@@ -1,0 +1,33 @@
+tickers:
+  - symbol: NVDA
+    name: NVIDIA Corporation
+    cik: "0001045810"
+    sector: semiconductors
+    regulators: [BIS, SEC]
+    key_customers: [MSFT, META, AMZN, GOOGL]
+    key_suppliers: [TSM, ASML, SK Hynix]
+    competitors: [AMD, INTC, AVGO]
+    macro_sensitivities: [export_controls_china, datacenter_capex]
+    notes: "Watch hyperscaler capital spending guidance closely."
+
+  - symbol: AAPL
+    name: Apple Inc.
+    cik: "0000320193"
+    sector: consumer_electronics
+    regulators: [DOJ, FTC, EU_EC, SEC]
+    key_customers: [Retail, Enterprise]
+    key_suppliers: [TSM, Foxconn, QCOM]
+    competitors: [GOOGL, MSFT, Samsung]
+    macro_sensitivities: [china_demand, consumer_spending]
+    notes: "Monitor services revenue growth and AI feature rollouts."
+
+  - symbol: MSFT
+    name: Microsoft Corporation
+    cik: "0000789019"
+    sector: software_cloud
+    regulators: [FTC, CMA, EU_EC, SEC]
+    key_customers: [Enterprise, Government]
+    key_suppliers: [NVDA, AMD, INTC]
+    competitors: [GOOGL, AMZN, AAPL]
+    macro_sensitivities: [cloud_growth, enterprise_it_spend]
+    notes: "Key focus on Azure growth and Copilot monetization."
