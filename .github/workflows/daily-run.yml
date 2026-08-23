@@ -1,0 +1,80 @@
+name: Daily Stock News Dashboard Run
+
+on:
+  schedule:
+    # Runs Monday through Friday at 11:00 UTC (6:00 AM EST / 7:00 AM EDT)
+    - cron: '0 11 * * 1-5'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI anytime
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/watchlist.yaml'
+      - 'collectors/**'
+      - 'pipeline/**'
+      - 'scripts/**'
+      - '.github/workflows/daily-run.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Restore Database Cache
+        uses: actions/cache/restore@v4
+        id: restore-db
+        with:
+          path: data/dashboard.db
+          key: "dashboard-db-${{ github.run_id }}"
+          restore-keys: |
+            dashboard-db-
+
+      - name: Run Pipeline (Collect, Deduplicate, Score, Render)
+        id: run_pipeline
+        env:
+          SEC_EDGAR_USER_AGENT: "${{ secrets.SEC_EDGAR_USER_AGENT || 'StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)' }}"
+        run: |
+          python scripts/run_local.py
+
+      - name: Save Updated Database Cache
+        if: always() && steps.run_pipeline.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: data/dashboard.db
+          key: "dashboard-db-${{ github.run_id }}"
+
+      - name: Upload Static Site Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-news-dashboard-site
+          path: site/
+          retention-days: 14
+
+      - name: Deploy to Cloudflare Pages
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        uses: cloudflare/wrangler-action@v3
+        env:
+          CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+        with:
+          apiToken: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          accountId: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          command: "pages deploy site --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME || 'stock-news-dashboard' }} --branch=main"
