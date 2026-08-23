@@ -18,6 +18,7 @@ on:
 
 jobs:
   build-and-deploy:
+    name: "Run Pipeline & Deploy"
     runs-on: ubuntu-latest
 
     permissions:
@@ -25,21 +26,26 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout Repository
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: 🐍 Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install Python Dependencies
+      - name: 🟢 Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Restore Database Cache
+      - name: 🗄️ Restore Database Cache (Historical Filings & Dedup History)
         uses: actions/cache/restore@v4
         id: restore-db
         with:
@@ -48,34 +54,43 @@ jobs:
           restore-keys: |
             dashboard-db-
 
-      - name: Run Pipeline (Collect, Deduplicate, Score, Render)
+      - name: 🚀 Run Pipeline (Collect, Deduplicate, Score, Render)
         id: run_pipeline
         env:
           SEC_EDGAR_USER_AGENT: "${{ secrets.SEC_EDGAR_USER_AGENT || 'StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)' }}"
         run: |
           python scripts/run_local.py
 
-      - name: Save Updated Database Cache
+      - name: 💾 Save Updated Database Cache
         if: always() && steps.run_pipeline.outcome == 'success'
         uses: actions/cache/save@v4
         with:
           path: data/dashboard.db
           key: "dashboard-db-${{ github.run_id }}"
 
-      - name: Upload Static Site Artifact
+      - name: 📦 Upload Static Site Artifact
         uses: actions/upload-artifact@v4
         with:
           name: stock-news-dashboard-site
           path: site/
           retention-days: 14
 
-      - name: Deploy to Cloudflare Pages
-        if: env.CLOUDFLARE_API_TOKEN != ''
-        uses: cloudflare/wrangler-action@v3
+      - name: 🌐 Deploy to Cloudflare Pages
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
         env:
           CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
           CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-        with:
-          apiToken: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
-          accountId: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-          command: "pages deploy site --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME || 'stock-news-dashboard' }} --branch=main"
+          PROJECT_NAME: "${{ secrets.CLOUDFLARE_PROJECT_NAME || 'stock-news-dashboard' }}"
+        run: |
+          echo "============================================================"
+          echo "🌐 Starting Cloudflare Pages Deployment"
+          echo "Target Project: $PROJECT_NAME"
+          echo "============================================================"
+
+          # Step 1: Ensure the Cloudflare Pages project exists
+          echo "Checking / creating project on Cloudflare Pages..."
+          npx wrangler pages project create "$PROJECT_NAME" --production-branch=main || true
+
+          # Step 2: Deploy the static site directory
+          echo "Deploying site/ directory to Cloudflare Pages..."
+          npx wrangler pages deploy site --project-name="$PROJECT_NAME" --branch=main --commit-dirty=true
