@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
-"""Run local end-to-end pipeline: Collect EDGAR filings -> SQLite -> Static HTML."""
+"""Run local end-to-end multi-source pipeline:
+Collectors (EDGAR + Company IR) -> Normalize -> Deduplicate -> Persist -> Render.
+"""
 
+import logging
 import os
 import sys
 import yaml
-import logging
 
 # Ensure project root is on sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from collectors.company_ir import collect_company_ir
 from collectors.edgar import collect_edgar_filings
 from pipeline.db import init_db
-from pipeline.persist import save_filings, get_filing_stats
+from pipeline.dedupe import deduplicate_items
+from pipeline.normalize import normalize_items
+from pipeline.persist import get_news_stats, save_news_items
 from pipeline.render import render_dashboard
 
 
@@ -37,9 +42,9 @@ def main():
     setup_logging()
     logger = logging.getLogger("run_local")
 
-    print("\n" + "=" * 60)
-    print("🚀 Running Stock News Dashboard Pipeline (Phase 1: SEC EDGAR)")
-    print("=" * 60 + "\n")
+    print("\n" + "=" * 65)
+    print("🚀 Running Stock News Dashboard Pipeline (Multi-Source + Deduplication)")
+    print("=" * 65 + "\n")
 
     watchlist_file = os.path.join(PROJECT_ROOT, "data", "watchlist.yaml")
     db_file = os.path.join(PROJECT_ROOT, "data", "dashboard.db")
@@ -55,30 +60,50 @@ def main():
     logger.info("Initializing database schema at %s", db_file)
     init_db(db_file)
 
-    # 3. Collect SEC Filings
+    # 3. Stage 1: Collectors (EDGAR + Company IR)
+    logger.info("--- Stage 1: Collectors ---")
     logger.info("Collecting SEC EDGAR filings...")
-    filings = collect_edgar_filings(tickers, max_items_per_ticker=30)
-    logger.info("Total filings parsed from SEC: %d", len(filings))
+    edgar_raw = collect_edgar_filings(tickers, max_items_per_ticker=30)
+    logger.info("SEC EDGAR raw items: %d", len(edgar_raw))
 
-    # 4. Persist to SQLite
-    logger.info("Saving filings into SQLite database...")
-    new_count, total_count = save_filings(filings, db_path=db_file)
-    logger.info("Persistence complete: %d new filings added (%d processed)", new_count, total_count)
+    logger.info("Collecting Company IR announcements...")
+    ir_raw = collect_company_ir(tickers, max_items_per_ticker=30)
+    logger.info("Company IR raw items: %d", len(ir_raw))
 
-    # 5. Render Static Site
-    logger.info("Rendering static HTML dashboard to %s", site_output)
+    raw_items = edgar_raw + ir_raw
+    logger.info("Total raw items collected across all sources: %d", len(raw_items))
+
+    # 4. Stage 2: Normalize
+    logger.info("--- Stage 2: Normalize ---")
+    normalized_items = normalize_items(raw_items)
+    logger.info("Normalized %d items into common schema", len(normalized_items))
+
+    # 5. Stage 3: Deduplicate
+    logger.info("--- Stage 3: Deduplicate ---")
+    unique_items, dup_count = deduplicate_items(normalized_items, similarity_threshold=0.75)
+    logger.info("Deduplication complete: %d unique items (%d duplicates filtered)", len(unique_items), dup_count)
+
+    # 6. Stage 4: Persist
+    logger.info("--- Stage 4: Persist ---")
+    new_count, total_processed = save_news_items(unique_items, db_path=db_file)
+    logger.info("Persistence complete: %d new items inserted (%d processed)", new_count, total_processed)
+
+    # 7. Stage 5: Render Static Site
+    logger.info("--- Stage 5: Render ---")
     output_html = render_dashboard(output_path=site_output, db_path=db_file)
+    logger.info("Rendered static dashboard to %s", output_html)
 
-    # 6. Summary Stats
-    stats = get_filing_stats(db_path=db_file)
-    print("\n" + "-" * 60)
+    # 8. Summary Stats
+    stats = get_news_stats(db_path=db_file)
+    print("\n" + "-" * 65)
     print("📊 Pipeline Run Summary")
-    print("-" * 60)
-    print(f"• Total Filings in Database: {stats['total']}")
-    print(f"• Latest Filing Date:        {stats['latest_date']}")
-    print(f"• Breakdown by Ticker:       {stats['by_ticker']}")
-    print(f"• Generated Dashboard:       {output_html}")
-    print("-" * 60)
+    print("-" * 65)
+    print(f"• Total Unique Items in DB:  {stats['total']}")
+    print(f"• Latest Story Date:        {stats['latest_date']}")
+    print(f"• Breakdown by Source:      {stats['by_source']}")
+    print(f"• Breakdown by Ticker:      {stats['by_ticker']}")
+    print(f"• Generated Dashboard:      {output_html}")
+    print("-" * 65)
     print(f"✅ Finished successfully! Open {output_html} in your browser.\n")
 
 

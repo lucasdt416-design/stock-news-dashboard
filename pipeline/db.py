@@ -4,7 +4,9 @@ import os
 import sqlite3
 from typing import Optional
 
-DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "dashboard.db")
+DEFAULT_DB_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "data", "dashboard.db"
+)
 
 
 def get_db_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
@@ -22,30 +24,35 @@ def init_db(db_path: Optional[str] = None) -> None:
     with conn:
         conn.execute(
             """
-            CREATE TABLE IF NOT EXISTS filings (
+            CREATE TABLE IF NOT EXISTS news_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item_uid TEXT UNIQUE NOT NULL,
                 ticker TEXT NOT NULL,
                 company_name TEXT,
-                cik TEXT NOT NULL,
-                form TEXT NOT NULL,
-                filing_date TEXT NOT NULL,
-                report_date TEXT,
-                acceptance_date_time TEXT,
-                accession_number TEXT UNIQUE NOT NULL,
-                primary_doc_name TEXT,
-                primary_doc_description TEXT,
+                source TEXT NOT NULL,
+                source_label TEXT NOT NULL,
+                source_type TEXT NOT NULL,
+                headline TEXT NOT NULL,
+                summary TEXT,
                 url TEXT NOT NULL,
+                published_date TEXT NOT NULL,
+                published_time TEXT,
+                form_or_type TEXT,
+                raw_id TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_filings_filing_date ON filings(filing_date DESC);"
+            "CREATE INDEX IF NOT EXISTS idx_news_published_date ON news_items(published_date DESC);"
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_filings_ticker ON filings(ticker);"
+            "CREATE INDEX IF NOT EXISTS idx_news_ticker ON news_items(ticker);"
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_filings_form ON filings(form);"
+            "CREATE INDEX IF NOT EXISTS idx_news_source ON news_items(source);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_news_form_type ON news_items(form_or_type);"
         )
     conn.close()

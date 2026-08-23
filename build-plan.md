@@ -21,7 +21,7 @@ Not financial advice; every output must be verifiable against a primary source.
 | Hosting | Cloudflare Pages / Netlify / GitHub Pages | Free, HTTPS included |
 | Classification | Fixed rules first, LLM for leftovers only | Rules are free/fast/predictable; LLM handles the ~20% rules can't resolve |
 
-**Open decision for you :** confirm Next.js is the right call vs. plain static HTML. Next.js is more
+**Open decision for you + your cousin:** confirm Next.js is the right call vs. plain static HTML. Next.js is more
 portfolio-impressive and easier to build a polished UI in, but is a heavier tool to learn if neither of you knows React yet.
 
 ## 2. System architecture (pipeline)
@@ -151,6 +151,7 @@ Benzinga, Tiingo — all have free tiers sufficient for personal scale.
 | **Phase 2** | Company IR feeds, one commercial news API, results calendar, deduplication | Multiple sources flow into one place without repeats |
 | **Phase 3** | Rule-based classifier, scoring engine, priority panel | Tool becomes genuinely useful daily |
 | **Phase 4** | LLM fallback classification, economic panel, supplier/customer cross-refs, health monitoring, real hosting + domain | System is finished and can run unattended |
+| **Phase 5** | Visual polish + insights (see §12) — real frontend, plain-language summaries, price charts | Portfolio-ready: looks good, explains itself, shows trends visually |
 | **Ongoing** | Tune score weights against real use, add sector-specific sources | — |
 
 **Guiding principle:** ship Phase 1's plain page before designing Phase 4's polish. A mediocre dashboard checked
@@ -167,10 +168,38 @@ daily beats a perfect one that's never finished.
 | Everything scored "critical" | Score weights drifted / bonus applying near-universally | Recalibrate against a known quiet day |
 | An obvious story is missing | Source failed silently, or category not covered | Missed-signal review, then add source |
 
-## 11. Open questions for you to resolve before/during Phase 2
+## 11. Open questions for you + your cousin to resolve before/during Phase 2
 
 - Confirm Next.js vs plain static HTML for the frontend
 - Which 1–2 commercial data providers to use
 - Initial watchlist — which companies
 - Who owns which repo permissions / secrets
 - Rough visual direction for the portfolio-facing site (this doesn't need to be decided yet, but worth a sketch before Phase 4)
+
+## 12. Phase 5 — Visual polish + insights (added after Phase 1 review)
+
+The original build guide is a *news* dashboard — it doesn't cover charts, since SEC filings and news
+articles aren't chart-shaped data. This phase captures three things discussed after seeing the Phase 1
+output, to make the endpoint feel like a finished product rather than a raw filings table.
+
+**1. "Tell you why it matters," not just the raw form type**
+Already implied by §6's scoring design (each item gets a one-line AI-generated summary), just not built
+yet. This is a Phase 4 task (LLM classification) surfaced properly in the UI — e.g. instead of just
+"Form 4," show "NVIDIA director sold 12,000 shares — routine, part of a scheduled 10b5-1 plan."
+
+**2. A real, good-looking frontend**
+The Next.js decision flagged as open in §11. Replace the plain table with the four-zone layout from §3:
+priority items, forward-looking calendar, per-company cards, economic panel.
+
+**3. Charts (new scope, not in the original guide)**
+Requires a new, separate lightweight data source — historical stock prices — since nothing else in the
+pipeline produces chart-shaped data. Realistic additions, roughly in order of effort:
+- A small price sparkline next to each company card
+- A chart of filing frequency over time (this one's free — it's just counting rows already in the DB)
+- A breakdown of filings by category (also free, same reason)
+
+A free stock price API (e.g. one of the commercial providers already listed in §7 usually includes basic
+price history) is the only new dependency this requires — no new architecture.
+
+**Where this sits relative to Phases 2–4:** don't start Phase 5 before Phase 3 is done. A pretty chart on
+top of an unscored, undeduplicated, single-source feed is polishing something that isn't useful yet.

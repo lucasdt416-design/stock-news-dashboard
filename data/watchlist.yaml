@@ -2,6 +2,7 @@ tickers:
   - symbol: NVDA
     name: NVIDIA Corporation
     cik: "0001045810"
+    ir_feed_url: "https://nvidianews.nvidia.com/releases.xml"
     sector: semiconductors
     regulators: [BIS, SEC]
     key_customers: [MSFT, META, AMZN, GOOGL]
@@ -13,6 +14,7 @@ tickers:
   - symbol: AAPL
     name: Apple Inc.
     cik: "0000320193"
+    ir_feed_url: "https://www.apple.com/newsroom/rss-feed.rss"
     sector: consumer_electronics
     regulators: [DOJ, FTC, EU_EC, SEC]
     key_customers: [Retail, Enterprise]
@@ -24,6 +26,7 @@ tickers:
   - symbol: MSFT
     name: Microsoft Corporation
     cik: "0000789019"
+    ir_feed_url: "https://news.microsoft.com/feed/"
     sector: software_cloud
     regulators: [FTC, CMA, EU_EC, SEC]
     key_customers: [Enterprise, Government]
