@@ -18,8 +18,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #0a0e17;
-      --bg-surface: #111827;
+      --bg-base: #080c14;
+      --bg-surface: #0f172a;
       --bg-surface-elevated: #1e293b;
       --bg-surface-highlight: #243048;
       --bg-hover: #334155;
@@ -38,6 +38,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 14px;
+      --radius-xl: 18px;
       --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
     }
 
@@ -57,7 +58,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }
 
     .container {
-      max-width: 1340px;
+      max-width: 1360px;
       margin: 0 auto;
       padding: 2rem 1.5rem;
     }
@@ -169,61 +170,174 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       margin-top: 0.35rem;
     }
 
-    /* Priority Panel */
-    .priority-panel {
-      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(17, 24, 39, 0.95) 100%);
-      border: 1px solid rgba(59, 130, 246, 0.35);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      margin-bottom: 2.25rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    /* ========================================================
+       PRIORITY INTELLIGENCE PANEL (VISUALLY DISTINCT)
+       ======================================================== */
+    .priority-section {
+      background: radial-gradient(ellipse at top, rgba(37, 99, 235, 0.15) 0%, rgba(15, 23, 42, 0.95) 70%);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: var(--radius-xl);
+      padding: 1.75rem;
+      margin-bottom: 2.75rem;
+      box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(59, 130, 246, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .priority-section::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #10b981, #8b5cf6, #3b82f6);
     }
 
     .priority-header {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1.25rem;
+      gap: 1rem;
+      margin-bottom: 1.35rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .priority-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .priority-badge-icon {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
     }
 
     .priority-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .priority-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
     }
 
     .priority-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 1.15rem;
     }
 
     .priority-card {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.15rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 0.75rem;
-      transition: all 0.15s ease;
+      gap: 0.85rem;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(8px);
     }
 
     .priority-card:hover {
-      border-color: var(--accent-emerald);
-      transform: translateY(-2px);
-      background: rgba(15, 23, 42, 0.95);
+      border-color: #34d399;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(52, 211, 153, 0.2);
+      background: rgba(24, 34, 53, 0.95);
     }
 
-    .priority-top {
+    .priority-card-top {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 0.5rem;
+    }
+
+    .priority-rank-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    .priority-score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 0.92rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-sm);
+      background: rgba(16, 185, 129, 0.22);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+    }
+
+    .priority-card-headline {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.4;
+      margin-top: 0.4rem;
+    }
+
+    .priority-card-summary {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-top: 0.35rem;
+    }
+
+    .priority-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Section Divider */
+    .feed-section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feed-section-header h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .feed-divider-line {
+      height: 1px;
+      background: var(--border-card);
+      flex-grow: 1;
     }
 
     /* Controls Panel */
@@ -527,11 +641,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="logo-badge">INTEL</div>
         <div class="brand-text">
           <h1>Stock News Dashboard</h1>
-          <p>Phase 3: Priority Scoring & Multi-Source Intelligence Feed</p>
+          <p>Phase 3: Priority Intelligence & Multi-Source Research Engine</p>
         </div>
       </div>
       <div class="header-meta">
-        <div><span class="status-indicator"></span> <strong>Scoring Engine Active</strong></div>
+        <div><span class="status-indicator"></span> <strong>Scoring Engine Live</strong></div>
         <div>Updated: <span id="generated-time">{{ generated_at }}</span></div>
       </div>
     </header>
@@ -541,20 +655,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="stat-card">
         <div class="stat-label">High Impact Stories (≥ 7.0)</div>
         <div class="stat-value" style="color: var(--accent-emerald);">{{ stats.high_priority_count }}</div>
-        <div class="stat-subtext">Priority review queue</div>
+        <div class="stat-subtext">Priority queue items</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Total Unique Items</div>
+        <div class="stat-label">Total Items In Database</div>
         <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-subtext">Across active watchlist</div>
+        <div class="stat-subtext">Deduplicated across sources</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Average Item Score</div>
+        <div class="stat-label">Average Importance Score</div>
         <div class="stat-value">{{ stats.avg_score }} / 10</div>
-        <div class="stat-subtext">Based on transparent formula</div>
+        <div class="stat-subtext">Transparent arithmetic</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Tracked Companies</div>
+        <div class="stat-label">Active Watchlist</div>
         <div class="stat-value">{{ stats.by_ticker|length }}</div>
         <div class="stat-subtext">
           {% for ticker, count in stats.by_ticker.items() %}
@@ -564,16 +678,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Priority Panel -->
+    <!-- ========================================================
+         VISUALLY DISTINCT PRIORITY PANEL (TOP SCORED ITEMS)
+         ======================================================== -->
     {% if priority_items %}
-    <section class="priority-panel">
+    <section class="priority-section">
       <div class="priority-header">
-        <div class="priority-title">
-          <span>⚡ Priority Intelligence Panel</span>
-          <span style="font-size:0.78rem; font-weight:500; color:var(--text-muted);">(Top Disclosures & Filings)</span>
+        <div class="priority-title-wrap">
+          <span class="priority-badge-icon">⚡ PRIORITY</span>
+          <div>
+            <h2 class="priority-title">Top Impact Disclosures & News</h2>
+            <p class="priority-subtitle">Top {{ priority_items|length }} highest scored stories across all watchlist companies</p>
+          </div>
         </div>
-        <div style="font-size: 0.78rem; color: var(--accent-emerald); font-weight: 600;">
-          Score ≥ 7.0
+        <div style="font-family:'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+          ⚡ SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
         </div>
       </div>
 
@@ -581,17 +700,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         {% for item in priority_items %}
         <div class="priority-card">
           <div>
-            <div class="priority-top">
-              <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
-              <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
+            <div class="priority-card-top">
+              <div style="display:flex; align-items:center; gap:0.45rem;">
+                <span class="priority-rank-pill">#{{ loop.index }}</span>
+                <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
+              </div>
+              <span class="priority-score-pill" title="{{ item.score_breakdown }}">
                 ★ {{ item.score }}
               </span>
             </div>
-            <div class="category-badge" style="margin-top: 0.5rem;">{{ item.category }}</div>
-            <div class="headline-text" style="font-size: 0.95rem; margin-top: 0.5rem;">{{ item.headline }}</div>
-            <div class="summary-text" style="margin-top: 0.35rem;">{{ item.summary[:180] }}{% if item.summary|length > 180 %}...{% endif %}</div>
+
+            <div style="margin-top: 0.65rem;">
+              <span class="category-badge">{{ item.category }}</span>
+              <span class="source-tag" style="margin-left: 0.4rem;">{{ item.source_label }}</span>
+            </div>
+
+            <h3 class="priority-card-headline">{{ item.headline }}</h3>
+            <p class="priority-card-summary">{{ item.summary[:175] }}{% if item.summary|length > 175 %}...{% endif %}</p>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06); padding-top:0.6rem; margin-top:0.5rem;">
+
+          <div class="priority-card-footer">
             <span class="date-cell">{{ item.published_date }}</span>
             <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
               View Source ↗
@@ -602,6 +730,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
     </section>
     {% endif %}
+
+    <!-- ========================================================
+         FULL FEED / CONTROLS & TABLE
+         ======================================================== -->
+    <div class="feed-section-header">
+      <h2>Full Intelligence Feed</h2>
+      <div class="feed-divider-line"></div>
+    </div>
 
     <!-- Controls / Filters -->
     <div class="controls-panel">
@@ -828,7 +964,8 @@ def render_dashboard(
         output_path = os.path.join(site_dir, "index.html")
 
     items = get_all_news_items(order_by="score", db_path=db_path)
-    priority_items = get_top_priority_items(min_score=7.0, limit=6, db_path=db_path)
+    # Retrieve top 8 highest scored items for the Priority Panel
+    priority_items = get_top_priority_items(limit=8, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 

@@ -122,21 +122,23 @@ def get_all_news_items(
 
 
 def get_top_priority_items(
-    min_score: float = 7.0, limit: int = 5, db_path: Optional[str] = None
+    limit: int = 8, min_score: Optional[float] = None, db_path: Optional[str] = None
 ) -> List[Dict[str, Any]]:
-    """Retrieve top highest-impact priority items."""
+    """Retrieve top highest-impact priority items (5-10 items)."""
     init_db(db_path)
     conn = get_db_connection(db_path)
 
-    cursor = conn.execute(
-        """
-        SELECT * FROM news_items
-        WHERE score >= ?
-        ORDER BY score DESC, published_date DESC
-        LIMIT ?
-        """,
-        (min_score, limit),
-    )
+    query = "SELECT * FROM news_items"
+    params: List[Any] = []
+
+    if min_score is not None:
+        query += " WHERE score >= ?"
+        params.append(min_score)
+
+    query += " ORDER BY score DESC, published_date DESC, id DESC LIMIT ?"
+    params.append(limit)
+
+    cursor = conn.execute(query, params)
     rows = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return rows
