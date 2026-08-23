@@ -19,7 +19,7 @@ def get_db_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
 
 
 def init_db(db_path: Optional[str] = None) -> None:
-    """Initialize database schema if tables do not exist."""
+    """Initialize database schema and perform backwards-compatible migrations."""
     conn = get_db_connection(db_path)
     with conn:
         conn.execute(
@@ -39,10 +39,25 @@ def init_db(db_path: Optional[str] = None) -> None:
                 published_time TEXT,
                 form_or_type TEXT,
                 raw_id TEXT,
+                category TEXT,
+                score REAL NOT NULL DEFAULT 0.0,
+                score_breakdown TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
+
+        # Migration helper for existing databases
+        cursor = conn.execute("PRAGMA table_info(news_items)")
+        columns = [row["name"] for row in cursor.fetchall()]
+
+        if "category" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN category TEXT")
+        if "score" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN score REAL NOT NULL DEFAULT 0.0")
+        if "score_breakdown" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN score_breakdown TEXT")
+
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_news_published_date ON news_items(published_date DESC);"
         )
@@ -53,6 +68,9 @@ def init_db(db_path: Optional[str] = None) -> None:
             "CREATE INDEX IF NOT EXISTS idx_news_source ON news_items(source);"
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_news_form_type ON news_items(form_or_type);"
+            "CREATE INDEX IF NOT EXISTS idx_news_score ON news_items(score DESC);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_news_category ON news_items(category);"
         )
     conn.close()

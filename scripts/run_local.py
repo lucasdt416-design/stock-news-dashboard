@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Run local end-to-end multi-source pipeline:
-Collectors (EDGAR + Company IR) -> Normalize -> Deduplicate -> Persist -> Render.
+"""Run local end-to-end Phase 3 pipeline:
+Collectors -> Normalize -> Deduplicate -> Score -> Persist -> Render.
 """
 
 import logging
@@ -20,6 +20,7 @@ from pipeline.dedupe import deduplicate_items
 from pipeline.normalize import normalize_items
 from pipeline.persist import get_news_stats, save_news_items
 from pipeline.render import render_dashboard
+from pipeline.score import score_items
 
 
 def setup_logging():
@@ -42,9 +43,9 @@ def main():
     setup_logging()
     logger = logging.getLogger("run_local")
 
-    print("\n" + "=" * 65)
-    print("🚀 Running Stock News Dashboard Pipeline (Multi-Source + Deduplication)")
-    print("=" * 65 + "\n")
+    print("\n" + "=" * 68)
+    print("🚀 Running Stock News Dashboard Pipeline (Phase 3: Scoring & Priority)")
+    print("=" * 68 + "\n")
 
     watchlist_file = os.path.join(PROJECT_ROOT, "data", "watchlist.yaml")
     db_file = os.path.join(PROJECT_ROOT, "data", "dashboard.db")
@@ -60,7 +61,7 @@ def main():
     logger.info("Initializing database schema at %s", db_file)
     init_db(db_file)
 
-    # 3. Stage 1: Collectors (EDGAR + Company IR)
+    # 3. Stage 1: Collectors
     logger.info("--- Stage 1: Collectors ---")
     logger.info("Collecting SEC EDGAR filings...")
     edgar_raw = collect_edgar_filings(tickers, max_items_per_ticker=30)
@@ -83,27 +84,35 @@ def main():
     unique_items, dup_count = deduplicate_items(normalized_items, similarity_threshold=0.75)
     logger.info("Deduplication complete: %d unique items (%d duplicates filtered)", len(unique_items), dup_count)
 
-    # 6. Stage 4: Persist
-    logger.info("--- Stage 4: Persist ---")
-    new_count, total_processed = save_news_items(unique_items, db_path=db_file)
-    logger.info("Persistence complete: %d new items inserted (%d processed)", new_count, total_processed)
+    # 6. Stage 4: Scoring Engine
+    logger.info("--- Stage 4: Scoring Engine ---")
+    scored_items = score_items(unique_items)
+    high_impact = [it for it in scored_items if it.get("score", 0) >= 7.0]
+    logger.info("Scored %d items (%d identified as High Impact ≥ 7.0)", len(scored_items), len(high_impact))
 
-    # 7. Stage 5: Render Static Site
-    logger.info("--- Stage 5: Render ---")
+    # 7. Stage 5: Persist
+    logger.info("--- Stage 5: Persist ---")
+    new_count, total_processed = save_news_items(scored_items, db_path=db_file)
+    logger.info("Persistence complete: %d records updated/inserted (%d processed)", new_count, total_processed)
+
+    # 8. Stage 6: Render Static Site
+    logger.info("--- Stage 6: Render ---")
     output_html = render_dashboard(output_path=site_output, db_path=db_file)
     logger.info("Rendered static dashboard to %s", output_html)
 
-    # 8. Summary Stats
+    # 9. Summary Stats
     stats = get_news_stats(db_path=db_file)
-    print("\n" + "-" * 65)
-    print("📊 Pipeline Run Summary")
-    print("-" * 65)
-    print(f"• Total Unique Items in DB:  {stats['total']}")
-    print(f"• Latest Story Date:        {stats['latest_date']}")
-    print(f"• Breakdown by Source:      {stats['by_source']}")
-    print(f"• Breakdown by Ticker:      {stats['by_ticker']}")
-    print(f"• Generated Dashboard:      {output_html}")
-    print("-" * 65)
+    print("\n" + "-" * 68)
+    print("📊 Phase 3 Pipeline Run Summary")
+    print("-" * 68)
+    print(f"• Total Unique Items in DB:    {stats['total']}")
+    print(f"• High Impact Stories (≥ 7.0): {stats['high_priority_count']}")
+    print(f"• Average Score:              {stats['avg_score']} / 10.0")
+    print(f"• Breakdown by Category:      {stats['by_category']}")
+    print(f"• Breakdown by Source:        {stats['by_source']}")
+    print(f"• Breakdown by Ticker:        {stats['by_ticker']}")
+    print(f"• Generated Dashboard:        {output_html}")
+    print("-" * 68)
     print(f"✅ Finished successfully! Open {output_html} in your browser.\n")
 
 

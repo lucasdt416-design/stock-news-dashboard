@@ -1,32 +1,34 @@
-"""Static HTML dashboard generator for multi-source stock news and filings."""
+"""Static HTML dashboard generator with Priority Panel and Score Ranking."""
 
 import os
 from datetime import datetime
 from typing import Optional
 from jinja2 import Template
-from pipeline.persist import get_all_news_items, get_news_stats
+from pipeline.persist import get_all_news_items, get_news_stats, get_top_priority_items
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Personal stock news dashboard: SEC EDGAR filings and official company IR press releases.">
-  <title>Stock News Dashboard</title>
+  <meta name="description" content="Personal stock news dashboard with rule-based scoring, priority ranking, and multi-source intelligence.">
+  <title>Stock News Dashboard — Priority Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #0b0f19;
+      --bg-base: #0a0e17;
       --bg-surface: #111827;
-      --bg-surface-elevated: #1f2937;
-      --bg-hover: #374151;
-      --border-subtle: #2d3748;
+      --bg-surface-elevated: #1e293b;
+      --bg-surface-highlight: #243048;
+      --bg-hover: #334155;
+      --border-subtle: #1e293b;
+      --border-card: #283548;
       --border-accent: #3b82f6;
-      --text-primary: #f9fafb;
-      --text-secondary: #9ca3af;
-      --text-muted: #6b7280;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
       --accent-blue: #3b82f6;
       --accent-emerald: #10b981;
       --accent-amber: #f59e0b;
@@ -55,7 +57,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }
 
     .container {
-      max-width: 1320px;
+      max-width: 1340px;
       margin: 0 auto;
       padding: 2rem 1.5rem;
     }
@@ -66,8 +68,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       justify-content: space-between;
       align-items: center;
       gap: 1.5rem;
-      padding-bottom: 2rem;
-      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 1.75rem;
+      border-bottom: 1px solid var(--border-card);
       margin-bottom: 2rem;
     }
 
@@ -85,10 +87,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 1.15rem;
+      font-weight: 800;
+      font-size: 1.25rem;
       color: #fff;
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.45);
     }
 
     .brand-text h1 {
@@ -111,7 +113,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       background: var(--bg-surface);
       padding: 0.5rem 1rem;
       border-radius: var(--radius-sm);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-card);
     }
 
     .status-indicator {
@@ -133,7 +135,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     .stat-card {
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 1.25rem;
       transition: transform 0.15s ease, border-color 0.15s ease;
@@ -167,10 +169,67 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       margin-top: 0.35rem;
     }
 
-    /* Controls Bar */
+    /* Priority Panel */
+    .priority-panel {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(17, 24, 39, 0.95) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 2.25rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .priority-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .priority-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .priority-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .priority-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.75rem;
+      transition: all 0.15s ease;
+    }
+
+    .priority-card:hover {
+      border-color: var(--accent-emerald);
+      transform: translateY(-2px);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .priority-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    /* Controls Panel */
     .controls-panel {
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       padding: 1.25rem;
       margin-bottom: 1.5rem;
@@ -191,14 +250,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin-right: 0.5rem;
-      min-width: 60px;
+      margin-right: 0.35rem;
+      min-width: 65px;
     }
 
     .filter-btn {
       background: var(--bg-surface-elevated);
       color: var(--text-secondary);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-sm);
       padding: 0.4rem 0.85rem;
       font-size: 0.82rem;
@@ -230,22 +289,32 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       background: rgba(255, 255, 255, 0.15);
     }
 
-    .search-row {
+    .bottom-controls {
       display: flex;
-      justify-content: flex-end;
-      margin-top: 0.25rem;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      border-top: 1px solid rgba(40, 53, 72, 0.5);
+      padding-top: 0.85rem;
+    }
+
+    .sort-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .search-box {
       position: relative;
-      width: 100%;
-      max-width: 400px;
+      flex-grow: 1;
+      max-width: 380px;
     }
 
     .search-box input {
       width: 100%;
       background: var(--bg-base);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-sm);
       padding: 0.55rem 0.85rem 0.55rem 2.25rem;
       color: var(--text-primary);
@@ -268,10 +337,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       font-size: 0.9rem;
     }
 
-    /* Table Styling */
+    /* Table & Cards */
     .table-container {
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       overflow: hidden;
       box-shadow: var(--shadow-card);
@@ -292,11 +361,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 0.05em;
       padding: 0.85rem 1.25rem;
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-card);
     }
 
     tbody tr {
-      border-bottom: 1px solid rgba(45, 55, 72, 0.6);
+      border-bottom: 1px solid rgba(40, 53, 72, 0.5);
       transition: background-color 0.12s ease;
     }
 
@@ -307,6 +376,40 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     td {
       padding: 1rem 1.25rem;
       vertical-align: middle;
+    }
+
+    /* Score Badges */
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: help;
+      position: relative;
+    }
+
+    .score-high {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .score-med {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+
+    .score-low {
+      background: rgba(148, 163, 184, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
     }
 
     .ticker-badge {
@@ -325,46 +428,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .ticker-MSFT { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
     .ticker-default { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156, 163, 175, 0.3); }
 
-    .source-badge {
-      display: inline-flex;
-      align-items: center;
+    .category-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-card);
+    }
+
+    .source-tag {
       font-size: 0.72rem;
       font-weight: 600;
       text-transform: uppercase;
-      padding: 0.2rem 0.5rem;
-      border-radius: var(--radius-sm);
-      letter-spacing: 0.03em;
-    }
-
-    .source-sec_edgar {
-      background: rgba(59, 130, 246, 0.15);
-      color: #93c5fd;
-      border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-
-    .source-company_ir {
-      background: rgba(139, 92, 246, 0.15);
-      color: #c4b5fd;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-
-    .form-badge {
-      display: inline-block;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.15rem 0.45rem;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      color: var(--text-primary);
-      border: 1px solid var(--border-subtle);
-      margin-left: 0.35rem;
-    }
-
-    .form-PRESS_RELEASE {
-      background: rgba(6, 182, 212, 0.15);
-      color: #22d3ee;
-      border-color: rgba(6, 182, 212, 0.3);
+      color: var(--text-muted);
     }
 
     .headline-text {
@@ -434,6 +513,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     @media (max-width: 768px) {
       .container { padding: 1rem; }
       .header-meta { width: 100%; justify-content: space-between; }
+      .bottom-controls { flex-direction: column; align-items: stretch; }
+      .search-box { max-width: none; }
       table { display: block; overflow-x: auto; }
     }
   </style>
@@ -443,14 +524,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <div class="brand">
-        <div class="logo-badge">FEED</div>
+        <div class="logo-badge">INTEL</div>
         <div class="brand-text">
           <h1>Stock News Dashboard</h1>
-          <p>Multi-Source Intel: SEC EDGAR Filings & Company Investor Relations Feeds</p>
+          <p>Phase 3: Priority Scoring & Multi-Source Intelligence Feed</p>
         </div>
       </div>
       <div class="header-meta">
-        <div><span class="status-indicator"></span> <strong>Multi-Source Live Sync</strong></div>
+        <div><span class="status-indicator"></span> <strong>Scoring Engine Active</strong></div>
         <div>Updated: <span id="generated-time">{{ generated_at }}</span></div>
       </div>
     </header>
@@ -458,14 +539,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <!-- Summary Stats -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">Total Unique Stories</div>
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-subtext">Deduplicated across sources</div>
+        <div class="stat-label">High Impact Stories (≥ 7.0)</div>
+        <div class="stat-value" style="color: var(--accent-emerald);">{{ stats.high_priority_count }}</div>
+        <div class="stat-subtext">Priority review queue</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Latest Publication</div>
-        <div class="stat-value" style="font-size: 1.35rem; margin-top: 0.3rem;">{{ stats.latest_date or "N/A" }}</div>
-        <div class="stat-subtext">Most recent announcement</div>
+        <div class="stat-label">Total Unique Items</div>
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-subtext">Across active watchlist</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Average Item Score</div>
+        <div class="stat-value">{{ stats.avg_score }} / 10</div>
+        <div class="stat-subtext">Based on transparent formula</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Tracked Companies</div>
@@ -476,27 +562,69 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           {% endfor %}
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Active Sources</div>
-        <div class="stat-value">{{ stats.by_source|length }}</div>
-        <div class="stat-subtext">
-          {% for src, count in stats.by_source.items() %}
-            <span style="font-family:'JetBrains Mono', monospace; margin-right: 0.35rem;">{{ src }}: {{ count }}</span>
-          {% endfor %}
+    </div>
+
+    <!-- Priority Panel -->
+    {% if priority_items %}
+    <section class="priority-panel">
+      <div class="priority-header">
+        <div class="priority-title">
+          <span>⚡ Priority Intelligence Panel</span>
+          <span style="font-size:0.78rem; font-weight:500; color:var(--text-muted);">(Top Disclosures & Filings)</span>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--accent-emerald); font-weight: 600;">
+          Score ≥ 7.0
         </div>
       </div>
-    </div>
+
+      <div class="priority-grid">
+        {% for item in priority_items %}
+        <div class="priority-card">
+          <div>
+            <div class="priority-top">
+              <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
+              <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
+                ★ {{ item.score }}
+              </span>
+            </div>
+            <div class="category-badge" style="margin-top: 0.5rem;">{{ item.category }}</div>
+            <div class="headline-text" style="font-size: 0.95rem; margin-top: 0.5rem;">{{ item.headline }}</div>
+            <div class="summary-text" style="margin-top: 0.35rem;">{{ item.summary[:180] }}{% if item.summary|length > 180 %}...{% endif %}</div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06); padding-top:0.6rem; margin-top:0.5rem;">
+            <span class="date-cell">{{ item.published_date }}</span>
+            <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
+              View Source ↗
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
 
     <!-- Controls / Filters -->
     <div class="controls-panel">
       <div class="filter-row">
-        <span class="filter-label">Tickers:</span>
+        <span class="filter-label">Ticker:</span>
         <button class="filter-btn active" data-filter-type="ticker" data-val="ALL" onclick="setTickerFilter('ALL', this)">
           All Tickers <span class="pill-count">{{ items|length }}</span>
         </button>
         {% for ticker, count in stats.by_ticker.items() %}
         <button class="filter-btn" data-filter-type="ticker" data-val="{{ ticker }}" onclick="setTickerFilter('{{ ticker }}', this)">
           {{ ticker }} <span class="pill-count">{{ count }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="filter-row">
+        <span class="filter-label">Category:</span>
+        <button class="filter-btn active" data-filter-type="category" data-val="ALL" onclick="setCategoryFilter('ALL', this)">
+          All Categories
+        </button>
+        {% for cat, count in stats.by_category.items() %}
+        <button class="filter-btn" data-filter-type="category" data-val="{{ cat }}" onclick="setCategoryFilter('{{ cat }}', this)">
+          {{ cat }} <span class="pill-count">{{ count }}</span>
         </button>
         {% endfor %}
       </div>
@@ -509,15 +637,25 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <button class="filter-btn" data-filter-type="source" data-val="sec_edgar" onclick="setSourceFilter('sec_edgar', this)">
           SEC EDGAR
         </button>
-        <button class="filter-btn" data-filter-type="company_ir" onclick="setSourceFilter('company_ir', this)">
+        <button class="filter-btn" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">
           Company IR
         </button>
       </div>
 
-      <div class="search-row">
+      <div class="bottom-controls">
+        <div class="sort-group">
+          <span class="filter-label" style="min-width:auto;">Sort By:</span>
+          <button class="filter-btn active" id="sortScoreBtn" onclick="sortRows('score')">
+            Highest Score First
+          </button>
+          <button class="filter-btn" id="sortDateBtn" onclick="sortRows('date')">
+            Newest Date First
+          </button>
+        </div>
+
         <div class="search-box">
           <span class="search-icon">🔍</span>
-          <input type="text" id="searchInput" placeholder="Search headlines, forms, or summary..." onkeyup="filterItems()">
+          <input type="text" id="searchInput" placeholder="Search headlines, categories, or keywords..." onkeyup="filterItems()">
         </div>
       </div>
     </div>
@@ -527,16 +665,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <table id="newsTable">
         <thead>
           <tr>
+            <th style="width: 75px;">Score</th>
             <th>Company</th>
-            <th>Source / Type</th>
+            <th>Category & Source</th>
             <th>Date</th>
-            <th>Headline & Excerpt</th>
+            <th>Headline & Description</th>
             <th>Source Link</th>
           </tr>
         </thead>
         <tbody id="newsBody">
           {% for item in items %}
-          <tr class="news-row" data-ticker="{{ item.ticker }}" data-source="{{ item.source }}" data-text="{{ item.ticker }} {{ item.company_name }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.summary }}">
+          <tr class="news-row" 
+              data-score="{{ item.score }}"
+              data-date="{{ item.published_date }}"
+              data-ticker="{{ item.ticker }}" 
+              data-source="{{ item.source }}" 
+              data-category="{{ item.category }}"
+              data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.summary }} {{ item.score_breakdown }}">
+            <td>
+              <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
+                {{ item.score }}
+              </span>
+            </td>
             <td>
               <div>
                 <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
@@ -545,8 +695,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             </td>
             <td>
               <div>
-                <span class="source-badge source-{{ item.source }}">{{ item.source_label }}</span>
-                <span class="form-badge form-{{ item.form_or_type|replace(' ', '-') }}">{{ item.form_or_type }}</span>
+                <span class="category-badge">{{ item.category }}</span>
+                <div class="source-tag" style="margin-top: 0.35rem;">
+                  {{ item.source_label }} &bull; {{ item.form_or_type }}
+                </div>
               </div>
             </td>
             <td class="date-cell">
@@ -558,7 +710,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             </td>
             <td>
               <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                View Source ↗
+                View ↗
               </a>
             </td>
           </tr>
@@ -571,17 +723,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <footer>
-      <p>Data aggregated from official SEC EDGAR Submissions API and Company Newsroom feeds. For informational research purposes only.</p>
+      <p>Transparent scoring arithmetic: Category Base Score + Source Authority (+3/+2/+1) + Recency (+2/+1/-1) + Named in Headline (+1). Deduplicated across official SEC EDGAR and Company Newsrooms.</p>
     </footer>
   </div>
 
   <script>
     let activeTickerFilter = 'ALL';
+    let activeCategoryFilter = 'ALL';
     let activeSourceFilter = 'ALL';
+    let currentSort = 'score';
 
     function setTickerFilter(val, btn) {
       activeTickerFilter = val;
       document.querySelectorAll('[data-filter-type="ticker"]').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      filterItems();
+    }
+
+    function setCategoryFilter(val, btn) {
+      activeCategoryFilter = val;
+      document.querySelectorAll('[data-filter-type="category"]').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
       filterItems();
     }
@@ -593,6 +754,30 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       filterItems();
     }
 
+    function sortRows(criteria) {
+      currentSort = criteria;
+      document.getElementById('sortScoreBtn').classList.toggle('active', criteria === 'score');
+      document.getElementById('sortDateBtn').classList.toggle('active', criteria === 'date');
+
+      const tbody = document.getElementById('newsBody');
+      const rows = Array.from(tbody.querySelectorAll('.news-row'));
+
+      rows.sort((a, b) => {
+        if (criteria === 'score') {
+          const scoreA = parseFloat(a.getAttribute('data-score')) || 0;
+          const scoreB = parseFloat(b.getAttribute('data-score')) || 0;
+          if (scoreB !== scoreA) return scoreB - scoreA;
+          return (b.getAttribute('data-date') || '').localeCompare(a.getAttribute('data-date') || '');
+        } else {
+          const dateComp = (b.getAttribute('data-date') || '').localeCompare(a.getAttribute('data-date') || '');
+          if (dateComp !== 0) return dateComp;
+          return (parseFloat(b.getAttribute('data-score')) || 0) - (parseFloat(a.getAttribute('data-score')) || 0);
+        }
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
     function filterItems() {
       const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const rows = document.querySelectorAll('.news-row');
@@ -601,13 +786,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       rows.forEach(row => {
         const rowTicker = row.getAttribute('data-ticker');
         const rowSource = row.getAttribute('data-source');
+        const rowCategory = row.getAttribute('data-category');
         const rowText = (row.getAttribute('data-text') || '').toLowerCase();
 
         const matchesTicker = (activeTickerFilter === 'ALL' || rowTicker === activeTickerFilter);
         const matchesSource = (activeSourceFilter === 'ALL' || rowSource === activeSourceFilter);
+        const matchesCategory = (activeCategoryFilter === 'ALL' || rowCategory === activeCategoryFilter);
         const matchesSearch = (!query || rowText.includes(query));
 
-        if (matchesTicker && matchesSource && matchesSearch) {
+        if (matchesTicker && matchesSource && matchesCategory && matchesSearch) {
           row.style.display = '';
           visibleCount++;
         } else {
@@ -632,7 +819,7 @@ def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> str:
-    """Render the multi-source dashboard HTML file from SQLite data and return the destination path."""
+    """Render the dashboard HTML file with priority panel and scoring."""
     if output_path is None:
         site_dir = os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "site"
@@ -640,13 +827,15 @@ def render_dashboard(
         os.makedirs(site_dir, exist_ok=True)
         output_path = os.path.join(site_dir, "index.html")
 
-    items = get_all_news_items(db_path=db_path)
+    items = get_all_news_items(order_by="score", db_path=db_path)
+    priority_items = get_top_priority_items(min_score=7.0, limit=6, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 
     template = Template(HTML_TEMPLATE)
     rendered_html = template.render(
         items=items,
+        priority_items=priority_items,
         stats=stats,
         generated_at=now_str,
     )

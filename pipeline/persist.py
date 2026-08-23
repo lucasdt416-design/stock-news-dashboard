@@ -1,4 +1,4 @@
-"""Persistence layer for saving and querying news items and filings in SQLite."""
+"""Persistence layer for saving and querying scored news items and filings in SQLite."""
 
 from typing import Any, Dict, List, Optional, Tuple
 from pipeline.db import get_db_connection, init_db
@@ -7,7 +7,7 @@ from pipeline.db import get_db_connection, init_db
 def save_news_items(
     items: List[Dict[str, Any]], db_path: Optional[str] = None
 ) -> Tuple[int, int]:
-    """Save a list of normalized and deduplicated news items into SQLite database.
+    """Save a list of scored and deduplicated news items into SQLite database.
 
     Returns:
         tuple (new_inserted_count, total_processed_count)
@@ -23,7 +23,7 @@ def save_news_items(
         for it in items:
             cursor = conn.execute(
                 """
-                INSERT OR IGNORE INTO news_items (
+                INSERT INTO news_items (
                     item_uid,
                     ticker,
                     company_name,
@@ -36,8 +36,17 @@ def save_news_items(
                     published_date,
                     published_time,
                     form_or_type,
-                    raw_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    raw_id,
+                    category,
+                    score,
+                    score_breakdown
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(item_uid) DO UPDATE SET
+                    category = excluded.category,
+                    score = excluded.score,
+                    score_breakdown = excluded.score_breakdown,
+                    headline = excluded.headline,
+                    summary = excluded.summary
                 """,
                 (
                     it.get("item_uid"),
@@ -53,6 +62,9 @@ def save_news_items(
                     it.get("published_time"),
                     it.get("form_or_type"),
                     it.get("raw_id"),
+                    it.get("category"),
+                    float(it.get("score", 0.0)),
+                    it.get("score_breakdown"),
                 ),
             )
             if cursor.rowcount > 0:
@@ -65,10 +77,12 @@ def save_news_items(
 def get_all_news_items(
     ticker: Optional[str] = None,
     source: Optional[str] = None,
+    category: Optional[str] = None,
+    order_by: str = "score",
     limit: Optional[int] = None,
     db_path: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieve news items sorted newest first."""
+    """Retrieve news items sorted by score or publication date."""
     init_db(db_path)
     conn = get_db_connection(db_path)
 
@@ -84,10 +98,18 @@ def get_all_news_items(
         conditions.append("source = ?")
         params.append(source.lower())
 
+    if category:
+        conditions.append("category = ?")
+        params.append(category)
+
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
 
-    query += " ORDER BY published_date DESC, published_time DESC, id DESC"
+    if order_by == "date":
+        query += " ORDER BY published_date DESC, score DESC, id DESC"
+    else:
+        # Default order by score (highest impact first) then recency
+        query += " ORDER BY score DESC, published_date DESC, id DESC"
 
     if limit is not None:
         query += " LIMIT ?"
@@ -99,13 +121,43 @@ def get_all_news_items(
     return rows
 
 
+def get_top_priority_items(
+    min_score: float = 7.0, limit: int = 5, db_path: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """Retrieve top highest-impact priority items."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+
+    cursor = conn.execute(
+        """
+        SELECT * FROM news_items
+        WHERE score >= ?
+        ORDER BY score DESC, published_date DESC
+        LIMIT ?
+        """,
+        (min_score, limit),
+    )
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return rows
+
+
 def get_news_stats(db_path: Optional[str] = None) -> Dict[str, Any]:
-    """Retrieve summary counts for tickers, sources, and latest dates."""
+    """Retrieve summary counts for tickers, sources, categories, and priority metrics."""
     init_db(db_path)
     conn = get_db_connection(db_path)
 
     total_cursor = conn.execute("SELECT COUNT(*) AS total FROM news_items")
     total = total_cursor.fetchone()["total"]
+
+    high_priority_cursor = conn.execute(
+        "SELECT COUNT(*) AS count FROM news_items WHERE score >= 7.0"
+    )
+    high_priority_count = high_priority_cursor.fetchone()["count"]
+
+    avg_score_cursor = conn.execute("SELECT AVG(score) AS avg_score FROM news_items")
+    avg_score_raw = avg_score_cursor.fetchone()["avg_score"]
+    avg_score = round(avg_score_raw, 1) if avg_score_raw is not None else 0.0
 
     ticker_cursor = conn.execute(
         "SELECT ticker, COUNT(*) AS count FROM news_items GROUP BY ticker ORDER BY count DESC"
@@ -117,6 +169,11 @@ def get_news_stats(db_path: Optional[str] = None) -> Dict[str, Any]:
     )
     by_source = {row["source_label"]: row["count"] for row in source_cursor.fetchall()}
 
+    category_cursor = conn.execute(
+        "SELECT category, COUNT(*) AS count FROM news_items GROUP BY category ORDER BY count DESC"
+    )
+    by_category = {row["category"]: row["count"] for row in category_cursor.fetchall() if row["category"]}
+
     latest_cursor = conn.execute(
         "SELECT MAX(published_date) AS latest_date FROM news_items"
     )
@@ -125,7 +182,10 @@ def get_news_stats(db_path: Optional[str] = None) -> Dict[str, Any]:
     conn.close()
     return {
         "total": total,
+        "high_priority_count": high_priority_count,
+        "avg_score": avg_score,
         "by_ticker": by_ticker,
         "by_source": by_source,
+        "by_category": by_category,
         "latest_date": latest_date,
     }
