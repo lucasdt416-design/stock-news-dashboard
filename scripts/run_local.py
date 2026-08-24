@@ -31,6 +31,7 @@ from pipeline.dedupe import deduplicate_items
 from pipeline.score import score_items
 from pipeline.summarize import summarize_items
 from pipeline.calendar import build_forthcoming_calendar
+from pipeline.economic import collect_economic_indicators
 from pipeline.persist import save_news_items, get_news_stats
 from pipeline.render import render_dashboard
 import yaml
@@ -129,8 +130,16 @@ def main() -> None:
     calendar_events = build_forthcoming_calendar(watchlist=tickers, db_path=str(db_file))
     logger.info("Corporate calendar populated: %d upcoming scheduled events", len(calendar_events))
 
-    # 11. Stage 9: Render Static Dashboard
-    logger.info("--- Stage 9: Render Static Site ---")
+    # 11. Stage 9: Macroeconomic Intelligence Engine (Category #15)
+    logger.info("--- Stage 9: FRED Macroeconomic Intelligence Engine ---")
+    economic_indicators = collect_economic_indicators(
+        watchlist=tickers,
+        db_path=str(db_file),
+    )
+    logger.info("Macroeconomic indicators updated: %d indicators mapped", len(economic_indicators))
+
+    # 12. Stage 10: Render Static Dashboard
+    logger.info("--- Stage 10: Render Static Site ---")
     output_html = render_dashboard(output_path=str(site_output), db_path=str(db_file))
     logger.info("Rendered static dashboard to %s", output_html)
 

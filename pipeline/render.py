@@ -8,6 +8,7 @@ from jinja2 import Template
 from pipeline.persist import (
     get_all_news_items,
     get_chart_data,
+    get_economic_indicators,
     get_forthcoming_calendar,
     get_news_stats,
     get_recent_pipeline_runs,
@@ -959,6 +960,166 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       gap: 0.25rem;
     }
 
+    /* Macroeconomic Intelligence (Category #15) Section */
+    .economic-section {
+      margin-top: 3.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .economic-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-card);
+      margin-bottom: 1.5rem;
+    }
+
+    .economic-source-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-indigo);
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .economic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .economic-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+      position: relative;
+    }
+
+    .economic-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-accent);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .economic-card.economic-hidden {
+      display: none;
+    }
+
+    .economic-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+    }
+
+    .economic-category-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: var(--bg-surface-highlight);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-card);
+    }
+
+    .economic-trend-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .trend-up {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .trend-down {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .trend-flat {
+      background: rgba(148, 163, 184, 0.12);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .economic-val-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.65rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .economic-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .economic-series-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.35rem 0;
+    }
+
+    .economic-context {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin-bottom: 1rem;
+    }
+
+    .economic-tickers-wrap {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .economic-tickers-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .economic-tickers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
     /* Health & Safeguards Section */
     .health-section {
       margin-top: 3.5rem;
@@ -1261,6 +1422,58 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
       </div>
     </section>
+
+    <!-- ========================================================
+         MACROECONOMIC INTELLIGENCE & SENSITIVITIES (CATEGORY #15)
+         ======================================================== -->
+    {% if economic_indicators %}
+    <section class="economic-section" id="economicSection">
+      <div class="economic-header">
+        <div class="section-header" style="margin-bottom:0;">
+          <h2>🏛️ Macroeconomic Intelligence &amp; Sensitivities</h2>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0.2rem 0 0 0;">Key Federal Reserve &amp; St. Louis Fed (FRED) economic indicators mapped to watchlist company sensitivities</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <span class="economic-source-pill">📈 St. Louis Fed (FRED) API</span>
+        </div>
+      </div>
+
+      <div class="economic-grid" id="economicGrid">
+        {% for ind in economic_indicators %}
+        <div class="economic-card" 
+             data-indicator-id="{{ ind.indicator_id }}"
+             data-relevant-tickers="{{ ind.relevant_tickers }}">
+          <div>
+            <div class="economic-card-top">
+              <span class="economic-category-badge">{{ ind.category }}</span>
+              <span class="economic-trend-badge {% if ind.change_direction == 'up' %}trend-up{% elif ind.change_direction == 'down' %}trend-down{% else %}trend-flat{% endif %}">
+                {% if ind.change_direction == 'up' %}▲ +{{ ind.change_value }}
+                {% elif ind.change_direction == 'down' %}▼ {{ ind.change_value }}
+                {% else %}■ Steady{% endif %}
+              </span>
+            </div>
+
+            <div class="economic-val-row">
+              <div class="economic-val">{{ ind.formatted_value }}</div>
+            </div>
+
+            <h4 class="economic-series-name">{{ ind.name }}</h4>
+            <p class="economic-context">{{ ind.context_note }}</p>
+          </div>
+
+          <div class="economic-tickers-wrap">
+            <div class="economic-tickers-label">Direct Watchlist Sensitivities ({{ ind.tickers_list|length }}):</div>
+            <div class="economic-tickers-list">
+              {% for sym in ind.tickers_list %}
+              <span class="ticker-badge ticker-{{ sym }}" style="font-size:0.68rem; padding: 0.15rem 0.45rem;">{{ sym }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
 
     <!-- ========================================================
          FORTHCOMING CORPORATE CALENDAR (CATEGORY #24)
@@ -1743,6 +1956,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       document.querySelectorAll('[data-filter-type="ticker"]').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
       filterItems();
+      filterEconomicCards(val);
+    }
+
+    function filterEconomicCards(ticker) {
+      const econCards = document.querySelectorAll('.economic-card');
+      econCards.forEach(card => {
+        if (ticker === 'ALL') {
+          card.style.display = 'flex';
+        } else {
+          const relTickers = (card.getAttribute('data-relevant-tickers') || '').split(',').map(t => t.trim());
+          if (relTickers.includes(ticker)) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        }
+      });
     }
 
     function setCategoryFilter(val, btn) {
@@ -1859,6 +2089,7 @@ def render_dashboard(
     priority_items = get_top_priority_items(limit=8, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     chart_data = get_chart_data(db_path=db_path)
+    economic_indicators = get_economic_indicators(db_path=db_path)
     calendar_events = get_forthcoming_calendar(limit=24, db_path=db_path)
     recent_runs = get_recent_pipeline_runs(limit=5, db_path=db_path)
     latest_run = recent_runs[0] if recent_runs else None
@@ -1870,6 +2101,7 @@ def render_dashboard(
         priority_items=priority_items,
         stats=stats,
         chart_data_json=json.dumps(chart_data),
+        economic_indicators=economic_indicators,
         calendar_events=calendar_events,
         recent_runs=recent_runs,
         latest_run=latest_run,

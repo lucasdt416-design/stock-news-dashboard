@@ -342,3 +342,46 @@ def get_forthcoming_calendar(
         logger.warning("Could not fetch calendar events: %s", e)
         conn.close()
         return []
+
+
+def get_economic_indicators(
+    db_path: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Retrieve macroeconomic indicators with relevant watchlist ticker mappings from SQLite."""
+    conn = get_db_connection(db_path)
+    try:
+        check = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='economic_indicators'"
+        ).fetchone()
+        if not check:
+            conn.close()
+            return []
+
+        cursor = conn.execute(
+            """
+            SELECT indicator_id, name, series_id, category, current_value,
+                   formatted_value, unit, previous_value, change_value,
+                   change_direction, observation_date, updated_at,
+                   context_note, relevant_tickers
+            FROM economic_indicators
+            ORDER BY 
+                CASE indicator_id
+                    WHEN 'interest_rates' THEN 1
+                    WHEN 'inflation' THEN 2
+                    WHEN 'unemployment' THEN 3
+                    ELSE 4
+                END
+            """
+        )
+        rows = []
+        for r in cursor.fetchall():
+            d = dict(r)
+            raw_tickers = d.get("relevant_tickers") or ""
+            d["tickers_list"] = [t.strip() for t in raw_tickers.split(",") if t.strip()]
+            rows.append(d)
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.warning("Could not fetch economic indicators: %s", e)
+        conn.close()
+        return []
