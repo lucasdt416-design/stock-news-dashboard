@@ -194,3 +194,70 @@ def get_news_stats(db_path: Optional[str] = None) -> Dict[str, Any]:
         "by_category": by_category,
         "latest_date": latest_date,
     }
+
+
+def get_chart_data(db_path: Optional[str] = None) -> Dict[str, Any]:
+    """Retrieve aggregated data series for Chart.js rendering."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+
+    # 1. Category Breakdown
+    cat_cursor = conn.execute(
+        """
+        SELECT category, COUNT(*) AS count
+        FROM news_items
+        WHERE category IS NOT NULL AND category != ''
+        GROUP BY category
+        ORDER BY count DESC
+        """
+    )
+    cat_rows = cat_cursor.fetchall()
+    categories = [r["category"] for r in cat_rows]
+    category_counts = [r["count"] for r in cat_rows]
+
+    # 2. Timeline Frequency per Ticker
+    time_cursor = conn.execute(
+        """
+        SELECT published_date, ticker, COUNT(*) AS count
+        FROM news_items
+        WHERE published_date IS NOT NULL AND published_date != ''
+        GROUP BY published_date, ticker
+        ORDER BY published_date ASC
+        """
+    )
+    time_rows = time_cursor.fetchall()
+
+    # Collect unique sorted dates (take last 14 most recent active dates)
+    all_dates_set = sorted(list({r["published_date"] for r in time_rows}))
+    recent_dates = all_dates_set[-14:] if len(all_dates_set) > 14 else all_dates_set
+
+    ticker_cursor = conn.execute(
+        "SELECT DISTINCT ticker FROM news_items ORDER BY ticker"
+    )
+    tickers_list = [r["ticker"] for r in ticker_cursor.fetchall()]
+
+    ticker_date_map: Dict[str, Dict[str, int]] = {
+        t: {d: 0 for d in recent_dates} for t in tickers_list
+    }
+
+    for r in time_rows:
+        d = r["published_date"]
+        t = r["ticker"]
+        if d in recent_dates and t in ticker_date_map:
+            ticker_date_map[t][d] = r["count"]
+
+    timeline_series = {
+        t: [ticker_date_map[t].get(d, 0) for d in recent_dates]
+        for t in tickers_list
+    }
+
+    # Short date label (MM/DD)
+    date_labels = [d[5:] if len(d) >= 10 else d for d in recent_dates]
+
+    conn.close()
+    return {
+        "categories": categories,
+        "category_counts": category_counts,
+        "timeline_dates": date_labels,
+        "timeline_series": timeline_series,
+    }

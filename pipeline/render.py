@@ -1,21 +1,29 @@
-"""Static HTML dashboard generator with Priority Panel, Score Ranking, and 'Why It Matters' Takeaways."""
+"""Static HTML dashboard generator with Priority Panel, Score Ranking, AI Takeaways, and Interactive Charts."""
 
+import json
 import os
 from datetime import datetime
 from typing import Optional
 from jinja2 import Template
-from pipeline.persist import get_all_news_items, get_news_stats, get_top_priority_items
+from pipeline.persist import (
+    get_all_news_items,
+    get_chart_data,
+    get_news_stats,
+    get_top_priority_items,
+)
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Personal stock news dashboard with rule-based scoring, plain-English 'Why It Matters' explanations, and multi-source intelligence.">
+  <meta name="description" content="Personal stock news dashboard with rule-based scoring, plain-English 'Why It Matters' explanations, interactive charts, and multi-source intelligence.">
   <title>Stock News Dashboard — Priority Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN (lightweight, zero-build dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg-base: #080c14;
@@ -178,7 +186,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       border: 1px solid rgba(59, 130, 246, 0.4);
       border-radius: var(--radius-xl);
       padding: 1.75rem;
-      margin-bottom: 2.75rem;
+      margin-bottom: 2.5rem;
       box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(59, 130, 246, 0.15);
       position: relative;
       overflow: hidden;
@@ -349,6 +357,65 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       padding-top: 0.75rem;
       margin-top: 0.5rem;
+    }
+
+    /* ========================================================
+       ANALYTICS & VISUAL TRENDS SECTION (CHART.JS)
+       ======================================================== */
+    .charts-section {
+      margin-bottom: 2.75rem;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 1.25rem;
+    }
+
+    .chart-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.35rem;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .chart-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .chart-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .chart-canvas-container {
+      position: relative;
+      width: 100%;
+      height: 250px;
+    }
+
+    .chart-canvas-container.donut-container {
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Section Divider */
@@ -656,6 +723,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       text-decoration: underline;
     }
 
+    @media (max-width: 960px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 768px) {
       .container { padding: 1rem; }
       .header-meta { width: 100%; justify-content: space-between; }
@@ -673,11 +744,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="logo-badge">INTEL</div>
         <div class="brand-text">
           <h1>Stock News Dashboard</h1>
-          <p>AI-Powered Intelligence & Multi-Source Research Engine</p>
+          <p>AI-Powered Intelligence, Scoring & Analytics Engine</p>
         </div>
       </div>
       <div class="header-meta">
-        <div><span class="status-indicator"></span> <strong>AI & Scoring Active</strong></div>
+        <div><span class="status-indicator"></span> <strong>Live Intelligence Feeds</strong></div>
         <div>Updated: <span id="generated-time">{{ generated_at }}</span></div>
       </div>
     </header>
@@ -769,6 +840,39 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
     </section>
     {% endif %}
+
+    <!-- ========================================================
+         ANALYTICS & VISUAL TRENDS SECTION (CHART.JS)
+         ======================================================== -->
+    <section class="charts-section">
+      <div class="charts-grid">
+        <!-- Chart 1: Frequency Over Time -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">📈 Filing & News Frequency Over Time</h3>
+              <p class="chart-subtitle">Recent daily disclosure volume per company</p>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="timelineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Category Breakdown -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">📊 Intelligence by Category</h3>
+              <p class="chart-subtitle">Distribution of disclosures across active categories</p>
+            </div>
+          </div>
+          <div class="chart-canvas-container donut-container">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- ========================================================
          FULL FEED / CONTROLS & TABLE
@@ -915,6 +1019,140 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     let activeSourceFilter = 'ALL';
     let currentSort = 'score';
 
+    // Chart.js Data Injected from Python SQLite Query
+    const chartData = {{ chart_data_json|safe }};
+
+    // Initialize Chart.js Dark Mode Defaults
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    // 1. Initialize Frequency Timeline Sparkline/Line Chart
+    if (document.getElementById('timelineChart') && chartData.timeline_dates) {
+      const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
+      
+      const tickerColors = {
+        'NVDA': { border: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' },
+        'AAPL': { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' },
+        'MSFT': { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' }
+      };
+
+      const datasets = Object.keys(chartData.timeline_series).map(ticker => {
+        const colors = tickerColors[ticker] || { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' };
+        return {
+          label: ticker,
+          data: chartData.timeline_series[ticker],
+          borderColor: colors.border,
+          backgroundColor: colors.bg,
+          borderWidth: 2.2,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: colors.border,
+          tension: 0.35,
+          fill: true
+        };
+      });
+
+      new Chart(ctxTimeline, {
+        type: 'line',
+        data: {
+          labels: chartData.timeline_dates,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              align: 'end',
+              labels: {
+                boxWidth: 12,
+                boxHeight: 12,
+                useBorderRadius: true,
+                borderRadius: 3,
+                font: { weight: '600', size: 11 }
+              }
+            },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              titleColor: '#f8fafc',
+              bodyColor: '#e2e8f0',
+              borderColor: '#334155',
+              borderWidth: 1,
+              padding: 10,
+              boxPadding: 4,
+              usePointStyle: true
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { font: { size: 10 } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { stepSize: 1, font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Initialize Category Distribution Donut Chart
+    if (document.getElementById('categoryChart') && chartData.categories) {
+      const ctxCat = document.getElementById('categoryChart').getContext('2d');
+      
+      const palette = [
+        '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
+        '#06b6d4', '#ec4899', '#6366f1', '#64748b'
+      ];
+
+      new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+          labels: chartData.categories,
+          datasets: [{
+            data: chartData.category_counts,
+            backgroundColor: palette.slice(0, chartData.categories.length),
+            borderColor: '#0f172a',
+            borderWidth: 2,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                boxWidth: 10,
+                boxHeight: 10,
+                useBorderRadius: true,
+                borderRadius: 2,
+                font: { size: 10.5 },
+                padding: 8
+              }
+            },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              titleColor: '#f8fafc',
+              bodyColor: '#e2e8f0',
+              borderColor: '#334155',
+              borderWidth: 1,
+              padding: 10
+            }
+          }
+        }
+      });
+    }
+
     function setTickerFilter(val, btn) {
       activeTickerFilter = val;
       document.querySelectorAll('[data-filter-type="ticker"]').forEach(b => b.classList.remove('active'));
@@ -1001,7 +1239,7 @@ def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> str:
-    """Render the dashboard HTML file with priority panel, scoring, and 'Why It Matters' summaries."""
+    """Render the dashboard HTML file with priority panel, scoring, AI summaries, and charts."""
     if output_path is None:
         site_dir = os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "site"
@@ -1012,6 +1250,7 @@ def render_dashboard(
     items = get_all_news_items(order_by="score", db_path=db_path)
     priority_items = get_top_priority_items(limit=8, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
+    chart_data = get_chart_data(db_path=db_path)
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 
     template = Template(HTML_TEMPLATE)
@@ -1019,6 +1258,7 @@ def render_dashboard(
         items=items,
         priority_items=priority_items,
         stats=stats,
+        chart_data_json=json.dumps(chart_data),
         generated_at=now_str,
     )
 
