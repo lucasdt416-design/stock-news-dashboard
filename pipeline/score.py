@@ -56,11 +56,11 @@ def calculate_recency_adjustment(pub_date_str: str, pub_time_str: str) -> Tuple[
         age_hours = (now - dt).total_seconds() / 3600.0
 
         if age_hours < 6:
-            return (2.0, "<6h old (+2)")
+            return (2.0, "under 6h old (+2)")
         elif age_hours < 24:
-            return (1.0, "<24h old (+1)")
+            return (1.0, "under 24h old (+1)")
         elif age_hours > 72:
-            return (-1.0, ">72h old (-1)")
+            return (-1.0, "over 72h old (-1)")
         else:
             return (0.0, "24-72h old (0)")
     except Exception:

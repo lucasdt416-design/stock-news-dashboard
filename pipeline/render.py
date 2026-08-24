@@ -1004,7 +1004,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
               data-ticker="{{ item.ticker }}" 
               data-source="{{ item.source }}" 
               data-category="{{ item.category }}"
-              data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.llm_summary }} {{ item.summary }} {{ item.score_breakdown }}">
+              data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
             <td>
               <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
                 {{ item.score }}
@@ -1324,7 +1324,7 @@ def render_dashboard(
     chart_data = get_chart_data(db_path=db_path)
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 
-    template = Template(HTML_TEMPLATE)
+    template = Template(HTML_TEMPLATE, autoescape=True)
     rendered_html = template.render(
         items=items,
         priority_items=priority_items,
