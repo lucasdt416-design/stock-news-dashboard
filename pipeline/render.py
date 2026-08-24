@@ -665,12 +665,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       letter-spacing: 0.02em;
     }
 
-    .ticker-NVDA { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .ticker-AAPL { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .ticker-MSFT { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
-    .ticker-TSLA { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .ticker-AMZN { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .ticker-JPM  { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .ticker-NVDA  { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .ticker-AAPL  { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .ticker-MSFT  { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .ticker-GOOGL { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .ticker-AMZN  { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .ticker-META  { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .ticker-TSLA  { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .ticker-JPM   { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
+    .ticker-JNJ   { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .ticker-XOM   { background: rgba(234, 88, 12, 0.15); color: #fb923c; border: 1px solid rgba(234, 88, 12, 0.3); }
+    .ticker-WMT   { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+    .ticker-DIS   { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+    .ticker-KO    { background: rgba(220, 38, 38, 0.15); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.3); }
+    .ticker-PFE   { background: rgba(37, 99, 235, 0.15); color: #93c5fd; border: 1px solid rgba(37, 99, 235, 0.3); }
+    .ticker-BA    { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.35); }
     .ticker-default { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156, 163, 175, 0.3); }
 
     .category-badge {
@@ -885,13 +894,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
               <h3 class="chart-title">📈 Filing & News Frequency Over Time</h3>
               <p class="chart-subtitle">Recent daily disclosure volume per company</p>
             </div>
-            <div class="chart-legend-wrap">
-              <span class="chart-legend-item"><span class="legend-dot" style="background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5);"></span> NVDA</span>
-              <span class="chart-legend-item"><span class="legend-dot" style="background:#3b82f6; box-shadow:0 0 6px rgba(59,130,246,0.5);"></span> AAPL</span>
-              <span class="chart-legend-item"><span class="legend-dot" style="background:#8b5cf6; box-shadow:0 0 6px rgba(139,92,246,0.5);"></span> MSFT</span>
-              <span class="chart-legend-item"><span class="legend-dot" style="background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.5);"></span> TSLA</span>
-              <span class="chart-legend-item"><span class="legend-dot" style="background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.5);"></span> AMZN</span>
-              <span class="chart-legend-item"><span class="legend-dot" style="background:#06b6d4; box-shadow:0 0 6px rgba(6,182,212,0.5);"></span> JPM</span>
+            <div class="chart-legend-wrap" id="chartLegendBadges">
+              <!-- Dynamically populated by JS for all active tickers -->
             </div>
           </div>
           <div class="chart-canvas-container">
@@ -1071,16 +1075,28 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
       
       const tickerColors = {
-        'NVDA': { border: '#10b981', bg: 'rgba(16, 185, 129, 0.14)' },
-        'AAPL': { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.14)' },
-        'MSFT': { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.14)' },
-        'TSLA': { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.14)' },
-        'AMZN': { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.14)' },
-        'JPM':  { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.14)' }
+        'NVDA':  { border: '#10b981', bg: 'rgba(16, 185, 129, 0.14)' },
+        'AAPL':  { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.14)' },
+        'MSFT':  { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.14)' },
+        'GOOGL': { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.14)' },
+        'AMZN':  { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.14)' },
+        'META':  { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.14)' },
+        'TSLA':  { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.14)' },
+        'JPM':   { border: '#14b8a6', bg: 'rgba(20, 184, 166, 0.14)' },
+        'JNJ':   { border: '#f43f5e', bg: 'rgba(244, 63, 94, 0.14)' },
+        'XOM':   { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.14)' },
+        'WMT':   { border: '#eab308', bg: 'rgba(234, 179, 8, 0.14)' },
+        'DIS':   { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.14)' },
+        'KO':    { border: '#dc2626', bg: 'rgba(220, 38, 38, 0.14)' },
+        'PFE':   { border: '#2563eb', bg: 'rgba(37, 99, 235, 0.14)' },
+        'BA':    { border: '#64748b', bg: 'rgba(100, 116, 139, 0.18)' }
       };
 
       // Explicitly sort tickers in order of watchlist priority
-      const tickerOrder = ['NVDA', 'AAPL', 'MSFT', 'TSLA', 'AMZN', 'JPM'];
+      const tickerOrder = [
+        'NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA',
+        'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA'
+      ];
       const presentTickers = Object.keys(chartData.timeline_series).sort((a, b) => {
         const idxA = tickerOrder.indexOf(a);
         const idxB = tickerOrder.indexOf(b);
@@ -1090,6 +1106,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         return a.localeCompare(b);
       });
 
+      // Populate header legend badges dynamically
+      const legendBadgesEl = document.getElementById('chartLegendBadges');
+      if (legendBadgesEl) {
+        legendBadgesEl.innerHTML = presentTickers.map(ticker => {
+          const col = tickerColors[ticker]?.border || '#06b6d4';
+          return `<span class="chart-legend-item"><span class="legend-dot" style="background:${col}; box-shadow:0 0 6px ${col};"></span> ${ticker}</span>`;
+        }).join('');
+      }
+
       const datasets = presentTickers.map(ticker => {
         const colors = tickerColors[ticker] || { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' };
         return {
@@ -1097,8 +1122,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           data: chartData.timeline_series[ticker],
           borderColor: colors.border,
           backgroundColor: colors.bg,
-          borderWidth: 2.4,
-          pointRadius: 3.5,
+          borderWidth: 2.2,
+          pointRadius: 3,
           pointHoverRadius: 6,
           pointBackgroundColor: colors.border,
           tension: 0.35,

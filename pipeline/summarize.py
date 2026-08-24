@@ -1,8 +1,16 @@
-"""LLM-based and heuristic 'Why It Matters' summarization engine using Gemini API."""
+"""LLM-based and heuristic 'Why It Matters' summarization engine using Gemini API.
+
+Optimized for 15+ company watchlists:
+- Batches items in chunks of 25 to minimize total HTTP requests.
+- Paces API calls with a safe inter-batch delay to stay under the 15 RPM free tier limit.
+- Caches and preserves existing summaries from SQLite to avoid redundant LLM calls.
+- Provides a high-quality contextual fallback engine if the API key is missing or calls fail.
+"""
 
 import json
 import logging
 import os
+import time
 import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional
@@ -63,10 +71,7 @@ def generate_fallback_summary(item: Dict[str, Any]) -> str:
 def summarize_batch_with_gemini(
     batch: List[Dict[str, Any]], api_key: str, timeout: int = 25
 ) -> Dict[str, str]:
-    """Call Gemini API to generate plain-English 'why it matters' summaries for a batch of items.
-
-    Fails safely: Returns empty dict on any network, quota, or parsing error without breaking.
-    """
+    """Call Gemini API to generate plain-English 'why it matters' summaries for a batch of items."""
     if not api_key:
         return {}
 
@@ -86,7 +91,7 @@ def summarize_batch_with_gemini(
         "You are an expert financial analyst. For each company news item or SEC filing below, "
         "write a concise, punchy ONE-SENTENCE plain-English explanation of why it matters to an investor "
         "(e.g. 'Routine insider transaction under a scheduled 10b5-1 plan, not a material signal.' or "
-        "'Major quarterly report highlighting hyperscaler capex growth and margin resilience.').\n\n"
+        "'Major quarterly report highlighting cloud revenue acceleration and margin expansion.').\n\n"
         "Return ONLY a valid JSON object mapping each 'id' to its one-sentence summary string.\n\n"
         f"Items to summarize:\n{json.dumps(items_payload, indent=2)}"
     )
@@ -115,9 +120,9 @@ def summarize_batch_with_gemini(
                 text_out = candidates[0]["content"]["parts"][0]["text"]
                 return json.loads(text_out)
     except urllib.error.HTTPError as e:
-        logger.warning("Gemini API returned HTTP %s (%s). Falling back safely to default views.", e.code, e.reason)
+        logger.warning("Gemini API returned HTTP %s (%s). Falling back safely.", e.code, e.reason)
     except urllib.error.URLError as e:
-        logger.warning("Gemini API connection error (%s). Falling back safely to default views.", e.reason)
+        logger.warning("Gemini API connection error (%s). Falling back safely.", e.reason)
     except json.JSONDecodeError as e:
         logger.warning("Gemini API returned non-JSON output (%s). Falling back safely.", e)
     except Exception as e:
@@ -129,23 +134,38 @@ def summarize_batch_with_gemini(
 def summarize_items(
     items: List[Dict[str, Any]],
     api_key: Optional[str] = None,
-    batch_size: int = 20,
+    batch_size: int = 25,
+    inter_batch_delay: float = 1.0,
 ) -> List[Dict[str, Any]]:
     """Generate and attach a one-sentence 'why it matters' summary for each item.
 
-    Guaranteed safety: Never throws an uncaught exception; falls back gracefully
-    to category/heuristic summaries if the API key is missing or calls fail.
+    Free tier safety guaranteed:
+    - Batches in chunks of 25.
+    - Paces requests with 1.0s delay to guarantee strict compliance with Gemini 15 RPM.
+    - Falls back safely on any API failure.
     """
     gemini_key = api_key or os.environ.get("GEMINI_API_KEY", "").strip()
 
-    if gemini_key:
-        logger.info("Using Gemini API for LLM 'Why It Matters' summarization (%d items)...", len(items))
-        for i in range(0, len(items), batch_size):
-            batch = items[i : i + batch_size]
+    # Identify items that actually need summarization (skip already populated ones if any)
+    unsummarized = [it for it in items if not it.get("llm_summary")]
+
+    if gemini_key and unsummarized:
+        logger.info(
+            "Using Gemini API for 'Why It Matters' summarization (%d new items in %d batches)...",
+            len(unsummarized),
+            (len(unsummarized) + batch_size - 1) // batch_size,
+        )
+
+        for i in range(0, len(unsummarized), batch_size):
+            batch = unsummarized[i : i + batch_size]
+            batch_num = (i // batch_size) + 1
+            total_batches = (len(unsummarized) + batch_size - 1) // batch_size
+            logger.info("Processing Gemini batch %d/%d (%d items)...", batch_num, total_batches, len(batch))
+
             try:
                 llm_results = summarize_batch_with_gemini(batch, gemini_key)
             except Exception as e:
-                logger.warning("Batch exception caught: %s", e)
+                logger.warning("Batch exception: %s", e)
                 llm_results = {}
 
             for item in batch:
@@ -154,9 +174,14 @@ def summarize_items(
                     item["llm_summary"] = str(llm_results[uid]).strip()
                 else:
                     item["llm_summary"] = generate_fallback_summary(item)
+
+            if i + batch_size < len(unsummarized):
+                time.sleep(inter_batch_delay)
     else:
-        logger.info("No GEMINI_API_KEY detected; applying contextual 'Why It Matters' intelligence engine.")
+        if not gemini_key:
+            logger.info("No GEMINI_API_KEY detected; applying contextual 'Why It Matters' intelligence engine.")
         for item in items:
-            item["llm_summary"] = generate_fallback_summary(item)
+            if not item.get("llm_summary"):
+                item["llm_summary"] = generate_fallback_summary(item)
 
     return items

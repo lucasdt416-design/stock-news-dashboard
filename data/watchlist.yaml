@@ -35,17 +35,17 @@ tickers:
     macro_sensitivities: [cloud_growth, enterprise_it_spend]
     notes: "Key focus on Azure growth and Copilot monetization."
 
-  - symbol: TSLA
-    name: Tesla, Inc.
-    cik: "0001318605"
-    ir_feed_url: "https://ir.tesla.com/press-releases/rss"
-    sector: automotive_clean_energy
-    regulators: [NHTSA, SEC, EPA, EU_EC]
-    key_customers: [Retail, Fleet_Operators, Commercial_Energy]
-    key_suppliers: [Panasonic, CATL, NVDA, LG_Energy]
-    competitors: [BYD, RIVN, F, GM, LCID]
-    macro_sensitivities: [ev_subsidies, lithium_prices, interest_rates_auto_loans, china_ev_competition]
-    notes: "Track vehicle deliveries, Full Self-Driving (FSD) regulatory milestones, and energy storage deployments."
+  - symbol: GOOGL
+    name: Alphabet Inc.
+    cik: "0001652044"
+    ir_feed_url: "https://blog.google/rss/"
+    sector: search_cloud_ai
+    regulators: [DOJ, FTC, EU_EC, SEC]
+    key_customers: [Digital_Advertisers, Enterprise_Cloud, Consumers]
+    key_suppliers: [NVDA, AVGO, TSM]
+    competitors: [MSFT, META, AMZN, AAPL]
+    macro_sensitivities: [digital_ad_spending, antitrust_remedies, ai_search_competition]
+    notes: "Track Google Search ad growth, GCP cloud margins, and antitrust ruling outcomes."
 
   - symbol: AMZN
     name: Amazon.com, Inc.
@@ -59,6 +59,30 @@ tickers:
     macro_sensitivities: [consumer_discretionary_spending, enterprise_cloud_budget, fuel_logistics_costs]
     notes: "Monitor AWS revenue growth, operating margins, and retail fulfillment efficiency."
 
+  - symbol: META
+    name: Meta Platforms, Inc.
+    cik: "0001326801"
+    ir_feed_url: "https://about.fb.com/news/feed/"
+    sector: social_media_digital_ads
+    regulators: [FTC, EU_EC, SEC]
+    key_customers: [Digital_Advertisers, Creators, Consumers]
+    key_suppliers: [NVDA, AMD, Arista]
+    competitors: [GOOGL, ByteDance_TikTok, SNAP, AAPL]
+    macro_sensitivities: [digital_ad_pricing, ai_capex_spend, privacy_regulations]
+    notes: "Watch AI-driven ad conversion improvements and Reality Labs operating losses."
+
+  - symbol: TSLA
+    name: Tesla, Inc.
+    cik: "0001318605"
+    ir_feed_url: "https://ir.tesla.com/press-releases/rss"
+    sector: automotive_clean_energy
+    regulators: [NHTSA, SEC, EPA, EU_EC]
+    key_customers: [Retail, Fleet_Operators, Commercial_Energy]
+    key_suppliers: [Panasonic, CATL, NVDA, LG_Energy]
+    competitors: [BYD, RIVN, F, GM, LCID]
+    macro_sensitivities: [ev_subsidies, lithium_prices, interest_rates_auto_loans, china_ev_competition]
+    notes: "Track vehicle deliveries, Full Self-Driving (FSD) regulatory milestones, and energy storage deployments."
+
   - symbol: JPM
     name: JPMorgan Chase & Co.
     cik: "0000019617"
@@ -70,3 +94,87 @@ tickers:
     competitors: [BAC, C, MS, GS, WFC]
     macro_sensitivities: [fed_interest_rates, yield_curve_inversion, credit_default_rates, investment_banking_m_and_a_volume]
     notes: "Key bellwether for net interest income (NII), credit reserves, and macroeconomic lending health."
+
+  - symbol: JNJ
+    name: Johnson & Johnson
+    cik: "0000200406"
+    ir_feed_url: "https://investor.jnj.com/rss/news-releases.xml"
+    sector: healthcare_pharmaceuticals
+    regulators: [FDA, EMA, SEC, FTC]
+    key_customers: [Hospitals, Healthcare_Providers, Pharmacies, Governments]
+    key_suppliers: [CMO_Manufacturers, Active_Pharma_Suppliers]
+    competitors: [PFE, MRK, ABBV, LLY, NVO]
+    macro_sensitivities: [drug_price_negotiations_medicare, patent_cliff_expirations, litigation_liabilities]
+    notes: "Focus on oncology/immunology pipeline readouts and MedTech device segment growth."
+
+  - symbol: XOM
+    name: Exxon Mobil Corporation
+    cik: "0000034088"
+    ir_feed_url: "https://corporate.exxonmobil.com/rss/news-releases.xml"
+    sector: energy_oil_gas
+    regulators: [EPA, DOE, SEC, FTC]
+    key_customers: [Refineries, Industrial, Utilities, Retail_Consumers]
+    key_suppliers: [Oilfield_Services_SLB, HAL, Pipeline_Operators]
+    competitors: [CVX, SHEL, TTE, BP, COP]
+    macro_sensitivities: [brent_wti_crude_prices, opec_production_quotas, refining_crack_spreads]
+    notes: "Monitor Permian basin production volumes, Pioneer integration synergies, and capital returns."
+
+  - symbol: WMT
+    name: Walmart Inc.
+    cik: "0000104169"
+    ir_feed_url: "https://corporate.walmart.com/news/rss"
+    sector: retail_consumer_staples
+    regulators: [FTC, DOJ, SEC, OSHA]
+    key_customers: [Retail_Consumers, Marketplace_Buyers, Sam's_Club_Members]
+    key_suppliers: [PG, KO, PEP, Unilever, Tyson]
+    competitors: [AMZN, TGT, COST, DG, KR]
+    macro_sensitivities: [inflation_food_prices, consumer_real_wage_growth, supply_chain_tariffs]
+    notes: "Benchmark for grocery market share, Walmart+ membership growth, and high-margin advertising revenue."
+
+  - symbol: DIS
+    name: The Walt Disney Company
+    cik: "0001744489"
+    ir_feed_url: "https://thewaltdisneycompany.com/feed/"
+    sector: entertainment_media
+    regulators: [FCC, FTC, SEC, DOJ]
+    key_customers: [Consumers, Theme_Park_Visitors, Advertisers, Cable_Subscribers]
+    key_suppliers: [Creative_Talent, Production_Studios, Tech_Platforms]
+    competitors: [NFLX, CMCSA, WBD, AMZN, AAPL]
+    macro_sensitivities: [theme_park_discretionary_spend, linear_tv_cord_cutting, streaming_subscriber_growth]
+    notes: "Track direct-to-consumer (Disney+/Hulu) profitability, box office performance, and Experiences segment margins."
+
+  - symbol: KO
+    name: The Coca-Cola Company
+    cik: "0000021344"
+    ir_feed_url: "https://www.coca-colacompany.com/news-releases.rss"
+    sector: consumer_staples_beverages
+    regulators: [FDA, FTC, SEC, International_Food_Agencies]
+    key_customers: [Bottling_Partners, Restaurants, Grocery_Chains, Convenience_Stores]
+    key_suppliers: [Sugar_Corn_Syrup_Commodities, Aluminum_Can_Mfrs, PET_Packaging]
+    competitors: [PEP, KDP, MNST, CELH]
+    macro_sensitivities: [fx_dollar_strength, packaging_commodity_costs, emerging_market_demand]
+    notes: "Defensive consumer staple focus on pricing power, unit case volume growth, and refranchising margins."
+
+  - symbol: PFE
+    name: Pfizer Inc.
+    cik: "0000078003"
+    ir_feed_url: "https://investors.pfizer.com/rss/news-releases.xml"
+    sector: healthcare_pharmaceuticals
+    regulators: [FDA, EMA, SEC, FTC]
+    key_customers: [Governments, Wholesalers_MCK_CAH, Hospital_Networks]
+    key_suppliers: [Biotech_Partners, Contract_Research_Orgs, Chemical_Suppliers]
+    competitors: [JNJ, MRK, BMY, LLY, AZN]
+    macro_sensitivities: [patent_expirations_loes, clinical_trial_success_rates, post_covid_demand_normalization]
+    notes: "Monitor Seagen oncology integration pipeline, cost realignment program, and commercial execution."
+
+  - symbol: BA
+    name: The Boeing Company
+    cik: "0000012927"
+    ir_feed_url: "https://boeing.mediaroom.com/index.php?s=43&news_releases&format=rss"
+    sector: aerospace_defense
+    regulators: [FAA, DOD, SEC, EASA]
+    key_customers: [Airlines_UAL_DAL_AAL_LUV, US_Department_of_Defense, Global_Militaries]
+    key_suppliers: [Spirit_AeroSystems, GE_Aerospace, RTX, Safran]
+    competitors: [Airbus, LMT, NOC, GD]
+    macro_sensitivities: [commercial_aviation_passenger_traffic, defense_budget_allocations, supply_chain_manufacturing_quality]
+    notes: "Crucial scrutiny on 737 MAX production rate recovery, FAA quality audits, and free cash flow generation."
