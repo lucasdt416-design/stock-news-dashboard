@@ -9,6 +9,7 @@ from pipeline.persist import (
     get_all_news_items,
     get_chart_data,
     get_news_stats,
+    get_recent_pipeline_runs,
     get_top_priority_items,
 )
 
@@ -748,6 +749,139 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       color: var(--text-muted);
     }
 
+    /* Health & Safeguards Section */
+    .health-section {
+      margin-top: 3.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .health-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-card);
+      margin-bottom: 1.5rem;
+    }
+
+    .health-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .health-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .health-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .health-badge-healthy {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .health-badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .health-badge-critical {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulseAnimation 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseAnimation {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .health-stat-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+
+    .health-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.35rem;
+    }
+
+    .health-stat-val {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+    }
+
+    .health-stat-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+    }
+
+    .health-runs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 1rem;
+    }
+
+    .health-runs-table th {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-card);
+    }
+
+    .health-runs-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
     footer {
       margin-top: 3.5rem;
       text-align: center;
@@ -1052,6 +1186,107 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
     </div>
 
+    <!-- ========================================================
+         HEALTH MONITORING & COLLECTOR SAFEGUARDS (SECTION 10)
+         ======================================================== -->
+    <section class="health-section">
+      <div class="health-header">
+        <div class="health-title-group">
+          <h3 class="health-title">🛡️ Pipeline Health & Collector Safeguards</h3>
+          {% if latest_run %}
+            {% if latest_run.status == 'HEALTHY' %}
+            <span class="health-status-badge health-badge-healthy">
+              <span class="pulse-dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span>
+              HEALTHY · ALL COLLECTORS OPERATIONAL
+            </span>
+            {% elif latest_run.status == 'WARNING' %}
+            <span class="health-status-badge health-badge-warning">
+              <span class="pulse-dot" style="background:#f59e0b; box-shadow:0 0 6px #f59e0b;"></span>
+              DEGRADED · ANOMALY DETECTED
+            </span>
+            {% else %}
+            <span class="health-status-badge health-badge-critical">
+              <span class="pulse-dot" style="background:#ef4444; box-shadow:0 0 6px #ef4444;"></span>
+              CRITICAL OUTAGE
+            </span>
+            {% endif %}
+          {% else %}
+          <span class="health-status-badge health-badge-healthy">
+            <span class="pulse-dot" style="background:#10b981;"></span> OPERATIONAL
+          </span>
+          {% endif %}
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-muted);">
+          Last telemetry sync: <strong>{{ latest_run.run_timestamp if latest_run else generated_at }}</strong>
+        </div>
+      </div>
+
+      <div class="health-grid">
+        <div class="health-stat-card">
+          <div class="health-stat-label">SEC EDGAR Filings</div>
+          <div class="health-stat-val" style="color:#60a5fa;">{{ latest_run.edgar_count if latest_run else stats.by_source.get('SEC EDGAR', 0) }}</div>
+          <div class="health-stat-sub">Official Submissions Ingested</div>
+        </div>
+        <div class="health-stat-card">
+          <div class="health-stat-label">Company IR Newsrooms</div>
+          <div class="health-stat-val" style="color:#34d399;">{{ latest_run.company_ir_count if latest_run else stats.by_source.get('Company IR', 0) }}</div>
+          <div class="health-stat-sub">Direct Press Releases</div>
+        </div>
+        <div class="health-stat-card">
+          <div class="health-stat-label">Total Ingestion Volume</div>
+          <div class="health-stat-val" style="color:#a78bfa;">{{ latest_run.total_raw if latest_run else stats.total }}</div>
+          <div class="health-stat-sub">Historical avg: {{ latest_run.moving_avg_raw|round(0)|int if latest_run and latest_run.moving_avg_raw > 0 else 'Baseline established' }} items</div>
+        </div>
+        <div class="health-stat-card">
+          <div class="health-stat-label">Anomaly Safeguard</div>
+          <div class="health-stat-val" style="color:#22d3ee;">33% Threshold</div>
+          <div class="health-stat-sub">Automatic CI Failure on Outages</div>
+        </div>
+      </div>
+
+      {% if latest_run and latest_run.health_message %}
+      <div style="font-size:0.85rem; color:var(--text-secondary); background:var(--bg-surface-elevated); padding:0.75rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-card); margin-bottom:1.25rem;">
+        <strong>Diagnostic Summary:</strong> {{ latest_run.health_message }}
+      </div>
+      {% endif %}
+
+      {% if recent_runs|length > 1 %}
+      <details style="font-size:0.85rem; color:var(--text-muted); cursor:pointer;">
+        <summary style="font-weight:600; color:var(--text-secondary); padding:0.25rem 0;">📋 View Recent Pipeline Run Audit Logs (Last {{ recent_runs|length }} Runs)</summary>
+        <table class="health-runs-table">
+          <thead>
+            <tr>
+              <th>Run Timestamp (UTC)</th>
+              <th>Status</th>
+              <th>SEC EDGAR</th>
+              <th>Company IR</th>
+              <th>Total Raw</th>
+              <th>Survivors</th>
+              <th>High Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in recent_runs %}
+            <tr>
+              <td>{{ run.run_timestamp }}</td>
+              <td>
+                <span class="health-status-badge {% if run.status == 'HEALTHY' %}health-badge-healthy{% elif run.status == 'WARNING' %}health-badge-warning{% else %}health-badge-critical{% endif %}" style="padding:0.15rem 0.5rem; font-size:0.72rem;">
+                  {{ run.status }}
+                </span>
+              </td>
+              <td>{{ run.edgar_count }}</td>
+              <td>{{ run.company_ir_count }}</td>
+              <td>{{ run.total_raw }}</td>
+              <td>{{ run.total_unique }}</td>
+              <td>{{ run.high_impact_count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+      {% endif %}
+    </section>
+
     <footer>
       <p>Multi-source financial intelligence engine powered by Gemini AI and transparent scoring arithmetic. Deduplicated across official SEC EDGAR and Company Newsrooms.</p>
     </footer>
@@ -1322,6 +1557,8 @@ def render_dashboard(
     priority_items = get_top_priority_items(limit=8, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     chart_data = get_chart_data(db_path=db_path)
+    recent_runs = get_recent_pipeline_runs(limit=5, db_path=db_path)
+    latest_run = recent_runs[0] if recent_runs else None
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 
     template = Template(HTML_TEMPLATE, autoescape=True)
@@ -1330,6 +1567,8 @@ def render_dashboard(
         priority_items=priority_items,
         stats=stats,
         chart_data_json=json.dumps(chart_data),
+        recent_runs=recent_runs,
+        latest_run=latest_run,
         generated_at=now_str,
     )
 

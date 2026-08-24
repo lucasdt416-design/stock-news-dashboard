@@ -159,3 +159,7 @@ def collect_edgar_filings(
         time.sleep(delay_seconds)
 
     return all_filings
+
+
+# Alias for consistency
+collect_sec_edgar = collect_edgar_filings

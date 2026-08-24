@@ -61,10 +61,10 @@ jobs:
           restore-keys: |
             dashboard-db-
 
-      - name: 🚀 Run Pipeline (Collect, Deduplicate, Score, Render)
+      - name: 🚀 Run Pipeline (Collect, Deduplicate, Score, Health Check, Render)
         id: run_pipeline
         run: |
-          python scripts/run_local.py
+          python scripts/run_local.py --fail-on-critical
 
       - name: 💾 Save Updated Database Cache
         if: always() && steps.run_pipeline.outcome == 'success'

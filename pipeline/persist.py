@@ -269,3 +269,41 @@ def get_chart_data(db_path: Optional[str] = None) -> Dict[str, Any]:
         "timeline_dates": date_labels,
         "timeline_series": timeline_series,
     }
+
+
+def get_recent_pipeline_runs(limit: int = 5, db_path: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Retrieve recent pipeline run telemetry reports from SQLite."""
+    conn = get_db_connection(db_path)
+    try:
+        # Check if table exists
+        check = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='pipeline_runs'"
+        ).fetchone()
+        if not check:
+            conn.close()
+            return []
+
+        cursor = conn.execute(
+            """
+            SELECT id, run_timestamp, edgar_count, company_ir_count,
+                   total_raw, total_unique, high_impact_count,
+                   status, health_message, moving_avg_raw
+            FROM pipeline_runs
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.warning("Could not fetch pipeline runs: %s", e)
+        conn.close()
+        return []
+
+
+def get_latest_pipeline_run(db_path: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Retrieve the most recent pipeline run telemetry report."""
+    runs = get_recent_pipeline_runs(limit=1, db_path=db_path)
+    return runs[0] if runs else None
