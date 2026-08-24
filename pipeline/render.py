@@ -1,10 +1,10 @@
-"""Multi-page static HTML dashboard generator with responsive tablet & mobile architecture (Phase 6).
+"""Multi-page static HTML dashboard generator with responsive architecture (Phase 6).
 
-Responsive & Layout Fixes:
-- Solved medium/tablet breakpoint squeeze bug: switched cleanly to full-width mobile/tablet layout at <= 1024px, eliminating leftover desktop margins and blank left columns.
-- Solved mid-word ticker breaking: prevented tickers (e.g. 'NVDA') from breaking mid-word by enforcing white-space: nowrap on ticker tokens and removing aggressive overflow-wrap rules on the hero banner pill.
+Unified Shared Layout & Viewport Fixes:
+- Fixed blank left column across all pages: Removed conflicting margin-left/width-calc rules and converted desktop layout to modern flex + sticky sidebar, with seamless full-width block flow on tablets and mobile (<= 1024px).
+- Fixed calendar date box ('NOV 09') right-edge cutoff: Structured .calendar-card-header so ticker and badge wrap cleanly on the left while date box stays pinned within card bounds on the right with no overflow clipping.
+- Guaranteed no mid-word ticker splits ('NVDA') with keep-all tokens.
 - Responsive top navbar, off-canvas slide-over drawer, and bottom navigation bar.
-- Responsive Chart.js scaling and adaptive font sizes.
 
 Generates:
 1. site/index.html    - Home / Overview: Hero greeting, live search, widget preview cards & rich charts
@@ -140,7 +140,7 @@ SHARED_CSS = """
       width: 100%;
     }
 
-    /* Layout with Persistent Desktop Sidebar & Mobile Off-Canvas Drawer */
+    /* Core Shared Layout: Sticky Sidebar on Desktop, Zero Leftover Margin on Main */
     .app-layout {
       display: flex;
       min-height: 100vh;
@@ -149,32 +149,33 @@ SHARED_CSS = """
     }
 
     .app-sidebar {
-      width: 250px;
+      width: 240px;
+      min-width: 240px;
+      max-width: 240px;
       flex-shrink: 0;
       background: var(--bg-surface);
       border-right: 1px solid var(--border-card);
       display: flex;
       flex-direction: column;
-      position: fixed;
+      position: sticky;
       top: 0;
-      bottom: 0;
-      left: 0;
-      z-index: 100;
+      height: 100vh;
       overflow-y: auto;
       padding: 1.5rem 1.15rem;
+      z-index: 100;
       transition: transform var(--transition-normal);
     }
 
     .app-main {
-      margin-left: 250px;
-      width: calc(100% - 250px);
-      padding: 2rem 2.5rem 4rem 2.5rem;
-      max-width: 1400px;
+      flex: 1 1 0%;
       min-width: 0;
+      width: 100%;
+      padding: 2rem 2.5rem 4rem 2.5rem;
+      margin: 0; /* Clear any leftover hardcoded margins */
       box-sizing: border-box;
     }
 
-    /* Mobile Header & Bottom Navigation Bar */
+    /* Mobile Sticky Header & Bottom Navigation Bar */
     .mobile-top-header {
       display: none;
       position: sticky;
@@ -297,59 +298,79 @@ SHARED_CSS = """
 
     /* Tablets & Medium Viewports (<= 1024px) */
     @media (max-width: 1024px) {
+      .app-layout {
+        display: block !important;
+        width: 100% !important;
+      }
+
       .mobile-top-header {
         display: flex !important;
       }
+
       .mobile-bottom-nav {
         display: flex !important;
       }
+
       .top-header-bar {
         display: none !important;
       }
+
       .sidebar-close-btn {
         display: block !important;
       }
+
       .app-sidebar {
         position: fixed !important;
         top: 0 !important;
         bottom: 0 !important;
         left: 0 !important;
+        height: 100vh !important;
         width: 280px !important;
+        max-width: 280px !important;
         z-index: 1100 !important;
         transform: translateX(-100%) !important;
         box-shadow: var(--shadow-modal) !important;
       }
+
       .app-sidebar.mobile-open {
         transform: translateX(0) !important;
       }
+
       .app-main {
-        margin-left: 0 !important;
+        margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
         padding: 1.5rem 1.25rem calc(5.5rem + env(safe-area-inset-bottom)) 1.25rem !important;
       }
+
       .hero-container {
         margin: 0.75rem auto 1.75rem auto !important;
       }
+
       .hero-title {
         font-size: 1.95rem !important;
       }
+
       .hero-subtext {
         font-size: 0.88rem !important;
         margin-bottom: 1.25rem !important;
       }
+
       .search-wrapper {
         margin-bottom: 1.75rem !important;
       }
+
       .quick-widgets-row {
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
         gap: 0.85rem !important;
         margin-bottom: 1.75rem !important;
       }
+
       .analytics-grid {
         grid-template-columns: 1fr !important;
         gap: 1.25rem !important;
       }
+
       .priority-section, .controls-panel, .health-section {
         padding: 1.25rem !important;
       }
@@ -360,19 +381,27 @@ SHARED_CSS = """
       .hero-title {
         font-size: 1.55rem !important;
       }
+
       .quick-widgets-row {
         grid-template-columns: 1fr !important;
         gap: 0.75rem !important;
       }
+
       .analytics-card {
         padding: 1rem !important;
       }
+
       .priority-section, .controls-panel, .health-section {
         padding: 1rem !important;
       }
+
       .hero-badge {
         font-size: 0.75rem !important;
         padding: 0.35rem 0.75rem !important;
+      }
+
+      .calendar-grid {
+        grid-template-columns: 1fr !important;
       }
     }
 
@@ -1612,24 +1641,27 @@ SHARED_CSS = """
       flex-wrap: wrap;
     }
 
-    /* Forthcoming Corporate Calendar Grid */
+    /* Forthcoming Corporate Calendar Grid & Fixed Header Layout */
     .calendar-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.25rem;
+      width: 100%;
     }
 
     .calendar-card {
       background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
-      padding: 1.35rem;
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       transition: all var(--transition-fast);
       box-shadow: var(--shadow-sm);
       min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .calendar-card:hover {
@@ -1643,12 +1675,21 @@ SHARED_CSS = """
       background: #f8fafc;
     }
 
-    .calendar-card-top {
+    .calendar-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 0.85rem;
       gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .calendar-card-identity {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      min-width: 0;
+      flex: 1;
     }
 
     .calendar-origin-badge {
@@ -1657,6 +1698,7 @@ SHARED_CSS = """
       padding: 0.15rem 0.4rem;
       border-radius: 4px;
       letter-spacing: 0.04em;
+      white-space: nowrap;
     }
 
     .origin-sourced {
@@ -1680,6 +1722,7 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.3rem;
       width: fit-content;
+      margin-top: 0.25rem;
     }
 
     .cal-type-earnings   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
@@ -1691,10 +1734,12 @@ SHARED_CSS = """
       background: #f8fafc;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
-      padding: 0.4rem 0.65rem;
+      padding: 0.35rem 0.55rem;
       text-align: center;
-      min-width: 54px;
+      width: 52px;
+      min-width: 52px;
       flex-shrink: 0;
+      align-self: flex-start;
     }
 
     .calendar-date-month {
@@ -1706,7 +1751,7 @@ SHARED_CSS = """
 
     .calendar-date-day {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.35rem;
+      font-size: 1.3rem;
       font-weight: 800;
       color: var(--text-primary);
       line-height: 1.1;
@@ -1716,14 +1761,14 @@ SHARED_CSS = """
       font-size: 0.95rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin: 0.4rem 0;
+      margin: 0.45rem 0 0.35rem 0;
       line-height: 1.35;
     }
 
     .calendar-card-details {
       font-size: 0.8rem;
       color: var(--text-secondary);
-      margin: 0 0 1rem 0;
+      margin: 0 0 0.85rem 0;
       line-height: 1.45;
     }
 
@@ -2001,7 +2046,8 @@ SHARED_CSS = """
       font-size: 1.35rem;
       color: var(--text-muted);
       cursor: pointer;
-      padding: 0.25rem 0.5rem;
+      padding: 0.25rem;
+      border-radius: 4px;
       line-height: 1;
     }
 
@@ -3296,7 +3342,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                           <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                             <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
                             <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">${ref.impact_note}</span>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
                           </div>
                           {% endfor %}
                         </div>
@@ -3456,7 +3502,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
         </div>
         <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
           <span class="calendar-origin-badge origin-sourced">SOURCED</span>
-          <span class="calendar-origin-badge origin-estimated">COMPUTED (40D RULE)</span>
+          <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
         </div>
       </header>
 
@@ -3491,27 +3537,28 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
              data-event-type="{{ ev.event_type }}"
              data-source-type="{{ ev.source_type }}">
           <div>
-            <div class="calendar-card-top">
-              <div style="display:flex; flex-direction:column; gap:0.35rem;">
-                <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-                  <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
-                  {% if ev.source_type == 'ESTIMATED_RULE' %}
-                  <span class="calendar-origin-badge origin-estimated">COMPUTED (40D RULE)</span>
-                  {% else %}
-                  <span class="calendar-origin-badge origin-sourced">SOURCED</span>
-                  {% endif %}
-                </div>
-                <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
-                  {% if 'Earnings' in ev.event_type %}Earnings Call
-                  {% elif 'Dividend' in ev.event_type %}Dividend
-                  {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}SEC Deadline (Estimated)
-                  {% else %}Conference{% endif %}
-                </span>
+            <div class="calendar-card-header">
+              <div class="calendar-card-identity">
+                <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
+                {% if ev.source_type == 'ESTIMATED_RULE' %}
+                <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
+                {% else %}
+                <span class="calendar-origin-badge origin-sourced">SOURCED</span>
+                {% endif %}
               </div>
               <div class="calendar-date-box">
                 <div class="calendar-date-month">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
                 <div class="calendar-date-day">{{ ev.event_date[8:10] }}</div>
               </div>
+            </div>
+
+            <div style="margin: 0.25rem 0 0.5rem 0;">
+              <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
+                {% if 'Earnings' in ev.event_type %}Earnings Call
+                {% elif 'Dividend' in ev.event_type %}Dividend
+                {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}SEC Deadline (Estimated)
+                {% else %}Conference{% endif %}
+              </span>
             </div>
 
             <h4 class="calendar-card-headline">{{ ev.headline }}</h4>
