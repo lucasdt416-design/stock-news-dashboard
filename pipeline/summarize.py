@@ -13,7 +13,7 @@ GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini
 
 
 def generate_fallback_summary(item: Dict[str, Any]) -> str:
-    """Generate a high-quality contextual plain-English 'why it matters' summary if LLM is unavailable."""
+    """Generate a contextual plain-English 'why it matters' summary based on category and form."""
     ticker = item.get("ticker", "")
     category = item.get("category", "")
     form = (item.get("form_or_type") or "").upper().strip()
@@ -63,7 +63,13 @@ def generate_fallback_summary(item: Dict[str, Any]) -> str:
 def summarize_batch_with_gemini(
     batch: List[Dict[str, Any]], api_key: str, timeout: int = 25
 ) -> Dict[str, str]:
-    """Call Gemini API to generate plain-English 'why it matters' summaries for a batch of items."""
+    """Call Gemini API to generate plain-English 'why it matters' summaries for a batch of items.
+
+    Fails safely: Returns empty dict on any network, quota, or parsing error without breaking.
+    """
+    if not api_key:
+        return {}
+
     items_payload = []
     for it in batch:
         items_payload.append({
@@ -108,8 +114,14 @@ def summarize_batch_with_gemini(
             if candidates:
                 text_out = candidates[0]["content"]["parts"][0]["text"]
                 return json.loads(text_out)
+    except urllib.error.HTTPError as e:
+        logger.warning("Gemini API returned HTTP %s (%s). Falling back safely to default views.", e.code, e.reason)
+    except urllib.error.URLError as e:
+        logger.warning("Gemini API connection error (%s). Falling back safely to default views.", e.reason)
+    except json.JSONDecodeError as e:
+        logger.warning("Gemini API returned non-JSON output (%s). Falling back safely.", e)
     except Exception as e:
-        logger.warning("Gemini API batch summarization call failed: %s", e)
+        logger.warning("Gemini API batch summarization error: %s. Falling back safely.", e)
 
     return {}
 
@@ -119,21 +131,27 @@ def summarize_items(
     api_key: Optional[str] = None,
     batch_size: int = 20,
 ) -> List[Dict[str, Any]]:
-    """Generate and attach a one-sentence 'why it matters' summary for each item."""
+    """Generate and attach a one-sentence 'why it matters' summary for each item.
+
+    Guaranteed safety: Never throws an uncaught exception; falls back gracefully
+    to category/heuristic summaries if the API key is missing or calls fail.
+    """
     gemini_key = api_key or os.environ.get("GEMINI_API_KEY", "").strip()
 
     if gemini_key:
         logger.info("Using Gemini API for LLM 'Why It Matters' summarization (%d items)...", len(items))
-        # Batch in groups of ~20
         for i in range(0, len(items), batch_size):
             batch = items[i : i + batch_size]
-            logger.info("Processing LLM batch %d-%d...", i + 1, min(i + batch_size, len(items)))
-            llm_results = summarize_batch_with_gemini(batch, gemini_key)
+            try:
+                llm_results = summarize_batch_with_gemini(batch, gemini_key)
+            except Exception as e:
+                logger.warning("Batch exception caught: %s", e)
+                llm_results = {}
 
             for item in batch:
                 uid = item.get("item_uid")
                 if uid in llm_results and llm_results[uid]:
-                    item["llm_summary"] = llm_results[uid].strip()
+                    item["llm_summary"] = str(llm_results[uid]).strip()
                 else:
                     item["llm_summary"] = generate_fallback_summary(item)
     else:
