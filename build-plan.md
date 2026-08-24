@@ -152,6 +152,8 @@ Benzinga, Tiingo — all have free tiers sufficient for personal scale.
 | **Phase 3** | Rule-based classifier, scoring engine, priority panel | Tool becomes genuinely useful daily |
 | **Phase 4** | LLM fallback classification, economic panel, supplier/customer cross-refs, health monitoring, real hosting + domain | System is finished and can run unattended |
 | **Phase 5** | Visual polish + insights (see §12) — real frontend, plain-language summaries, price charts | Portfolio-ready: looks good, explains itself, shows trends visually |
+| **Phase 6** | UX/information architecture overhaul (see §13) — multi-page navigation, decluttering, human-readable content | Feels like a real product, not one long scrollable page |
+| **Future** | Stock price analysis (once Phase 6 lands) | — |
 | **Ongoing** | Tune score weights against real use, add sector-specific sources | — |
 
 **Guiding principle:** ship Phase 1's plain page before designing Phase 4's polish. A mediocre dashboard checked
@@ -203,3 +205,35 @@ price history) is the only new dependency this requires — no new architecture.
 
 **Where this sits relative to Phases 2–4:** don't start Phase 5 before Phase 3 is done. A pretty chart on
 top of an unscored, undeduplicated, single-source feed is polishing something that isn't useful yet.
+
+## 13. Phase 6 — UX / information architecture overhaul
+
+Everything built in Phases 1–5 works correctly, but currently lives on one long scrollable page. This
+phase reorganizes the *same data* into something that feels like a real product. No new data sources —
+this is entirely about structure, clarity, and visual polish.
+
+**Site structure — move from one page to several, linked by a sidebar:**
+- `index.html` — Home/Overview: a grid of clickable widget cards (Priority News, Calendar, Economic
+  Snapshot, Health Status, per-sector breakdown), each a preview that links to its own full page.
+- `news.html` — the full Intelligence Feed (filters, search, sort) that currently dominates the single page.
+- `calendar.html` — the Forthcoming Calendar, full view.
+- `economic.html` — the Economic panel, full view.
+- Sidebar present on every page for navigation between them (Home / News / Calendar / Economic / Health).
+- No framework migration needed — this is achievable as multiple static HTML files sharing one
+  template/sidebar component, consistent with the "no build system" approach already in place.
+
+**Content clarity fixes:**
+- Replace raw filenames as headlines (e.g. "SEC Form 8-K (nvda-20260817.htm)") with a human-readable
+  title — e.g. "NVIDIA Discloses Material Corporate Event" — using the existing AI-generated takeaway to
+  drive the headline itself, not just a caption underneath it. The form type (8-K, 10-Q, etc.) moves to a
+  small subtitle/badge, de-emphasized, not the headline itself.
+- Collapse repeated cross-reference badges (e.g. 5 separate "Context: CUSTOMER X" badges on one item)
+  into a single expandable element — e.g. "Also relevant to 5 companies ▾" — that expands on click instead
+  of listing every relationship inline by default.
+
+**Visual direction:** not a bright color scheme — leaning toward a sleeker, more restrained look.
+Exact palette/spacing still to be decided with the agent's proposal; review before committing to it site-wide.
+
+**Deferred to a future phase (not part of Phase 6):** stock price data analysis / historical price charts —
+worth doing once the reorganized structure is in place, since it'll need its own dedicated page in the
+new navigation rather than being squeezed into the existing single page.

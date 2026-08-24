@@ -241,7 +241,7 @@ def collect_economic_indicators(
                         parsed_successfully = True
                     else:
                         curr_dt, curr_val = valid_rows[-1][0], float(valid_rows[-1][1])
-                        prev_dt, prev_val = valid_rows[-2][0], float(valid_rows[-2][1])
+                        prev_val = float(valid_rows[-2][1])
                         delta = curr_val - prev_val
 
                         eff_str = ""
