@@ -1,5 +1,10 @@
 """Multi-page static HTML dashboard generator with shared sidebar navigation (Phase 6).
 
+Content clarity enhancements:
+- Human-readable executive titles replace raw filenames (e.g. "NVIDIA Discloses Material Corporate Event").
+- Technical form-type codes (8-K, 10-Q, Form 4) move to de-emphasized subtitle badges.
+- Repeated cross-reference badges collapse into interactive "Also relevant to N companies ▾" accordion elements.
+
 Generates:
 1. site/index.html    - Home / Overview: Clickable widget preview cards linking to full subpages
 2. site/news.html     - Full Intelligence Feed: Priority Panel, Filters, Search, Sort & News Table
@@ -25,6 +30,56 @@ from pipeline.persist import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def format_human_headline(item: Dict[str, Any]) -> str:
+    """Produce a clean human-readable executive title for any news or filing item."""
+    raw = item.get("headline", "") or ""
+    co_name = item.get("company_name") or item.get("ticker", "")
+    form = (item.get("form_or_type") or "").upper().strip()
+    category = item.get("category", "")
+    llm = item.get("llm_summary", "") or ""
+
+    is_raw_edgar = (
+        raw.startswith("SEC Form")
+        or raw.startswith("FORM ")
+        or ".htm" in raw.lower()
+        or ".xml" in raw.lower()
+        or "STATEMENT OF CHANGES" in raw
+        or "xsl144" in raw.lower()
+        or "primary_doc" in raw.lower()
+    )
+
+    if not is_raw_edgar:
+        return raw
+
+    if form == "8-K":
+        if "financial results" in llm.lower() or "earnings" in llm.lower():
+            return f"{co_name} Discloses Quarterly Financial Results"
+        return f"{co_name} Discloses Material Corporate Event"
+    elif form == "10-Q":
+        return f"{co_name} Files Quarterly Financial Report (10-Q)"
+    elif form == "10-K":
+        return f"{co_name} Files Annual Financial Report (10-K)"
+    elif form == "4":
+        return f"{co_name} Reports Executive & Director Insider Transaction"
+    elif form == "144":
+        return f"{co_name} Files Notice of Proposed Securities Sale (Rule 144)"
+    elif form in ("DEF 14A", "DEFA14A"):
+        return f"{co_name} Files Definitive Proxy Statement"
+    elif form in ("13F-HR", "13F"):
+        return f"{co_name} Discloses Institutional Investment Holdings (13F)"
+    elif form in ("SC 13G", "SC 13G/A", "SC 13D"):
+        return f"{co_name} Discloses Beneficial Ownership Stake"
+    elif category == "Earnings & Financials":
+        return f"{co_name} Files Periodic Financial Disclosure"
+    elif category == "Insider Transactions":
+        return f"{co_name} Reports Insider Securities Transaction"
+    elif category == "Regulation & Policy / Litigation":
+        return f"{co_name} Discloses Regulatory & Governance Filing"
+    else:
+        return f"{co_name} Files Official Regulatory Filing ({form})"
+
 
 # ==============================================================================
 # SHARED BASE CSS & DESIGN SYSTEM
@@ -378,7 +433,7 @@ SHARED_CSS = """
     .ticker-PFE   { background: rgba(37, 99, 235, 0.15); color: #93c5fd; border: 1px solid rgba(37, 99, 235, 0.3); }
     .ticker-BA    { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.35); }
 
-    /* Category Badges */
+    /* Category & Form Badges */
     .category-badge {
       font-size: 0.72rem;
       font-weight: 700;
@@ -389,6 +444,19 @@ SHARED_CSS = """
       color: var(--text-secondary);
       border: 1px solid var(--border-card);
       white-space: nowrap;
+    }
+
+    .form-type-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--bg-surface-highlight);
+      padding: 0.12rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-card);
+      display: inline-block;
+      letter-spacing: 0.02em;
     }
 
     .source-tag {
@@ -428,12 +496,13 @@ SHARED_CSS = """
       border: 1px solid rgba(148, 163, 184, 0.2);
     }
 
-    /* Supply-Chain Cross-Reference Badges */
+    /* Collapsible Cross-Reference Accordion */
     .crossref-badges-wrap {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 0.35rem;
-      margin-top: 0.45rem;
+      margin-top: 0.35rem;
     }
 
     .crossref-badge {
@@ -442,7 +511,7 @@ SHARED_CSS = """
       gap: 0.25rem;
       font-size: 0.7rem;
       font-weight: 600;
-      padding: 0.2rem 0.55rem;
+      padding: 0.18rem 0.5rem;
       border-radius: var(--radius-sm);
       background: rgba(99, 102, 241, 0.12);
       color: #c7d2fe;
@@ -470,6 +539,68 @@ SHARED_CSS = """
       background: rgba(245, 158, 11, 0.2);
       color: #fbbf24;
       border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .crossref-accordion {
+      display: inline-block;
+      margin-top: 0.2rem;
+    }
+
+    .crossref-summary-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #c7d2fe;
+      background: rgba(99, 102, 241, 0.14);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-sm);
+      padding: 0.18rem 0.55rem;
+      cursor: pointer;
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all var(--transition-fast);
+      user-select: none;
+    }
+
+    .crossref-summary-pill::-webkit-details-marker {
+      display: none;
+    }
+
+    .crossref-summary-pill:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #ffffff;
+    }
+
+    .accordion-arrow {
+      font-size: 0.75rem;
+      transition: transform var(--transition-fast);
+      display: inline-block;
+    }
+
+    .crossref-accordion[open] .accordion-arrow {
+      transform: rotate(180deg);
+    }
+
+    .crossref-dropdown-content {
+      margin-top: 0.45rem;
+      padding: 0.5rem 0.65rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    }
+
+    .crossref-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      padding: 0.15rem 0;
     }
 
     /* Why It Matters Callout Box */
@@ -1352,11 +1483,16 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               {% for it in priority_items[:3] %}
               <div style="background:var(--bg-surface-elevated); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:0.85rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-                  <span class="ticker-badge ticker-{{ it.ticker }}">{{ it.ticker }}</span>
+                  <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span class="ticker-badge ticker-{{ it.ticker }}">{{ it.ticker }}</span>
+                    {% if it.form_or_type %}
+                    <span class="form-type-pill">{{ it.form_or_type }}</span>
+                    {% endif %}
+                  </div>
                   <span class="score-badge score-high" style="font-size:0.75rem; padding:0.15rem 0.45rem;">★ {{ it.score }}</span>
                 </div>
                 <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); line-height:1.3; margin-bottom:0.25rem;">
-                  {{ it.headline }}
+                  {{ it.clean_headline }}
                 </div>
                 {% if it.llm_summary %}
                 <div style="font-size:0.78rem; color:#bfdbfe; background:rgba(59,130,246,0.08); padding:0.35rem 0.55rem; border-radius:4px; border-left:2px solid var(--accent-blue);">
@@ -1652,29 +1788,50 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 <div style="display:flex; align-items:center; gap:0.45rem;">
                   <span class="priority-rank-pill">#{{ loop.index }}</span>
                   <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
+                  {% if item.form_or_type %}
+                  <span class="form-type-pill">{{ item.form_or_type }}</span>
+                  {% endif %}
                 </div>
                 <span class="priority-score-pill" title="{{ item.score_breakdown }}">
                   ★ {{ item.score }}
                 </span>
               </div>
 
-              <div style="margin-top:0.65rem;">
+              <div style="margin-top:0.5rem;">
                 <span class="category-badge">{{ item.category }}</span>
                 <span class="source-tag" style="margin-left:0.4rem;">{{ item.source_label }}</span>
               </div>
 
-              <h3 class="priority-card-headline">{{ item.headline }}</h3>
+              <h3 class="priority-card-headline">{{ item.clean_headline }}</h3>
               
               {% if item.cross_references_list %}
-              <div class="crossref-badges-wrap">
-                {% for ref in item.cross_references_list %}
-                <span class="crossref-badge" title="{{ ref.impact_note }}">
-                  🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                  <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
-                  ({{ ref.matched_entity }})
-                </span>
-                {% endfor %}
-              </div>
+                {% if item.cross_references_list|length == 1 %}
+                  {% set ref = item.cross_references_list[0] %}
+                  <div class="crossref-badges-wrap">
+                    <span class="crossref-badge" title="{{ ref.impact_note }}">
+                      🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                      <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                      ({{ ref.matched_entity }})
+                    </span>
+                  </div>
+                {% else %}
+                  <div class="crossref-badges-wrap">
+                    <details class="crossref-accordion">
+                      <summary class="crossref-summary-pill">
+                        🔗 Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
+                      </summary>
+                      <div class="crossref-dropdown-content">
+                        {% for ref in item.cross_references_list %}
+                        <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
+                          <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                          <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                          <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </details>
+                  </div>
+                {% endif %}
               {% endif %}
 
               {% if item.llm_summary %}
@@ -1772,7 +1929,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
                 data-source="{{ item.source }}" 
                 data-category="{{ item.category }}"
-                data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
+                data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
               <td>
                 <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
                   {{ item.score }}
@@ -1788,7 +1945,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 <div>
                   <span class="category-badge">{{ item.category }}</span>
                   <div class="source-tag" style="margin-top: 0.35rem;">
-                    {{ item.source_label }} &bull; {{ item.form_or_type }}
+                    {{ item.source_label }}
                   </div>
                 </div>
               </td>
@@ -1796,19 +1953,39 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 {{ item.published_date }}
               </td>
               <td>
-                <div class="headline-text">{{ item.headline }}</div>
+                <div class="headline-text">{{ item.clean_headline }}</div>
                 
-                {% if item.cross_references_list %}
-                <div class="crossref-badges-wrap">
-                  {% for ref in item.cross_references_list %}
-                  <span class="crossref-badge" title="{{ ref.impact_note }}">
-                    🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                    <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
-                    ({{ ref.matched_entity }})
-                  </span>
-                  {% endfor %}
+                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem; margin-top:0.25rem;">
+                  {% if item.form_or_type %}
+                  <span class="form-type-pill">{{ item.form_or_type }}</span>
+                  {% endif %}
+                  
+                  {% if item.cross_references_list %}
+                    {% if item.cross_references_list|length == 1 %}
+                      {% set ref = item.cross_references_list[0] %}
+                      <span class="crossref-badge" title="{{ ref.impact_note }}">
+                        🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                        <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                        ({{ ref.matched_entity }})
+                      </span>
+                    {% else %}
+                      <details class="crossref-accordion">
+                        <summary class="crossref-summary-pill">
+                          🔗 Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
+                        </summary>
+                        <div class="crossref-dropdown-content">
+                          {% for ref in item.cross_references_list %}
+                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
+                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                            <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
+                          </div>
+                          {% endfor %}
+                        </div>
+                      </details>
+                    {% endif %}
+                  {% endif %}
                 </div>
-                {% endif %}
 
                 {% if item.llm_summary %}
                 <div class="why-matters-box">
@@ -2209,7 +2386,7 @@ def render_dashboard(
     os.makedirs(site_dir, exist_ok=True)
 
     # 1. Fetch data from SQLite
-    items = get_all_news_items(order_by="score", db_path=db_path)
+    raw_items = get_all_news_items(order_by="score", db_path=db_path)
     priority_items = get_top_priority_items(limit=8, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     chart_data = get_chart_data(db_path=db_path)
@@ -2219,7 +2396,20 @@ def render_dashboard(
     latest_run = recent_runs[0] if recent_runs else None
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 
-    # 2. Load watchlist for sensitivity matrix
+    # 2. Enrich items with human-readable headlines
+    items = []
+    for it in raw_items:
+        it_copy = dict(it)
+        it_copy["clean_headline"] = format_human_headline(it_copy)
+        items.append(it_copy)
+
+    enriched_priority = []
+    for it in priority_items:
+        it_copy = dict(it)
+        it_copy["clean_headline"] = format_human_headline(it_copy)
+        enriched_priority.append(it_copy)
+
+    # 3. Load watchlist for sensitivity matrix
     watchlist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml")
     watchlist_companies: List[Dict[str, Any]] = []
     if os.path.exists(watchlist_path):
@@ -2229,7 +2419,7 @@ def render_dashboard(
 
     common_context = {
         "items": items,
-        "priority_items": priority_items,
+        "priority_items": enriched_priority,
         "stats": stats,
         "chart_data_json": json.dumps(chart_data),
         "economic_indicators": economic_indicators,
@@ -2240,7 +2430,7 @@ def render_dashboard(
         "watchlist_companies": watchlist_companies,
     }
 
-    # 3. Render and save all 4 pages
+    # 4. Render and save all 4 pages
     pages = [
         ("index.html", INDEX_TEMPLATE, "home"),
         ("news.html", NEWS_TEMPLATE, "news"),
