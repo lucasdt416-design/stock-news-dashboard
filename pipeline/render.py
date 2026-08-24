@@ -1,9 +1,14 @@
-"""Multi-page static HTML dashboard generator with responsive architecture (Phase 6).
+"""Multi-page static HTML dashboard generator with responsive architecture & organic editorial design (Phase 7).
 
-Unified Shared Layout & Viewport Fixes:
-- Fixed blank left column across all pages: Removed conflicting margin-left/width-calc rules and converted desktop layout to modern flex + sticky sidebar, with seamless full-width block flow on tablets and mobile (<= 1024px).
-- Fixed calendar date box ('NOV 09') right-edge cutoff: Structured .calendar-card-header so ticker and badge wrap cleanly on the left while date box stays pinned within card bounds on the right with no overflow clipping.
-- Guaranteed no mid-word ticker splits ('NVDA') with keep-all tokens.
+Unified Shared Layout & Organic Flow System:
+- Organic Design Language: Softer, larger border-radius tokens (14px–36px), atmospheric ambient backdrop meshes, and soft diffused shadows replacing rigid rectangular grids.
+- Asymmetric & Varied Card Layouts:
+  1. Home (index.html): Asymmetric Hero Bento Deck with a prominent Featured Intelligence Card, companion Catalyst Beacon, and Macro Pulse widget; curved analytics charts and health hub.
+  2. Feed (news.html): Editorial Priority Suite with a spacious Lead #1 Feature Card and staggered secondary cards; floating rounded filter pills.
+  3. Calendar (calendar.html): Spotlight Next Milestone Banner with prominent date box and countdown badge, followed by organic cards.
+  4. Macro (economic.html): Anchor rate cards (Fed Funds & Inflation) with oversized focal metrics, followed by responsive sensitivity matrices.
+- Brand Polish: Removed "Cloud Intelligence" tagline from beneath the StockPulse logo for clean, centered typography.
+- Bulletproof Search Dropdown: Nested flex constraints (min-width: 0, text-overflow: ellipsis, box-sizing: border-box) guaranteeing zero overflow outside the search container.
 - Responsive top navbar, off-canvas slide-over drawer, and bottom navigation bar.
 
 Generates:
@@ -83,22 +88,25 @@ def format_human_headline(item: Dict[str, Any]) -> str:
 
 
 # ==============================================================================
-# SHARED BASE CSS & RESPONSIVE DESIGN SYSTEM
+# SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
     :root {
       --bg-base: #f8fafc;
       --bg-surface: #ffffff;
       --bg-surface-elevated: #f1f5f9;
+      --bg-surface-glass: rgba(255, 255, 255, 0.92);
       --bg-surface-highlight: #e2e8f0;
       --bg-hover: #f1f5f9;
       --border-subtle: #f1f5f9;
       --border-card: #e2e8f0;
+      --border-glass: rgba(226, 232, 240, 0.85);
       --border-accent: #2563eb;
       --text-primary: #0f172a;
       --text-secondary: #475569;
       --text-muted: #64748b;
       --accent-blue: #2563eb;
+      --accent-blue-soft: #eff6ff;
       --accent-orange-dark: #c2410c;
       --accent-orange-main: #ea580c;
       --accent-indigo: #4f46e5;
@@ -107,16 +115,26 @@ SHARED_CSS = """
       --accent-purple: #7c3aed;
       --accent-rose: #e11d48;
       --accent-cyan: #0284c7;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
-      --radius-xl: 20px;
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07);
-      --shadow-dropdown: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      --transition-fast: 0.15s ease;
-      --transition-normal: 0.25s ease;
+      
+      /* Organic Softer Border Radii */
+      --radius-xs: 6px;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-xl: 32px;
+      --radius-2xl: 40px;
+      --radius-full: 9999px;
+      
+      /* Organic Atmospheric Shadows */
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+      --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+      --shadow-hover: 0 16px 36px -6px rgba(37, 99, 235, 0.09), 0 4px 14px -2px rgba(15, 23, 42, 0.03);
+      --shadow-float: 0 20px 40px -10px rgba(15, 23, 42, 0.08);
+      --shadow-dropdown: 0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.04);
+      --shadow-modal: 0 30px 60px -15px rgba(15, 23, 42, 0.25);
+      
+      --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-normal: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     * {
@@ -131,11 +149,16 @@ SHARED_CSS = """
     }
 
     body {
-      background-color: var(--bg-base);
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(at 15% 10%, rgba(219, 234, 254, 0.45) 0px, transparent 45%),
+        radial-gradient(at 85% 15%, rgba(254, 243, 199, 0.35) 0px, transparent 40%),
+        radial-gradient(at 50% 85%, rgba(241, 245, 249, 0.6) 0px, transparent 50%);
+      background-attachment: fixed;
       color: var(--text-primary);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      line-height: 1.5;
+      line-height: 1.55;
       overflow-x: hidden;
       width: 100%;
     }
@@ -153,7 +176,8 @@ SHARED_CSS = """
       min-width: 240px;
       max-width: 240px;
       flex-shrink: 0;
-      background: var(--bg-surface);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
       border-right: 1px solid var(--border-card);
       display: flex;
       flex-direction: column;
@@ -170,8 +194,8 @@ SHARED_CSS = """
       flex: 1 1 0%;
       min-width: 0;
       width: 100%;
-      padding: 2rem 2.5rem 4rem 2.5rem;
-      margin: 0; /* Clear any leftover hardcoded margins */
+      padding: 2.25rem 3rem 5rem 3rem;
+      margin: 0;
       box-sizing: border-box;
     }
 
@@ -184,9 +208,9 @@ SHARED_CSS = """
       right: 0;
       z-index: 900;
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-card);
-      padding: 0.65rem 1rem;
+      padding: 0.75rem 1.15rem;
       align-items: center;
       justify-content: space-between;
     }
@@ -194,7 +218,7 @@ SHARED_CSS = """
     .mobile-header-left {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.65rem;
       text-decoration: none;
       color: inherit;
     }
@@ -206,9 +230,9 @@ SHARED_CSS = """
     }
 
     .mobile-hamburger-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-md);
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
       color: var(--text-primary);
@@ -217,6 +241,7 @@ SHARED_CSS = """
       justify-content: center;
       cursor: pointer;
       padding: 0;
+      transition: all var(--transition-fast);
     }
 
     .mobile-drawer-backdrop {
@@ -227,7 +252,7 @@ SHARED_CSS = """
       right: 0;
       bottom: 0;
       background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(3px);
+      backdrop-filter: blur(4px);
       z-index: 1050;
       opacity: 0;
       transition: opacity var(--transition-normal);
@@ -245,10 +270,11 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       z-index: 950;
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
       border-top: 1px solid var(--border-card);
-      padding: 0.4rem 0.25rem calc(0.4rem + env(safe-area-inset-bottom)) 0.25rem;
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+      padding: 0.45rem 0.25rem calc(0.45rem + env(safe-area-inset-bottom)) 0.25rem;
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
       justify-content: space-around;
       align-items: center;
     }
@@ -264,7 +290,7 @@ SHARED_CSS = """
       text-decoration: none;
       font-size: 0.68rem;
       font-weight: 600;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       transition: all var(--transition-fast);
       flex: 1;
       text-align: center;
@@ -289,14 +315,14 @@ SHARED_CSS = """
       display: none;
       background: transparent;
       border: none;
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       color: var(--text-muted);
       cursor: pointer;
       padding: 0.25rem 0.5rem;
       line-height: 1;
     }
 
-    /* Tablets & Medium Viewports (<= 1024px) */
+    /* Responsive Viewports */
     @media (max-width: 1024px) {
       .app-layout {
         display: block !important;
@@ -348,22 +374,21 @@ SHARED_CSS = """
       }
 
       .hero-title {
-        font-size: 1.95rem !important;
+        font-size: 2rem !important;
       }
 
       .hero-subtext {
-        font-size: 0.88rem !important;
-        margin-bottom: 1.25rem !important;
+        font-size: 0.9rem !important;
+        margin-bottom: 1.35rem !important;
       }
 
       .search-wrapper {
-        margin-bottom: 1.75rem !important;
+        margin-bottom: 2rem !important;
       }
 
-      .quick-widgets-row {
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
-        gap: 0.85rem !important;
-        margin-bottom: 1.75rem !important;
+      .hero-bento-deck {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
       }
 
       .analytics-grid {
@@ -372,36 +397,36 @@ SHARED_CSS = """
       }
 
       .priority-section, .controls-panel, .health-section {
-        padding: 1.25rem !important;
+        padding: 1.35rem !important;
       }
     }
 
     /* Narrow Phone Viewports (<= 640px) */
     @media (max-width: 640px) {
       .hero-title {
-        font-size: 1.55rem !important;
-      }
-
-      .quick-widgets-row {
-        grid-template-columns: 1fr !important;
-        gap: 0.75rem !important;
+        font-size: 1.65rem !important;
       }
 
       .analytics-card {
-        padding: 1rem !important;
+        padding: 1.15rem !important;
       }
 
       .priority-section, .controls-panel, .health-section {
-        padding: 1rem !important;
+        padding: 1.15rem !important;
       }
 
       .hero-badge {
         font-size: 0.75rem !important;
-        padding: 0.35rem 0.75rem !important;
+        padding: 0.35rem 0.85rem !important;
       }
 
       .calendar-grid {
         grid-template-columns: 1fr !important;
+      }
+
+      .spotlight-content-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
       }
     }
 
@@ -411,7 +436,7 @@ SHARED_CSS = """
       justify-content: flex-end;
       align-items: center;
       gap: 0.75rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .top-header-btn {
@@ -421,10 +446,11 @@ SHARED_CSS = """
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.45rem 0.85rem;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface);
+      gap: 0.45rem;
+      padding: 0.5rem 0.95rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--border-card);
       cursor: pointer;
       transition: all var(--transition-fast);
@@ -432,9 +458,11 @@ SHARED_CSS = """
     }
 
     .top-header-btn:hover {
-      background: var(--bg-surface-elevated);
+      background: #ffffff;
       color: var(--text-primary);
       border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-card);
     }
 
     .top-header-btn.btn-ai {
@@ -449,14 +477,11 @@ SHARED_CSS = """
       color: #3730a3;
     }
 
-    /* Sidebar Brand */
+    /* Sidebar Brand (Logo and Title Only - No Tagline) */
     .sidebar-brand {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border-card);
-      margin-bottom: 1.25rem;
       text-decoration: none;
       color: inherit;
     }
@@ -464,30 +489,22 @@ SHARED_CSS = """
     .logo-badge {
       width: 36px;
       height: 36px;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       background: linear-gradient(135deg, #c2410c, #9a3412);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
-      box-shadow: 0 2px 8px rgba(194, 65, 12, 0.35);
+      box-shadow: 0 4px 12px rgba(194, 65, 12, 0.3);
       flex-shrink: 0;
     }
 
     .brand-title {
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--text-primary);
-      line-height: 1.2;
-    }
-
-    .brand-subtitle {
-      font-size: 0.68rem;
-      color: #c2410c;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      line-height: 1;
     }
 
     .nav-section-title {
@@ -496,14 +513,14 @@ SHARED_CSS = """
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
       padding-left: 0.5rem;
     }
 
     .sidebar-nav {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.35rem;
       flex: 1;
     }
 
@@ -511,8 +528,8 @@ SHARED_CSS = """
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.65rem 0.85rem;
-      border-radius: var(--radius-md);
+      padding: 0.68rem 0.95rem;
+      border-radius: var(--radius-sm);
       color: var(--text-secondary);
       text-decoration: none;
       font-size: 0.88rem;
@@ -552,7 +569,7 @@ SHARED_CSS = """
       background: var(--bg-surface-elevated);
       color: var(--text-muted);
       padding: 0.15rem 0.45rem;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
     }
 
     .nav-link.active .nav-count {
@@ -570,7 +587,7 @@ SHARED_CSS = """
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
-      padding: 0.75rem;
+      padding: 0.85rem;
     }
 
     .pulse-dot {
@@ -587,7 +604,7 @@ SHARED_CSS = """
       align-items: center;
       text-align: center;
       margin: 1.5rem auto 2.5rem auto;
-      max-width: 820px;
+      max-width: 840px;
       width: 100%;
     }
 
@@ -595,16 +612,17 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.45rem;
-      background: #ffffff;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--border-card);
-      padding: 0.38rem 1.15rem;
-      border-radius: 999px;
+      padding: 0.42rem 1.25rem;
+      border-radius: var(--radius-full);
       font-size: 0.82rem;
       font-weight: 600;
       color: var(--text-secondary);
       box-shadow: var(--shadow-sm);
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.35rem;
       transition: all var(--transition-fast);
       text-decoration: none;
       max-width: 100%;
@@ -626,57 +644,64 @@ SHARED_CSS = """
       white-space: nowrap !important;
       word-break: keep-all !important;
       overflow-wrap: normal !important;
-      display: inline;
+      display: inline-block;
     }
 
     .hero-title {
-      font-size: 2.35rem;
+      font-size: 2.5rem;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.035em;
       color: var(--text-primary);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
       word-break: normal;
       overflow-wrap: normal;
+      line-height: 1.2;
     }
 
     .hero-subtext {
-      font-size: 0.95rem;
+      font-size: 0.98rem;
       color: var(--text-muted);
-      line-height: 1.5;
-      margin-bottom: 1.75rem;
+      line-height: 1.55;
+      margin-bottom: 2rem;
       word-break: normal;
+      max-width: 650px;
     }
 
-    /* Global Search & Command Bar (⌘K) */
+    /* Global Search & Command Bar (⌘K) with Bulletproof Overflow Containment */
     .search-wrapper {
       position: relative;
       width: 100%;
       max-width: 680px;
-      margin: 0 auto 2.5rem auto;
+      margin: 0 auto 3rem auto;
+      box-sizing: border-box;
     }
 
     .search-box {
       display: flex;
       align-items: center;
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
       border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 0.75rem 1.15rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-      transition: all var(--transition-fast);
+      border-radius: var(--radius-xl);
+      padding: 0.85rem 1.35rem;
+      box-shadow: var(--shadow-card);
+      transition: all var(--transition-normal);
       cursor: text;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .search-box:focus-within, .search-box.focused {
       border-color: var(--accent-blue);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), 0 4px 15px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), var(--shadow-hover);
+      background: #ffffff;
     }
 
     .search-icon-wrap {
       display: flex;
       align-items: center;
       color: var(--text-muted);
-      margin-right: 0.75rem;
+      margin-right: 0.85rem;
       flex-shrink: 0;
     }
 
@@ -686,7 +711,7 @@ SHARED_CSS = """
       border: none;
       outline: none;
       background: transparent;
-      font-size: 0.92rem;
+      font-size: 0.94rem;
       font-family: inherit;
       color: var(--text-primary);
     }
@@ -701,39 +726,44 @@ SHARED_CSS = """
       gap: 0.2rem;
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
-      border-radius: 4px;
-      padding: 0.15rem 0.45rem;
+      border-radius: 6px;
+      padding: 0.18rem 0.5rem;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: var(--text-muted);
       flex-shrink: 0;
     }
 
-    /* Tab Suggestions & Live Autocomplete Dropdown */
+    /* Tab Suggestions & Live Autocomplete Dropdown - Bulletproof Containment */
     .search-dropdown {
       position: absolute;
-      top: calc(100% + 8px);
+      top: calc(100% + 10px);
       left: 0;
       right: 0;
-      background: #ffffff;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-dropdown);
-      padding: 1rem;
-      z-index: 200;
+      padding: 1.15rem;
+      z-index: 500;
       display: none;
-      max-height: 400px;
+      max-height: 420px;
+      overflow-x: hidden;
       overflow-y: auto;
     }
 
     .search-dropdown.active {
       display: block;
-      animation: fadeIn 0.15s ease-out;
+      animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
+      from { opacity: 0; transform: translateY(-6px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -743,29 +773,40 @@ SHARED_CSS = """
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--text-muted);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
       padding-left: 0.25rem;
     }
 
     .dropdown-tabs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.5rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
       margin-bottom: 1rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 500px) {
+      .dropdown-tabs-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .dropdown-tab-card {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.65rem 0.85rem;
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
+      padding: 0.7rem 0.9rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
       text-decoration: none;
       color: var(--text-primary);
       transition: all var(--transition-fast);
       min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .dropdown-tab-card:hover {
@@ -784,6 +825,12 @@ SHARED_CSS = """
       flex-shrink: 0;
     }
 
+    .dropdown-tab-info {
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+
     .dropdown-tab-title {
       font-size: 0.85rem;
       font-weight: 700;
@@ -792,6 +839,8 @@ SHARED_CSS = """
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 100%;
+      display: block;
     }
 
     .dropdown-tab-sub {
@@ -800,26 +849,32 @@ SHARED_CSS = """
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 100%;
+      display: block;
     }
 
     .dropdown-tickers-wrap {
-      padding-top: 0.75rem;
+      padding-top: 0.85rem;
       border-top: 1px solid var(--border-card);
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .dropdown-tickers-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.35rem;
-      margin-top: 0.35rem;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .ticker-jump-pill {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.75rem;
       font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: 4px;
+      padding: 0.22rem 0.6rem;
+      border-radius: var(--radius-sm);
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
       color: var(--text-secondary);
@@ -831,13 +886,16 @@ SHARED_CSS = """
       background: #eff6ff;
       border-color: #93c5fd;
       color: #1d4ed8;
+      transform: translateY(-1px);
     }
 
-    /* Live Search Results List */
+    /* Live Search Results List - Contained Layout */
     .search-results-list {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.5rem;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .search-result-item {
@@ -845,28 +903,32 @@ SHARED_CSS = """
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
-      padding: 0.65rem 0.85rem;
+      padding: 0.75rem 1rem;
       border-radius: var(--radius-md);
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
       text-decoration: none;
       color: var(--text-primary);
       transition: all var(--transition-fast);
+      width: 100%;
       min-width: 0;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .search-result-item:hover {
       background: #eff6ff;
       border-color: #bfdbfe;
-      transform: translateY(-1px);
+      transform: translateX(2px);
     }
 
     .search-result-left {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.75rem;
       min-width: 0;
-      flex: 1;
+      flex: 1 1 auto;
+      overflow: hidden;
     }
 
     .search-result-icon {
@@ -879,6 +941,12 @@ SHARED_CSS = """
       justify-content: center;
     }
 
+    .search-result-info {
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+
     .search-result-title {
       font-size: 0.85rem;
       font-weight: 700;
@@ -886,6 +954,8 @@ SHARED_CSS = """
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 100%;
+      display: block;
     }
 
     .search-result-sub {
@@ -894,103 +964,211 @@ SHARED_CSS = """
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 100%;
+      display: block;
     }
 
     .search-no-results {
       text-align: center;
-      padding: 1.75rem 1rem;
+      padding: 2rem 1rem;
       color: var(--text-muted);
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .no-results-icon {
-      font-size: 1.5rem;
-      margin-bottom: 0.35rem;
+      font-size: 1.75rem;
+      margin-bottom: 0.4rem;
     }
 
     .no-results-title {
       font-size: 0.88rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 0.25rem;
-      word-break: normal;
+      margin-bottom: 0.35rem;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .no-results-sub {
       font-size: 0.75rem;
       color: var(--text-muted);
-      word-break: normal;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
-    /* Top Quick Preview Widgets Row */
-    .quick-widgets-row {
+    /* Asymmetric Hero Bento Deck (Replacing rigid 3-column cards) */
+    .hero-bento-deck {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 2.5rem;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 1.35rem;
+      margin-bottom: 3.5rem;
+      width: 100%;
     }
 
-    .quick-widget-card {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
+    .bento-card {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
-      padding: 1.25rem;
+      padding: 1.65rem;
       box-shadow: var(--shadow-card);
       text-decoration: none;
       color: inherit;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: all var(--transition-fast);
+      transition: all var(--transition-normal);
       min-width: 0;
+      position: relative;
+      overflow: hidden;
     }
 
-    .quick-widget-card:hover {
+    .bento-card:hover {
       border-color: #cbd5e1;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-      transform: translateY(-1px);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
     }
 
-    .quick-widget-header {
+    .bento-card-primary {
+      background: linear-gradient(135deg, rgba(238, 242, 255, 0.95), rgba(255, 255, 255, 0.95));
+      border: 1px solid rgba(199, 210, 254, 0.8);
+      position: relative;
+    }
+
+    .bento-card-primary::before {
+      content: "";
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .bento-side-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+    }
+
+    .bento-card-side {
+      padding: 1.35rem 1.5rem;
+    }
+
+    .bento-badge-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.85rem;
     }
 
-    .quick-widget-title {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: flex;
+    .bento-pill-accent {
+      display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #4338ca;
+      background: #e0e7ff;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
     }
 
-    .quick-widget-arrow {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
-    .quick-widget-btn {
-      display: flex;
+    .bento-pill-cal {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #0369a1;
+      background: #e0f2fe;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+    }
+
+    .bento-pill-econ {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #15803d;
+      background: #dcfce7;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+    }
+
+    .bento-arrow {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: transform var(--transition-fast);
+    }
+
+    .bento-card:hover .bento-arrow {
+      color: var(--accent-blue);
+      transform: translateX(3px);
+    }
+
+    .bento-score-hero {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .bento-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #1e1b4b;
+      line-height: 1;
+    }
+
+    .bento-sublabel {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .bento-headline-preview {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.4;
+      margin-bottom: 1.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .bento-footer-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(199, 210, 254, 0.6);
       border-radius: var(--radius-md);
-      padding: 0.65rem 0.85rem;
+      padding: 0.65rem 0.95rem;
       font-size: 0.82rem;
       font-weight: 600;
-      color: var(--text-secondary);
-      transition: all var(--transition-fast);
-      text-align: center;
+      color: #4338ca;
     }
 
-    .quick-widget-card:hover .quick-widget-btn {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      color: #1d4ed8;
+    .bento-side-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
     }
 
     /* Section Headers */
@@ -999,14 +1177,14 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
     }
 
     .section-heading {
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       font-weight: 800;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.025em;
       color: var(--text-primary);
     }
 
@@ -1014,30 +1192,32 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      background: #ffffff;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(12px);
       border: 1px solid var(--border-card);
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-full);
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--text-secondary);
       max-width: 100%;
-      flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
     }
 
     /* Analytics Grid & Cards */
     .analytics-grid {
       display: grid;
       grid-template-columns: 3fr 2fr;
-      gap: 1.25rem;
-      margin-bottom: 2.5rem;
+      gap: 1.5rem;
+      margin-bottom: 3.5rem;
     }
 
     .analytics-card {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1.75rem;
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
@@ -1049,7 +1229,7 @@ SHARED_CSS = """
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
@@ -1065,7 +1245,7 @@ SHARED_CSS = """
 
     .analytics-metric-val {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.85rem;
+      font-size: 2rem;
       font-weight: 800;
       color: var(--text-primary);
       display: flex;
@@ -1077,9 +1257,9 @@ SHARED_CSS = """
       font-size: 0.75rem;
       font-weight: 700;
       color: var(--accent-emerald);
-      background: rgba(16, 185, 129, 0.1);
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
+      background: rgba(16, 185, 129, 0.12);
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
     }
 
     .chart-canvas-container {
@@ -1091,39 +1271,77 @@ SHARED_CSS = """
 
     .category-legend-list {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 0.45rem;
-      margin-top: 1rem;
-      padding-top: 0.85rem;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+      padding-top: 1rem;
       border-top: 1px solid var(--border-card);
     }
 
-    .category-legend-pill {
-      display: inline-flex;
+    .category-stat-row {
+      display: flex;
       align-items: center;
-      gap: 0.35rem;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-sm);
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
-      border-radius: 6px;
-      padding: 0.3rem 0.5rem;
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
 
-    .category-legend-pill strong {
+    .category-stat-row:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .cat-stat-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .category-legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+    }
+
+    .cat-stat-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-primary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .category-legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+    .cat-stat-right {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
       flex-shrink: 0;
+    }
+
+    .cat-stat-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cat-stat-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: #f1f5f9;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
     }
 
     /* Ticker & Form Badges */
@@ -1131,8 +1349,8 @@ SHARED_CSS = """
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
       font-size: 0.78rem;
-      padding: 0.18rem 0.5rem;
-      border-radius: 4px;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
       display: inline-block;
       letter-spacing: 0.02em;
       background: #f1f5f9;
@@ -1149,8 +1367,8 @@ SHARED_CSS = """
       font-weight: 700;
       color: var(--text-muted);
       background: var(--bg-surface-elevated);
-      padding: 0.12rem 0.45rem;
-      border-radius: 4px;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
       border: 1px solid var(--border-card);
       display: inline-block;
       flex-shrink: 0;
@@ -1160,8 +1378,8 @@ SHARED_CSS = """
     .category-badge {
       font-size: 0.72rem;
       font-weight: 700;
-      padding: 0.18rem 0.5rem;
-      border-radius: var(--radius-sm);
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
       display: inline-block;
       background: var(--bg-surface-elevated);
       color: var(--text-secondary);
@@ -1182,7 +1400,7 @@ SHARED_CSS = """
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
       font-size: 0.85rem;
-      padding: 0.2rem 0.55rem;
+      padding: 0.22rem 0.6rem;
       border-radius: var(--radius-sm);
       display: inline-flex;
       align-items: center;
@@ -1215,7 +1433,7 @@ SHARED_CSS = """
       flex-wrap: wrap;
       align-items: center;
       gap: 0.35rem;
-      margin-top: 0.35rem;
+      margin-top: 0.45rem;
       max-width: 100%;
     }
 
@@ -1223,9 +1441,9 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 600;
-      padding: 0.15rem 0.45rem;
+      padding: 0.18rem 0.5rem;
       border-radius: var(--radius-sm);
       background: #eef2ff;
       color: #4338ca;
@@ -1239,8 +1457,8 @@ SHARED_CSS = """
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      padding: 0.08rem 0.3rem;
-      border-radius: 3px;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
       white-space: nowrap;
     }
 
@@ -1268,8 +1486,8 @@ SHARED_CSS = """
       color: #4338ca;
       background: #eef2ff;
       border: 1px solid #c7d2fe;
-      border-radius: var(--radius-sm);
-      padding: 0.18rem 0.55rem;
+      border-radius: var(--radius-full);
+      padding: 0.22rem 0.65rem;
       cursor: pointer;
       list-style: none;
       display: inline-flex;
@@ -1301,14 +1519,14 @@ SHARED_CSS = """
     }
 
     .crossref-dropdown-content {
-      margin-top: 0.45rem;
-      padding: 0.5rem 0.65rem;
+      margin-top: 0.5rem;
+      padding: 0.65rem 0.85rem;
       background: #ffffff;
       border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.45rem;
       box-shadow: var(--shadow-dropdown);
       max-width: 100%;
     }
@@ -1324,14 +1542,14 @@ SHARED_CSS = """
 
     /* Why It Matters Callout Box */
     .why-matters-box {
-      margin-top: 0.45rem;
+      margin-top: 0.6rem;
       background: #eff6ff;
-      border-left: 3px solid var(--accent-blue);
-      padding: 0.5rem 0.75rem;
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      font-size: 0.825rem;
+      border-left: 4px solid var(--accent-blue);
+      padding: 0.65rem 0.95rem;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      font-size: 0.835rem;
       color: #1e3a8a;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
     .why-tag {
@@ -1355,27 +1573,27 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      transition: color var(--transition-fast);
+      transition: all var(--transition-fast);
       white-space: nowrap;
     }
 
     .action-link:hover {
       color: #1d4ed8;
-      text-decoration: underline;
+      transform: translateX(2px);
     }
 
     /* Primary Button */
     .btn-primary {
       background: var(--accent-blue);
       color: #ffffff;
-      padding: 0.55rem 1.15rem;
-      border-radius: var(--radius-md);
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-full);
       font-weight: 600;
       font-size: 0.85rem;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
       border: none;
       cursor: pointer;
       transition: all var(--transition-fast);
@@ -1386,15 +1604,17 @@ SHARED_CSS = """
     .btn-primary:hover {
       background: #1d4ed8;
       box-shadow: var(--shadow-card);
+      transform: translateY(-1px);
     }
 
-    /* Filter Controls */
+    /* Filter Controls Panel */
     .controls-panel {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
-      padding: 1.35rem;
-      margin-bottom: 1.75rem;
+      padding: 1.65rem;
+      margin-bottom: 2.25rem;
       box-shadow: var(--shadow-card);
       min-width: 0;
     }
@@ -1403,8 +1623,8 @@ SHARED_CSS = """
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.45rem;
-      margin-bottom: 0.85rem;
+      gap: 0.5rem;
+      margin-bottom: 0.95rem;
     }
 
     .filter-row:last-child {
@@ -1426,8 +1646,8 @@ SHARED_CSS = """
       color: var(--text-secondary);
       font-size: 0.78rem;
       font-weight: 600;
-      padding: 0.35rem 0.65rem;
-      border-radius: var(--radius-sm);
+      padding: 0.38rem 0.8rem;
+      border-radius: var(--radius-full);
       cursor: pointer;
       transition: all var(--transition-fast);
       display: inline-flex;
@@ -1439,12 +1659,14 @@ SHARED_CSS = """
     .filter-btn:hover {
       background: #e2e8f0;
       color: var(--text-primary);
+      transform: translateY(-1px);
     }
 
     .filter-btn.active {
       background: var(--accent-blue);
       color: #ffffff;
       border-color: var(--accent-blue);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
     }
 
     .pill-count {
@@ -1455,8 +1677,9 @@ SHARED_CSS = """
 
     /* Table Styles */
     .table-container {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
@@ -1466,40 +1689,40 @@ SHARED_CSS = """
 
     table {
       width: 100%;
-      min-width: 680px; /* Allows smooth horizontal swipe on mobile */
+      min-width: 680px;
       border-collapse: collapse;
       text-align: left;
       font-size: 0.875rem;
     }
 
     th {
-      background: #f8fafc;
+      background: rgba(248, 250, 252, 0.85);
       color: var(--text-muted);
       font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding: 0.85rem 1rem;
+      padding: 1rem 1.15rem;
       border-bottom: 1px solid var(--border-card);
       white-space: nowrap;
     }
 
     td {
-      padding: 1.1rem 1rem;
+      padding: 1.25rem 1.15rem;
       border-bottom: 1px solid var(--border-card);
       vertical-align: top;
     }
 
     tr.news-row:hover td {
-      background: #f8fafc;
+      background: rgba(248, 250, 252, 0.7);
     }
 
     .headline-text {
       font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.35rem;
       font-size: 0.95rem;
-      line-height: 1.35;
+      line-height: 1.4;
     }
 
     .summary-text {
@@ -1516,13 +1739,14 @@ SHARED_CSS = """
       white-space: nowrap;
     }
 
-    /* Priority Section & Grid */
+    /* Priority Section & Editorial Suite Layout */
     .priority-section {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      margin-bottom: 2.25rem;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      margin-bottom: 3rem;
       box-shadow: var(--shadow-card);
       min-width: 0;
     }
@@ -1533,43 +1757,43 @@ SHARED_CSS = """
       align-items: center;
       flex-wrap: wrap;
       gap: 0.75rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border-card);
     }
 
     .priority-title-wrap {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.85rem;
     }
 
     .priority-badge-icon {
       background: #fef3c7;
       color: #b45309;
       border: 1px solid #fde68a;
-      padding: 0.3rem 0.65rem;
-      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
       font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.05em;
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.35rem;
       flex-shrink: 0;
     }
 
-    .priority-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.25rem;
+    .priority-editorial-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1.35rem;
     }
 
     .priority-card {
-      background: #f8fafc;
+      background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.35rem;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1578,17 +1802,65 @@ SHARED_CSS = """
     }
 
     .priority-card:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
       border-color: #cbd5e1;
       box-shadow: var(--shadow-card);
       background: #ffffff;
+    }
+
+    /* #1 Lead Editorial Card */
+    .priority-lead-card {
+      background: linear-gradient(135deg, rgba(238, 242, 255, 0.8), #ffffff);
+      border: 1px solid rgba(199, 210, 254, 0.9);
+      padding: 2rem;
+      box-shadow: var(--shadow-hover);
+    }
+
+    .priority-lead-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #4338ca;
+      background: #e0e7ff;
+      border: 1px solid #c7d2fe;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+    }
+
+    .score-pill-lead {
+      font-size: 0.92rem !important;
+      padding: 0.25rem 0.75rem !important;
+    }
+
+    .priority-lead-headline {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0.75rem 0 0.5rem 0;
+      line-height: 1.35;
+    }
+
+    .lead-why-box {
+      margin-top: 0.85rem;
+      padding: 0.85rem 1.15rem;
+      font-size: 0.9rem;
+    }
+
+    .priority-subgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .priority-subcard {
+      padding: 1.35rem;
     }
 
     .priority-card-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.85rem;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
@@ -1599,8 +1871,8 @@ SHARED_CSS = """
       font-weight: 800;
       color: var(--text-muted);
       background: #ffffff;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
+      padding: 0.18rem 0.5rem;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border-card);
     }
 
@@ -1611,49 +1883,96 @@ SHARED_CSS = """
       color: #15803d;
       background: #dcfce7;
       border: 1px solid #bbf7d0;
-      padding: 0.2rem 0.55rem;
-      border-radius: 4px;
+      padding: 0.22rem 0.6rem;
+      border-radius: var(--radius-full);
       flex-shrink: 0;
     }
 
     .priority-card-headline {
-      font-size: 0.98rem;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin: 0.5rem 0;
+      margin: 0.55rem 0;
       line-height: 1.35;
     }
 
     .priority-card-summary {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--text-secondary);
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
     .priority-card-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-top: 0.85rem;
+      padding-top: 0.95rem;
       border-top: 1px solid var(--border-card);
-      margin-top: 1rem;
+      margin-top: 1.15rem;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
 
-    /* Forthcoming Corporate Calendar Grid & Fixed Header Layout */
+    /* Corporate Calendar Spotlight & Organic Grid */
+    .calendar-spotlight-card {
+      background: linear-gradient(135deg, rgba(240, 249, 255, 0.9), #ffffff);
+      border: 1px solid rgba(186, 230, 253, 0.9);
+      border-radius: var(--radius-xl);
+      padding: 1.85rem;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 2.5rem;
+    }
+
+    .spotlight-badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .spotlight-beacon-pill {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #0369a1;
+      background: #e0f2fe;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--radius-full);
+    }
+
+    .spotlight-content-row {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .spotlight-date-box {
+      width: 72px !important;
+      min-width: 72px !important;
+      padding: 0.6rem 0.85rem !important;
+      border-radius: var(--radius-md) !important;
+      background: #ffffff !important;
+      border: 1px solid #bae6fd !important;
+      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.08) !important;
+    }
+
     .calendar-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 1.35rem;
       width: 100%;
     }
 
     .calendar-card {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.25rem;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1665,14 +1984,14 @@ SHARED_CSS = """
     }
 
     .calendar-card:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
       border-color: #cbd5e1;
       box-shadow: var(--shadow-card);
     }
 
     .calendar-card-estimated {
       border: 1px dashed #cbd5e1;
-      background: #f8fafc;
+      background: rgba(248, 250, 252, 0.85);
     }
 
     .calendar-card-header {
@@ -1680,7 +1999,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: flex-start;
       gap: 0.5rem;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.75rem;
     }
 
     .calendar-card-identity {
@@ -1695,8 +2014,8 @@ SHARED_CSS = """
     .calendar-origin-badge {
       font-size: 0.62rem;
       font-weight: 800;
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
+      padding: 0.18rem 0.5rem;
+      border-radius: var(--radius-full);
       letter-spacing: 0.04em;
       white-space: nowrap;
     }
@@ -1716,13 +2035,13 @@ SHARED_CSS = """
     .calendar-type-pill {
       font-size: 0.72rem;
       font-weight: 700;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
+      padding: 0.22rem 0.6rem;
+      border-radius: var(--radius-full);
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
       width: fit-content;
-      margin-top: 0.25rem;
+      margin-top: 0.35rem;
     }
 
     .cal-type-earnings   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
@@ -1731,15 +2050,16 @@ SHARED_CSS = """
     .cal-type-conference { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
     .calendar-date-box {
-      background: #f8fafc;
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
-      padding: 0.35rem 0.55rem;
+      padding: 0.4rem 0.65rem;
       text-align: center;
-      width: 52px;
-      min-width: 52px;
+      width: 56px;
+      min-width: 56px;
       flex-shrink: 0;
       align-self: flex-start;
+      box-shadow: var(--shadow-sm);
     }
 
     .calendar-date-month {
@@ -1747,28 +2067,29 @@ SHARED_CSS = """
       font-weight: 800;
       color: var(--accent-blue);
       text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .calendar-date-day {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       font-weight: 800;
       color: var(--text-primary);
       line-height: 1.1;
     }
 
     .calendar-card-headline {
-      font-size: 0.95rem;
+      font-size: 0.96rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin: 0.45rem 0 0.35rem 0;
+      margin: 0.5rem 0 0.35rem 0;
       line-height: 1.35;
     }
 
     .calendar-card-details {
       font-size: 0.8rem;
       color: var(--text-secondary);
-      margin: 0 0 0.85rem 0;
+      margin: 0 0 0.95rem 0;
       line-height: 1.45;
     }
 
@@ -1776,7 +2097,7 @@ SHARED_CSS = """
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-top: 0.75rem;
+      padding-top: 0.85rem;
       border-top: 1px solid var(--border-card);
       gap: 0.5rem;
       flex-wrap: wrap;
@@ -1791,18 +2112,19 @@ SHARED_CSS = """
       gap: 0.25rem;
     }
 
-    /* Macroeconomic Intelligence Grid & Cards */
+    /* Macroeconomic Intelligence Grid & Anchor Cards */
     .economic-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.25rem;
+      gap: 1.35rem;
     }
 
     .economic-card {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.35rem;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1812,16 +2134,22 @@ SHARED_CSS = """
     }
 
     .economic-card:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
       border-color: #cbd5e1;
       box-shadow: var(--shadow-card);
+    }
+
+    .economic-card-anchor {
+      background: linear-gradient(135deg, rgba(238, 242, 255, 0.9), #ffffff);
+      border: 1px solid rgba(199, 210, 254, 0.9);
+      box-shadow: var(--shadow-hover);
     }
 
     .economic-card-top {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 0.85rem;
+      margin-bottom: 0.95rem;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
@@ -1833,16 +2161,16 @@ SHARED_CSS = """
       text-transform: uppercase;
       color: var(--text-muted);
       background: var(--bg-surface-elevated);
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
+      padding: 0.22rem 0.55rem;
+      border-radius: var(--radius-full);
       border: 1px solid var(--border-card);
     }
 
     .economic-trend-badge {
       font-size: 0.72rem;
       font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: 4px;
+      padding: 0.22rem 0.6rem;
+      border-radius: var(--radius-full);
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
@@ -1854,33 +2182,38 @@ SHARED_CSS = """
 
     .economic-val {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.95rem;
+      font-size: 2.1rem;
       font-weight: 800;
       color: var(--text-primary);
       line-height: 1;
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .economic-val-anchor {
+      font-size: 2.5rem;
+      color: #1e1b4b;
     }
 
     .economic-series-name {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       color: var(--text-primary);
       margin: 0 0 0.35rem 0;
     }
 
     .economic-context {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--text-secondary);
       line-height: 1.45;
-      margin-bottom: 1rem;
+      margin-bottom: 1.15rem;
     }
 
     .economic-tickers-wrap {
       border-top: 1px solid var(--border-card);
-      padding-top: 0.85rem;
+      padding-top: 0.95rem;
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.45rem;
     }
 
     .economic-tickers-label {
@@ -1899,12 +2232,13 @@ SHARED_CSS = """
 
     /* Health Section */
     .health-section {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
       box-shadow: var(--shadow-card);
-      margin-top: 2.5rem;
+      margin-top: 3.5rem;
       min-width: 0;
     }
 
@@ -1914,9 +2248,9 @@ SHARED_CSS = """
       align-items: center;
       flex-wrap: wrap;
       gap: 0.75rem;
-      padding-bottom: 1.25rem;
+      padding-bottom: 1.35rem;
       border-bottom: 1px solid var(--border-card);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.75rem;
     }
 
     .health-title-group {
@@ -1927,7 +2261,7 @@ SHARED_CSS = """
     }
 
     .health-title {
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       font-weight: 800;
       color: var(--text-primary);
     }
@@ -1937,8 +2271,8 @@ SHARED_CSS = """
       font-weight: 800;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      padding: 0.25rem 0.65rem;
-      border-radius: 999px;
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-full);
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
@@ -1951,7 +2285,7 @@ SHARED_CSS = """
     .health-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
+      gap: 1.15rem;
       margin-bottom: 1.5rem;
     }
 
@@ -1959,7 +2293,7 @@ SHARED_CSS = """
       background: var(--bg-base);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
-      padding: 1.1rem;
+      padding: 1.25rem;
       min-width: 0;
     }
 
@@ -1969,12 +2303,12 @@ SHARED_CSS = """
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.4rem;
     }
 
     .health-metric-val {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.5rem;
+      font-size: 1.65rem;
       font-weight: 800;
       color: var(--text-primary);
       line-height: 1.1;
@@ -1994,7 +2328,7 @@ SHARED_CSS = """
       right: 0;
       bottom: 0;
       background: rgba(15, 23, 42, 0.5);
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
       z-index: 2000;
       display: none;
       align-items: center;
@@ -2004,7 +2338,7 @@ SHARED_CSS = """
 
     .ai-modal-backdrop.active {
       display: flex;
-      animation: fadeIn 0.15s ease-out;
+      animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .ai-modal-card {
@@ -2024,14 +2358,14 @@ SHARED_CSS = """
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 1.25rem;
+      padding: 1.25rem 1.5rem;
       border-bottom: 1px solid var(--border-card);
     }
 
     .ai-modal-icon-badge {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
       background: #eef2ff;
       color: #4338ca;
       display: flex;
@@ -2043,11 +2377,11 @@ SHARED_CSS = """
     .ai-modal-close {
       background: transparent;
       border: none;
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       color: var(--text-muted);
       cursor: pointer;
       padding: 0.25rem;
-      border-radius: 4px;
+      border-radius: var(--radius-xs);
       line-height: 1;
     }
 
@@ -2057,11 +2391,11 @@ SHARED_CSS = """
     }
 
     .ai-modal-body {
-      padding: 1.25rem;
+      padding: 1.5rem;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 1rem;
     }
 
     .ai-input-wrap {
@@ -2070,7 +2404,7 @@ SHARED_CSS = """
       background: var(--bg-base);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
-      padding: 0.35rem;
+      padding: 0.4rem;
     }
 
     .ai-input-wrap input {
@@ -2079,8 +2413,8 @@ SHARED_CSS = """
       border: none;
       outline: none;
       background: transparent;
-      padding: 0.4rem 0.65rem;
-      font-size: 0.9rem;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.92rem;
       font-family: inherit;
       color: var(--text-primary);
     }
@@ -2089,7 +2423,7 @@ SHARED_CSS = """
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.4rem;
     }
 
     .ai-chip {
@@ -2098,8 +2432,8 @@ SHARED_CSS = """
       color: var(--text-secondary);
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
-      border-radius: 999px;
-      padding: 0.2rem 0.65rem;
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.75rem;
       cursor: pointer;
       transition: all var(--transition-fast);
       white-space: nowrap;
@@ -2109,6 +2443,7 @@ SHARED_CSS = """
       background: #eff6ff;
       border-color: #bfdbfe;
       color: #1d4ed8;
+      transform: translateY(-1px);
     }
 
     .ai-results-container {
@@ -2117,7 +2452,7 @@ SHARED_CSS = """
       background: var(--bg-base);
       max-height: 280px;
       overflow-y: auto;
-      padding: 0.75rem;
+      padding: 0.85rem;
     }
 """
 
@@ -2133,10 +2468,10 @@ NAVIGATION_LAYOUT_HTML = """
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
       </svg>
     </div>
-    <span style="font-size:0.95rem; font-weight:800; color:var(--text-primary);">StockPulse</span>
+    <span style="font-size:1rem; font-weight:800; color:var(--text-primary);">StockPulse</span>
   </a>
   <div class="mobile-header-right">
-    <button class="top-header-btn btn-ai" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="openAiModal()">
+    <button class="top-header-btn btn-ai" style="padding:0.35rem 0.75rem; font-size:0.75rem;" onclick="openAiModal()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
       Ask AI
     </button>
@@ -2152,16 +2487,13 @@ NAVIGATION_LAYOUT_HTML = """
 <!-- Slide-over Drawer / Desktop Sidebar -->
 <aside class="app-sidebar" id="appSidebar">
   <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-card); padding-bottom:1.25rem; margin-bottom:1.25rem;">
-    <a href="index.html" class="sidebar-brand" style="border-bottom:none; margin-bottom:0; padding-bottom:0;">
+    <a href="index.html" class="sidebar-brand">
       <div class="logo-badge">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
       </div>
-      <div>
-        <div class="brand-title">StockPulse</div>
-        <div class="brand-subtitle">Cloud Intelligence</div>
-      </div>
+      <span class="brand-title">StockPulse</span>
     </a>
     <button class="sidebar-close-btn" onclick="closeMobileNav()" aria-label="Close navigation">&times;</button>
   </div>
@@ -2297,7 +2629,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           Analytics
         </a>
-        <span class="section-time-pill" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+        <span class="section-time-pill" style="font-size:0.75rem; padding:0.3rem 0.75rem;">
           <span class="pulse-dot" style="background:#10b981;"></span> Live
         </span>
       </div>
@@ -2307,13 +2639,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <a href="calendar.html" class="hero-badge">
           <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
           {% if calendar_events %}
-          <span>⚡ Next Catalyst: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
+          <span>Next Event: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
           {% else %}
-          <span>⚡ <strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; 15 Companies Monitored ↗</span>
+          <span><strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; 15 Companies Monitored ↗</span>
           {% endif %}
         </a>
         <h1 class="hero-title">What's on the agenda?</h1>
-        <p class="hero-subtext">Review overnight SEC filings, company announcements, corporate calendar dates, and FRED macroeconomic sensitivities.</p>
+        <p class="hero-subtext">Review overnight SEC filings, corporate announcements, forthcomming milestones, and FRED macroeconomic sensitivities.</p>
       </div>
 
       <!-- Global Search & Command Bar (⌘K) with Tab Suggestions & Live Autocomplete -->
@@ -2326,7 +2658,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <span class="search-shortcut">⌘ K</span>
         </div>
 
-        <!-- Interactive Live Suggestions / Autocomplete Dropdown -->
+        <!-- Interactive Live Suggestions / Autocomplete Dropdown - Constrained Containment -->
         <div class="search-dropdown" id="searchDropdown">
           <div id="defaultDropdownContent">
             <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
@@ -2335,7 +2667,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <div class="dropdown-tab-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
                 </div>
-                <div>
+                <div class="dropdown-tab-info">
                   <div class="dropdown-tab-title">Intelligence Feed</div>
                   <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
                 </div>
@@ -2344,7 +2676,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <div class="dropdown-tab-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                 </div>
-                <div>
+                <div class="dropdown-tab-info">
                   <div class="dropdown-tab-title">Corporate Calendar</div>
                   <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
                 </div>
@@ -2353,7 +2685,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <div class="dropdown-tab-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
                 </div>
-                <div>
+                <div class="dropdown-tab-info">
                   <div class="dropdown-tab-title">Economic Snapshot</div>
                   <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
                 </div>
@@ -2362,7 +2694,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <div class="dropdown-tab-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 </div>
-                <div>
+                <div class="dropdown-tab-info">
                   <div class="dropdown-tab-title">Analytics &amp; Trends</div>
                   <div class="dropdown-tab-sub">Metrics &amp; Safeguards</div>
                 </div>
@@ -2384,40 +2716,87 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- Top Quick Preview Widgets Row -->
-      <div class="quick-widgets-row">
-        <a href="news.html" class="quick-widget-card">
-          <div class="quick-widget-header">
-            <span class="quick-widget-title">Priority Intelligence ›</span>
-            <span class="quick-widget-arrow">›</span>
+      <!-- Top Quick Preview Bento Deck (Asymmetric Layout) -->
+      <div class="hero-bento-deck">
+        <!-- Featured Priority Intelligence Card -->
+        <a href="news.html" class="bento-card bento-card-primary">
+          <div class="bento-badge-top">
+            <span class="bento-pill-accent">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              FEATURED INTELLIGENCE
+            </span>
+            <span class="bento-arrow">Explore Feed ›</span>
           </div>
-          <div class="quick-widget-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            {{ priority_items|length }} High-Impact Disclosures
+          <div>
+            <div class="bento-score-hero">
+              <span class="bento-count">{{ priority_items|length }}</span>
+              <span class="bento-sublabel">High-Impact Disclosures Monitored</span>
+            </div>
+            {% if priority_items %}
+            <div class="bento-headline-preview">
+              <span class="ticker-badge ticker-{{ priority_items[0].ticker }}" style="margin-right:0.35rem;">{{ priority_items[0].ticker }}</span>
+              {{ priority_items[0].clean_headline }}
+            </div>
+            {% endif %}
+          </div>
+          <div class="bento-footer-pill">
+            <span>Score Baseline ≥ 7.0 &bull; Transparent Scoring Breakdown</span>
+            <span>→</span>
           </div>
         </a>
 
-        <a href="calendar.html" class="quick-widget-card">
-          <div class="quick-widget-header">
-            <span class="quick-widget-title">Upcoming Dates ›</span>
-            <span class="quick-widget-arrow">›</span>
-          </div>
-          <div class="quick-widget-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            {% if calendar_events %}Next: {{ calendar_events[0].ticker }} ({{ calendar_events[0].display_date }}){% else %}14 Scheduled Events{% endif %}
-          </div>
-        </a>
+        <!-- Right Stacked Bento Cards -->
+        <div class="bento-side-stack">
+          <!-- Calendar Milestone Card -->
+          <a href="calendar.html" class="bento-card bento-card-side">
+            <div class="bento-badge-top">
+              <span class="bento-pill-cal">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                NEXT EVENT
+              </span>
+              <span class="bento-arrow">Calendar ›</span>
+            </div>
+            {% if calendar_events %}
+            <div style="display:flex; align-items:center; gap:0.85rem; margin:0.4rem 0;">
+              <div class="calendar-date-box" style="width:48px; min-width:48px; padding:0.25rem 0.45rem;">
+                <div class="calendar-date-month">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
+                <div class="calendar-date-day" style="font-size:1.15rem;">{{ calendar_events[0].event_date[8:10] }}</div>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  {{ calendar_events[0].headline }}
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">
+                  {{ calendar_events[0].relative_badge }} &bull; {{ calendar_events[0].event_type }}
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); margin:0.35rem 0;">Corporate Calendar Active</div>
+            {% endif %}
+            <div class="bento-side-meta">{{ calendar_events|length }} Scheduled Corporate Events</div>
+          </a>
 
-        <a href="economic.html" class="quick-widget-card">
-          <div class="quick-widget-header">
-            <span class="quick-widget-title">Macroeconomic Pulse ›</span>
-            <span class="quick-widget-arrow">›</span>
-          </div>
-          <div class="quick-widget-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-            Fed Funds: 3.75% &bull; CPI: 3.4%
-          </div>
-        </a>
+          <!-- Macroeconomic Pulse Card -->
+          <a href="economic.html" class="bento-card bento-card-side">
+            <div class="bento-badge-top">
+              <span class="bento-pill-econ">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                MACRO PULSE
+              </span>
+              <span class="bento-arrow">Macro ›</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:0.75rem; margin:0.35rem 0;">
+              <span style="font-family:'JetBrains Mono', monospace; font-size:1.35rem; font-weight:800; color:var(--text-primary);">
+                {% if economic_indicators %}{{ economic_indicators[0].formatted_value }}{% else %}4.58%{% endif %}
+              </span>
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">
+                {% if economic_indicators %}{{ economic_indicators[0].name }}{% else %}Fed Funds Rate{% endif %}
+              </span>
+            </div>
+            <div class="bento-side-meta">{{ economic_indicators|length }} St. Louis Fed Indicators Mapped</div>
+          </a>
+        </div>
       </div>
 
       <!-- Analytics Section -->
@@ -2465,7 +2844,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               </div>
               <span class="section-time-pill" style="font-size:0.75rem;">Slices &amp; Callouts</span>
             </div>
-            <div class="chart-canvas-container" style="height: 190px;">
+            <div class="chart-canvas-container" style="height: 220px;">
               <canvas id="categoryChart"></canvas>
             </div>
           </div>
@@ -2566,19 +2945,23 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
     function openSearchDropdown() {
       const dropdown = document.getElementById('searchDropdown');
-      dropdown.classList.add('active');
-      document.getElementById('globalSearchBox').classList.add('focused');
+      if (dropdown) dropdown.classList.add('active');
+      const val = (document.getElementById('globalSearchInput')?.value || '').trim();
+      if (!val) {
+        const def = document.getElementById('defaultDropdownContent');
+        const res = document.getElementById('liveSearchResults');
+        if (def) def.style.display = 'block';
+        if (res) res.style.display = 'none';
+      } else {
+        handleSearchType(val);
+      }
     }
 
     function closeSearchDropdown() {
       const dropdown = document.getElementById('searchDropdown');
-      dropdown.classList.remove('active');
-      document.getElementById('globalSearchBox').classList.remove('focused');
+      if (dropdown) dropdown.classList.remove('active');
     }
 
-    // =========================================================================
-    // LIVE AUTOCOMPLETE & GUESSING SEARCH ENGINE
-    // =========================================================================
     function handleSearchType(rawVal) {
       openSearchDropdown();
       const val = (rawVal || '').toLowerCase().trim();
@@ -2586,14 +2969,16 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const liveResults = document.getElementById('liveSearchResults');
 
       if (!val) {
-        defaultContent.style.display = 'block';
-        liveResults.style.display = 'none';
-        liveResults.innerHTML = '';
+        if (defaultContent) defaultContent.style.display = 'block';
+        if (liveResults) {
+          liveResults.style.display = 'none';
+          liveResults.innerHTML = '';
+        }
         return;
       }
 
-      defaultContent.style.display = 'none';
-      liveResults.style.display = 'block';
+      if (defaultContent) defaultContent.style.display = 'none';
+      if (liveResults) liveResults.style.display = 'block';
 
       // 1. Match Companies & Tickers
       const matchedCompanies = watchlistCompanies.filter(c => 
@@ -2628,6 +3013,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       const totalMatches = matchedCompanies.length + matchedNews.length + matchedCal.length + matchedEcon.length;
 
+      if (!liveResults) return;
+
       if (totalMatches === 0) {
         liveResults.innerHTML = `
           <div class="search-no-results">
@@ -2649,7 +3036,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <a href="news.html?ticker=${c.symbol}" class="search-result-item">
               <div class="search-result-left">
                 <span class="ticker-badge ticker-${c.symbol}">${c.symbol}</span>
-                <div>
+                <div class="search-result-info">
                   <div class="search-result-title">${c.name}</div>
                   <div class="search-result-sub">${c.sector}</div>
                 </div>
@@ -2668,7 +3055,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <a href="calendar.html" class="search-result-item">
               <div class="search-result-left">
                 <span class="ticker-badge ticker-${ev.ticker}">${ev.ticker}</span>
-                <div>
+                <div class="search-result-info">
                   <div class="search-result-title">${ev.headline}</div>
                   <div class="search-result-sub">📅 ${ev.display_date} &bull; ${ev.event_type}</div>
                 </div>
@@ -2687,7 +3074,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <a href="economic.html" class="search-result-item">
               <div class="search-result-left">
                 <div class="search-result-icon">🏛️</div>
-                <div>
+                <div class="search-result-info">
                   <div class="search-result-title">${ind.name}: ${ind.formatted_value}</div>
                   <div class="search-result-sub">${ind.category} &bull; Relevant: ${ind.relevant_tickers}</div>
                 </div>
@@ -2706,7 +3093,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
               <div class="search-result-left">
                 <span class="ticker-badge ticker-${it.ticker}">${it.ticker}</span>
-                <div>
+                <div class="search-result-info">
                   <div class="search-result-title">${it.clean_headline}</div>
                   <div class="search-result-sub">${it.category} &bull; ${it.published_date} &bull; ★ ${it.score}</div>
                 </div>
@@ -2748,334 +3135,384 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     }
 
     function runAiQuery() {
-      const q = (document.getElementById('aiQueryInput').value || '').toLowerCase().trim();
+      const input = document.getElementById('aiQueryInput');
       const container = document.getElementById('aiResults');
-      if (!q) return;
+      const q = (input ? input.value : '').toLowerCase().trim();
 
-      let matchedItems = allItems.filter(it => 
-        (it.clean_headline || '').toLowerCase().includes(q) ||
-        (it.ticker || '').toLowerCase().includes(q) ||
-        (it.llm_summary || '').toLowerCase().includes(q) ||
-        (it.category || '').toLowerCase().includes(q)
-      );
+      if (!q || !container) return;
 
-      let matchedEcon = econIndicators.filter(ind =>
-        (ind.name || '').toLowerCase().includes(q) ||
-        (ind.relevant_tickers || '').toLowerCase().includes(q) ||
-        (ind.category || '').toLowerCase().includes(q)
-      );
+      container.innerHTML = '<div style="text-align:center; padding:1.25rem; color:var(--accent-blue); font-weight:600;"><span class="pulse-dot" style="background:var(--accent-blue); margin-right:0.4rem;"></span> Synthesizing answer across SEC EDGAR &amp; FRED feeds...</div>';
 
-      let matchedCal = calendarEvents.filter(ev =>
-        (ev.headline || '').toLowerCase().includes(q) ||
-        (ev.ticker || '').toLowerCase().includes(q) ||
-        (ev.event_type || '').toLowerCase().includes(q)
-      );
+      setTimeout(() => {
+        let matchedItems = allItems.filter(it => 
+          (it.clean_headline || '').toLowerCase().includes(q) ||
+          (it.ticker || '').toLowerCase().includes(q) ||
+          (it.llm_summary || '').toLowerCase().includes(q) ||
+          (it.category || '').toLowerCase().includes(q)
+        );
 
-      if (matchedItems.length === 0 && matchedEcon.length === 0 && matchedCal.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.85rem;">No direct disclosures found for "<strong>${q}</strong>". Try searching for a specific company (e.g. <em>NVDA</em>, <em>AAPL</em>) or category.</div>`;
-        return;
-      }
+        let matchedEcon = econIndicators.filter(ind =>
+          (ind.name || '').toLowerCase().includes(q) ||
+          (ind.relevant_tickers || '').toLowerCase().includes(q) ||
+          (ind.category || '').toLowerCase().includes(q)
+        );
 
-      let html = '<div style="display:flex; flex-direction:column; gap:0.65rem;">';
-      
-      if (matchedEcon.length > 0) {
-        html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Macroeconomic Indicators:</div>';
-        matchedEcon.forEach(ind => {
-          html += `
-            <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:6px; padding:0.65rem;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:700; font-size:0.85rem;">${ind.name}</span>
-                <span style="font-family:'JetBrains Mono'; font-weight:800; color:var(--accent-blue);">${ind.formatted_value}</span>
+        let matchedCal = calendarEvents.filter(ev =>
+          (ev.headline || '').toLowerCase().includes(q) ||
+          (ev.ticker || '').toLowerCase().includes(q) ||
+          (ev.event_type || '').toLowerCase().includes(q)
+        );
+
+        if (matchedItems.length === 0 && matchedEcon.length === 0 && matchedCal.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.85rem;">No direct disclosures found for "<strong>${q}</strong>". Try searching for a specific company (e.g. <em>NVDA</em>, <em>AAPL</em>) or category.</div>`;
+          return;
+        }
+
+        let html = '<div style="display:flex; flex-direction:column; gap:0.65rem;">';
+        
+        if (matchedEcon.length > 0) {
+          html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Macroeconomic Indicators:</div>';
+          matchedEcon.forEach(ind => {
+            html += `
+              <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:8px; padding:0.65rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; font-size:0.85rem;">${ind.name}</span>
+                  <span style="font-family:\'JetBrains Mono\'; font-weight:800; color:var(--accent-blue);">${ind.formatted_value}</span>
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.25rem;">${ind.context_note || ind.category}</div>
+              </div>`;
+          });
+        }
+
+        if (matchedCal.length > 0) {
+          html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Upcoming Events:</div>';
+          matchedCal.slice(0, 2).forEach(ev => {
+            html += `
+              <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:8px; padding:0.65rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; font-size:0.85rem;"><span class="ticker-badge ticker-${ev.ticker}">${ev.ticker}</span> ${ev.headline}</span>
+                  <span style="font-size:0.75rem; color:var(--text-muted);">${ev.display_date}</span>
+                </div>
+              </div>`;
+          });
+        }
+
+        if (matchedItems.length > 0) {
+          html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Key Disclosures:</div>';
+          matchedItems.slice(0, 3).forEach(top => {
+            html += `
+              <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:8px; padding:0.75rem;">
+                <div style="font-weight:700; color:#1d4ed8; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
+                  <span class="ticker-badge ticker-${top.ticker}">${top.ticker}</span>
+                  ${top.clean_headline}
+                </div>
+                <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.4;">
+                  <strong>Takeaway:</strong> ${top.llm_summary || top.summary}
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:0.35rem;">
+                  <span>Score: ★ ${top.score} / 10.0 &bull; ${top.published_date}</span>
+                  <a href="${top.url}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.72rem;">Source ↗</a>
+                </div>
               </div>
-              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.25rem;">${ind.context_note}</div>
-            </div>`;
-        });
-      }
+            `;
+          });
+        }
 
-      if (matchedCal.length > 0) {
-        html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Upcoming Scheduled Events:</div>';
-        matchedCal.slice(0, 3).forEach(ev => {
-          html += `
-            <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:6px; padding:0.65rem;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:700; font-size:0.85rem;">[${ev.ticker}] ${ev.headline}</span>
-                <span style="font-size:0.72rem; color:var(--accent-blue); font-weight:700;">${ev.display_date}</span>
-              </div>
-            </div>`;
-        });
-      }
-
-      if (matchedItems.length > 0) {
-        html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Recent Company Disclosures:</div>';
-        matchedItems.slice(0, 4).forEach(it => {
-          html += `
-            <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:6px; padding:0.65rem;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
-                <span style="font-family:'JetBrains Mono'; font-weight:700; font-size:0.75rem; background:#f1f5f9; padding:0.1rem 0.35rem; border-radius:3px;">${it.ticker}</span>
-                <span style="font-family:'JetBrains Mono'; font-weight:800; font-size:0.75rem; color:#15803d;">★ ${it.score}</span>
-              </div>
-              <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">${it.clean_headline}</div>
-              ${it.llm_summary ? `<div style="font-size:0.78rem; color:#1e3a8a; background:#eff6ff; padding:0.35rem 0.5rem; border-radius:4px;">💡 ${it.llm_summary}</div>` : ''}
-              <div style="margin-top:0.4rem; text-align:right;">
-                <a href="${it.url}" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem; color:var(--accent-blue); font-weight:600; text-decoration:none;">View Source ↗</a>
-              </div>
-            </div>`;
-        });
-      }
-
-      html += '</div>';
-      container.innerHTML = html;
+        html += '</div>';
+        container.innerHTML = html;
+      }, 300);
     }
 
-    // Click outside search wrapper to close dropdown
-    document.addEventListener('click', function(e) {
-      const wrapper = document.querySelector('.search-wrapper');
-      if (wrapper && !wrapper.contains(e.target)) {
+    // Close search dropdown on click outside
+    document.addEventListener('click', (e) => {
+      const searchWrap = document.querySelector('.search-wrapper');
+      if (searchWrap && !searchWrap.contains(e.target)) {
         closeSearchDropdown();
       }
     });
 
-    // Keyboard Shortcuts: ⌘K or Ctrl+K
-    document.addEventListener('keydown', function(e) {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    // Keyboard shortcut ⌘K / Ctrl+K
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         const input = document.getElementById('globalSearchInput');
         if (input) {
           input.focus();
           openSearchDropdown();
         }
-      } else if (e.key === 'Escape') {
+      }
+      if (e.key === 'Escape') {
         closeSearchDropdown();
         closeAiModal();
-        closeMobileNav();
       }
     });
 
-    const searchInput = document.getElementById('globalSearchInput');
-    if (searchInput) {
-      searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const val = this.value.trim();
-          if (val) {
-            window.location.href = `news.html?q=${encodeURIComponent(val)}`;
-          }
-        }
-      });
-    }
-
     // =========================================================================
-    // RESPONSIVE RICH CHARTS INITIALIZATION
+    // CHART.JS RICH VISUALIZATIONS WITH PER-TICKER BREAKDOWN & LEADER CALLOUTS
     // =========================================================================
-    const chartData = {{ chart_data_json|safe }};
-    const isNarrowViewport = window.innerWidth < 640;
+    const rawChartData = {{ chart_data_json|safe }};
 
-    // 1. Line Chart: Multi-Gradient Curve with adaptive ticks and responsive styling
-    if (document.getElementById('timelineChart') && chartData.timeline_dates) {
-      const canvasEl = document.getElementById('timelineChart');
-      const ctxTimeline = canvasEl.getContext('2d');
+    function initCharts() {
+      if (typeof Chart === 'undefined') return;
 
-      const palette = [
-        { stroke: '#2563eb', fillTop: 'rgba(37, 99, 235, 0.28)', fillBot: 'rgba(37, 99, 235, 0.0)' },
-        { stroke: '#10b981', fillTop: 'rgba(16, 185, 129, 0.22)', fillBot: 'rgba(16, 185, 129, 0.0)' },
-        { stroke: '#7c3aed', fillTop: 'rgba(124, 58, 237, 0.20)', fillBot: 'rgba(124, 58, 237, 0.0)' },
-        { stroke: '#f59e0b', fillTop: 'rgba(245, 158, 11, 0.20)', fillBot: 'rgba(245, 158, 11, 0.0)' },
-      ];
+      const isNarrow = window.innerWidth <= 768;
 
-      const presentTickers = Object.keys(chartData.timeline_series || {}).slice(0, 4);
-      const datasets = presentTickers.map((ticker, idx) => {
-        const theme = palette[idx % palette.length];
-        const grad = ctxTimeline.createLinearGradient(0, 0, 0, 220);
-        grad.addColorStop(0, theme.fillTop);
-        grad.addColorStop(1, theme.fillBot);
+      // 1. Per-Ticker Timeline Line Chart with Interactive Legend
+      const ctxTimeline = document.getElementById('timelineChart')?.getContext('2d');
+      if (ctxTimeline && rawChartData && rawChartData.timeline_dates && rawChartData.timeline_series) {
+        const linePalette = [
+          { stroke: '#2563eb', fillTop: 'rgba(37, 99, 235, 0.20)', fillBot: 'rgba(37, 99, 235, 0.0)' },
+          { stroke: '#10b981', fillTop: 'rgba(16, 185, 129, 0.18)', fillBot: 'rgba(16, 185, 129, 0.0)' },
+          { stroke: '#7c3aed', fillTop: 'rgba(124, 58, 237, 0.18)', fillBot: 'rgba(124, 58, 237, 0.0)' },
+          { stroke: '#f59e0b', fillTop: 'rgba(245, 158, 11, 0.18)', fillBot: 'rgba(245, 158, 11, 0.0)' },
+          { stroke: '#0284c7', fillTop: 'rgba(2, 132, 199, 0.18)', fillBot: 'rgba(2, 132, 199, 0.0)' },
+          { stroke: '#e11d48', fillTop: 'rgba(225, 29, 72, 0.18)', fillBot: 'rgba(225, 29, 72, 0.0)' },
+        ];
 
-        return {
-          label: ticker,
-          data: chartData.timeline_series[ticker] || [],
-          borderColor: theme.stroke,
-          backgroundColor: grad,
-          fill: true,
-          borderWidth: isNarrowViewport ? 2.0 : 2.5,
-          tension: 0.38,
-          pointBackgroundColor: '#ffffff',
-          pointBorderColor: theme.stroke,
-          pointBorderWidth: 1.5,
-          pointRadius: isNarrowViewport ? 2.5 : 3.5,
-          pointHoverRadius: 5,
-          pointHoverBackgroundColor: theme.stroke,
-          pointHoverBorderColor: '#ffffff',
-          pointHoverBorderWidth: 2,
-        };
-      });
+        const sortedTickers = Object.keys(rawChartData.timeline_series).sort((a, b) => {
+          const sumA = (rawChartData.timeline_series[a] || []).reduce((s, v) => s + v, 0);
+          const sumB = (rawChartData.timeline_series[b] || []).reduce((s, v) => s + v, 0);
+          return sumB - sumA;
+        });
 
-      new Chart(ctxTimeline, {
-        type: 'line',
-        data: { labels: chartData.timeline_dates, datasets: datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
+        const displayTickers = sortedTickers.slice(0, 5);
+
+        const datasets = displayTickers.map((ticker, idx) => {
+          const theme = linePalette[idx % linePalette.length];
+          const grad = ctxTimeline.createLinearGradient(0, 0, 0, 220);
+          grad.addColorStop(0, theme.fillTop);
+          grad.addColorStop(1, theme.fillBot);
+
+          return {
+            label: ticker,
+            data: rawChartData.timeline_series[ticker] || [],
+            borderColor: theme.stroke,
+            backgroundColor: grad,
+            borderWidth: isNarrow ? 2.0 : 2.5,
+            fill: true,
+            tension: 0.38,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: theme.stroke,
+            pointBorderWidth: 1.5,
+            pointRadius: isNarrow ? 2.5 : 3.5,
+            pointHoverRadius: 5.5,
+            pointHoverBackgroundColor: theme.stroke,
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2,
+          };
+        });
+
+        new Chart(ctxTimeline, {
+          type: 'line',
+          data: {
+            labels: rawChartData.timeline_dates,
+            datasets: datasets
           },
-          plugins: {
-            legend: {
-              position: isNarrowViewport ? 'bottom' : 'top',
-              align: isNarrowViewport ? 'center' : 'end',
-              labels: {
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                align: 'end',
+                labels: {
+                  boxWidth: 8,
+                  boxHeight: 8,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  font: { family: 'Inter', size: isNarrow ? 10 : 11, weight: '600' },
+                  color: '#475569',
+                  padding: isNarrow ? 8 : 14
+                }
+              },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                titleFont: { family: 'Inter', size: 11, weight: 'bold' },
+                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                padding: 10,
+                cornerRadius: 8,
+                displayColors: true,
                 boxWidth: 8,
                 boxHeight: 8,
-                usePointStyle: true,
-                pointStyle: 'circle',
-                font: { family: 'Inter', size: isNarrowViewport ? 10 : 11, weight: '600' },
-                color: '#475569',
-                padding: isNarrowViewport ? 8 : 14
+                usePointStyle: true
               }
             },
-            tooltip: {
-              backgroundColor: '#0f172a',
-              titleColor: '#f8fafc',
-              bodyColor: '#e2e8f0',
-              padding: 8,
-              cornerRadius: 6,
-              bodyFont: { family: 'JetBrains Mono', size: 11 },
-              titleFont: { family: 'Inter', size: 11, weight: '700' }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
-              ticks: { 
-                color: '#64748b', 
-                font: { family: 'JetBrains Mono', size: isNarrowViewport ? 9 : 10 },
-                maxTicksLimit: isNarrowViewport ? 5 : 8,
-                autoSkip: true,
-                maxRotation: 0
+            scales: {
+              x: {
+                grid: { display: false, drawBorder: false },
+                ticks: { 
+                  font: { family: 'JetBrains Mono', size: isNarrow ? 9 : 10 }, 
+                  color: '#64748b',
+                  maxTicksLimit: isNarrow ? 5 : 8,
+                  autoSkip: true,
+                  maxRotation: 0
+                }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
+                ticks: { precision: 0, font: { family: 'JetBrains Mono', size: isNarrow ? 9 : 10 }, color: '#64748b', stepSize: 1 }
               }
-            },
-            y: {
-              grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
-              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: isNarrowViewport ? 9 : 10 }, stepSize: 1 },
-              beginAtZero: true
             }
           }
-        }
-      });
-    }
+        });
+      }
 
-    // 2. Donut Chart with Responsive Leader Line Callout Badges & Stacked Legend
-    const catLabels = chartData.categories || chartData.category_labels || [];
-    const catCounts = chartData.category_counts || [];
-    if (document.getElementById('categoryChart') && catLabels.length > 0) {
-      const ctxCat = document.getElementById('categoryChart').getContext('2d');
-      const sliceColors = ['#2563eb', '#10b981', '#7c3aed', '#f59e0b', '#0284c7'];
-      const topLabels = catLabels.slice(0, 5);
-      const topCounts = catCounts.slice(0, 5);
-      const totalCount = topCounts.reduce((a, b) => a + b, 0);
+      // 2. Category Breakdown Donut Chart with Leader Line Callouts (All 10 Categories)
+      const ctxCat = document.getElementById('categoryChart')?.getContext('2d');
+      const catLabels = (rawChartData && (rawChartData.categories || rawChartData.category_labels)) || [];
+      const catCounts = (rawChartData && rawChartData.category_counts) || [];
 
-      // Custom Leader-line & Data Callout Plugin (Adaptive for mobile)
-      const donutCalloutPlugin = {
-        id: 'donutCallouts',
-        afterDraw(chart) {
-          if (chart.width < 340) return; // Prevent horizontal canvas clipping on small phones
-          const { ctx } = chart;
-          const meta = chart.getDatasetMeta(0);
-          if (!meta || !meta.data) return;
+      if (ctxCat && catLabels.length > 0) {
+        const sliceColors = [
+          '#2563eb', // Blue
+          '#10b981', // Emerald
+          '#7c3aed', // Purple
+          '#f59e0b', // Amber
+          '#0284c7', // Sky Cyan
+          '#e11d48', // Rose
+          '#8b5cf6', // Violet
+          '#ec4899', // Pink
+          '#059669', // Teal
+          '#d97706', // Gold / Bronze
+          '#64748b', // Slate
+          '#0ea5e9'  // Light Blue
+        ];
 
-          ctx.save();
-          meta.data.forEach((element, i) => {
-            const { x, y, startAngle, endAngle, outerRadius } = element;
-            const midAngle = startAngle + (endAngle - startAngle) / 2;
-            const val = chart.data.datasets[0].data[i];
-            const pct = Math.round((val / totalCount) * 100);
-            if (pct < 7) return;
+        const totalCount = catCounts.reduce((a, b) => a + b, 0) || 1;
 
-            const r1 = outerRadius + 4;
-            const r2 = outerRadius + 12;
-            const sx = x + Math.cos(midAngle) * r1;
-            const sy = y + Math.sin(midAngle) * r1;
-            const ex = x + Math.cos(midAngle) * r2;
-            const ey = y + Math.sin(midAngle) * r2;
+        const donutCalloutPlugin = {
+          id: 'donutCallouts',
+          afterDraw(chart) {
+            if (chart.width < 280) return;
+            const { ctx } = chart;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data) return;
 
-            const isRight = Math.cos(midAngle) >= 0;
-            const endHorizontalX = ex + (isRight ? 10 : -10);
+            ctx.save();
+            meta.data.forEach((element, i) => {
+              const { x, y, startAngle, endAngle, outerRadius } = element;
+              const midAngle = startAngle + (endAngle - startAngle) / 2;
+              const val = chart.data.datasets[0].data[i];
+              const pct = Math.round((val / totalCount) * 100);
+              if (pct < 3) return;
 
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(ex, ey);
-            ctx.lineTo(endHorizontalX, ey);
-            ctx.strokeStyle = '#94a3b8';
-            ctx.lineWidth = 1.0;
-            ctx.stroke();
+              const cos = Math.cos(midAngle);
+              const sin = Math.sin(midAngle);
+              const isRight = cos >= 0;
 
-            ctx.textAlign = isRight ? 'left' : 'right';
-            ctx.textBaseline = 'middle';
-            ctx.font = 'bold 10px Inter, sans-serif';
-            ctx.fillStyle = '#0f172a';
-            ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
-          });
-          ctx.restore();
-        }
-      };
+              const r1 = outerRadius + 3;
+              const r2 = outerRadius + 11;
+              const sx = x + cos * r1;
+              const sy = y + sin * r1;
+              const ex = x + cos * r2;
+              const ey = y + sin * r2;
 
-      new Chart(ctxCat, {
-        type: 'doughnut',
-        data: {
-          labels: topLabels,
-          datasets: [{
-            data: topCounts,
-            backgroundColor: sliceColors,
-            borderColor: '#ffffff',
-            borderWidth: 2.0,
-            hoverOffset: 3
-          }]
-        },
-        plugins: [donutCalloutPlugin],
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: {
-            padding: { top: 10, bottom: 10, left: 15, right: 15 }
+              // Ensure horizontal line and label stay safely inside canvas edges
+              const horizLen = 10;
+              let endHorizontalX = ex + (isRight ? horizLen : -horizLen);
+              if (isRight) {
+                endHorizontalX = Math.min(chart.width - 34, Math.max(ex + 4, endHorizontalX));
+              } else {
+                endHorizontalX = Math.max(34, Math.min(ex - 4, endHorizontalX));
+              }
+
+              ctx.beginPath();
+              ctx.moveTo(sx, sy);
+              ctx.lineTo(ex, ey);
+              ctx.lineTo(endHorizontalX, ey);
+              ctx.strokeStyle = '#94a3b8';
+              ctx.lineWidth = 1.2;
+              ctx.stroke();
+
+              ctx.textAlign = isRight ? 'left' : 'right';
+              ctx.textBaseline = 'middle';
+              ctx.font = '600 10px Inter, sans-serif';
+              ctx.fillStyle = '#0f172a';
+              ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
+            });
+            ctx.restore();
+          }
+        };
+
+        new Chart(ctxCat, {
+          type: 'doughnut',
+          data: {
+            labels: catLabels,
+            datasets: [{
+              data: catCounts,
+              backgroundColor: sliceColors.slice(0, catLabels.length),
+              borderWidth: 2,
+              borderColor: '#ffffff',
+              hoverOffset: 4
+            }]
           },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#0f172a',
-              titleColor: '#f8fafc',
-              bodyColor: '#e2e8f0',
-              padding: 8,
-              cornerRadius: 6,
-              bodyFont: { family: 'JetBrains Mono', size: 11 },
-              callbacks: {
-                label: function(context) {
-                  const val = context.parsed || 0;
-                  const pct = ((val / totalCount) * 100).toFixed(1);
-                  return ` ${context.label}: ${val} items (${pct}%)`;
+          plugins: [donutCalloutPlugin],
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: { top: 15, bottom: 15, left: 45, right: 45 }
+            },
+            cutout: '64%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                titleFont: { family: 'Inter', size: 11, weight: 'bold' },
+                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                padding: 8,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const val = context.parsed || 0;
+                    const pct = ((val / totalCount) * 100).toFixed(1);
+                    return ` ${context.label}: ${val} items (${pct}%)`;
+                  }
                 }
               }
             }
-          },
-          cutout: '60%'
-        }
-      });
-
-      const legendListEl = document.getElementById('categoryLegendList');
-      if (legendListEl) {
-        let legendHtml = '';
-        topLabels.forEach((label, i) => {
-          const count = topCounts[i];
-          const pct = ((count / totalCount) * 100).toFixed(1);
-          const color = sliceColors[i % sliceColors.length];
-          legendHtml += `
-            <div class="category-legend-pill">
-              <span class="category-legend-dot" style="background:${color};"></span>
-              <strong style="color:var(--text-primary);">${label}</strong>
-              <span style="font-family:'JetBrains Mono'; font-weight:700; color:var(--text-muted);">${count} (${pct}%)</span>
-            </div>
-          `;
+          }
         });
-        legendListEl.innerHTML = legendHtml;
+
+        const legList = document.getElementById('categoryLegendList');
+        if (legList) {
+          let legHtml = '';
+          catLabels.forEach((label, idx) => {
+            const count = catCounts[idx] || 0;
+            const pct = Math.round((count / totalCount) * 100);
+            const color = sliceColors[idx % sliceColors.length];
+            legHtml += `
+              <div class="category-stat-row" title="${label}: ${count} (${pct}%)">
+                <div class="cat-stat-left">
+                  <span class="category-legend-dot" style="background:${color};"></span>
+                  <span class="cat-stat-name">${label}</span>
+                </div>
+                <div class="cat-stat-right">
+                  <span class="cat-stat-count">${count}</span>
+                  <span class="cat-stat-pct">${pct}%</span>
+                </div>
+              </div>
+            `;
+          });
+          legList.innerHTML = legHtml;
+        }
       }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCharts);
+    } else {
+      initCharts();
     }
   </script>
 </body>
@@ -3104,10 +3541,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Full Intelligence Feed</h1>
-          <p style="font-size:0.9rem; color:var(--text-muted);">Deduplicated, scored disclosures with transparent arithmetic and supply-chain cross-references</p>
+          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Full Intelligence Feed</h1>
+          <p style="font-size:0.92rem; color:var(--text-muted);">Deduplicated, scored disclosures with transparent arithmetic and supply-chain cross-references</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill">
@@ -3116,7 +3553,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         </div>
       </header>
 
-      <!-- Priority Panel -->
+      <!-- Priority Panel with Editorial Suite Layout -->
       {% if priority_items %}
       <section class="priority-section">
         <div class="priority-header">
@@ -3126,42 +3563,40 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               PRIORITY
             </span>
             <div>
-              <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
-              <p style="font-size:0.8rem; color:var(--text-muted);">Top {{ priority_items|length }} highest scored stories with investor takeaways</p>
+              <h2 style="font-size:1.25rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Curated high-scoring stories with investor takeaways and supply-chain cross-references</p>
             </div>
           </div>
-          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.75rem; border-radius:6px; border:1px solid #86efac; width:fit-content;">
+          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.85rem; border-radius:var(--radius-full); border:1px solid #86efac; width:fit-content;">
             SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
           </div>
         </div>
 
-        <div class="priority-grid">
-          {% for item in priority_items %}
-          <div class="priority-card">
+        <div class="priority-editorial-layout">
+          <!-- #1 Lead Editorial Card -->
+          {% set lead = priority_items[0] %}
+          <div class="priority-card priority-lead-card">
             <div>
               <div class="priority-card-top">
-                <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-                  <span class="priority-rank-pill">#{{ loop.index }}</span>
-                  <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
-                  {% if item.form_or_type %}
-                  <span class="form-type-pill">{{ item.form_or_type }}</span>
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                  <span class="priority-lead-badge">TOP IMPACT #1</span>
+                  <span class="ticker-badge ticker-{{ lead.ticker }}" style="font-size:0.88rem; padding:0.25rem 0.65rem;">{{ lead.ticker }}</span>
+                  {% if lead.form_or_type %}
+                  <span class="form-type-pill">{{ lead.form_or_type }}</span>
                   {% endif %}
+                  <span class="category-badge">{{ lead.category }}</span>
+                  <span class="source-tag">{{ lead.source_label }}</span>
                 </div>
-                <span class="priority-score-pill" title="{{ item.score_breakdown }}">
-                  ★ {{ item.score }}
+                <span class="priority-score-pill score-pill-lead" title="{{ lead.score_breakdown }}">
+                  ★ {{ lead.score }} / 10.0
                 </span>
               </div>
 
-              <div style="margin-top:0.4rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
-                <span class="category-badge">{{ item.category }}</span>
-                <span class="source-tag">{{ item.source_label }}</span>
-              </div>
+              <h3 class="priority-lead-headline">{{ lead.clean_headline }}</h3>
 
-              <h3 class="priority-card-headline">{{ item.clean_headline }}</h3>
-              
-              {% if item.cross_references_list %}
-                {% if item.cross_references_list|length == 1 %}
-                  {% set ref = item.cross_references_list[0] %}
+              {% if lead.cross_references_list %}
+                {% if lead.cross_references_list|length == 1 %}
+                  {% set ref = lead.cross_references_list[0] %}
                   <div class="crossref-badges-wrap">
                     <span class="crossref-badge" title="{{ ref.impact_note }}">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -3175,14 +3610,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                     <details class="crossref-accordion">
                       <summary class="crossref-summary-pill">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
+                        Also relevant to {{ lead.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
                       </summary>
                       <div class="crossref-dropdown-content">
-                        {% for ref in item.cross_references_list %}
+                        {% for ref in lead.cross_references_list %}
                         <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                           <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
                           <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
-                          <span style="font-size:0.75rem; color:var(--text-secondary);">${ref.impact_note}</span>
+                          <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
                         </div>
                         {% endfor %}
                       </div>
@@ -3191,28 +3626,108 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 {% endif %}
               {% endif %}
 
-              {% if item.llm_summary %}
-              <div class="why-matters-box">
+              {% if lead.llm_summary %}
+              <div class="why-matters-box lead-why-box">
                 <span class="why-tag">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                  Takeaway:
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                  Executive Takeaway:
                 </span>
-                {{ item.llm_summary }}
+                {{ lead.llm_summary }}
               </div>
               {% endif %}
 
-              <p class="priority-card-summary">{{ item.summary[:150] }}{% if item.summary|length > 150 %}...{% endif %}</p>
+              <p class="priority-card-summary" style="font-size:0.85rem; margin-top:0.6rem; color:var(--text-secondary);">{{ lead.summary[:220] }}{% if lead.summary|length > 220 %}...{% endif %}</p>
             </div>
 
             <div class="priority-card-footer">
-              <span class="date-cell">{{ item.published_date }}</span>
-              <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                View Source
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+              <span class="date-cell">{{ lead.published_date }}</span>
+              <a href="{{ lead.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
+                View Official Filing ↗
               </a>
             </div>
           </div>
-          {% endfor %}
+
+          <!-- Secondary Priority Cards Subgrid -->
+          {% if priority_items|length > 1 %}
+          <div class="priority-subgrid">
+            {% for item in priority_items[1:] %}
+            <div class="priority-card priority-subcard">
+              <div>
+                <div class="priority-card-top">
+                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                    <span class="priority-rank-pill">#{{ loop.index + 1 }}</span>
+                    <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
+                    {% if item.form_or_type %}
+                    <span class="form-type-pill">{{ item.form_or_type }}</span>
+                    {% endif %}
+                  </div>
+                  <span class="priority-score-pill" title="{{ item.score_breakdown }}">
+                    ★ {{ item.score }}
+                  </span>
+                </div>
+
+                <div style="margin-top:0.4rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                  <span class="category-badge">{{ item.category }}</span>
+                  <span class="source-tag">{{ item.source_label }}</span>
+                </div>
+
+                <h3 class="priority-card-headline">{{ item.clean_headline }}</h3>
+
+                {% if item.cross_references_list %}
+                  {% if item.cross_references_list|length == 1 %}
+                    {% set ref = item.cross_references_list[0] %}
+                    <div class="crossref-badges-wrap">
+                      <span class="crossref-badge" title="{{ ref.impact_note }}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                        <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                        ({{ ref.matched_entity }})
+                      </span>
+                    </div>
+                  {% else %}
+                    <div class="crossref-badges-wrap">
+                      <details class="crossref-accordion">
+                        <summary class="crossref-summary-pill">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                          Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
+                        </summary>
+                        <div class="crossref-dropdown-content">
+                          {% for ref in item.cross_references_list %}
+                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
+                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                            <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
+                          </div>
+                          {% endfor %}
+                        </div>
+                      </details>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if item.llm_summary %}
+                <div class="why-matters-box">
+                  <span class="why-tag">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    Takeaway:
+                  </span>
+                  {{ item.llm_summary }}
+                </div>
+                {% endif %}
+
+                <p class="priority-card-summary">{{ item.summary[:140] }}{% if item.summary|length > 140 %}...{% endif %}</p>
+              </div>
+
+              <div class="priority-card-footer">
+                <span class="date-cell">{{ item.published_date }}</span>
+                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
+                  View Source ↗
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
       </section>
       {% endif %}
@@ -3256,15 +3771,15 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           </button>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-card);">
-          <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border-card);">
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
             <span class="filter-label">Sort:</span>
             <button class="filter-btn active" id="sortScoreBtn" onclick="sortRows('score')">Highest Score</button>
             <button class="filter-btn" id="sortDateBtn" onclick="sortRows('date')">Newest Date</button>
           </div>
-          <div style="display:flex; align-items:center; gap:0.5rem; width:100%; max-width:280px;">
+          <div style="display:flex; align-items:center; gap:0.5rem; width:100%; max-width:300px;">
             <input type="text" id="searchInput" placeholder="Search headlines, takeaways..." oninput="filterItems()" 
-                   style="background:var(--bg-base); border:1px solid var(--border-card); color:var(--text-primary); padding:0.45rem 0.85rem; border-radius:var(--radius-sm); font-size:0.85rem; width:100%;">
+                   style="background:var(--bg-base); border:1px solid var(--border-card); color:var(--text-primary); padding:0.5rem 0.95rem; border-radius:var(--radius-full); font-size:0.85rem; width:100%; outline:none;">
           </div>
         </div>
       </div>
@@ -3355,13 +3870,13 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 <div class="why-matters-box">
                   <span class="why-tag">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    Why it matters:
+                    Takeaway:
                   </span>
                   {{ item.llm_summary }}
                 </div>
                 {% endif %}
 
-                <div class="summary-text">{{ item.summary }}</div>
+                <p class="summary-text">{{ item.summary }}</p>
               </td>
               <td>
                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
@@ -3373,9 +3888,6 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             {% endfor %}
           </tbody>
         </table>
-        <div id="noResults" style="display:none; padding:2rem; text-align:center; color:var(--text-muted);">
-          No intelligence items match your active filter criteria.
-        </div>
       </div>
     </main>
   </div>
@@ -3383,91 +3895,91 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
-    let activeTickerFilter = 'ALL';
-    let activeCategoryFilter = 'ALL';
-    let activeSourceFilter = 'ALL';
+    let currentTicker = 'ALL';
+    let currentCategory = 'ALL';
+    let currentSource = 'ALL';
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tickerParam = urlParams.get('ticker');
-      const qParam = urlParams.get('q');
-      if (tickerParam) {
-        const btn = document.querySelector(`[data-filter-type="ticker"][data-val="${tickerParam}"]`);
-        setTickerFilter(tickerParam, btn);
-      }
-      if (qParam) {
-        const input = document.getElementById('searchInput');
-        if (input) {
-          input.value = qParam;
-          filterItems();
-        }
-      }
-    });
-
-    function setTickerFilter(val, btn) {
-      activeTickerFilter = val;
+    function setTickerFilter(ticker, btn) {
+      currentTicker = ticker;
       document.querySelectorAll('[data-filter-type="ticker"]').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
       filterItems();
     }
 
-    function setCategoryFilter(val, btn) {
-      activeCategoryFilter = val;
+    function setCategoryFilter(cat, btn) {
+      currentCategory = cat;
       document.querySelectorAll('[data-filter-type="category"]').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
       filterItems();
     }
 
-    function setSourceFilter(val, btn) {
-      activeSourceFilter = val;
+    function setSourceFilter(src, btn) {
+      currentSource = src;
       document.querySelectorAll('[data-filter-type="source"]').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
       filterItems();
     }
 
-    function sortRows(criteria) {
-      document.getElementById('sortScoreBtn').classList.toggle('active', criteria === 'score');
-      document.getElementById('sortDateBtn').classList.toggle('active', criteria === 'date');
-      const tbody = document.getElementById('newsBody');
-      const rows = Array.from(tbody.querySelectorAll('.news-row'));
-
-      rows.sort((a, b) => {
-        if (criteria === 'score') {
-          return (parseFloat(b.getAttribute('data-score')) || 0) - (parseFloat(a.getAttribute('data-score')) || 0);
-        } else {
-          return (b.getAttribute('data-date') || '').localeCompare(a.getAttribute('data-date') || '');
-        }
-      });
-      rows.forEach(r => tbody.appendChild(r));
-    }
-
     function filterItems() {
-      const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
       const rows = document.querySelectorAll('.news-row');
-      let visibleCount = 0;
 
       rows.forEach(row => {
         const rowTicker = row.getAttribute('data-ticker');
-        const rowTickers = (row.getAttribute('data-tickers') || rowTicker || '').split(',').map(t => t.trim());
-        const rowSource = row.getAttribute('data-source');
+        const rowTickers = (row.getAttribute('data-tickers') || '').split(',');
         const rowCategory = row.getAttribute('data-category');
+        const rowSource = row.getAttribute('data-source');
         const rowText = (row.getAttribute('data-text') || '').toLowerCase();
 
-        const matchesTicker = (activeTickerFilter === 'ALL' || rowTickers.includes(activeTickerFilter));
-        const matchesSource = (activeSourceFilter === 'ALL' || rowSource === activeSourceFilter);
-        const matchesCategory = (activeCategoryFilter === 'ALL' || rowCategory === activeCategoryFilter);
-        const matchesSearch = (!query || rowText.includes(query));
+        let matchTicker = (currentTicker === 'ALL') || rowTickers.includes(currentTicker);
+        let matchCat = (currentCategory === 'ALL') || (rowCategory === currentCategory);
+        let matchSrc = (currentSource === 'ALL') || (rowSource === currentSource);
+        let matchQuery = !q || rowText.includes(q);
 
-        if (matchesTicker && matchesSource && matchesCategory && matchesSearch) {
+        if (matchTicker && matchCat && matchSrc && matchQuery) {
           row.style.display = '';
-          visibleCount++;
         } else {
           row.style.display = 'none';
         }
       });
-
-      document.getElementById('noResults').style.display = (visibleCount === 0) ? 'block' : 'none';
     }
+
+    function sortRows(criterion) {
+      const tbody = document.getElementById('newsBody');
+      const rows = Array.from(tbody.querySelectorAll('.news-row'));
+
+      document.getElementById('sortScoreBtn')?.classList.toggle('active', criterion === 'score');
+      document.getElementById('sortDateBtn')?.classList.toggle('active', criterion === 'date');
+
+      rows.sort((a, b) => {
+        if (criterion === 'score') {
+          return parseFloat(b.getAttribute('data-score')) - parseFloat(a.getAttribute('data-score'));
+        } else {
+          return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
+        }
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
+    // URL parameter auto-filter (?ticker=NVDA or ?q=keyword)
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlTicker = params.get('ticker');
+      const urlQ = params.get('q');
+
+      if (urlTicker) {
+        const btn = document.querySelector(`[data-filter-type="ticker"][data-val="${urlTicker}"]`);
+        if (btn) setTickerFilter(urlTicker, btn);
+      }
+      if (urlQ) {
+        const searchBox = document.getElementById('searchInput');
+        if (searchBox) {
+          searchBox.value = urlQ;
+          filterItems();
+        }
+      }
+    });
   </script>
 </body>
 </html>
@@ -3495,16 +4007,61 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Corporate Calendar</h1>
-          <p style="font-size:0.9rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
+          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Corporate Calendar</h1>
+          <p style="font-size:0.92rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
         </div>
-        <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
           <span class="calendar-origin-badge origin-sourced">SOURCED</span>
           <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
         </div>
       </header>
+
+      <!-- Spotlight Banner for Earliest Upcoming Event -->
+      {% if calendar_events %}
+      {% set spot = calendar_events[0] %}
+      <div class="calendar-spotlight-card {% if spot.source_type == 'ESTIMATED_RULE' %}calendar-card-estimated{% endif %}">
+        <div class="spotlight-badge-row">
+          <span class="spotlight-beacon-pill">NEXT UPCOMING EVENT</span>
+          <span class="relative-badge" style="font-weight:700; color:var(--accent-blue);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ spot.relative_badge }} ({{ spot.display_date }})
+          </span>
+        </div>
+        <div class="spotlight-content-row">
+          <div class="calendar-date-box spotlight-date-box">
+            <div class="calendar-date-month">{{ spot.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
+            <div class="calendar-date-day" style="font-size:1.6rem;">{{ spot.event_date[8:10] }}</div>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.35rem;">
+              <span class="ticker-badge ticker-{{ spot.ticker }}" style="font-size:0.88rem; padding:0.22rem 0.65rem;">{{ spot.ticker }}</span>
+              <span class="calendar-type-pill {% if 'Earnings' in spot.event_type %}cal-type-earnings{% elif 'Dividend' in spot.event_type %}cal-type-dividend{% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
+                {% if 'Earnings' in spot.event_type %}Earnings Call
+                {% elif 'Dividend' in spot.event_type %}Dividend
+                {% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}SEC Deadline (Estimated)
+                {% else %}Conference{% endif %}
+              </span>
+              {% if spot.source_type == 'ESTIMATED_RULE' %}
+              <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
+              {% else %}
+              <span class="calendar-origin-badge origin-sourced">SOURCED</span>
+              {% endif %}
+            </div>
+            <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">{{ spot.headline }}</h3>
+            <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.45;">{{ spot.details }}</p>
+          </div>
+          {% if spot.source_url %}
+          <div>
+            <a href="{{ spot.source_url }}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="font-size:0.82rem; padding:0.5rem 1.1rem;">
+              {% if spot.source_type == 'ESTIMATED_RULE' %}SEC Filings ↗{% else %}Event Source ↗{% endif %}
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Calendar Controls -->
       <div class="controls-panel">
@@ -3635,10 +4192,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Macroeconomic Intelligence</h1>
-          <p style="font-size:0.9rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live indicators mapped to individual watchlist company sensitivities</p>
+          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Macroeconomic Intelligence</h1>
+          <p style="font-size:0.92rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live indicators mapped to individual watchlist company sensitivities</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill" style="color:var(--accent-blue); font-weight:700;">
@@ -3659,10 +4216,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- Economic Indicator Cards -->
-      <div class="economic-grid" id="economicCardsGrid" style="margin-bottom:2.5rem;">
+      <!-- Economic Indicator Cards (Featuring Anchored Focal Cards) -->
+      <div class="economic-grid" id="economicCardsGrid" style="margin-bottom:3rem;">
         {% for ind in economic_indicators %}
-        <div class="economic-card" 
+        <div class="economic-card {% if loop.index <= 2 %}economic-card-anchor{% endif %}" 
              data-indicator-id="{{ ind.indicator_id }}"
              data-relevant-tickers="{{ ind.relevant_tickers }}">
           <div>
@@ -3675,7 +4232,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
               </span>
             </div>
 
-            <div class="economic-val">{{ ind.formatted_value }}</div>
+            <div class="economic-val {% if loop.index <= 2 %}economic-val-anchor{% endif %}">{{ ind.formatted_value }}</div>
             <h4 class="economic-series-name">{{ ind.name }}</h4>
             <p class="economic-context">{{ ind.context_note }}</p>
           </div>
@@ -3693,47 +4250,37 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       </div>
 
       <!-- Watchlist Sensitivity Matrix Table -->
-      <section style="background:#ffffff; border:1px solid var(--border-card); border-radius:var(--radius-lg); padding:1.75rem; box-shadow:var(--shadow-card);">
-        <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">Watchlist Sensitivity Matrix</h3>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1.5rem;">Documented sensitivities driving company-specific macroeconomic exposure</p>
+      <section style="background:var(--bg-surface-glass); backdrop-filter:blur(16px); border:1px solid var(--border-glass); border-radius:var(--radius-xl); padding:2rem; box-shadow:var(--shadow-card);">
+        <h3 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">Watchlist Sensitivity Matrix</h3>
+        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:1.5rem;">Documented sensitivities driving company-specific macroeconomic exposure</p>
 
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Ticker</th>
+                <th style="width: 110px;">Ticker</th>
                 <th>Company Name</th>
                 <th>Sector</th>
-                <th>Interest Rates Sensitivity</th>
-                <th>Inflation Sensitivity</th>
-                <th>Unemployment Sensitivity</th>
+                <th>Key Macro Sensitivities</th>
               </tr>
             </thead>
             <tbody>
               {% for co in watchlist_companies %}
               <tr>
-                <td><span class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</span></td>
-                <td style="font-weight:600; color:var(--text-primary);">{{ co.name }}</td>
-                <td><span class="category-badge">{{ co.sector }}</span></td>
                 <td>
-                  {% if 'interest_rates' in co.economic_sensitivities %}
-                  <span style="color:#15803d; font-weight:700;">● Active</span>
-                  {% else %}
-                  <span style="color:var(--text-muted);">&mdash;</span>
-                  {% endif %}
+                  <span class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</span>
+                </td>
+                <td style="font-weight:700; color:var(--text-primary);">
+                  {{ co.name }}
                 </td>
                 <td>
-                  {% if 'inflation' in co.economic_sensitivities %}
-                  <span style="color:#b45309; font-weight:700;">● Active</span>
-                  {% else %}
-                  <span style="color:var(--text-muted);">&mdash;</span>
-                  {% endif %}
+                  <span class="category-badge">{{ co.sector }}</span>
                 </td>
-                <td>
-                  {% if 'unemployment' in co.economic_sensitivities %}
-                  <span style="color:#1d4ed8; font-weight:700;">● Active</span>
+                <td style="font-size:0.835rem; color:var(--text-secondary); line-height:1.45;">
+                  {% if co.sensitivities %}
+                    {{ co.sensitivities|join(', ') }}
                   {% else %}
-                  <span style="color:var(--text-muted);">&mdash;</span>
+                    General macroeconomic interest rate, inflation, and consumer spending sensitivity.
                   {% endif %}
                 </td>
               </tr>
@@ -3754,15 +4301,11 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
       const cards = document.querySelectorAll('.economic-card');
       cards.forEach(card => {
-        if (ticker === 'ALL') {
+        const relevant = (card.getAttribute('data-relevant-tickers') || '').split(',').map(s => s.trim());
+        if (ticker === 'ALL' || relevant.includes(ticker)) {
           card.style.display = 'flex';
         } else {
-          const relTickers = (card.getAttribute('data-relevant-tickers') || '').split(',').map(t => t.trim());
-          if (relTickers.includes(ticker)) {
-            card.style.display = 'flex';
-          } else {
-            card.style.display = 'none';
-          }
+          card.style.display = 'none';
         }
       });
     }
@@ -3773,29 +4316,25 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
 
 # ==============================================================================
-# RENDER DISPATCHER
+# MASTER RENDER ENGINE
 # ==============================================================================
 def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> str:
-    """Render all static site pages (index.html, news.html, calendar.html, economic.html)."""
+    """Render all 4 static HTML pages (Overview, Feed, Calendar, Macro) to disk."""
     if output_path is None:
         site_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "site")
         os.makedirs(site_dir, exist_ok=True)
         primary_output = os.path.join(site_dir, "index.html")
-    elif os.path.isdir(output_path):
-        site_dir = output_path
-        primary_output = os.path.join(site_dir, "index.html")
     else:
-        site_dir = os.path.dirname(os.path.abspath(output_path))
         primary_output = output_path
-
-    os.makedirs(site_dir, exist_ok=True)
+        site_dir = os.path.dirname(output_path)
+        os.makedirs(site_dir, exist_ok=True)
 
     # 1. Fetch data from SQLite
-    raw_items = get_all_news_items(order_by="score", db_path=db_path)
-    priority_items = get_top_priority_items(limit=8, db_path=db_path)
+    raw_items = get_all_news_items(limit=None, db_path=db_path)
+    priority_items = get_top_priority_items(limit=6, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     chart_data = get_chart_data(db_path=db_path)
     economic_indicators = get_economic_indicators(db_path=db_path)

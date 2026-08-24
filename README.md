@@ -12,6 +12,7 @@ An automated financial intelligence engine that ingests corporate disclosures ac
 
 ---
 
+
 ## 💡 Why I Built This
 
 Financial newsfeeds are flooded with syndicated wire spam, while official filings are obscured behind cryptic form numbers (*Form 4*, *Form 8-K*, *Rule 144*) that give no immediate context on investor impact. 
