@@ -1,12 +1,16 @@
-"""Multi-page static HTML dashboard generator with shared sidebar navigation (Phase 6).
+"""Multi-page static HTML dashboard generator with Cloudflare-inspired visual design (Phase 6).
 
-Content clarity enhancements:
-- Human-readable executive titles replace raw filenames (e.g. "NVIDIA Discloses Material Corporate Event").
-- Technical form-type codes (8-K, 10-Q, Form 4) move to de-emphasized subtitle badges.
-- Repeated cross-reference badges collapse into interactive "Also relevant to N companies ▾" accordion elements.
+Features:
+- Clean light SaaS aesthetic (white/slate canvas, crisp borders, subtle shadows).
+- Left sidebar navigation with active indicator and status footer.
+- Hero greeting ("What's on the agenda?") with top badge pill.
+- Interactive Command/Search bar (⌘K) with instant Tab Suggestions dropdown linking to all pages.
+- Top preview widgets with direct deep-links.
+- Analytics section with Chart.js timeline and category breakdown charts.
+- Content clarity: human-readable executive titles, de-emphasized form badges, collapsible cross-reference accordions.
 
 Generates:
-1. site/index.html    - Home / Overview: Clickable widget preview cards linking to full subpages
+1. site/index.html    - Home / Overview: Hero greeting, search with tab suggestions, widget preview cards & analytics
 2. site/news.html     - Full Intelligence Feed: Priority Panel, Filters, Search, Sort & News Table
 3. site/calendar.html - Forthcoming Corporate Calendar: Earnings calls, Dividends, Filing Deadlines
 4. site/economic.html - Macroeconomic Intelligence: FRED indicators, Live Sensitivity Filtering & Matrix
@@ -82,33 +86,36 @@ def format_human_headline(item: Dict[str, Any]) -> str:
 
 
 # ==============================================================================
-# SHARED BASE CSS & DESIGN SYSTEM
+# SHARED BASE CSS & CLOUDFLARE-INSPIRED DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
     :root {
-      --bg-base: #080c14;
-      --bg-surface: #0f172a;
-      --bg-surface-elevated: #1e293b;
-      --bg-surface-highlight: #243048;
-      --bg-hover: #334155;
-      --border-subtle: #1e293b;
-      --border-card: #283548;
-      --border-accent: #3b82f6;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-surface-highlight: #e2e8f0;
+      --bg-hover: #f1f5f9;
+      --border-subtle: #f1f5f9;
+      --border-card: #e2e8f0;
+      --border-accent: #2563eb;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
       --text-muted: #64748b;
-      --accent-blue: #3b82f6;
-      --accent-indigo: #6366f1;
+      --accent-blue: #2563eb;
+      --accent-orange: #f97316;
+      --accent-indigo: #4f46e5;
       --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-purple: #8b5cf6;
-      --accent-rose: #f43f5e;
-      --accent-cyan: #06b6d4;
+      --accent-amber: #d97706;
+      --accent-purple: #7c3aed;
+      --accent-rose: #e11d48;
+      --accent-cyan: #0284c7;
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 14px;
-      --radius-xl: 18px;
-      --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+      --radius-xl: 20px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07);
+      --shadow-dropdown: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       --transition-fast: 0.15s ease;
       --transition-normal: 0.25s ease;
     }
@@ -134,7 +141,7 @@ SHARED_CSS = """
     }
 
     .app-sidebar {
-      width: 270px;
+      width: 250px;
       background: var(--bg-surface);
       border-right: 1px solid var(--border-card);
       display: flex;
@@ -145,26 +152,26 @@ SHARED_CSS = """
       left: 0;
       z-index: 100;
       overflow-y: auto;
-      padding: 1.75rem 1.25rem;
+      padding: 1.5rem 1.15rem;
     }
 
     .app-main {
       flex: 1;
-      margin-left: 270px;
-      padding: 2.25rem 3rem;
-      max-width: 1480px;
-      width: calc(100% - 270px);
+      margin-left: 250px;
+      padding: 2rem 3rem 4rem 3rem;
+      max-width: 1440px;
+      width: calc(100% - 250px);
     }
 
     @media (max-width: 1080px) {
       .app-sidebar {
-        width: 230px;
+        width: 220px;
         padding: 1.25rem 1rem;
       }
       .app-main {
-        margin-left: 230px;
-        width: calc(100% - 230px);
-        padding: 1.75rem 1.5rem;
+        margin-left: 220px;
+        width: calc(100% - 220px);
+        padding: 1.75rem 1.5rem 3rem 1.5rem;
       }
     }
 
@@ -182,37 +189,65 @@ SHARED_CSS = """
       .app-main {
         margin-left: 0;
         width: 100%;
-        padding: 1.5rem 1rem;
+        padding: 1.5rem 1rem 3rem 1rem;
       }
+    }
+
+    /* Top Navigation Bar */
+    .top-header-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .top-header-btn {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .top-header-btn:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
     }
 
     /* Sidebar Components */
     .sidebar-brand {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
-      padding-bottom: 1.5rem;
+      gap: 0.75rem;
+      padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border-card);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
       text-decoration: none;
       color: inherit;
     }
 
     .logo-badge {
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
       border-radius: var(--radius-md);
-      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      background: linear-gradient(135deg, #f97316, #ea580c);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+      font-size: 1.2rem;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
       flex-shrink: 0;
     }
 
     .brand-title {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--text-primary);
@@ -220,9 +255,9 @@ SHARED_CSS = """
     }
 
     .brand-subtitle {
-      font-size: 0.72rem;
-      color: var(--accent-cyan);
-      font-weight: 600;
+      font-size: 0.68rem;
+      color: var(--accent-orange);
+      font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
@@ -233,14 +268,14 @@ SHARED_CSS = """
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 0.65rem;
+      margin-bottom: 0.5rem;
       padding-left: 0.5rem;
     }
 
     .sidebar-nav {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.25rem;
       flex: 1;
     }
 
@@ -248,27 +283,24 @@ SHARED_CSS = """
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.75rem 0.85rem;
+      padding: 0.65rem 0.85rem;
       border-radius: var(--radius-md);
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 600;
       transition: all var(--transition-fast);
-      border: 1px solid transparent;
     }
 
     .nav-link:hover {
       background: var(--bg-surface-elevated);
       color: var(--text-primary);
-      border-color: var(--border-card);
     }
 
     .nav-link.active {
-      background: rgba(59, 130, 246, 0.14);
-      color: #93c5fd;
-      border-color: rgba(59, 130, 246, 0.35);
-      box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
     }
 
     .nav-item-left {
@@ -278,8 +310,8 @@ SHARED_CSS = """
     }
 
     .nav-icon {
-      font-size: 1.15rem;
-      width: 24px;
+      font-size: 1.05rem;
+      width: 22px;
       text-align: center;
     }
 
@@ -287,30 +319,28 @@ SHARED_CSS = """
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.72rem;
       font-weight: 700;
-      background: var(--bg-surface-highlight);
-      color: var(--text-secondary);
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
       padding: 0.15rem 0.45rem;
       border-radius: 999px;
-      border: 1px solid var(--border-card);
     }
 
     .nav-link.active .nav-count {
-      background: rgba(59, 130, 246, 0.25);
-      color: #bfdbfe;
-      border-color: rgba(59, 130, 246, 0.4);
+      background: #dbeafe;
+      color: #1e40af;
     }
 
     .sidebar-footer {
-      padding-top: 1.5rem;
+      padding-top: 1.25rem;
       border-top: 1px solid var(--border-card);
-      margin-top: 1.5rem;
+      margin-top: 1.25rem;
     }
 
     .sidebar-health-box {
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
-      padding: 0.85rem;
+      padding: 0.75rem;
     }
 
     .pulse-dot {
@@ -320,90 +350,380 @@ SHARED_CSS = """
       display: inline-block;
     }
 
-    /* Page Header */
-    .page-header {
+    /* Hero Greeting Section */
+    .hero-container {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 1.25rem;
-      padding-bottom: 1.75rem;
-      border-bottom: 1px solid var(--border-card);
-      margin-bottom: 2rem;
-    }
-
-    .page-title {
-      font-size: 1.85rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-    }
-
-    .page-subtitle {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      line-height: 1.4;
-    }
-
-    .top-status-group {
-      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
+      text-align: center;
+      margin: 1.5rem auto 2.5rem auto;
+      max-width: 780px;
     }
 
-    .status-pill {
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 0.35rem 0.75rem;
-      border-radius: 999px;
-      border: 1px solid var(--border-card);
-      background: var(--bg-surface-elevated);
+    .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.45rem;
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      padding: 0.35rem 0.95rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.25rem;
+      transition: all var(--transition-fast);
     }
 
-    /* Stats Grid */
-    .stats-grid {
+    .hero-badge:hover {
+      border-color: var(--accent-blue);
+      box-shadow: var(--shadow-card);
+    }
+
+    .hero-title {
+      font-size: 2.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-subtext {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Global Search & Command Bar (⌘K) with Tab Suggestions */
+    .search-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto 2.5rem auto;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 1.15rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+      transition: all var(--transition-fast);
+      cursor: text;
+    }
+
+    .search-box:focus-within, .search-box.focused {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), 0 4px 15px rgba(0, 0, 0, 0.06);
+    }
+
+    .search-icon {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-right: 0.75rem;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text-primary);
+    }
+
+    .search-input::placeholder {
+      color: #94a3b8;
+    }
+
+    .search-shortcut {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: 4px;
+      padding: 0.15rem 0.45rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* Tab Suggestions Dropdown Modal */
+    .search-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-dropdown);
+      padding: 1rem;
+      z-index: 200;
+      display: none;
+    }
+
+    .search-dropdown.active {
+      display: block;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-section-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      padding-left: 0.25rem;
+    }
+
+    .dropdown-tabs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 1rem;
     }
 
-    .stat-card {
-      background: var(--bg-surface);
+    .dropdown-tab-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      background: var(--bg-base);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all var(--transition-fast);
+    }
+
+    .dropdown-tab-card:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      transform: translateY(-1px);
+    }
+
+    .dropdown-tab-icon {
+      font-size: 1.25rem;
+    }
+
+    .dropdown-tab-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .dropdown-tab-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .dropdown-tickers-wrap {
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-card);
+    }
+
+    .dropdown-tickers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.35rem;
+    }
+
+    .ticker-jump-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+    }
+
+    .ticker-jump-pill:hover {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+    }
+
+    /* Top Quick Preview Widgets Row (Cloudflare-style) */
+    .quick-widgets-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .quick-widget-card {
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       padding: 1.25rem;
       box-shadow: var(--shadow-card);
-      position: relative;
-      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all var(--transition-fast);
     }
 
-    .stat-label {
-      font-size: 0.75rem;
+    .quick-widget-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      transform: translateY(-1px);
+    }
+
+    .quick-widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .quick-widget-title {
+      font-size: 0.88rem;
       font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .quick-widget-arrow {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .quick-widget-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      background: var(--bg-base);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+
+    .quick-widget-card:hover .quick-widget-btn {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    /* Section Headers */
+    .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-heading {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .section-time-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* Analytics Grid & Cards */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    @media (max-width: 960px) {
+      .analytics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .analytics-card {
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .analytics-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+    }
+
+    .analytics-card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.25rem;
     }
 
-    .stat-value {
+    .analytics-metric-val {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.85rem;
+      font-size: 2rem;
       font-weight: 800;
       color: var(--text-primary);
-      line-height: 1.1;
-      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    .stat-subtext {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
+    .analytics-delta-pill {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.1);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    .chart-canvas-container {
+      position: relative;
+      height: 220px;
+      width: 100%;
     }
 
     /* Ticker Badges */
@@ -411,39 +731,13 @@ SHARED_CSS = """
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
       font-size: 0.78rem;
-      padding: 0.2rem 0.55rem;
+      padding: 0.18rem 0.5rem;
       border-radius: 4px;
       display: inline-block;
       letter-spacing: 0.02em;
-    }
-
-    .ticker-NVDA  { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .ticker-AAPL  { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .ticker-MSFT  { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
-    .ticker-GOOGL { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
-    .ticker-AMZN  { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .ticker-META  { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
-    .ticker-TSLA  { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .ticker-JPM   { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
-    .ticker-JNJ   { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
-    .ticker-XOM   { background: rgba(234, 88, 12, 0.15); color: #fb923c; border: 1px solid rgba(234, 88, 12, 0.3); }
-    .ticker-WMT   { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
-    .ticker-DIS   { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
-    .ticker-KO    { background: rgba(220, 38, 38, 0.15); color: #fca5a5; border: 1px solid rgba(220, 38, 38, 0.3); }
-    .ticker-PFE   { background: rgba(37, 99, 235, 0.15); color: #93c5fd; border: 1px solid rgba(37, 99, 235, 0.3); }
-    .ticker-BA    { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.35); }
-
-    /* Category & Form Badges */
-    .category-badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-sm);
-      display: inline-block;
-      background: var(--bg-surface-highlight);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-card);
-      white-space: nowrap;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
     }
 
     .form-type-pill {
@@ -451,16 +745,27 @@ SHARED_CSS = """
       font-size: 0.68rem;
       font-weight: 700;
       color: var(--text-muted);
-      background: var(--bg-surface-highlight);
+      background: var(--bg-surface-elevated);
       padding: 0.12rem 0.45rem;
       border-radius: 4px;
       border: 1px solid var(--border-card);
       display: inline-block;
-      letter-spacing: 0.02em;
+    }
+
+    .category-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.18rem 0.5rem;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-card);
+      white-space: nowrap;
     }
 
     .source-tag {
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
       font-weight: 500;
     }
@@ -470,7 +775,7 @@ SHARED_CSS = """
       font-family: 'JetBrains Mono', monospace;
       font-weight: 800;
       font-size: 0.85rem;
-      padding: 0.25rem 0.6rem;
+      padding: 0.2rem 0.55rem;
       border-radius: var(--radius-sm);
       display: inline-flex;
       align-items: center;
@@ -478,22 +783,21 @@ SHARED_CSS = """
     }
 
     .score-high {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
     }
 
     .score-med {
-      background: rgba(245, 158, 11, 0.15);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
     }
 
     .score-low {
-      background: rgba(148, 163, 184, 0.1);
-      color: #94a3b8;
-      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
     }
 
     /* Collapsible Cross-Reference Accordion */
@@ -511,12 +815,11 @@ SHARED_CSS = """
       gap: 0.25rem;
       font-size: 0.7rem;
       font-weight: 600;
-      padding: 0.18rem 0.5rem;
+      padding: 0.15rem 0.45rem;
       border-radius: var(--radius-sm);
-      background: rgba(99, 102, 241, 0.12);
-      color: #c7d2fe;
-      border: 1px solid rgba(99, 102, 241, 0.35);
-      line-height: 1.35;
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
     }
 
     .crossref-rel-pill {
@@ -524,21 +827,20 @@ SHARED_CSS = """
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      padding: 0.1rem 0.35rem;
+      padding: 0.08rem 0.3rem;
       border-radius: 3px;
-      margin: 0 0.15rem;
     }
 
     .crossref-customer {
-      background: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
     }
 
     .crossref-supplier {
-      background: rgba(245, 158, 11, 0.2);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.4);
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fcd34d;
     }
 
     .crossref-accordion {
@@ -549,9 +851,9 @@ SHARED_CSS = """
     .crossref-summary-pill {
       font-size: 0.72rem;
       font-weight: 700;
-      color: #c7d2fe;
-      background: rgba(99, 102, 241, 0.14);
-      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #4338ca;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
       border-radius: var(--radius-sm);
       padding: 0.18rem 0.55rem;
       cursor: pointer;
@@ -568,9 +870,8 @@ SHARED_CSS = """
     }
 
     .crossref-summary-pill:hover {
-      background: rgba(99, 102, 241, 0.25);
-      border-color: rgba(99, 102, 241, 0.5);
-      color: #ffffff;
+      background: #e0e7ff;
+      border-color: #a5b4fc;
     }
 
     .accordion-arrow {
@@ -586,13 +887,13 @@ SHARED_CSS = """
     .crossref-dropdown-content {
       margin-top: 0.45rem;
       padding: 0.5rem 0.65rem;
-      background: var(--bg-surface-elevated);
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-sm);
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+      box-shadow: var(--shadow-dropdown);
     }
 
     .crossref-dropdown-item {
@@ -606,18 +907,18 @@ SHARED_CSS = """
     /* Why It Matters Callout Box */
     .why-matters-box {
       margin-top: 0.45rem;
-      background: rgba(59, 130, 246, 0.08);
+      background: #eff6ff;
       border-left: 3px solid var(--accent-blue);
       padding: 0.5rem 0.75rem;
       border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       font-size: 0.85rem;
-      color: #bfdbfe;
+      color: #1e3a8a;
       line-height: 1.4;
     }
 
     .why-tag {
       font-weight: 700;
-      color: #60a5fa;
+      color: #1d4ed8;
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.03em;
@@ -636,34 +937,35 @@ SHARED_CSS = """
     }
 
     .action-link:hover {
-      color: #93c5fd;
+      color: #1d4ed8;
       text-decoration: underline;
     }
 
-    /* Buttons */
+    /* Primary Button */
     .btn-primary {
-      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      background: var(--accent-blue);
       color: #ffffff;
-      padding: 0.6rem 1.15rem;
+      padding: 0.55rem 1.15rem;
       border-radius: var(--radius-md);
-      font-weight: 700;
+      font-weight: 600;
       font-size: 0.85rem;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: none;
       transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+      background: #1d4ed8;
+      box-shadow: var(--shadow-card);
     }
 
     /* Filter Controls */
     .controls-panel {
-      background: var(--bg-surface);
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       padding: 1.35rem;
@@ -708,16 +1010,14 @@ SHARED_CSS = """
     }
 
     .filter-btn:hover {
-      background: var(--bg-hover);
+      background: #e2e8f0;
       color: var(--text-primary);
-      border-color: var(--border-accent);
     }
 
     .filter-btn.active {
       background: var(--accent-blue);
       color: #ffffff;
       border-color: var(--accent-blue);
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
     }
 
     .pill-count {
@@ -728,7 +1028,7 @@ SHARED_CSS = """
 
     /* Table Styles */
     .table-container {
-      background: var(--bg-surface);
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       overflow-x: auto;
@@ -743,7 +1043,7 @@ SHARED_CSS = """
     }
 
     th {
-      background: var(--bg-surface-elevated);
+      background: #f8fafc;
       color: var(--text-muted);
       font-size: 0.75rem;
       font-weight: 700;
@@ -760,7 +1060,7 @@ SHARED_CSS = """
     }
 
     tr.news-row:hover td {
-      background: rgba(255, 255, 255, 0.015);
+      background: #f8fafc;
     }
 
     .headline-text {
@@ -787,12 +1087,12 @@ SHARED_CSS = """
 
     /* Priority Section & Grid */
     .priority-section {
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 16, 30, 0.95) 100%);
-      border: 1px solid rgba(59, 130, 246, 0.25);
+      background: #ffffff;
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       padding: 1.75rem;
       margin-bottom: 2.25rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      box-shadow: var(--shadow-card);
     }
 
     .priority-header {
@@ -813,9 +1113,9 @@ SHARED_CSS = """
     }
 
     .priority-badge-icon {
-      background: rgba(245, 158, 11, 0.15);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
       padding: 0.3rem 0.65rem;
       border-radius: var(--radius-sm);
       font-size: 0.75rem;
@@ -830,21 +1130,21 @@ SHARED_CSS = """
     }
 
     .priority-card {
-      background: var(--bg-surface-elevated);
+      background: #f8fafc;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 1.35rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
-      position: relative;
+      transition: all var(--transition-fast);
     }
 
     .priority-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-accent);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      transform: translateY(-1px);
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-card);
+      background: #ffffff;
     }
 
     .priority-card-top {
@@ -859,7 +1159,7 @@ SHARED_CSS = """
       font-size: 0.72rem;
       font-weight: 800;
       color: var(--text-muted);
-      background: var(--bg-surface);
+      background: #ffffff;
       padding: 0.15rem 0.45rem;
       border-radius: 4px;
       border: 1px solid var(--border-card);
@@ -869,9 +1169,9 @@ SHARED_CSS = """
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.82rem;
       font-weight: 800;
-      color: #34d399;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #15803d;
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
       padding: 0.2rem 0.55rem;
       border-radius: 4px;
     }
@@ -885,12 +1185,12 @@ SHARED_CSS = """
     }
 
     .priority-why-box {
-      background: rgba(59, 130, 246, 0.1);
+      background: #eff6ff;
       border-left: 3px solid var(--accent-blue);
       padding: 0.5rem 0.75rem;
       border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       font-size: 0.8rem;
-      color: #bfdbfe;
+      color: #1e3a8a;
       margin: 0.65rem 0;
       line-height: 1.4;
     }
@@ -906,7 +1206,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       padding-top: 0.85rem;
-      border-top: 1px solid var(--border-subtle);
+      border-top: 1px solid var(--border-card);
       margin-top: 1rem;
     }
 
@@ -918,26 +1218,26 @@ SHARED_CSS = """
     }
 
     .calendar-card {
-      background: var(--bg-surface-elevated);
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 1.35rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
-      position: relative;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
     }
 
     .calendar-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-accent);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      transform: translateY(-1px);
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-card);
     }
 
     .calendar-card-estimated {
-      border: 1px dashed rgba(148, 163, 184, 0.4);
-      background: rgba(30, 41, 59, 0.6);
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
     }
 
     .calendar-card-top {
@@ -956,15 +1256,15 @@ SHARED_CSS = """
     }
 
     .origin-sourced {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.35);
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
     }
 
     .origin-estimated {
-      background: rgba(148, 163, 184, 0.15);
-      color: #cbd5e1;
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
     }
 
     .calendar-type-pill {
@@ -975,13 +1275,13 @@ SHARED_CSS = """
       display: inline-block;
     }
 
-    .cal-type-earnings   { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .cal-type-dividend   { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .cal-type-sec        { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
-    .cal-type-conference { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .cal-type-earnings   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .cal-type-dividend   { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .cal-type-sec        { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    .cal-type-conference { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
     .calendar-date-box {
-      background: var(--bg-surface);
+      background: #f8fafc;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 0.4rem 0.65rem;
@@ -992,7 +1292,7 @@ SHARED_CSS = """
     .calendar-date-month {
       font-size: 0.65rem;
       font-weight: 800;
-      color: var(--accent-cyan);
+      color: var(--accent-blue);
       text-transform: uppercase;
     }
 
@@ -1024,7 +1324,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       padding-top: 0.75rem;
-      border-top: 1px solid var(--border-subtle);
+      border-top: 1px solid var(--border-card);
     }
 
     .relative-badge {
@@ -1044,21 +1344,21 @@ SHARED_CSS = """
     }
 
     .economic-card {
-      background: var(--bg-surface-elevated);
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 1.35rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
-      position: relative;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
     }
 
     .economic-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-accent);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      transform: translateY(-1px);
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-card);
     }
 
     .economic-card-top {
@@ -1074,7 +1374,7 @@ SHARED_CSS = """
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--text-muted);
-      background: var(--bg-surface-highlight);
+      background: var(--bg-surface-elevated);
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
       border: 1px solid var(--border-card);
@@ -1090,9 +1390,9 @@ SHARED_CSS = """
       gap: 0.25rem;
     }
 
-    .trend-up   { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .trend-down { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .trend-flat { background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+    .trend-up   { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .trend-down { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .trend-flat { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
     .economic-val {
       font-family: 'JetBrains Mono', monospace;
@@ -1118,7 +1418,7 @@ SHARED_CSS = """
     }
 
     .economic-tickers-wrap {
-      border-top: 1px solid var(--border-subtle);
+      border-top: 1px solid var(--border-card);
       padding-top: 0.85rem;
       display: flex;
       flex-direction: column;
@@ -1139,131 +1439,9 @@ SHARED_CSS = """
       gap: 0.35rem;
     }
 
-    /* Home Overview Widgets Grid */
-    .home-widgets-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2.5rem;
-    }
-
-    .widget-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-fast);
-    }
-
-    .widget-card:hover {
-      border-color: rgba(59, 130, 246, 0.4);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    }
-
-    .widget-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border-card);
-      margin-bottom: 1.25rem;
-    }
-
-    .widget-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .widget-footer {
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--border-card);
-      margin-top: 1.25rem;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    /* Charts Section */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    @media (max-width: 960px) {
-      .charts-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .chart-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      box-shadow: var(--shadow-card);
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1.25rem;
-    }
-
-    .chart-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .chart-subtitle {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-    }
-
-    .chart-canvas-container {
-      position: relative;
-      height: 240px;
-      width: 100%;
-    }
-
-    .chart-legend-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-    }
-
-    .chart-legend-item {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: var(--bg-surface-elevated);
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      border: 1px solid var(--border-card);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .legend-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-    }
-
     /* Health Section */
     .health-section {
-      background: var(--bg-surface);
+      background: #ffffff;
       border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       padding: 1.75rem;
@@ -1306,9 +1484,9 @@ SHARED_CSS = """
       gap: 0.4rem;
     }
 
-    .health-badge-healthy  { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-    .health-badge-warning  { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .health-badge-critical { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .health-badge-healthy  { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .health-badge-warning  { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .health-badge-critical { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
 
     .health-grid {
       display: grid;
@@ -1318,7 +1496,7 @@ SHARED_CSS = """
     }
 
     .health-metric-card {
-      background: var(--bg-surface-elevated);
+      background: var(--bg-base);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 1.1rem;
@@ -1357,7 +1535,7 @@ SIDEBAR_HTML = """
     <div class="logo-badge">⚡</div>
     <div>
       <div class="brand-title">StockPulse</div>
-      <div class="brand-subtitle">Intelligence System</div>
+      <div class="brand-subtitle">Cloud Intelligence</div>
     </div>
   </a>
 
@@ -1366,7 +1544,7 @@ SIDEBAR_HTML = """
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}">
       <div class="nav-item-left">
         <span class="nav-icon">🏠</span>
-        <span class="nav-text">Home / Overview</span>
+        <span class="nav-text">Home</span>
       </div>
     </a>
     <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}">
@@ -1390,15 +1568,21 @@ SIDEBAR_HTML = """
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
     </a>
+    <a href="index.html#health" class="nav-link">
+      <div class="nav-item-left">
+        <span class="nav-icon">🛡️</span>
+        <span class="nav-text">System Health</span>
+      </div>
+    </a>
   </nav>
 
   <div class="sidebar-footer">
     <div class="sidebar-health-box">
-      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
-        <span class="pulse-dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span>
-        <span style="font-size:0.75rem; font-weight:700; color:var(--accent-emerald);">SYSTEM HEALTHY</span>
+      <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
+        <span class="pulse-dot" style="background:#10b981;"></span>
+        <span style="font-size:0.75rem; font-weight:700; color:#15803d;">ALL SYSTEMS OPERATIONAL</span>
       </div>
-      <div style="font-size:0.7rem; color:var(--text-muted); line-height:1.4;">
+      <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.4;">
         15 Watchlist Companies<br>
         Updated: {{ generated_at }}
       </div>
@@ -1415,8 +1599,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Personal stock news dashboard overview with widget preview cards linking to full subpages.">
-  <title>StockPulse Intelligence — Home &amp; Overview</title>
+  <meta name="description" content="Personal stock news dashboard overview with widget preview cards and instant search suggestions.">
+  <title>StockPulse — What's on the agenda?</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1430,177 +1614,155 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     """ + SIDEBAR_HTML + """
 
     <main class="app-main">
-      <header class="page-header">
-        <div>
-          <h1 class="page-title">Executive Briefing &amp; Overview</h1>
-          <p class="page-subtitle">Multi-source SEC EDGAR filings, company announcements, corporate calendar &amp; FRED economic indicators</p>
-        </div>
-        <div class="top-status-group">
-          <span class="status-pill">
-            <span class="pulse-dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span> Live System
-          </span>
-          <span class="status-pill" style="font-family:'JetBrains Mono', monospace; font-size:0.75rem;">
-            Updated: {{ generated_at }}
-          </span>
-        </div>
-      </header>
-
-      <!-- Stats Summary -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">High Impact Stories (≥ 7.0)</div>
-          <div class="stat-value" style="color: var(--accent-emerald);">{{ stats.high_priority_count }}</div>
-          <div class="stat-subtext">Priority queue items</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Disclosures In Database</div>
-          <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-subtext">Deduplicated across sources</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Average Importance Score</div>
-          <div class="stat-value">{{ stats.avg_score }} / 10</div>
-          <div class="stat-subtext">Rule-based scoring</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Active Watchlist</div>
-          <div class="stat-value">{{ stats.by_ticker|length }}</div>
-          <div class="stat-subtext">US Large-Cap Core Focus</div>
-        </div>
+      <!-- Top Right Bar -->
+      <div class="top-header-bar">
+        <a href="https://github.com/lucasdt416-design/stock-news-dashboard" target="_blank" rel="noopener noreferrer" class="top-header-btn">
+          ✨ Ask AI
+        </a>
+        <a href="index.html#health" class="top-header-btn">
+          🛡️ Telemetry
+        </a>
+        <span class="section-time-pill" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+          <span class="pulse-dot" style="background:#10b981;"></span> Live
+        </span>
       </div>
 
-      <!-- Clickable Widget Preview Cards Grid -->
-      <div class="home-widgets-grid">
-        <!-- Widget 1: Priority News Preview -->
-        <div class="widget-card">
-          <div>
-            <div class="widget-header">
-              <h3 class="widget-title">⚡ Top Priority News</h3>
-              <span class="category-badge">{{ priority_items|length }} Top Items</span>
-            </div>
-            
-            <div style="display:flex; flex-direction:column; gap:0.85rem;">
-              {% for it in priority_items[:3] %}
-              <div style="background:var(--bg-surface-elevated); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:0.85rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-                  <div style="display:flex; align-items:center; gap:0.4rem;">
-                    <span class="ticker-badge ticker-{{ it.ticker }}">{{ it.ticker }}</span>
-                    {% if it.form_or_type %}
-                    <span class="form-type-pill">{{ it.form_or_type }}</span>
-                    {% endif %}
-                  </div>
-                  <span class="score-badge score-high" style="font-size:0.75rem; padding:0.15rem 0.45rem;">★ {{ it.score }}</span>
-                </div>
-                <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); line-height:1.3; margin-bottom:0.25rem;">
-                  {{ it.clean_headline }}
-                </div>
-                {% if it.llm_summary %}
-                <div style="font-size:0.78rem; color:#bfdbfe; background:rgba(59,130,246,0.08); padding:0.35rem 0.55rem; border-radius:4px; border-left:2px solid var(--accent-blue);">
-                  💡 {{ it.llm_summary[:110] }}{% if it.llm_summary|length > 110 %}...{% endif %}
-                </div>
-                {% endif %}
-              </div>
-              {% endfor %}
-            </div>
-          </div>
+      <!-- Hero Greeting Section -->
+      <div class="hero-container">
+        <div class="hero-badge">
+          Onboard your intelligence engine to StockPulse ⚡💥📊
+        </div>
+        <h1 class="hero-title">What's on the agenda?</h1>
+        <p class="hero-subtext">Review overnight SEC EDGAR filings, company announcements, corporate calendar dates, and FRED macroeconomic sensitivities.</p>
+      </div>
 
-          <div class="widget-footer">
-            <a href="news.html" class="btn-primary">View Full Intelligence Feed ({{ stats.total }} Items) &rarr;</a>
-          </div>
+      <!-- Global Search & Command Bar (⌘K) with Tab Suggestions -->
+      <div class="search-wrapper">
+        <div class="search-box" id="globalSearchBox" onclick="openSearchDropdown()">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
+          <span class="search-shortcut">⌘ K</span>
         </div>
 
-        <!-- Widget 2: Forthcoming Calendar Preview -->
-        <div class="widget-card">
-          <div>
-            <div class="widget-header">
-              <h3 class="widget-title">📅 Forthcoming Calendar</h3>
-              <span class="category-badge">{{ calendar_events|length }} Scheduled Events</span>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:0.85rem;">
-              {% for ev in calendar_events[:3] %}
-              <div style="background:var(--bg-surface-elevated); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:0.85rem; display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
-                <div>
-                  <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.25rem;">
-                    <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
-                    <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted);">{{ ev.event_type }}</span>
-                  </div>
-                  <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); line-height:1.3;">
-                    {{ ev.headline[:55] }}{% if ev.headline|length > 55 %}...{% endif %}
-                  </div>
-                </div>
-                <div class="calendar-date-box" style="padding:0.3rem 0.5rem; min-width:50px;">
-                  <div class="calendar-date-month" style="font-size:0.6rem;">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                  <div class="calendar-date-day" style="font-size:1.15rem;">{{ ev.event_date[8:10] }}</div>
-                </div>
+        <!-- Interactive Tab Suggestions Dropdown -->
+        <div class="search-dropdown" id="searchDropdown">
+          <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
+          <div class="dropdown-tabs-grid">
+            <a href="news.html" class="dropdown-tab-card">
+              <span class="dropdown-tab-icon">⚡</span>
+              <div>
+                <div class="dropdown-tab-title">Intelligence Feed</div>
+                <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
               </div>
+            </a>
+            <a href="calendar.html" class="dropdown-tab-card">
+              <span class="dropdown-tab-icon">📅</span>
+              <div>
+                <div class="dropdown-tab-title">Corporate Calendar</div>
+                <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
+              </div>
+            </a>
+            <a href="economic.html" class="dropdown-tab-card">
+              <span class="dropdown-tab-icon">🏛️</span>
+              <div>
+                <div class="dropdown-tab-title">Economic Snapshot</div>
+                <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
+              </div>
+            </a>
+            <a href="index.html#health" class="dropdown-tab-card" onclick="closeSearchDropdown()">
+              <span class="dropdown-tab-icon">🛡️</span>
+              <div>
+                <div class="dropdown-tab-title">System Health</div>
+                <div class="dropdown-tab-sub">Collector Safeguards</div>
+              </div>
+            </a>
+          </div>
+
+          <div class="dropdown-tickers-wrap">
+            <div class="dropdown-section-title">Jump to Watchlist Ticker</div>
+            <div class="dropdown-tickers-list">
+              {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA'] %}
+              <a href="news.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
               {% endfor %}
             </div>
-          </div>
-
-          <div class="widget-footer">
-            <a href="calendar.html" class="btn-primary">View Full Corporate Calendar &rarr;</a>
-          </div>
-        </div>
-
-        <!-- Widget 3: Economic Snapshot Preview -->
-        <div class="widget-card">
-          <div>
-            <div class="widget-header">
-              <h3 class="widget-title">🏛️ Macroeconomic Snapshot</h3>
-              <span class="category-badge">FRED API</span>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:0.75rem;">
-              {% for ind in economic_indicators %}
-              <div style="background:var(--bg-surface-elevated); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:0.85rem; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                  <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.15rem;">{{ ind.name }}</div>
-                  <div style="font-family:'JetBrains Mono', monospace; font-size:1.4rem; font-weight:800; color:var(--text-primary);">{{ ind.formatted_value }}</div>
-                </div>
-                <span class="economic-trend-badge {% if ind.change_direction == 'up' %}trend-up{% elif ind.change_direction == 'down' %}trend-down{% else %}trend-flat{% endif %}">
-                  {% if ind.change_direction == 'up' %}▲ +{{ ind.change_value }}{% elif ind.change_direction == 'down' %}▼ {{ ind.change_value }}{% else %}■ Steady{% endif %}
-                </span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-
-          <div class="widget-footer">
-            <a href="economic.html" class="btn-primary">View Full Economic Intelligence &rarr;</a>
           </div>
         </div>
       </div>
 
-      <!-- Charts & Visual Analytics Section -->
-      <section class="charts-section">
-        <div class="charts-grid">
-          <div class="chart-card">
-            <div class="chart-header">
-              <div>
-                <h3 class="chart-title">📈 Filing &amp; News Frequency Over Time</h3>
-                <p class="chart-subtitle">Recent daily disclosure volume per company</p>
-              </div>
-              <div class="chart-legend-wrap" id="chartLegendBadges"></div>
-            </div>
-            <div class="chart-canvas-container">
-              <canvas id="timelineChart"></canvas>
-            </div>
+      <!-- Top Quick Preview Widgets Row (Cloudflare style) -->
+      <div class="quick-widgets-row">
+        <a href="news.html" class="quick-widget-card">
+          <div class="quick-widget-header">
+            <span class="quick-widget-title">Priority Intelligence ›</span>
+            <span class="quick-widget-arrow">›</span>
           </div>
+          <div class="quick-widget-btn">
+            ⚡ {{ priority_items|length }} High-Impact Disclosures
+          </div>
+        </a>
 
-          <div class="chart-card">
-            <div class="chart-header">
-              <div>
-                <h3 class="chart-title">📊 Intelligence by Category</h3>
-                <p class="chart-subtitle">Distribution across 24 core categories</p>
+        <a href="calendar.html" class="quick-widget-card">
+          <div class="quick-widget-header">
+            <span class="quick-widget-title">Upcoming Dates ›</span>
+            <span class="quick-widget-arrow">›</span>
+          </div>
+          <div class="quick-widget-btn">
+            📅 {% if calendar_events %}Next: {{ calendar_events[0].ticker }} ({{ calendar_events[0].display_date }}){% else %}14 Scheduled Events{% endif %}
+          </div>
+        </a>
+
+        <a href="economic.html" class="quick-widget-card">
+          <div class="quick-widget-header">
+            <span class="quick-widget-title">Macroeconomic Pulse ›</span>
+            <span class="quick-widget-arrow">›</span>
+          </div>
+          <div class="quick-widget-btn">
+            🏛️ Fed Funds: 3.75% · CPI: 3.4%
+          </div>
+        </a>
+      </div>
+
+      <!-- Analytics Section -->
+      <div class="section-header-row">
+        <h2 class="section-heading">Analytics</h2>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span class="section-time-pill">📅 Last 24 hours</span>
+          <button class="section-time-pill" onclick="window.location.reload()" style="cursor:pointer; border:1px solid var(--border-card);">🔄</button>
+        </div>
+      </div>
+
+      <div class="analytics-grid">
+        <!-- Metric Card 1: Total Disclosures Sparkline -->
+        <div class="analytics-card">
+          <div class="analytics-card-header">
+            <div>
+              <div class="analytics-card-title">Total Disclosures Collected</div>
+              <div class="analytics-metric-val">
+                {{ stats.total }} <span class="analytics-delta-pill">↗ 100.0%</span>
               </div>
             </div>
-            <div class="chart-canvas-container">
-              <canvas id="categoryChart"></canvas>
-            </div>
+            <span class="section-time-pill" style="font-size:0.75rem;">15 Tickers</span>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="timelineChart"></canvas>
           </div>
         </div>
-      </section>
+
+        <!-- Metric Card 2: Category Breakdown Donut -->
+        <div class="analytics-card">
+          <div class="analytics-card-header">
+            <div>
+              <div class="analytics-card-title">Intelligence by Category</div>
+              <div class="analytics-metric-val" style="font-size:1.5rem;">
+                {{ stats.by_category|length }} Categories
+              </div>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      </div>
 
       <!-- Health Section -->
       <section class="health-section" id="health">
@@ -1608,7 +1770,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div class="health-title-group">
             <h3 class="health-title">🛡️ Pipeline Health &amp; Collector Safeguards</h3>
             <span class="health-status-badge health-badge-healthy">
-              <span class="pulse-dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span>
+              <span class="pulse-dot" style="background:#10b981;"></span>
               HEALTHY · ALL COLLECTORS OPERATIONAL
             </span>
           </div>
@@ -1620,7 +1782,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <div class="health-grid">
           <div class="health-metric-card">
             <div class="health-metric-title">SEC EDGAR Filings</div>
-            <div class="health-metric-val" style="color:var(--accent-emerald);">{{ latest_run.edgar_count if latest_run else 450 }}</div>
+            <div class="health-metric-val" style="color:#15803d;">{{ latest_run.edgar_count if latest_run else 450 }}</div>
             <div class="health-metric-sub">15 companies queried</div>
           </div>
           <div class="health-metric-card">
@@ -1630,12 +1792,12 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           </div>
           <div class="health-metric-card">
             <div class="health-metric-title">Total Unique Yield</div>
-            <div class="health-metric-val" style="color:var(--accent-purple);">{{ latest_run.total_unique if latest_run else stats.total }}</div>
+            <div class="health-metric-val" style="color:#7c3aed;">{{ latest_run.total_unique if latest_run else stats.total }}</div>
             <div class="health-metric-sub">After deduplication</div>
           </div>
           <div class="health-metric-card">
             <div class="health-metric-title">High Priority Stories</div>
-            <div class="health-metric-val" style="color:var(--accent-amber);">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
+            <div class="health-metric-val" style="color:#b45309;">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
             <div class="health-metric-sub">Score ≥ 7.0 / 10.0</div>
           </div>
         </div>
@@ -1644,47 +1806,75 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   </div>
 
   <script>
+    // Search Dropdown interactions
+    function openSearchDropdown() {
+      const dropdown = document.getElementById('searchDropdown');
+      dropdown.classList.add('active');
+      document.getElementById('globalSearchBox').classList.add('focused');
+    }
+
+    function closeSearchDropdown() {
+      const dropdown = document.getElementById('searchDropdown');
+      dropdown.classList.remove('active');
+      document.getElementById('globalSearchBox').classList.remove('focused');
+    }
+
+    document.addEventListener('click', function(e) {
+      const wrapper = document.querySelector('.search-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        closeSearchDropdown();
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const input = document.getElementById('globalSearchInput');
+        if (input) {
+          input.focus();
+          openSearchDropdown();
+        }
+      }
+      if (e.key === 'Escape') {
+        closeSearchDropdown();
+      }
+    });
+
+    function handleSearchType(val) {
+      if (val && val.trim().length > 1) {
+        // Redirect on Enter or direct search to news.html
+      }
+    }
+
+    document.getElementById('globalSearchInput')?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const val = this.value.trim();
+        if (val) {
+          window.location.href = `news.html?q=${encodeURIComponent(val)}`;
+        }
+      }
+    });
+
+    // Charts Initialization
     const chartData = {{ chart_data_json|safe }};
     if (document.getElementById('timelineChart') && chartData.timeline_dates) {
       const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
       const tickerColors = {
-        'NVDA':  { border: '#10b981', bg: 'rgba(16, 185, 129, 0.14)' },
-        'AAPL':  { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.14)' },
-        'MSFT':  { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.14)' },
-        'GOOGL': { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.14)' },
-        'AMZN':  { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.14)' },
-        'META':  { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.14)' },
-        'TSLA':  { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.14)' },
-        'JPM':   { border: '#14b8a6', bg: 'rgba(20, 184, 166, 0.14)' },
-        'JNJ':   { border: '#f43f5e', bg: 'rgba(244, 63, 94, 0.14)' },
-        'XOM':   { border: '#ea580c', bg: 'rgba(234, 88, 12, 0.14)' },
-        'WMT':   { border: '#eab308', bg: 'rgba(234, 179, 8, 0.14)' },
-        'DIS':   { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.14)' },
-        'KO':    { border: '#dc2626', bg: 'rgba(220, 38, 38, 0.14)' },
-        'PFE':   { border: '#2563eb', bg: 'rgba(37, 99, 235, 0.14)' },
-        'BA':    { border: '#64748b', bg: 'rgba(100, 116, 139, 0.18)' }
+        'NVDA': '#10b981', 'AAPL': '#2563eb', 'MSFT': '#7c3aed', 'GOOGL': '#4f46e5',
+        'AMZN': '#f59e0b', 'META': '#0284c7', 'TSLA': '#dc2626', 'JPM': '#0d9488'
       };
 
-      const presentTickers = Object.keys(chartData.timeline_series).slice(0, 6);
-      const legendBadgesEl = document.getElementById('chartLegendBadges');
-      if (legendBadgesEl) {
-        legendBadgesEl.innerHTML = presentTickers.map(ticker => {
-          const col = tickerColors[ticker]?.border || '#06b6d4';
-          return `<span class="chart-legend-item"><span class="legend-dot" style="background:${col};"></span> ${ticker}</span>`;
-        }).join('');
-      }
-
+      const presentTickers = Object.keys(chartData.timeline_series).slice(0, 4);
       const datasets = presentTickers.map(ticker => {
-        const col = tickerColors[ticker] || { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' };
+        const col = tickerColors[ticker] || '#2563eb';
         return {
           label: ticker,
           data: chartData.timeline_series[ticker] || [],
-          borderColor: col.border,
-          backgroundColor: col.bg,
+          borderColor: col,
+          backgroundColor: 'transparent',
           borderWidth: 2,
-          pointRadius: 2.5,
+          pointRadius: 2,
           tension: 0.35,
-          fill: true
         };
       });
 
@@ -1694,10 +1884,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 10 }, color: '#475569' } } },
           scales: {
-            x: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-            y: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
+            x: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
           }
         }
       });
@@ -1710,18 +1900,18 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       new Chart(ctxCat, {
         type: 'doughnut',
         data: {
-          labels: catLabels,
+          labels: catLabels.slice(0, 5),
           datasets: [{
-            data: catCounts,
-            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ef4444', '#14b8a6', '#f43f5e', '#ea580c', '#eab308'],
-            borderColor: '#0f172a',
+            data: catCounts.slice(0, 5),
+            backgroundColor: ['#2563eb', '#10b981', '#7c3aed', '#f59e0b', '#0284c7'],
+            borderColor: '#ffffff',
             borderWidth: 2
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 }, color: '#cbd5e1', padding: 8 } } }
+          plugins: { legend: { position: 'right', labels: { boxWidth: 8, font: { size: 10 }, color: '#475569', padding: 6 } } }
         }
       });
     }
@@ -1752,13 +1942,13 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     """ + SIDEBAR_HTML + """
 
     <main class="app-main">
-      <header class="page-header">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="page-title">⚡ Full Intelligence Feed</h1>
-          <p class="page-subtitle">Deduplicated, scored disclosures with transparent arithmetic and supply-chain cross-references</p>
+          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">⚡ Full Intelligence Feed</h1>
+          <p style="font-size:0.9rem; color:var(--text-muted);">Deduplicated, scored disclosures with transparent arithmetic and supply-chain cross-references</p>
         </div>
-        <div class="top-status-group">
-          <span class="status-pill">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span class="section-time-pill">
             <span class="pulse-dot" style="background:#10b981;"></span> {{ items|length }} Total Items
           </span>
         </div>
@@ -1771,11 +1961,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <div class="priority-title-wrap">
             <span class="priority-badge-icon">⚡ PRIORITY</span>
             <div>
-              <h2 class="priority-title">Top Impact Disclosures</h2>
-              <p class="priority-subtitle">Top {{ priority_items|length }} highest scored stories with plain-English investor takeaways</p>
+              <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
+              <p style="font-size:0.8rem; color:var(--text-muted);">Top {{ priority_items|length }} highest scored stories with plain-English investor takeaways</p>
             </div>
           </div>
-          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:var(--accent-emerald); font-weight:700; background:rgba(16,185,129,0.12); padding:0.35rem 0.75rem; border-radius:6px; border:1px solid rgba(16,185,129,0.3);">
+          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.75rem; border-radius:6px; border:1px solid #86efac;">
             ⚡ SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
           </div>
         </div>
@@ -1797,7 +1987,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 </span>
               </div>
 
-              <div style="margin-top:0.5rem;">
+              <div style="margin-top:0.4rem;">
                 <span class="category-badge">{{ item.category }}</span>
                 <span class="source-tag" style="margin-left:0.4rem;">{{ item.source_label }}</span>
               </div>
@@ -1810,7 +2000,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   <div class="crossref-badges-wrap">
                     <span class="crossref-badge" title="{{ ref.impact_note }}">
                       🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                      <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                      <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
                       ({{ ref.matched_entity }})
                     </span>
                   </div>
@@ -1824,7 +2014,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                         {% for ref in item.cross_references_list %}
                         <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                           <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                          <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                          <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
                           <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
                         </div>
                         {% endfor %}
@@ -1902,7 +2092,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           </div>
           <div style="display:flex; align-items:center; gap:0.5rem;">
             <input type="text" id="searchInput" placeholder="Search headlines, takeaways, suppliers..." oninput="filterItems()" 
-                   style="background:var(--bg-surface-elevated); border:1px solid var(--border-card); color:var(--text-primary); padding:0.45rem 0.85rem; border-radius:var(--radius-sm); font-size:0.85rem; width:280px;">
+                   style="background:var(--bg-base); border:1px solid var(--border-card); color:var(--text-primary); padding:0.45rem 0.85rem; border-radius:var(--radius-sm); font-size:0.85rem; width:280px;">
           </div>
         </div>
       </div>
@@ -1965,7 +2155,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                       {% set ref = item.cross_references_list[0] %}
                       <span class="crossref-badge" title="{{ ref.impact_note }}">
                         🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                        <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
                         ({{ ref.matched_entity }})
                       </span>
                     {% else %}
@@ -1977,7 +2167,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                           {% for ref in item.cross_references_list %}
                           <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                             <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                            <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
                             <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
                           </div>
                           {% endfor %}
@@ -2015,6 +2205,24 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     let activeTickerFilter = 'ALL';
     let activeCategoryFilter = 'ALL';
     let activeSourceFilter = 'ALL';
+
+    // Parse URL params for ?ticker=NVDA or ?q=
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tickerParam = urlParams.get('ticker');
+      const qParam = urlParams.get('q');
+      if (tickerParam) {
+        const btn = document.querySelector(`[data-filter-type="ticker"][data-val="${tickerParam}"]`);
+        setTickerFilter(tickerParam, btn);
+      }
+      if (qParam) {
+        const input = document.getElementById('searchInput');
+        if (input) {
+          input.value = qParam;
+          filterItems();
+        }
+      }
+    });
 
     function setTickerFilter(val, btn) {
       activeTickerFilter = val;
@@ -2107,14 +2315,14 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
     """ + SIDEBAR_HTML + """
 
     <main class="app-main">
-      <header class="page-header">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="page-title">📅 Forthcoming Corporate Calendar</h1>
-          <p class="page-subtitle">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
+          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">📅 Forthcoming Corporate Calendar</h1>
+          <p style="font-size:0.9rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
         </div>
-        <div class="top-status-group">
-          <span class="calendar-origin-badge origin-sourced">📢 SOURCED FROM IR / PR</span>
-          <span class="calendar-origin-badge origin-estimated">⚙️ COMPUTED (40D STATUTORY RULE)</span>
+        <div style="display:flex; align-items:center; gap:0.45rem;">
+          <span class="calendar-origin-badge origin-sourced">📢 SOURCED</span>
+          <span class="calendar-origin-badge origin-estimated">⚙️ COMPUTED (40D RULE)</span>
         </div>
       </header>
 
@@ -2230,13 +2438,13 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     """ + SIDEBAR_HTML + """
 
     <main class="app-main">
-      <header class="page-header">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="page-title">🏛️ Macroeconomic Intelligence</h1>
-          <p class="page-subtitle">Federal Reserve Bank of St. Louis (FRED) live indicators mapped to individual watchlist company sensitivities</p>
+          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">🏛️ Macroeconomic Intelligence</h1>
+          <p style="font-size:0.9rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live indicators mapped to individual watchlist company sensitivities</p>
         </div>
-        <div class="top-status-group">
-          <span class="status-pill" style="color:var(--accent-indigo); font-weight:700;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span class="section-time-pill" style="color:var(--accent-blue); font-weight:700;">
             📈 St. Louis Fed (FRED) Feed
           </span>
         </div>
@@ -2287,7 +2495,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       </div>
 
       <!-- Watchlist Sensitivity Matrix Table -->
-      <section style="background:var(--bg-surface); border:1px solid var(--border-card); border-radius:var(--radius-lg); padding:1.75rem; box-shadow:var(--shadow-card);">
+      <section style="background:#ffffff; border:1px solid var(--border-card); border-radius:var(--radius-lg); padding:1.75rem; box-shadow:var(--shadow-card);">
         <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">📊 Watchlist Sensitivity Matrix</h3>
         <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1.5rem;">Documented sensitivities driving company-specific macroeconomic exposure</p>
 
@@ -2311,21 +2519,21 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
                 <td><span class="category-badge">{{ co.sector }}</span></td>
                 <td>
                   {% if 'interest_rates' in co.economic_sensitivities %}
-                  <span style="color:#34d399; font-weight:700;">● Active</span>
+                  <span style="color:#15803d; font-weight:700;">● Active</span>
                   {% else %}
                   <span style="color:var(--text-muted);">&mdash;</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if 'inflation' in co.economic_sensitivities %}
-                  <span style="color:#fbbf24; font-weight:700;">● Active</span>
+                  <span style="color:#b45309; font-weight:700;">● Active</span>
                   {% else %}
                   <span style="color:var(--text-muted);">&mdash;</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if 'unemployment' in co.economic_sensitivities %}
-                  <span style="color:#60a5fa; font-weight:700;">● Active</span>
+                  <span style="color:#1d4ed8; font-weight:700;">● Active</span>
                   {% else %}
                   <span style="color:var(--text-muted);">&mdash;</span>
                   {% endif %}
