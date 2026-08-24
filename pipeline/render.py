@@ -1,13 +1,10 @@
-"""Multi-page static HTML dashboard generator with responsive mobile architecture (Phase 6).
+"""Multi-page static HTML dashboard generator with responsive tablet & mobile architecture (Phase 6).
 
-Mobile & UX Enhancements:
-- Responsive Mobile Header with Brand, Quick Ask AI, and slide-over hamburger drawer.
-- Floating/Pinned Mobile Bottom Navigation Bar (Home, Feed, Calendar, Macro) with safe-area insets.
-- Responsive Chart.js resizing with adaptive font sizes, axis skip rules, and legend positioning on narrow viewports.
-- Donut chart viewport clipping protection and stacked mobile legend grid.
-- Strict text wrapping (overflow-wrap: anywhere) and smooth horizontal swipe containers for tables at 375px, 390px, 414px viewports.
-- Live guessing search autocomplete & helpful empty state.
-- Next Catalyst hero badge tracker.
+Responsive & Layout Fixes:
+- Solved medium/tablet breakpoint squeeze bug: switched cleanly to full-width mobile/tablet layout at <= 1024px, eliminating leftover desktop margins and blank left columns.
+- Solved mid-word ticker breaking: prevented tickers (e.g. 'NVDA') from breaking mid-word by enforcing white-space: nowrap on ticker tokens and removing aggressive overflow-wrap rules on the hero banner pill.
+- Responsive top navbar, off-canvas slide-over drawer, and bottom navigation bar.
+- Responsive Chart.js scaling and adaptive font sizes.
 
 Generates:
 1. site/index.html    - Home / Overview: Hero greeting, live search, widget preview cards & rich charts
@@ -153,6 +150,7 @@ SHARED_CSS = """
 
     .app-sidebar {
       width: 250px;
+      flex-shrink: 0;
       background: var(--bg-surface);
       border-right: 1px solid var(--border-card);
       display: flex;
@@ -168,12 +166,12 @@ SHARED_CSS = """
     }
 
     .app-main {
-      flex: 1;
       margin-left: 250px;
-      padding: 2rem 3rem 4rem 3rem;
-      max-width: 1440px;
       width: calc(100% - 250px);
-      min-width: 0; /* Prevents flex children from bursting out */
+      padding: 2rem 2.5rem 4rem 2.5rem;
+      max-width: 1400px;
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     /* Mobile Header & Bottom Navigation Bar */
@@ -297,77 +295,84 @@ SHARED_CSS = """
       line-height: 1;
     }
 
-    /* Responsive Breakpoints */
-    @media (max-width: 1080px) {
-      .app-sidebar {
-        width: 220px;
-        padding: 1.25rem 1rem;
-      }
-      .app-main {
-        margin-left: 220px;
-        width: calc(100% - 220px);
-        padding: 1.75rem 1.5rem 3rem 1.5rem;
-      }
-    }
-
-    @media (max-width: 768px) {
+    /* Tablets & Medium Viewports (<= 1024px) */
+    @media (max-width: 1024px) {
       .mobile-top-header {
-        display: flex;
+        display: flex !important;
       }
       .mobile-bottom-nav {
-        display: flex;
+        display: flex !important;
       }
       .top-header-bar {
         display: none !important;
       }
       .sidebar-close-btn {
-        display: block;
+        display: block !important;
       }
       .app-sidebar {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        width: 280px;
-        z-index: 1100;
-        transform: translateX(-100%);
-        box-shadow: var(--shadow-modal);
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 280px !important;
+        z-index: 1100 !important;
+        transform: translateX(-100%) !important;
+        box-shadow: var(--shadow-modal) !important;
       }
       .app-sidebar.mobile-open {
-        transform: translateX(0);
+        transform: translateX(0) !important;
       }
       .app-main {
-        margin-left: 0;
-        width: 100%;
-        padding: 1.25rem 1rem calc(5.5rem + env(safe-area-inset-bottom)) 1rem;
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 1.5rem 1.25rem calc(5.5rem + env(safe-area-inset-bottom)) 1.25rem !important;
       }
       .hero-container {
         margin: 0.75rem auto 1.75rem auto !important;
       }
       .hero-title {
-        font-size: 1.75rem !important;
+        font-size: 1.95rem !important;
       }
       .hero-subtext {
-        font-size: 0.85rem !important;
+        font-size: 0.88rem !important;
         margin-bottom: 1.25rem !important;
       }
       .search-wrapper {
         margin-bottom: 1.75rem !important;
       }
       .quick-widgets-row {
-        grid-template-columns: 1fr !important;
-        gap: 0.75rem !important;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+        gap: 0.85rem !important;
         margin-bottom: 1.75rem !important;
       }
       .analytics-grid {
         grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-      }
-      .analytics-card {
-        padding: 1.1rem !important;
+        gap: 1.25rem !important;
       }
       .priority-section, .controls-panel, .health-section {
-        padding: 1.1rem !important;
+        padding: 1.25rem !important;
+      }
+    }
+
+    /* Narrow Phone Viewports (<= 640px) */
+    @media (max-width: 640px) {
+      .hero-title {
+        font-size: 1.55rem !important;
+      }
+      .quick-widgets-row {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+      }
+      .analytics-card {
+        padding: 1rem !important;
+      }
+      .priority-section, .controls-panel, .health-section {
+        padding: 1rem !important;
+      }
+      .hero-badge {
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.75rem !important;
       }
     }
 
@@ -553,19 +558,20 @@ SHARED_CSS = """
       align-items: center;
       text-align: center;
       margin: 1.5rem auto 2.5rem auto;
-      max-width: 780px;
+      max-width: 820px;
       width: 100%;
     }
 
     .hero-badge {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.45rem;
       background: #ffffff;
       border: 1px solid var(--border-card);
-      padding: 0.35rem 0.95rem;
+      padding: 0.38rem 1.15rem;
       border-radius: 999px;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
       color: var(--text-secondary);
       box-shadow: var(--shadow-sm);
@@ -574,8 +580,10 @@ SHARED_CSS = """
       text-decoration: none;
       max-width: 100%;
       text-align: center;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      line-height: 1.4;
+      white-space: normal;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
     }
 
     .hero-badge:hover {
@@ -585,14 +593,21 @@ SHARED_CSS = """
       transform: translateY(-1px);
     }
 
+    .catalyst-ticker, .ticker-badge {
+      white-space: nowrap !important;
+      word-break: keep-all !important;
+      overflow-wrap: normal !important;
+      display: inline;
+    }
+
     .hero-title {
       font-size: 2.35rem;
       font-weight: 800;
       letter-spacing: -0.03em;
       color: var(--text-primary);
       margin-bottom: 0.5rem;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      word-break: normal;
+      overflow-wrap: normal;
     }
 
     .hero-subtext {
@@ -600,8 +615,7 @@ SHARED_CSS = """
       color: var(--text-muted);
       line-height: 1.5;
       margin-bottom: 1.75rem;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      word-break: normal;
     }
 
     /* Global Search & Command Bar (⌘K) */
@@ -869,13 +883,13 @@ SHARED_CSS = """
       font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 0.25rem;
-      word-break: break-word;
+      word-break: normal;
     }
 
     .no-results-sub {
       font-size: 0.75rem;
       color: var(--text-muted);
-      word-break: break-word;
+      word-break: normal;
     }
 
     /* Top Quick Preview Widgets Row */
@@ -942,7 +956,6 @@ SHARED_CSS = """
       color: var(--text-secondary);
       transition: all var(--transition-fast);
       text-align: center;
-      word-break: break-word;
     }
 
     .quick-widget-card:hover .quick-widget-btn {
@@ -966,7 +979,6 @@ SHARED_CSS = """
       font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--text-primary);
-      word-break: break-word;
     }
 
     .section-time-pill {
@@ -1098,6 +1110,8 @@ SHARED_CSS = """
       color: #334155;
       border: 1px solid #cbd5e1;
       flex-shrink: 0;
+      white-space: nowrap !important;
+      word-break: keep-all !important;
     }
 
     .form-type-pill {
@@ -1111,6 +1125,7 @@ SHARED_CSS = """
       border: 1px solid var(--border-card);
       display: inline-block;
       flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .category-badge {
@@ -1130,6 +1145,7 @@ SHARED_CSS = """
       font-size: 0.72rem;
       color: var(--text-muted);
       font-weight: 500;
+      white-space: nowrap;
     }
 
     /* Score Badges */
@@ -1143,6 +1159,7 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.2rem;
       flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .score-high {
@@ -1195,6 +1212,7 @@ SHARED_CSS = """
       letter-spacing: 0.04em;
       padding: 0.08rem 0.3rem;
       border-radius: 3px;
+      white-space: nowrap;
     }
 
     .crossref-customer {
@@ -1231,8 +1249,7 @@ SHARED_CSS = """
       transition: all var(--transition-fast);
       user-select: none;
       max-width: 100%;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      word-break: normal;
     }
 
     .crossref-summary-pill::-webkit-details-marker {
@@ -1274,8 +1291,6 @@ SHARED_CSS = """
       gap: 0.4rem;
       font-size: 0.75rem;
       padding: 0.15rem 0;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     /* Why It Matters Callout Box */
@@ -1288,8 +1303,6 @@ SHARED_CSS = """
       font-size: 0.825rem;
       color: #1e3a8a;
       line-height: 1.45;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .why-tag {
@@ -1301,6 +1314,7 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
+      white-space: nowrap;
     }
 
     /* Action Link */
@@ -1457,8 +1471,6 @@ SHARED_CSS = """
       margin-bottom: 0.25rem;
       font-size: 0.95rem;
       line-height: 1.35;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .summary-text {
@@ -1466,8 +1478,6 @@ SHARED_CSS = """
       font-size: 0.825rem;
       line-height: 1.45;
       margin-top: 0.35rem;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .date-cell {
@@ -1583,16 +1593,12 @@ SHARED_CSS = """
       color: var(--text-primary);
       margin: 0.5rem 0;
       line-height: 1.35;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .priority-card-summary {
       font-size: 0.8rem;
       color: var(--text-secondary);
       line-height: 1.4;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .priority-card-footer {
@@ -1712,8 +1718,6 @@ SHARED_CSS = """
       color: var(--text-primary);
       margin: 0.4rem 0;
       line-height: 1.35;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .calendar-card-details {
@@ -1721,8 +1725,6 @@ SHARED_CSS = """
       color: var(--text-secondary);
       margin: 0 0 1rem 0;
       line-height: 1.45;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .calendar-card-bottom {
@@ -1819,8 +1821,6 @@ SHARED_CSS = """
       font-weight: 700;
       color: var(--text-primary);
       margin: 0 0 0.35rem 0;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .economic-context {
@@ -1828,8 +1828,6 @@ SHARED_CSS = """
       color: var(--text-secondary);
       line-height: 1.45;
       margin-bottom: 1rem;
-      word-break: break-word;
-      overflow-wrap: anywhere;
     }
 
     .economic-tickers-wrap {
@@ -2003,8 +2001,7 @@ SHARED_CSS = """
       font-size: 1.35rem;
       color: var(--text-muted);
       cursor: pointer;
-      padding: 0.25rem;
-      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
       line-height: 1;
     }
 
@@ -2264,9 +2261,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <a href="calendar.html" class="hero-badge">
           <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
           {% if calendar_events %}
-          ⚡ Next Catalyst: <strong>{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Disclosures ↗
+          <span>⚡ Next Catalyst: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
           {% else %}
-          ⚡ <strong>{{ priority_items|length }} Priority Disclosures Active</strong> &bull; 15 Companies Monitored ↗
+          <span>⚡ <strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; 15 Companies Monitored ↗</span>
           {% endif %}
         </a>
         <h1 class="hero-title">What's on the agenda?</h1>
@@ -3299,7 +3296,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                           <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                             <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
                             <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">${ref.impact_note}</span>
                           </div>
                           {% endfor %}
                         </div>
