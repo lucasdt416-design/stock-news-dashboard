@@ -5,8 +5,8 @@ tickers:
     ir_feed_url: "https://nvidianews.nvidia.com/releases.xml"
     sector: semiconductors
     regulators: [BIS, SEC]
-    key_customers: [MSFT, META, AMZN, GOOGL]
-    key_suppliers: [TSM, ASML, SK Hynix]
+    key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Supermicro, SMCI]
+    key_suppliers: [TSM, TSMC, Taiwan Semiconductor, ASML, SK Hynix, Micron, Samsung Foundry]
     competitors: [AMD, INTC, AVGO]
     macro_sensitivities: [export_controls_china, datacenter_capex]
     economic_sensitivities: [interest_rates]
@@ -18,8 +18,8 @@ tickers:
     ir_feed_url: "https://www.apple.com/newsroom/rss-feed.rss"
     sector: consumer_electronics
     regulators: [DOJ, FTC, EU_EC, SEC]
-    key_customers: [Retail, Enterprise]
-    key_suppliers: [TSM, Foxconn, QCOM]
+    key_customers: [Global Consumers, Enterprise Fleet]
+    key_suppliers: [TSM, TSMC, Taiwan Semiconductor, Foxconn, Hon Hai, Qualcomm, QCOM, Broadcom, AVGO, Sony, LG Display]
     competitors: [GOOGL, MSFT, Samsung]
     macro_sensitivities: [china_demand, consumer_spending]
     economic_sensitivities: [inflation, unemployment]
@@ -31,8 +31,8 @@ tickers:
     ir_feed_url: "https://news.microsoft.com/feed/"
     sector: software_cloud
     regulators: [FTC, CMA, EU_EC, SEC]
-    key_customers: [Enterprise, Government]
-    key_suppliers: [NVDA, AMD, INTC]
+    key_customers: [Enterprise Cloud, Fortune 500, US Department of Defense]
+    key_suppliers: [NVDA, NVIDIA, AMD, Intel, INTC]
     competitors: [GOOGL, AMZN, AAPL]
     macro_sensitivities: [cloud_growth, enterprise_it_spend]
     economic_sensitivities: [interest_rates]
@@ -44,8 +44,8 @@ tickers:
     ir_feed_url: "https://blog.google/rss/"
     sector: search_cloud_ai
     regulators: [DOJ, FTC, EU_EC, SEC]
-    key_customers: [Digital_Advertisers, Enterprise_Cloud, Consumers]
-    key_suppliers: [NVDA, AVGO, TSM]
+    key_customers: [Digital Advertisers, Enterprise Cloud, Android Ecosystem]
+    key_suppliers: [NVDA, NVIDIA, Broadcom, AVGO, TSM, TSMC, Samsung]
     competitors: [MSFT, META, AMZN, AAPL]
     macro_sensitivities: [digital_ad_spending, antitrust_remedies, ai_search_competition]
     economic_sensitivities: [interest_rates]
@@ -57,8 +57,8 @@ tickers:
     ir_feed_url: "https://www.aboutamazon.com/news/rss"
     sector: ecommerce_cloud
     regulators: [FTC, DOJ, EU_EC, SEC]
-    key_customers: [Retail, AWS_Enterprise, SMB_Sellers]
-    key_suppliers: [NVDA, INTC, AMD, Logistics_Partners]
+    key_customers: [Retail Consumers, AWS Enterprise Clients, Prime Members]
+    key_suppliers: [NVDA, NVIDIA, Intel, INTC, AMD, FedEx, UPS]
     competitors: [MSFT, GOOGL, WMT, BABA, SHOP]
     macro_sensitivities: [consumer_discretionary_spending, enterprise_cloud_budget, fuel_logistics_costs]
     economic_sensitivities: [inflation, unemployment]
@@ -70,8 +70,8 @@ tickers:
     ir_feed_url: "https://about.fb.com/news/feed/"
     sector: social_media_digital_ads
     regulators: [FTC, EU_EC, SEC]
-    key_customers: [Digital_Advertisers, Creators, Consumers]
-    key_suppliers: [NVDA, AMD, Arista]
+    key_customers: [Digital Advertisers, App Developers, Content Creators]
+    key_suppliers: [NVDA, NVIDIA, AMD, Arista Networks, ANET]
     competitors: [GOOGL, ByteDance_TikTok, SNAP, AAPL]
     macro_sensitivities: [digital_ad_pricing, ai_capex_spend, privacy_regulations]
     economic_sensitivities: [inflation]
@@ -83,8 +83,8 @@ tickers:
     ir_feed_url: "https://ir.tesla.com/press-releases/rss"
     sector: automotive_clean_energy
     regulators: [NHTSA, SEC, EPA, EU_EC]
-    key_customers: [Retail, Fleet_Operators, Commercial_Energy]
-    key_suppliers: [Panasonic, CATL, NVDA, LG_Energy]
+    key_customers: [Retail Drivers, Fleet Operators, Hertz]
+    key_suppliers: [Panasonic, CATL, NVDA, NVIDIA, LG Energy Solution]
     competitors: [BYD, RIVN, F, GM, LCID]
     macro_sensitivities: [ev_subsidies, lithium_prices, interest_rates_auto_loans, china_ev_competition]
     economic_sensitivities: [interest_rates, inflation]
@@ -96,8 +96,8 @@ tickers:
     ir_feed_url: "https://jpmorganchaseco.gcs-web.com/rss/news-releases.xml"
     sector: financial_banking
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
-    key_customers: [Institutional_Clients, Corporations, Commercial, Retail_Banking]
-    key_suppliers: [Financial_Market_Infrastructure, Core_Banking_Tech, Cloud_Providers]
+    key_customers: [Institutional Asset Managers, Corporate Borrowers, Retail Depositors]
+    key_suppliers: [Bloomberg, S&P Global, Amazon AWS, Microsoft Azure]
     competitors: [BAC, C, MS, GS, WFC]
     macro_sensitivities: [fed_interest_rates, yield_curve_inversion, credit_default_rates, investment_banking_m_and_a_volume]
     economic_sensitivities: [interest_rates, unemployment]
@@ -109,8 +109,8 @@ tickers:
     ir_feed_url: "https://investor.jnj.com/rss/news-releases.xml"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
-    key_customers: [Hospitals, Healthcare_Providers, Pharmacies, Governments]
-    key_suppliers: [CMO_Manufacturers, Active_Pharma_Suppliers]
+    key_customers: [Hospital Systems, McKesson, AmerisourceBergen, Cardinal Health, Global Health Agencies]
+    key_suppliers: [Lonza, Catalent, Samsung Biologics, West Pharmaceutical]
     competitors: [PFE, MRK, ABBV, LLY, NVO]
     macro_sensitivities: [drug_price_negotiations_medicare, patent_cliff_expirations, litigation_liabilities]
     economic_sensitivities: [inflation]
@@ -122,8 +122,8 @@ tickers:
     ir_feed_url: "https://corporate.exxonmobil.com/rss/news-releases.xml"
     sector: energy_oil_gas
     regulators: [EPA, DOE, SEC, FTC]
-    key_customers: [Refineries, Industrial, Utilities, Retail_Consumers]
-    key_suppliers: [Oilfield_Services_SLB, HAL, Pipeline_Operators]
+    key_customers: [Refineries, Industrial Manufacturers, Aviation Fuel Buyers]
+    key_suppliers: [SLB, Schlumberger, Halliburton, HAL, Baker Hughes, BKR, Enterprise Products]
     competitors: [CVX, SHEL, TTE, BP, COP]
     macro_sensitivities: [brent_wti_crude_prices, opec_production_quotas, refining_crack_spreads]
     economic_sensitivities: [inflation]
@@ -135,8 +135,8 @@ tickers:
     ir_feed_url: "https://corporate.walmart.com/news/rss"
     sector: retail_consumer_staples
     regulators: [FTC, DOJ, SEC, OSHA]
-    key_customers: [Retail_Consumers, Marketplace_Buyers, Sam's_Club_Members]
-    key_suppliers: [PG, KO, PEP, Unilever, Tyson]
+    key_customers: [Retail Shoppers, Sam's Club Members, Walmart+ Subscribers]
+    key_suppliers: [Procter & Gamble, PG, Coca-Cola, KO, PepsiCo, PEP, Unilever, Tyson Foods, TSN, Kraft Heinz, KHC]
     competitors: [AMZN, TGT, COST, DG, KR]
     macro_sensitivities: [inflation_food_prices, consumer_real_wage_growth, supply_chain_tariffs]
     economic_sensitivities: [inflation, unemployment]
@@ -148,8 +148,8 @@ tickers:
     ir_feed_url: "https://thewaltdisneycompany.com/feed/"
     sector: entertainment_media
     regulators: [FCC, FTC, SEC, DOJ]
-    key_customers: [Consumers, Theme_Park_Visitors, Advertisers, Cable_Subscribers]
-    key_suppliers: [Creative_Talent, Production_Studios, Tech_Platforms]
+    key_customers: [Park Guests, Streaming Subscribers, Moviegoers, Linear Advertisers]
+    key_suppliers: [Sony Pictures, IMAX, Dolby Laboratories, Amazon AWS]
     competitors: [NFLX, CMCSA, WBD, AMZN, AAPL]
     macro_sensitivities: [theme_park_discretionary_spend, linear_tv_cord_cutting, streaming_subscriber_growth]
     economic_sensitivities: [inflation, unemployment]
@@ -161,8 +161,8 @@ tickers:
     ir_feed_url: "https://www.coca-colacompany.com/news-releases.rss"
     sector: consumer_staples_beverages
     regulators: [FDA, FTC, SEC, International_Food_Agencies]
-    key_customers: [Bottling_Partners, Restaurants, Grocery_Chains, Convenience_Stores]
-    key_suppliers: [Sugar_Corn_Syrup_Commodities, Aluminum_Can_Mfrs, PET_Packaging]
+    key_customers: [Coca-Cola FEMSA, McDonald's, MCD, Walmart, WMT, Target, TGT, Restaurant Brands]
+    key_suppliers: [Ball Corporation, BLL, Crown Holdings, CCK, Archer-Daniels-Midland, ADM]
     competitors: [PEP, KDP, MNST, CELH]
     macro_sensitivities: [fx_dollar_strength, packaging_commodity_costs, emerging_market_demand]
     economic_sensitivities: [inflation]
@@ -174,8 +174,8 @@ tickers:
     ir_feed_url: "https://investors.pfizer.com/rss/news-releases.xml"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
-    key_customers: [Governments, Wholesalers_MCK_CAH, Hospital_Networks]
-    key_suppliers: [Biotech_Partners, Contract_Research_Orgs, Chemical_Suppliers]
+    key_customers: [Governments, McKesson, MCK, Cardinal Health, CAH, Hospital Networks]
+    key_suppliers: [BioNTech, BNTX, Lonza, Catalent, Thermo Fisher Scientific, TMO]
     competitors: [JNJ, MRK, BMY, LLY, AZN]
     macro_sensitivities: [patent_expirations_loes, clinical_trial_success_rates, post_covid_demand_normalization]
     economic_sensitivities: [inflation]
@@ -187,8 +187,8 @@ tickers:
     ir_feed_url: "https://boeing.mediaroom.com/index.php?s=43&news_releases&format=rss"
     sector: aerospace_defense
     regulators: [FAA, DOD, SEC, EASA]
-    key_customers: [Airlines_UAL_DAL_AAL_LUV, US_Department_of_Defense, Global_Militaries]
-    key_suppliers: [Spirit_AeroSystems, GE_Aerospace, RTX, Safran]
+    key_customers: [United Airlines, UAL, Delta Air Lines, DAL, American Airlines, AAL, Southwest Airlines, LUV, Ryanair, RYAAY, US Air Force]
+    key_suppliers: [Spirit AeroSystems, SPR, GE Aerospace, GE, Raytheon, Safran, Honeywell, HON]
     competitors: [Airbus, LMT, NOC, GD]
     macro_sensitivities: [commercial_aviation_passenger_traffic, defense_budget_allocations, supply_chain_manufacturing_quality]
     economic_sensitivities: [interest_rates, inflation]

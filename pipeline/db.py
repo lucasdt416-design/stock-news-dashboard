@@ -60,6 +60,12 @@ def init_db(db_path: Optional[str] = None) -> None:
             conn.execute("ALTER TABLE news_items ADD COLUMN score_breakdown TEXT")
         if "llm_summary" not in columns:
             conn.execute("ALTER TABLE news_items ADD COLUMN llm_summary TEXT")
+        if "related_tickers" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN related_tickers TEXT")
+        if "cross_references" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN cross_references TEXT")
+        if "cross_ref_summary" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN cross_ref_summary TEXT")
 
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_news_published_date ON news_items(published_date DESC);"

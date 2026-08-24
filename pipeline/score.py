@@ -8,6 +8,7 @@ from pipeline.classify import (
     CAT_M_AND_A,
     CAT_REGULATORY,
     CAT_LEADERSHIP,
+    CAT_SUPPLY_CHAIN,
     CAT_PRODUCT_TECH,
     CAT_INSIDER,
     CAT_CAPITAL,
@@ -17,12 +18,13 @@ from pipeline.classify import (
     classify_item,
 )
 
-# Base Category Scores (Section 6: Earnings/M&A=8, Regulatory=7, Leadership=6, etc.)
+# Base Category Scores (Section 6: Earnings/M&A=8, Regulatory=7, Leadership=6, Supplier/Customer=5, etc.)
 CATEGORY_BASE_SCORES: Dict[str, float] = {
     CAT_EARNINGS: 8.0,
     CAT_M_AND_A: 8.0,
     CAT_REGULATORY: 7.0,
     CAT_LEADERSHIP: 6.0,
+    CAT_SUPPLY_CHAIN: 5.0,
     CAT_PRODUCT_TECH: 5.0,
     CAT_INSIDER: 4.0,
     CAT_CAPITAL: 4.0,

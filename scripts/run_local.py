@@ -28,6 +28,7 @@ from pipeline.db import init_db
 from pipeline.health import record_pipeline_run_health, STATUS_CRITICAL, STATUS_WARNING
 from pipeline.normalize import normalize_items
 from pipeline.dedupe import deduplicate_items
+from pipeline.crossref import apply_supply_chain_cross_references
 from pipeline.score import score_items
 from pipeline.summarize import summarize_items
 from pipeline.calendar import build_forthcoming_calendar
@@ -96,19 +97,24 @@ def main() -> None:
     unique_items, dup_count = deduplicate_items(normalized_items, similarity_threshold=0.75)
     logger.info("Deduplication complete: %d unique items (%d duplicates filtered)", len(unique_items), dup_count)
 
-    # 6. Stage 4: Scoring Engine
-    logger.info("--- Stage 4: Scoring Engine ---")
-    scored_items = score_items(unique_items)
+    # 6. Stage 4: Supply Chain & Customer Cross-Referencing (Category #12)
+    logger.info("--- Stage 4: Supplier & Customer Cross-Referencing Engine ---")
+    crossref_items = apply_supply_chain_cross_references(unique_items, tickers)
+    logger.info("Cross-referencing complete for %d items", len(crossref_items))
+
+    # 7. Stage 5: Scoring Engine
+    logger.info("--- Stage 5: Scoring Engine ---")
+    scored_items = score_items(crossref_items)
     high_impact = [it for it in scored_items if it.get("score", 0) >= 7.0]
     logger.info("Scored %d items (%d identified as High Impact ≥ 7.0)", len(scored_items), len(high_impact))
 
-    # 7. Stage 5: 'Why It Matters' Summarization (Gemini API)
-    logger.info("--- Stage 5: 'Why It Matters' Summarization ---")
+    # 8. Stage 6: 'Why It Matters' Summarization (Gemini API)
+    logger.info("--- Stage 6: 'Why It Matters' Summarization ---")
     summarized_items = summarize_items(scored_items, batch_size=25)
     logger.info("Summarization complete for %d items", len(summarized_items))
 
-    # 8. Stage 6: Persist News Records
-    logger.info("--- Stage 6: Persist News Records ---")
+    # 9. Stage 7: Persist News Records
+    logger.info("--- Stage 7: Persist News Records ---")
     new_count, total_processed = save_news_items(summarized_items, db_path=str(db_file))
     logger.info("Persistence complete: %d records updated/inserted (%d processed)", new_count, total_processed)
 

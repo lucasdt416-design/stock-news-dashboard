@@ -960,6 +960,57 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       gap: 0.25rem;
     }
 
+    /* Supplier & Customer Cross-Reference Badges (Category #12) */
+    .crossref-badges-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+    }
+
+    .crossref-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+      background: rgba(99, 102, 241, 0.12);
+      color: #c7d2fe;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      line-height: 1.35;
+      transition: all var(--transition-fast);
+    }
+
+    .crossref-badge:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: rgba(99, 102, 241, 0.55);
+      color: #ffffff;
+    }
+
+    .crossref-rel-pill {
+      font-size: 0.62rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      margin: 0 0.15rem;
+    }
+
+    .crossref-customer {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .crossref-supplier {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
     /* Macroeconomic Intelligence (Category #15) Section */
     .economic-section {
       margin-top: 3.5rem;
@@ -1366,6 +1417,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
             <h3 class="priority-card-headline">{{ item.headline }}</h3>
             
+            {% if item.cross_references_list %}
+            <div class="crossref-badges-wrap">
+              {% for ref in item.cross_references_list %}
+              <span class="crossref-badge" title="{{ ref.impact_note }}">
+                🔗 Context: <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                ({{ ref.matched_entity }})
+              </span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
             {% if item.llm_summary %}
             <div class="priority-why-box">
               <span class="why-tag">💡 Takeaway:</span> {{ item.llm_summary }}
@@ -1627,10 +1690,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           <tr class="news-row" 
               data-score="{{ item.score }}"
               data-date="{{ item.published_date }}"
-              data-ticker="{{ item.ticker }}" 
+              data-ticker="{{ item.ticker }}"
+              data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
               data-source="{{ item.source }}" 
               data-category="{{ item.category }}"
-              data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
+              data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
             <td>
               <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
                 {{ item.score }}
@@ -1656,6 +1720,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <td>
               <div class="headline-text">{{ item.headline }}</div>
               
+              {% if item.cross_references_list %}
+              <div class="crossref-badges-wrap">
+                {% for ref in item.cross_references_list %}
+                <span class="crossref-badge" title="{{ ref.impact_note }}">
+                  🔗 Cross-Ref: <strong class="ticker-badge ticker-{{ ref.related_ticker }}" style="font-size:0.65rem; padding:0.1rem 0.35rem; margin:0 0.2rem;">{{ ref.related_ticker }}</strong>
+                  <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                  ({{ ref.matched_entity }})
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
               {% if item.llm_summary %}
               <div class="why-matters-box">
                 <span class="why-tag">💡 Why it matters:</span> {{ item.llm_summary }}
@@ -2020,11 +2096,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
       rows.forEach(row => {
         const rowTicker = row.getAttribute('data-ticker');
+        const rowTickers = (row.getAttribute('data-tickers') || rowTicker || '').split(',').map(t => t.trim());
         const rowSource = row.getAttribute('data-source');
         const rowCategory = row.getAttribute('data-category');
         const rowText = (row.getAttribute('data-text') || '').toLowerCase();
 
-        const matchesTicker = (activeTickerFilter === 'ALL' || rowTicker === activeTickerFilter);
+        const matchesTicker = (activeTickerFilter === 'ALL' || rowTickers.includes(activeTickerFilter));
         const matchesSource = (activeSourceFilter === 'ALL' || rowSource === activeSourceFilter);
         const matchesCategory = (activeCategoryFilter === 'ALL' || rowCategory === activeCategoryFilter);
         const matchesSearch = (!query || rowText.includes(query));

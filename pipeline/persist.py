@@ -1,6 +1,8 @@
 """Persistence layer for saving and querying scored news items and filings in SQLite."""
 
+import json
 import logging
+import sqlite3
 from typing import Any, Dict, List, Optional, Tuple
 from pipeline.db import get_db_connection, init_db
 
@@ -24,6 +26,12 @@ def save_news_items(
 
     with conn:
         for it in items:
+            rel_tickers = it.get("related_tickers", [])
+            rel_tickers_str = ",".join(rel_tickers) if isinstance(rel_tickers, list) else str(rel_tickers or "")
+            cross_refs = it.get("cross_references", [])
+            cross_refs_str = json.dumps(cross_refs) if isinstance(cross_refs, list) else str(cross_refs or "")
+            cross_ref_summary = it.get("cross_ref_summary", "")
+
             cursor = conn.execute(
                 """
                 INSERT INTO news_items (
@@ -43,15 +51,21 @@ def save_news_items(
                     category,
                     score,
                     score_breakdown,
-                    llm_summary
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    llm_summary,
+                    related_tickers,
+                    cross_references,
+                    cross_ref_summary
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(item_uid) DO UPDATE SET
                     category = excluded.category,
                     score = excluded.score,
                     score_breakdown = excluded.score_breakdown,
                     llm_summary = excluded.llm_summary,
                     headline = excluded.headline,
-                    summary = excluded.summary
+                    summary = excluded.summary,
+                    related_tickers = excluded.related_tickers,
+                    cross_references = excluded.cross_references,
+                    cross_ref_summary = excluded.cross_ref_summary
                 """,
                 (
                     it.get("item_uid"),
@@ -71,6 +85,9 @@ def save_news_items(
                     float(it.get("score", 0.0)),
                     it.get("score_breakdown"),
                     it.get("llm_summary"),
+                    rel_tickers_str,
+                    cross_refs_str,
+                    cross_ref_summary,
                 ),
             )
             if cursor.rowcount > 0:
@@ -78,6 +95,19 @@ def save_news_items(
 
     conn.close()
     return (new_count, len(items))
+
+
+def _hydrate_news_row(r: sqlite3.Row) -> Dict[str, Any]:
+    """Helper to hydrate database row into Python dict with parsed JSON fields."""
+    d = dict(r)
+    rel_str = d.get("related_tickers") or ""
+    d["related_tickers_list"] = [t.strip() for t in rel_str.split(",") if t.strip()]
+    raw_refs = d.get("cross_references") or ""
+    try:
+        d["cross_references_list"] = json.loads(raw_refs) if raw_refs.startswith("[") else []
+    except Exception:
+        d["cross_references_list"] = []
+    return d
 
 
 def get_all_news_items(
@@ -122,7 +152,7 @@ def get_all_news_items(
         params.append(limit)
 
     cursor = conn.execute(query, params)
-    rows = [dict(row) for row in cursor.fetchall()]
+    rows = [_hydrate_news_row(row) for row in cursor.fetchall()]
     conn.close()
     return rows
 
@@ -145,7 +175,7 @@ def get_top_priority_items(
     params.append(limit)
 
     cursor = conn.execute(query, params)
-    rows = [dict(row) for row in cursor.fetchall()]
+    rows = [_hydrate_news_row(row) for row in cursor.fetchall()]
     conn.close()
     return rows
 
