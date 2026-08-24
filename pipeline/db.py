@@ -42,6 +42,7 @@ def init_db(db_path: Optional[str] = None) -> None:
                 category TEXT,
                 score REAL NOT NULL DEFAULT 0.0,
                 score_breakdown TEXT,
+                llm_summary TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -57,6 +58,8 @@ def init_db(db_path: Optional[str] = None) -> None:
             conn.execute("ALTER TABLE news_items ADD COLUMN score REAL NOT NULL DEFAULT 0.0")
         if "score_breakdown" not in columns:
             conn.execute("ALTER TABLE news_items ADD COLUMN score_breakdown TEXT")
+        if "llm_summary" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN llm_summary TEXT")
 
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_news_published_date ON news_items(published_date DESC);"

@@ -39,12 +39,14 @@ def save_news_items(
                     raw_id,
                     category,
                     score,
-                    score_breakdown
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    score_breakdown,
+                    llm_summary
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(item_uid) DO UPDATE SET
                     category = excluded.category,
                     score = excluded.score,
                     score_breakdown = excluded.score_breakdown,
+                    llm_summary = excluded.llm_summary,
                     headline = excluded.headline,
                     summary = excluded.summary
                 """,
@@ -65,6 +67,7 @@ def save_news_items(
                     it.get("category"),
                     float(it.get("score", 0.0)),
                     it.get("score_breakdown"),
+                    it.get("llm_summary"),
                 ),
             )
             if cursor.rowcount > 0:

@@ -30,6 +30,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
       CLOUDFLARE_PROJECT_NAME: "${{ secrets.CLOUDFLARE_PROJECT_NAME || 'stock-news-dashboard' }}"
       SEC_EDGAR_USER_AGENT: "${{ secrets.SEC_EDGAR_USER_AGENT || 'StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)' }}"
+      GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
 
     steps:
       - name: 📥 Checkout Repository

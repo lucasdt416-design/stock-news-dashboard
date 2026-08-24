@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Run local end-to-end Phase 3 pipeline:
-Collectors -> Normalize -> Deduplicate -> Score -> Persist -> Render.
+"""Run local end-to-end pipeline:
+Collectors -> Normalize -> Deduplicate -> Score -> Summarize (Gemini LLM) -> Persist -> Render.
 """
 
 import logging
@@ -21,6 +21,7 @@ from pipeline.normalize import normalize_items
 from pipeline.persist import get_news_stats, save_news_items
 from pipeline.render import render_dashboard
 from pipeline.score import score_items
+from pipeline.summarize import summarize_items
 
 
 def setup_logging():
@@ -43,9 +44,9 @@ def main():
     setup_logging()
     logger = logging.getLogger("run_local")
 
-    print("\n" + "=" * 68)
-    print("🚀 Running Stock News Dashboard Pipeline (Phase 3: Scoring & Priority)")
-    print("=" * 68 + "\n")
+    print("\n" + "=" * 70)
+    print("🚀 Running Stock News Dashboard Pipeline (Scoring + AI 'Why It Matters')")
+    print("=" * 70 + "\n")
 
     watchlist_file = os.path.join(PROJECT_ROOT, "data", "watchlist.yaml")
     db_file = os.path.join(PROJECT_ROOT, "data", "dashboard.db")
@@ -90,21 +91,26 @@ def main():
     high_impact = [it for it in scored_items if it.get("score", 0) >= 7.0]
     logger.info("Scored %d items (%d identified as High Impact ≥ 7.0)", len(scored_items), len(high_impact))
 
-    # 7. Stage 5: Persist
-    logger.info("--- Stage 5: Persist ---")
-    new_count, total_processed = save_news_items(scored_items, db_path=db_file)
+    # 7. Stage 5: 'Why It Matters' Summarization (Gemini API)
+    logger.info("--- Stage 5: 'Why It Matters' Summarization ---")
+    summarized_items = summarize_items(scored_items, batch_size=20)
+    logger.info("Summarization complete for %d items", len(summarized_items))
+
+    # 8. Stage 6: Persist
+    logger.info("--- Stage 6: Persist ---")
+    new_count, total_processed = save_news_items(summarized_items, db_path=db_file)
     logger.info("Persistence complete: %d records updated/inserted (%d processed)", new_count, total_processed)
 
-    # 8. Stage 6: Render Static Site
-    logger.info("--- Stage 6: Render ---")
+    # 9. Stage 7: Render Static Site
+    logger.info("--- Stage 7: Render ---")
     output_html = render_dashboard(output_path=site_output, db_path=db_file)
     logger.info("Rendered static dashboard to %s", output_html)
 
-    # 9. Summary Stats
+    # 10. Summary Stats
     stats = get_news_stats(db_path=db_file)
-    print("\n" + "-" * 68)
-    print("📊 Phase 3 Pipeline Run Summary")
-    print("-" * 68)
+    print("\n" + "-" * 70)
+    print("📊 Pipeline Run Summary")
+    print("-" * 70)
     print(f"• Total Unique Items in DB:    {stats['total']}")
     print(f"• High Impact Stories (≥ 7.0): {stats['high_priority_count']}")
     print(f"• Average Score:              {stats['avg_score']} / 10.0")
@@ -112,7 +118,7 @@ def main():
     print(f"• Breakdown by Source:        {stats['by_source']}")
     print(f"• Breakdown by Ticker:        {stats['by_ticker']}")
     print(f"• Generated Dashboard:        {output_html}")
-    print("-" * 68)
+    print("-" * 70)
     print(f"✅ Finished successfully! Open {output_html} in your browser.\n")
 
 

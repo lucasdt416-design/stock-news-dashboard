@@ -1,4 +1,4 @@
-"""Static HTML dashboard generator with Priority Panel and Score Ranking."""
+"""Static HTML dashboard generator with Priority Panel, Score Ranking, and 'Why It Matters' Takeaways."""
 
 import os
 from datetime import datetime
@@ -11,7 +11,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Personal stock news dashboard with rule-based scoring, priority ranking, and multi-source intelligence.">
+  <meta name="description" content="Personal stock news dashboard with rule-based scoring, plain-English 'Why It Matters' explanations, and multi-source intelligence.">
   <title>Stock News Dashboard — Priority Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -171,7 +171,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }
 
     /* ========================================================
-       PRIORITY INTELLIGENCE PANEL (VISUALLY DISTINCT)
+       PRIORITY INTELLIGENCE PANEL
        ======================================================== */
     .priority-section {
       background: radial-gradient(ellipse at top, rgba(37, 99, 235, 0.15) 0%, rgba(15, 23, 42, 0.95) 70%);
@@ -303,11 +303,43 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       margin-top: 0.4rem;
     }
 
-    .priority-card-summary {
+    .priority-why-box {
+      margin: 0.45rem 0;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-sm);
+      background: rgba(59, 130, 246, 0.12);
+      border-left: 3px solid var(--accent-blue);
       font-size: 0.8rem;
-      color: var(--text-secondary);
+      color: #e2e8f0;
       line-height: 1.4;
-      margin-top: 0.35rem;
+    }
+
+    .why-matters-box {
+      margin: 0.4rem 0;
+      padding: 0.45rem 0.7rem;
+      border-radius: var(--radius-sm);
+      background: rgba(16, 185, 129, 0.08);
+      border-left: 3px solid var(--accent-emerald);
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      line-height: 1.4;
+    }
+
+    .why-tag {
+      font-weight: 700;
+      color: #34d399;
+      margin-right: 0.25rem;
+    }
+
+    .priority-why-box .why-tag {
+      color: #60a5fa;
+    }
+
+    .priority-card-summary {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin-top: 0.25rem;
     }
 
     .priority-card-footer {
@@ -561,14 +593,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }
 
     .headline-text {
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.2rem;
       line-height: 1.4;
     }
 
     .summary-text {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       line-height: 1.35;
     }
@@ -641,11 +673,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="logo-badge">INTEL</div>
         <div class="brand-text">
           <h1>Stock News Dashboard</h1>
-          <p>Phase 3: Priority Intelligence & Multi-Source Research Engine</p>
+          <p>AI-Powered Intelligence & Multi-Source Research Engine</p>
         </div>
       </div>
       <div class="header-meta">
-        <div><span class="status-indicator"></span> <strong>Scoring Engine Live</strong></div>
+        <div><span class="status-indicator"></span> <strong>AI & Scoring Active</strong></div>
         <div>Updated: <span id="generated-time">{{ generated_at }}</span></div>
       </div>
     </header>
@@ -688,7 +720,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           <span class="priority-badge-icon">⚡ PRIORITY</span>
           <div>
             <h2 class="priority-title">Top Impact Disclosures & News</h2>
-            <p class="priority-subtitle">Top {{ priority_items|length }} highest scored stories across all watchlist companies</p>
+            <p class="priority-subtitle">Top {{ priority_items|length }} highest scored stories with plain-English investor takeaways</p>
           </div>
         </div>
         <div style="font-family:'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-emerald); font-weight: 700; background: rgba(16, 185, 129, 0.12); padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
@@ -716,7 +748,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             </div>
 
             <h3 class="priority-card-headline">{{ item.headline }}</h3>
-            <p class="priority-card-summary">{{ item.summary[:175] }}{% if item.summary|length > 175 %}...{% endif %}</p>
+            
+            {% if item.llm_summary %}
+            <div class="priority-why-box">
+              <span class="why-tag">💡 Takeaway:</span> {{ item.llm_summary }}
+            </div>
+            {% endif %}
+
+            <p class="priority-card-summary">{{ item.summary[:150] }}{% if item.summary|length > 150 %}...{% endif %}</p>
           </div>
 
           <div class="priority-card-footer">
@@ -791,7 +830,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         <div class="search-box">
           <span class="search-icon">🔍</span>
-          <input type="text" id="searchInput" placeholder="Search headlines, categories, or keywords..." onkeyup="filterItems()">
+          <input type="text" id="searchInput" placeholder="Search headlines, takeaways, or keywords..." onkeyup="filterItems()">
         </div>
       </div>
     </div>
@@ -805,7 +844,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <th>Company</th>
             <th>Category & Source</th>
             <th>Date</th>
-            <th>Headline & Description</th>
+            <th>Headline & 'Why It Matters' Takeaway</th>
             <th>Source Link</th>
           </tr>
         </thead>
@@ -817,7 +856,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
               data-ticker="{{ item.ticker }}" 
               data-source="{{ item.source }}" 
               data-category="{{ item.category }}"
-              data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.summary }} {{ item.score_breakdown }}">
+              data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.headline }} {{ item.llm_summary }} {{ item.summary }} {{ item.score_breakdown }}">
             <td>
               <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
                 {{ item.score }}
@@ -842,6 +881,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             </td>
             <td>
               <div class="headline-text">{{ item.headline }}</div>
+              
+              {% if item.llm_summary %}
+              <div class="why-matters-box">
+                <span class="why-tag">💡 Why it matters:</span> {{ item.llm_summary }}
+              </div>
+              {% endif %}
+
               <div class="summary-text">{{ item.summary }}</div>
             </td>
             <td>
@@ -859,7 +905,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <footer>
-      <p>Transparent scoring arithmetic: Category Base Score + Source Authority (+3/+2/+1) + Recency (+2/+1/-1) + Named in Headline (+1). Deduplicated across official SEC EDGAR and Company Newsrooms.</p>
+      <p>Multi-source financial intelligence engine powered by Gemini AI and transparent scoring arithmetic. Deduplicated across official SEC EDGAR and Company Newsrooms.</p>
     </footer>
   </div>
 
@@ -955,7 +1001,7 @@ def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> str:
-    """Render the dashboard HTML file with priority panel and scoring."""
+    """Render the dashboard HTML file with priority panel, scoring, and 'Why It Matters' summaries."""
     if output_path is None:
         site_dir = os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "site"
@@ -964,7 +1010,6 @@ def render_dashboard(
         output_path = os.path.join(site_dir, "index.html")
 
     items = get_all_news_items(order_by="score", db_path=db_path)
-    # Retrieve top 8 highest scored items for the Priority Panel
     priority_items = get_top_priority_items(limit=8, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
