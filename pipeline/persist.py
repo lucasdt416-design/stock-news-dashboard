@@ -1,7 +1,10 @@
 """Persistence layer for saving and querying scored news items and filings in SQLite."""
 
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 from pipeline.db import get_db_connection, init_db
+
+logger = logging.getLogger(__name__)
 
 
 def save_news_items(
@@ -307,3 +310,35 @@ def get_latest_pipeline_run(db_path: Optional[str] = None) -> Optional[Dict[str,
     """Retrieve the most recent pipeline run telemetry report."""
     runs = get_recent_pipeline_runs(limit=1, db_path=db_path)
     return runs[0] if runs else None
+
+
+def get_forthcoming_calendar(
+    limit: int = 24, db_path: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """Retrieve forthcoming corporate calendar events sorted by soonest date first."""
+    conn = get_db_connection(db_path)
+    try:
+        check = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='calendar_events'"
+        ).fetchone()
+        if not check:
+            conn.close()
+            return []
+
+        cursor = conn.execute(
+            """
+            SELECT id, ticker, company_name, event_type, event_date,
+                   display_date, relative_badge, headline, details, source_url
+            FROM calendar_events
+            ORDER BY event_date ASC, ticker ASC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.warning("Could not fetch calendar events: %s", e)
+        conn.close()
+        return []

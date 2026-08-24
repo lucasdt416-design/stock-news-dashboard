@@ -8,6 +8,7 @@ from jinja2 import Template
 from pipeline.persist import (
     get_all_news_items,
     get_chart_data,
+    get_forthcoming_calendar,
     get_news_stats,
     get_recent_pipeline_runs,
     get_top_priority_items,
@@ -749,6 +750,181 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       color: var(--text-muted);
     }
 
+    /* Forthcoming Calendar (Category #24) Section */
+    .calendar-section {
+      margin-top: 3.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-card);
+      margin-bottom: 1.5rem;
+    }
+
+    .calendar-filter-bar {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .cal-filter-btn {
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-card);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .cal-filter-btn:hover {
+      background: var(--bg-surface-highlight);
+      color: var(--text-primary);
+      border-color: var(--border-accent);
+    }
+
+    .cal-filter-btn.active {
+      background: var(--accent-blue);
+      color: #fff;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .calendar-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+      position: relative;
+    }
+
+    .calendar-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-accent);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .calendar-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .calendar-date-box {
+      background: var(--bg-surface-highlight);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.65rem;
+      text-align: center;
+      min-width: 68px;
+    }
+
+    .calendar-date-month {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-blue);
+    }
+
+    .calendar-date-day {
+      font-size: 1.15rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    .calendar-type-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .cal-type-earnings {
+      background: rgba(139, 92, 246, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.35);
+    }
+
+    .cal-type-dividend {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .cal-type-sec {
+      background: rgba(6, 182, 212, 0.15);
+      color: #22d3ee;
+      border: 1px solid rgba(6, 182, 212, 0.35);
+    }
+
+    .cal-type-conference {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .calendar-card-headline {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.5rem 0;
+      line-height: 1.4;
+    }
+
+    .calendar-card-details {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin: 0 0 1rem 0;
+      line-height: 1.45;
+    }
+
+    .calendar-card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .relative-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
     /* Health & Safeguards Section */
     .health-section {
       margin-top: 3.5rem;
@@ -1051,6 +1227,65 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
       </div>
     </section>
+
+    <!-- ========================================================
+         FORTHCOMING CORPORATE CALENDAR (CATEGORY #24)
+         ======================================================== -->
+    {% if calendar_events %}
+    <section class="calendar-section">
+      <div class="calendar-header">
+        <div class="section-header" style="margin-bottom:0;">
+          <h2>📅 Forthcoming Corporate Calendar</h2>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0.2rem 0 0 0;">Upcoming earnings calls, dividend dates, statutory SEC filing deadlines & conferences</p>
+        </div>
+        <div class="calendar-filter-bar">
+          <button class="cal-filter-btn active" onclick="filterCalendar('ALL', this)">All ({{ calendar_events|length }})</button>
+          <button class="cal-filter-btn" onclick="filterCalendar('Earnings', this)">📊 Earnings</button>
+          <button class="cal-filter-btn" onclick="filterCalendar('Dividend', this)">💰 Dividends</button>
+          <button class="cal-filter-btn" onclick="filterCalendar('SEC', this)">⚖️ SEC Deadlines</button>
+          <button class="cal-filter-btn" onclick="filterCalendar('Conference', this)">🎤 Conferences</button>
+        </div>
+      </div>
+
+      <div class="calendar-grid" id="calendarGrid">
+        {% for ev in calendar_events %}
+        <div class="calendar-card" data-event-type="{{ ev.event_type }}">
+          <div>
+            <div class="calendar-card-top">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
+                <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
+                  {% if 'Earnings' in ev.event_type %}📊 Earnings
+                  {% elif 'Dividend' in ev.event_type %}💰 Dividend
+                  {% elif 'SEC' in ev.event_type %}⚖️ SEC Deadline
+                  {% else %}🎤 Conference{% endif %}
+                </span>
+              </div>
+              <div class="calendar-date-box">
+                <div class="calendar-date-month">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
+                <div class="calendar-date-day">{{ ev.event_date[8:10] }}</div>
+              </div>
+            </div>
+
+            <h4 class="calendar-card-headline">{{ ev.headline }}</h4>
+            <p class="calendar-card-details">{{ ev.details }}</p>
+          </div>
+
+          <div class="calendar-card-bottom">
+            <span class="relative-badge">
+              ⏳ <strong>{{ ev.relative_badge }}</strong> ({{ ev.display_date }})
+            </span>
+            {% if ev.source_url %}
+            <a href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.75rem;">
+              Source ↗
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
 
     <!-- ========================================================
          FULL FEED / CONTROLS & TABLE
@@ -1535,6 +1770,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         noResults.style.display = 'none';
       }
     }
+
+    function filterCalendar(type, btn) {
+      document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.calendar-card');
+      cards.forEach(card => {
+        const evType = card.getAttribute('data-event-type') || '';
+        if (type === 'ALL') {
+          card.style.display = 'flex';
+        } else if (evType.toLowerCase().includes(type.toLowerCase())) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
   </script>
 </body>
 </html>
@@ -1545,7 +1797,7 @@ def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> str:
-    """Render the dashboard HTML file with priority panel, scoring, AI summaries, and charts."""
+    """Render the dashboard HTML file with priority panel, scoring, AI summaries, charts, and calendar."""
     if output_path is None:
         site_dir = os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "site"
@@ -1557,6 +1809,7 @@ def render_dashboard(
     priority_items = get_top_priority_items(limit=8, db_path=db_path)
     stats = get_news_stats(db_path=db_path)
     chart_data = get_chart_data(db_path=db_path)
+    calendar_events = get_forthcoming_calendar(limit=24, db_path=db_path)
     recent_runs = get_recent_pipeline_runs(limit=5, db_path=db_path)
     latest_run = recent_runs[0] if recent_runs else None
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
@@ -1567,6 +1820,7 @@ def render_dashboard(
         priority_items=priority_items,
         stats=stats,
         chart_data_json=json.dumps(chart_data),
+        calendar_events=calendar_events,
         recent_runs=recent_runs,
         latest_run=latest_run,
         generated_at=now_str,

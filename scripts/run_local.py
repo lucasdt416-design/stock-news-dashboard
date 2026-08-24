@@ -30,6 +30,7 @@ from pipeline.normalize import normalize_items
 from pipeline.dedupe import deduplicate_items
 from pipeline.score import score_items
 from pipeline.summarize import summarize_items
+from pipeline.calendar import build_forthcoming_calendar
 from pipeline.persist import save_news_items, get_news_stats
 from pipeline.render import render_dashboard
 import yaml
@@ -123,8 +124,13 @@ def main() -> None:
         db_path=str(db_file),
     )
 
-    # 10. Stage 8: Render Static Dashboard
-    logger.info("--- Stage 8: Render Static Site ---")
+    # 10. Stage 8: Forthcoming Corporate Calendar (Category #24)
+    logger.info("--- Stage 8: Forthcoming Corporate Calendar ---")
+    calendar_events = build_forthcoming_calendar(watchlist=tickers, db_path=str(db_file))
+    logger.info("Corporate calendar populated: %d upcoming scheduled events", len(calendar_events))
+
+    # 11. Stage 9: Render Static Dashboard
+    logger.info("--- Stage 9: Render Static Site ---")
     output_html = render_dashboard(output_path=str(site_output), db_path=str(db_file))
     logger.info("Rendered static dashboard to %s", output_html)
 
