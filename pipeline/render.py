@@ -1,13 +1,15 @@
 """Multi-page static HTML dashboard generator with Cloudflare-inspired visual design (Phase 6).
 
 Visual & UX Polish:
-- Rich line chart styling: vertical gradient fills, smooth cubic-bezier curves, styled point nodes, custom tooltips.
-- Category donut chart: custom canvas plugin rendering leader lines and direct callout percentage/count badges for each slice.
+- Interactive live autocomplete & guessing search engine inside #globalSearchInput.
+- Helpful empty search state: "Sorry, what you are searching for cannot be found, try being less specific."
+- Actionable top hero badge: Next upcoming corporate catalyst with live date and priority disclosures count.
+- Rich line chart styling: vertical gradient fills, smooth curves, styled point nodes.
+- Category donut chart: custom canvas leader lines and direct callout percentage badges.
 - Top bar and navigation: Replaced "Telemetry" & shield icon with "Analytics" & bar chart SVG icon linked to #analyticsSection.
 - High quality SVG icon set (Lucide/Heroicons).
 - Refined darkened StockPulse logo mark.
 - Interactive "Ask AI" assistant modal.
-- Fixed spacebar typing in search bar / command palette.
 
 Generates:
 1. site/index.html    - Home / Overview: Hero greeting, search with tab suggestions, widget preview cards & rich analytics
@@ -398,11 +400,14 @@ SHARED_CSS = """
       box-shadow: var(--shadow-sm);
       margin-bottom: 1.25rem;
       transition: all var(--transition-fast);
+      text-decoration: none;
     }
 
     .hero-badge:hover {
       border-color: var(--accent-blue);
+      color: var(--accent-blue);
       box-shadow: var(--shadow-card);
+      transform: translateY(-1px);
     }
 
     .hero-title {
@@ -480,7 +485,7 @@ SHARED_CSS = """
       color: var(--text-muted);
     }
 
-    /* Tab Suggestions Dropdown Modal */
+    /* Tab Suggestions & Live Autocomplete Dropdown */
     .search-dropdown {
       position: absolute;
       top: calc(100% + 8px);
@@ -493,6 +498,8 @@ SHARED_CSS = """
       padding: 1rem;
       z-index: 200;
       display: none;
+      max-height: 420px;
+      overflow-y: auto;
     }
 
     .search-dropdown.active {
@@ -592,6 +599,91 @@ SHARED_CSS = """
       background: #eff6ff;
       border-color: #93c5fd;
       color: #1d4ed8;
+    }
+
+    /* Live Search Results List */
+    .search-results-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-base);
+      border: 1px solid var(--border-card);
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all var(--transition-fast);
+    }
+
+    .search-result-item:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      transform: translateY(-1px);
+    }
+
+    .search-result-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .search-result-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--accent-blue);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-result-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-result-sub {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-no-results {
+      text-align: center;
+      padding: 1.75rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .no-results-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .no-results-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .no-results-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
     /* Top Quick Preview Widgets Row */
@@ -1836,14 +1928,19 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       <!-- Hero Greeting Section -->
       <div class="hero-container">
-        <div class="hero-badge">
-          <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem;"></span> StockPulse Intelligence Platform &bull; Overnight Run Complete
-        </div>
+        <a href="calendar.html" class="hero-badge">
+          <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem;"></span>
+          {% if calendar_events %}
+          ⚡ Next Catalyst: <strong>{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Disclosures Active ↗
+          {% else %}
+          ⚡ <strong>{{ priority_items|length }} Priority Disclosures Active</strong> &bull; 15 Companies Monitored ↗
+          {% endif %}
+        </a>
         <h1 class="hero-title">What's on the agenda?</h1>
         <p class="hero-subtext">Review overnight SEC EDGAR filings, company announcements, corporate calendar dates, and FRED macroeconomic sensitivities.</p>
       </div>
 
-      <!-- Global Search & Command Bar (⌘K) with Tab Suggestions -->
+      <!-- Global Search & Command Bar (⌘K) with Tab Suggestions & Live Autocomplete -->
       <div class="search-wrapper">
         <div class="search-box" id="globalSearchBox">
           <span class="search-icon-wrap">
@@ -1853,56 +1950,61 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <span class="search-shortcut">⌘ K</span>
         </div>
 
-        <!-- Interactive Tab Suggestions Dropdown -->
+        <!-- Interactive Live Suggestions / Autocomplete Dropdown -->
         <div class="search-dropdown" id="searchDropdown">
-          <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
-          <div class="dropdown-tabs-grid">
-            <a href="news.html" class="dropdown-tab-card">
-              <div class="dropdown-tab-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-              </div>
-              <div>
-                <div class="dropdown-tab-title">Intelligence Feed</div>
-                <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
-              </div>
-            </a>
-            <a href="calendar.html" class="dropdown-tab-card">
-              <div class="dropdown-tab-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              </div>
-              <div>
-                <div class="dropdown-tab-title">Corporate Calendar</div>
-                <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
-              </div>
-            </a>
-            <a href="economic.html" class="dropdown-tab-card">
-              <div class="dropdown-tab-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-              <div>
-                <div class="dropdown-tab-title">Economic Snapshot</div>
-                <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
-              </div>
-            </a>
-            <a href="#analyticsSection" class="dropdown-tab-card" onclick="closeSearchDropdown()">
-              <div class="dropdown-tab-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              </div>
-              <div>
-                <div class="dropdown-tab-title">Analytics &amp; Trends</div>
-                <div class="dropdown-tab-sub">Metrics &amp; Safeguards</div>
-              </div>
-            </a>
-          </div>
+          <div id="defaultDropdownContent">
+            <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
+            <div class="dropdown-tabs-grid">
+              <a href="news.html" class="dropdown-tab-card">
+                <div class="dropdown-tab-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+                </div>
+                <div>
+                  <div class="dropdown-tab-title">Intelligence Feed</div>
+                  <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
+                </div>
+              </a>
+              <a href="calendar.html" class="dropdown-tab-card">
+                <div class="dropdown-tab-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                </div>
+                <div>
+                  <div class="dropdown-tab-title">Corporate Calendar</div>
+                  <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
+                </div>
+              </a>
+              <a href="economic.html" class="dropdown-tab-card">
+                <div class="dropdown-tab-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div>
+                  <div class="dropdown-tab-title">Economic Snapshot</div>
+                  <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
+                </div>
+              </a>
+              <a href="#analyticsSection" class="dropdown-tab-card" onclick="closeSearchDropdown()">
+                <div class="dropdown-tab-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </div>
+                <div>
+                  <div class="dropdown-tab-title">Analytics &amp; Trends</div>
+                  <div class="dropdown-tab-sub">Metrics &amp; Safeguards</div>
+                </div>
+              </a>
+            </div>
 
-          <div class="dropdown-tickers-wrap">
-            <div class="dropdown-section-title">Jump to Watchlist Ticker</div>
-            <div class="dropdown-tickers-list">
-              {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA'] %}
-              <a href="news.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
-              {% endfor %}
+            <div class="dropdown-tickers-wrap">
+              <div class="dropdown-section-title">Jump to Watchlist Ticker</div>
+              <div class="dropdown-tickers-list">
+                {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA'] %}
+                <a href="news.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
+                {% endfor %}
+              </div>
             </div>
           </div>
+
+          <!-- Dynamic Live Search Results Container -->
+          <div id="liveSearchResults" style="display:none;"></div>
         </div>
       </div>
 
@@ -2082,6 +2184,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     const allItems = {{ items|tojson|safe }};
     const calendarEvents = {{ calendar_events|tojson|safe }};
     const econIndicators = {{ economic_indicators|tojson|safe }};
+    const watchlistCompanies = {{ watchlist_companies|tojson|safe }};
 
     function openSearchDropdown() {
       const dropdown = document.getElementById('searchDropdown');
@@ -2093,6 +2196,151 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const dropdown = document.getElementById('searchDropdown');
       dropdown.classList.remove('active');
       document.getElementById('globalSearchBox').classList.remove('focused');
+    }
+
+    // =========================================================================
+    // LIVE AUTOCOMPLETE & GUESSING SEARCH ENGINE
+    // =========================================================================
+    function handleSearchType(rawVal) {
+      openSearchDropdown();
+      const val = (rawVal || '').toLowerCase().trim();
+      const defaultContent = document.getElementById('defaultDropdownContent');
+      const liveResults = document.getElementById('liveSearchResults');
+
+      if (!val) {
+        defaultContent.style.display = 'block';
+        liveResults.style.display = 'none';
+        liveResults.innerHTML = '';
+        return;
+      }
+
+      defaultContent.style.display = 'none';
+      liveResults.style.display = 'block';
+
+      // 1. Match Companies & Tickers
+      const matchedCompanies = watchlistCompanies.filter(c => 
+        (c.symbol || '').toLowerCase().includes(val) ||
+        (c.name || '').toLowerCase().includes(val) ||
+        (c.sector || '').toLowerCase().includes(val)
+      );
+
+      // 2. Match News & Disclosures
+      const matchedNews = allItems.filter(it =>
+        (it.clean_headline || '').toLowerCase().includes(val) ||
+        (it.ticker || '').toLowerCase().includes(val) ||
+        (it.form_or_type || '').toLowerCase().includes(val) ||
+        (it.category || '').toLowerCase().includes(val) ||
+        (it.llm_summary || '').toLowerCase().includes(val)
+      );
+
+      // 3. Match Calendar Events
+      const matchedCal = calendarEvents.filter(ev =>
+        (ev.headline || '').toLowerCase().includes(val) ||
+        (ev.ticker || '').toLowerCase().includes(val) ||
+        (ev.event_type || '').toLowerCase().includes(val)
+      );
+
+      // 4. Match Economic Indicators
+      const matchedEcon = econIndicators.filter(ind =>
+        (ind.name || '').toLowerCase().includes(val) ||
+        (ind.series_id || '').toLowerCase().includes(val) ||
+        (ind.relevant_tickers || '').toLowerCase().includes(val) ||
+        (ind.category || '').toLowerCase().includes(val)
+      );
+
+      const totalMatches = matchedCompanies.length + matchedNews.length + matchedCal.length + matchedEcon.length;
+
+      if (totalMatches === 0) {
+        liveResults.innerHTML = `
+          <div class="search-no-results">
+            <div class="no-results-icon">🔍</div>
+            <div class="no-results-title">Sorry, what you are searching for cannot be found, try being less specific.</div>
+            <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>), form type (<em>8-K</em>), category, or indicator.</div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '<div class="search-results-list">';
+
+      // Render Company matches
+      if (matchedCompanies.length > 0) {
+        html += '<div class="dropdown-section-title">Matching Companies</div>';
+        matchedCompanies.slice(0, 3).forEach(c => {
+          html += `
+            <a href="news.html?ticker=${c.symbol}" class="search-result-item">
+              <div class="search-result-left">
+                <span class="ticker-badge ticker-${c.symbol}">${c.symbol}</span>
+                <div>
+                  <div class="search-result-title">${c.name}</div>
+                  <div class="search-result-sub">${c.sector} &bull; ${c.exchange}</div>
+                </div>
+              </div>
+              <span class="action-link" style="font-size:0.75rem;">View Feed ↗</span>
+            </a>
+          `;
+        });
+      }
+
+      // Render Calendar matches
+      if (matchedCal.length > 0) {
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Upcoming Corporate Events</div>';
+        matchedCal.slice(0, 2).forEach(ev => {
+          html += `
+            <a href="calendar.html" class="search-result-item">
+              <div class="search-result-left">
+                <span class="ticker-badge ticker-${ev.ticker}">${ev.ticker}</span>
+                <div>
+                  <div class="search-result-title">${ev.headline}</div>
+                  <div class="search-result-sub">📅 ${ev.display_date} &bull; ${ev.event_type}</div>
+                </div>
+              </div>
+              <span class="action-link" style="font-size:0.75rem;">Calendar ↗</span>
+            </a>
+          `;
+        });
+      }
+
+      // Render Macroeconomic matches
+      if (matchedEcon.length > 0) {
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Macroeconomic Indicators</div>';
+        matchedEcon.slice(0, 2).forEach(ind => {
+          html += `
+            <a href="economic.html" class="search-result-item">
+              <div class="search-result-left">
+                <div class="search-result-icon">🏛️</div>
+                <div>
+                  <div class="search-result-title">${ind.name}: ${ind.formatted_value}</div>
+                  <div class="search-result-sub">${ind.category} &bull; Relevant: ${ind.relevant_tickers}</div>
+                </div>
+              </div>
+              <span class="action-link" style="font-size:0.75rem;">Macro ↗</span>
+            </a>
+          `;
+        });
+      }
+
+      // Render News matches
+      if (matchedNews.length > 0) {
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Disclosures &amp; Intelligence (' + matchedNews.length + ')</div>';
+        matchedNews.slice(0, 4).forEach(it => {
+          html += `
+            <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
+              <div class="search-result-left">
+                <span class="ticker-badge ticker-${it.ticker}">${it.ticker}</span>
+                <div>
+                  <div class="search-result-title">${it.clean_headline}</div>
+                  <div class="search-result-sub">${it.category} &bull; ${it.published_date} &bull; ★ ${it.score}</div>
+                </div>
+              </div>
+              <span class="action-link" style="font-size:0.75rem;">Feed ↗</span>
+            </a>
+          `;
+        });
+      }
+
+      html += '</div>';
+      liveResults.innerHTML = html;
     }
 
     // Modal AI Controls
@@ -2353,7 +2601,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             const midAngle = startAngle + (endAngle - startAngle) / 2;
             const val = chart.data.datasets[0].data[i];
             const pct = Math.round((val / totalCount) * 100);
-            if (pct < 5) return; // skip tiny slivers
+            if (pct < 5) return;
 
             const r1 = outerRadius + 6;
             const r2 = outerRadius + 16;
@@ -2365,7 +2613,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             const isRight = Math.cos(midAngle) >= 0;
             const endHorizontalX = ex + (isRight ? 12 : -12);
 
-            // Draw clean leader line
             ctx.beginPath();
             ctx.moveTo(sx, sy);
             ctx.lineTo(ex, ey);
@@ -2374,7 +2621,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             ctx.lineWidth = 1.2;
             ctx.stroke();
 
-            // Text Callout
             ctx.textAlign = isRight ? 'left' : 'right';
             ctx.textBaseline = 'middle';
             ctx.font = 'bold 11px Inter, sans-serif';
@@ -2426,7 +2672,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         }
       });
 
-      // Populate interactive legend breakdown below donut
       const legendListEl = document.getElementById('categoryLegendList');
       if (legendListEl) {
         let legendHtml = '';
@@ -2560,7 +2805,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               {% endif %}
 
               {% if item.llm_summary %}
-              <div class="priority-why-box">
+              <div class="why-matters-box">
                 <span class="why-tag">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
                   Takeaway:
