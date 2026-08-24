@@ -1,14 +1,16 @@
 """Multi-page static HTML dashboard generator with Cloudflare-inspired visual design (Phase 6).
 
 Visual & UX Polish:
-- High quality SVG icon set (Lucide/Heroicons) replacing emoji icons across sidebar, badges, and filters.
-- Refined, darkened StockPulse logo mark with burnt orange / warm amber gradient.
-- Fully functional interactive "Ask AI" assistant modal querying disclosures and macro sensitivities.
+- Rich line chart styling: vertical gradient fills, smooth cubic-bezier curves, styled point nodes, custom tooltips.
+- Category donut chart: custom canvas plugin rendering leader lines and direct callout percentage/count badges for each slice.
+- Top bar and navigation: Replaced "Telemetry" & shield icon with "Analytics" & bar chart SVG icon linked to #analyticsSection.
+- High quality SVG icon set (Lucide/Heroicons).
+- Refined darkened StockPulse logo mark.
+- Interactive "Ask AI" assistant modal.
 - Fixed spacebar typing in search bar / command palette.
-- Content clarity: human-readable executive titles, de-emphasized form subtitle badges, collapsible cross-references.
 
 Generates:
-1. site/index.html    - Home / Overview: Hero greeting, search with tab suggestions, widget preview cards & analytics
+1. site/index.html    - Home / Overview: Hero greeting, search with tab suggestions, widget preview cards & rich analytics
 2. site/news.html     - Full Intelligence Feed: Priority Panel, Filters, Search, Sort & News Table
 3. site/calendar.html - Forthcoming Corporate Calendar: Earnings calls, Dividends, Filing Deadlines
 4. site/economic.html - Macroeconomic Intelligence: FRED indicators, Live Sensitivity Filtering & Matrix
@@ -126,6 +128,10 @@ SHARED_CSS = """
       padding: 0;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       background-color: var(--bg-base);
       color: var(--text-primary);
@@ -237,7 +243,7 @@ SHARED_CSS = """
       color: #3730a3;
     }
 
-    /* Sidebar Brand (Darkened burnt orange logo) */
+    /* Sidebar Brand */
     .sidebar-brand {
       display: flex;
       align-items: center;
@@ -691,12 +697,12 @@ SHARED_CSS = """
     /* Analytics Grid & Cards */
     .analytics-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: 3fr 2fr;
       gap: 1.25rem;
       margin-bottom: 2.5rem;
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 1040px) {
       .analytics-grid {
         grid-template-columns: 1fr;
       }
@@ -708,13 +714,16 @@ SHARED_CSS = """
       border-radius: var(--radius-lg);
       padding: 1.5rem;
       box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     .analytics-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
     }
 
     .analytics-card-title {
@@ -747,8 +756,35 @@ SHARED_CSS = """
 
     .chart-canvas-container {
       position: relative;
-      height: 220px;
+      height: 260px;
       width: 100%;
+    }
+
+    .category-legend-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border-card);
+    }
+
+    .category-legend-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: 6px;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .category-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
     }
 
     /* Ticker & Form Badges */
@@ -1692,7 +1728,7 @@ SHARED_CSS = """
 """
 
 # ==============================================================================
-# SIDEBAR NAVIGATION MACRO (With SVG Icons)
+# SIDEBAR NAVIGATION MACRO
 # ==============================================================================
 SIDEBAR_HTML = """
 <aside class="app-sidebar">
@@ -1737,10 +1773,10 @@ SIDEBAR_HTML = """
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
     </a>
-    <a href="index.html#health" class="nav-link">
+    <a href="index.html#analyticsSection" class="nav-link">
       <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span class="nav-text">System Health</span>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="nav-text">Analytics &amp; Health</span>
       </div>
     </a>
   </nav>
@@ -1768,7 +1804,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Personal stock news dashboard overview with widget preview cards and instant search suggestions.">
+  <meta name="description" content="Personal stock news dashboard overview with widget preview cards, rich disclosure trends, and instant search suggestions.">
   <title>StockPulse — What's on the agenda?</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1789,9 +1825,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
           Ask AI
         </button>
-        <a href="index.html#health" class="top-header-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Telemetry
+        <a href="#analyticsSection" class="top-header-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
         </a>
         <span class="section-time-pill" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
           <span class="pulse-dot" style="background:#10b981;"></span> Live
@@ -1848,13 +1884,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
               </div>
             </a>
-            <a href="index.html#health" class="dropdown-tab-card" onclick="closeSearchDropdown()">
+            <a href="#analyticsSection" class="dropdown-tab-card" onclick="closeSearchDropdown()">
               <div class="dropdown-tab-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               </div>
               <div>
-                <div class="dropdown-tab-title">System Health</div>
-                <div class="dropdown-tab-sub">Collector Safeguards</div>
+                <div class="dropdown-tab-title">Analytics &amp; Trends</div>
+                <div class="dropdown-tab-sub">Metrics &amp; Safeguards</div>
               </div>
             </a>
           </div>
@@ -1907,8 +1943,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       </div>
 
       <!-- Analytics Section -->
-      <div class="section-header-row">
-        <h2 class="section-heading">Analytics</h2>
+      <div id="analyticsSection" class="section-header-row" style="padding-top:1rem;">
+        <h2 class="section-heading">Analytics &amp; Trends</h2>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
@@ -1921,34 +1957,43 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       </div>
 
       <div class="analytics-grid">
-        <!-- Metric Card 1: Total Disclosures Sparkline -->
+        <!-- Metric Card 1: Rich Disclosure Trend Graph with Gradients -->
         <div class="analytics-card">
-          <div class="analytics-card-header">
-            <div>
-              <div class="analytics-card-title">Total Disclosures Collected</div>
-              <div class="analytics-metric-val">
-                {{ stats.total }} <span class="analytics-delta-pill">↗ 100.0%</span>
+          <div>
+            <div class="analytics-card-header">
+              <div>
+                <div class="analytics-card-title">Daily Filing &amp; Intelligence Velocity</div>
+                <div class="analytics-metric-val">
+                  {{ stats.total }} <span class="analytics-delta-pill">↗ 100.0%</span>
+                </div>
               </div>
+              <span class="section-time-pill" style="font-size:0.75rem;">15 Core Tickers</span>
             </div>
-            <span class="section-time-pill" style="font-size:0.75rem;">15 Tickers</span>
-          </div>
-          <div class="chart-canvas-container">
-            <canvas id="timelineChart"></canvas>
+            <div class="chart-canvas-container">
+              <canvas id="timelineChart"></canvas>
+            </div>
           </div>
         </div>
 
-        <!-- Metric Card 2: Category Breakdown Donut -->
+        <!-- Metric Card 2: Category Breakdown Donut with Data Callout Badges -->
         <div class="analytics-card">
-          <div class="analytics-card-header">
-            <div>
-              <div class="analytics-card-title">Intelligence by Category</div>
-              <div class="analytics-metric-val" style="font-size:1.5rem;">
-                {{ stats.by_category|length }} Categories
+          <div>
+            <div class="analytics-card-header">
+              <div>
+                <div class="analytics-card-title">Intelligence by Category</div>
+                <div class="analytics-metric-val" style="font-size:1.5rem;">
+                  {{ stats.by_category|length }} Categories
+                </div>
               </div>
+              <span class="section-time-pill" style="font-size:0.75rem;">Slices &amp; Callouts</span>
+            </div>
+            <div class="chart-canvas-container" style="height: 200px;">
+              <canvas id="categoryChart"></canvas>
             </div>
           </div>
-          <div class="chart-canvas-container">
-            <canvas id="categoryChart"></canvas>
+          
+          <div class="category-legend-list" id="categoryLegendList">
+            <!-- Dynamically populated legend badges with counts & percentages -->
           </div>
         </div>
       </div>
@@ -2192,26 +2237,46 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    // Charts Initialization
+    // =========================================================================
+    // RICH CHARTS INITIALIZATION
+    // =========================================================================
     const chartData = {{ chart_data_json|safe }};
-    if (document.getElementById('timelineChart') && chartData.timeline_dates) {
-      const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
-      const tickerColors = {
-        'NVDA': '#10b981', 'AAPL': '#2563eb', 'MSFT': '#7c3aed', 'GOOGL': '#4f46e5',
-        'AMZN': '#f59e0b', 'META': '#0284c7', 'TSLA': '#dc2626', 'JPM': '#0d9488'
-      };
 
-      const presentTickers = Object.keys(chartData.timeline_series).slice(0, 4);
-      const datasets = presentTickers.map(ticker => {
-        const col = tickerColors[ticker] || '#2563eb';
+    // 1. Line Chart: Multi-Gradient Curve with styled tooltips and tension
+    if (document.getElementById('timelineChart') && chartData.timeline_dates) {
+      const canvasEl = document.getElementById('timelineChart');
+      const ctxTimeline = canvasEl.getContext('2d');
+
+      const palette = [
+        { stroke: '#2563eb', fillTop: 'rgba(37, 99, 235, 0.28)', fillBot: 'rgba(37, 99, 235, 0.0)' },
+        { stroke: '#10b981', fillTop: 'rgba(16, 185, 129, 0.22)', fillBot: 'rgba(16, 185, 129, 0.0)' },
+        { stroke: '#7c3aed', fillTop: 'rgba(124, 58, 237, 0.20)', fillBot: 'rgba(124, 58, 237, 0.0)' },
+        { stroke: '#f59e0b', fillTop: 'rgba(245, 158, 11, 0.20)', fillBot: 'rgba(245, 158, 11, 0.0)' },
+      ];
+
+      const presentTickers = Object.keys(chartData.timeline_series || {}).slice(0, 4);
+      const datasets = presentTickers.map((ticker, idx) => {
+        const theme = palette[idx % palette.length];
+        const grad = ctxTimeline.createLinearGradient(0, 0, 0, 220);
+        grad.addColorStop(0, theme.fillTop);
+        grad.addColorStop(1, theme.fillBot);
+
         return {
           label: ticker,
           data: chartData.timeline_series[ticker] || [],
-          borderColor: col,
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 2,
-          tension: 0.35,
+          borderColor: theme.stroke,
+          backgroundColor: grad,
+          fill: true,
+          borderWidth: 2.5,
+          tension: 0.38,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: theme.stroke,
+          pointBorderWidth: 2,
+          pointRadius: 3.5,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: theme.stroke,
+          pointHoverBorderColor: '#ffffff',
+          pointHoverBorderWidth: 2,
         };
       });
 
@@ -2221,36 +2286,164 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 10 }, color: '#475569' } } },
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              align: 'end',
+              labels: {
+                boxWidth: 10,
+                boxHeight: 10,
+                usePointStyle: true,
+                pointStyle: 'circle',
+                font: { family: 'Inter', size: 11, weight: '600' },
+                color: '#475569',
+                padding: 14
+              }
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleColor: '#f8fafc',
+              bodyColor: '#e2e8f0',
+              padding: 10,
+              cornerRadius: 8,
+              bodyFont: { family: 'JetBrains Mono', size: 12 },
+              titleFont: { family: 'Inter', size: 12, weight: '700' }
+            }
+          },
           scales: {
-            x: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 } } },
-            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
+            x: {
+              grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 }, stepSize: 1 },
+              beginAtZero: true
+            }
           }
         }
       });
     }
 
+    // 2. Donut Chart with Leader Line Callout Badges & Legend List
     const catLabels = chartData.categories || chartData.category_labels || [];
     const catCounts = chartData.category_counts || [];
     if (document.getElementById('categoryChart') && catLabels.length > 0) {
       const ctxCat = document.getElementById('categoryChart').getContext('2d');
+      const sliceColors = ['#2563eb', '#10b981', '#7c3aed', '#f59e0b', '#0284c7'];
+      const topLabels = catLabels.slice(0, 5);
+      const topCounts = catCounts.slice(0, 5);
+      const totalCount = topCounts.reduce((a, b) => a + b, 0);
+
+      // Custom Leader-line & Data Callout Plugin
+      const donutCalloutPlugin = {
+        id: 'donutCallouts',
+        afterDraw(chart) {
+          const { ctx } = chart;
+          const meta = chart.getDatasetMeta(0);
+          if (!meta || !meta.data) return;
+
+          ctx.save();
+          meta.data.forEach((element, i) => {
+            const { x, y, startAngle, endAngle, outerRadius } = element;
+            const midAngle = startAngle + (endAngle - startAngle) / 2;
+            const val = chart.data.datasets[0].data[i];
+            const pct = Math.round((val / totalCount) * 100);
+            if (pct < 5) return; // skip tiny slivers
+
+            const r1 = outerRadius + 6;
+            const r2 = outerRadius + 16;
+            const sx = x + Math.cos(midAngle) * r1;
+            const sy = y + Math.sin(midAngle) * r1;
+            const ex = x + Math.cos(midAngle) * r2;
+            const ey = y + Math.sin(midAngle) * r2;
+
+            const isRight = Math.cos(midAngle) >= 0;
+            const endHorizontalX = ex + (isRight ? 12 : -12);
+
+            // Draw clean leader line
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.lineTo(endHorizontalX, ey);
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Text Callout
+            ctx.textAlign = isRight ? 'left' : 'right';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.fillStyle = '#0f172a';
+            ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 4 : -4), ey);
+          });
+          ctx.restore();
+        }
+      };
+
       new Chart(ctxCat, {
         type: 'doughnut',
         data: {
-          labels: catLabels.slice(0, 5),
+          labels: topLabels,
           datasets: [{
-            data: catCounts.slice(0, 5),
-            backgroundColor: ['#2563eb', '#10b981', '#7c3aed', '#f59e0b', '#0284c7'],
+            data: topCounts,
+            backgroundColor: sliceColors,
             borderColor: '#ffffff',
-            borderWidth: 2
+            borderWidth: 2.5,
+            hoverOffset: 4
           }]
         },
+        plugins: [donutCalloutPlugin],
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { boxWidth: 8, font: { size: 10 }, color: '#475569', padding: 6 } } }
+          layout: {
+            padding: { top: 15, bottom: 15, left: 25, right: 25 }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleColor: '#f8fafc',
+              bodyColor: '#e2e8f0',
+              padding: 8,
+              cornerRadius: 6,
+              bodyFont: { family: 'JetBrains Mono', size: 12 },
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed || 0;
+                  const pct = ((val / totalCount) * 100).toFixed(1);
+                  return ` ${context.label}: ${val} items (${pct}%)`;
+                }
+              }
+            }
+          },
+          cutout: '62%'
         }
       });
+
+      // Populate interactive legend breakdown below donut
+      const legendListEl = document.getElementById('categoryLegendList');
+      if (legendListEl) {
+        let legendHtml = '';
+        topLabels.forEach((label, i) => {
+          const count = topCounts[i];
+          const pct = ((count / totalCount) * 100).toFixed(1);
+          const color = sliceColors[i % sliceColors.length];
+          legendHtml += `
+            <div class="category-legend-pill">
+              <span class="category-legend-dot" style="background:${color};"></span>
+              <strong style="color:var(--text-primary);">${label}</strong>
+              <span style="font-family:'JetBrains Mono'; font-weight:700; color:var(--text-muted);">${count} (${pct}%)</span>
+            </div>
+          `;
+        });
+        legendListEl.innerHTML = legendHtml;
+      }
     }
   </script>
 </body>
