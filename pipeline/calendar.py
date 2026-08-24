@@ -1,11 +1,15 @@
 """Forthcoming Corporate Calendar Engine (Category #24).
 
 Extracts and calculates upcoming known dates for all watchlist companies:
-- Next earnings release / conference call dates from SEC 8-K & Company IR press releases.
-- Next dividend record, ex-dividend, and payment dates.
-- Statutory SEC filing deadlines (Form 10-Q: 40 days post-quarter; Form 10-K: 60 days post-year) derived from EDGAR report periods.
-- Major investor & industry conference presentations.
-- Sorts strictly by soonest date first.
+1. Sourced Company Events:
+   - Next earnings release / conference call dates from SEC 8-K & Company IR press releases.
+   - Next dividend record, ex-dividend, and payment dates.
+   - Major investor & industry conference presentations.
+   - Cleans wire datelines and ensures only actual future event dates are extracted.
+2. Statutory SEC Filing Deadlines (Computed / Estimated):
+   - Computes statutory SEC deadlines for Large Accelerated Filers (Form 10-Q: 40 days post-quarter end; Form 10-K: 60 days post-year end).
+   - Derived from each company's actual EDGAR quarterly report cycle and explicitly labeled as computed/estimated.
+3. Sorts strictly by soonest date first.
 """
 
 import datetime
@@ -18,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def init_calendar_schema(conn) -> None:
-    """Create calendar_events table in SQLite if it does not exist."""
+    """Create calendar_events table in SQLite if it does not exist and migrate columns."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS calendar_events (
@@ -26,6 +30,7 @@ def init_calendar_schema(conn) -> None:
             ticker TEXT NOT NULL,
             company_name TEXT NOT NULL,
             event_type TEXT NOT NULL,
+            source_type TEXT NOT NULL DEFAULT 'SOURCED',
             event_date TEXT NOT NULL,
             display_date TEXT NOT NULL,
             relative_badge TEXT NOT NULL,
@@ -37,17 +42,43 @@ def init_calendar_schema(conn) -> None:
         );
         """
     )
+    # Ensure source_type column exists if table existed previously
+    cursor = conn.execute("PRAGMA table_info(calendar_events)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if "source_type" not in columns:
+        conn.execute("ALTER TABLE calendar_events ADD COLUMN source_type TEXT NOT NULL DEFAULT 'SOURCED'")
     conn.commit()
 
 
-def parse_dates_from_text(text: str, reference_year: int = 2026) -> List[str]:
-    """Extract standard ISO YYYY-MM-DD dates from headline or summary text."""
-    if not text:
-        return []
+def clean_and_extract_event_dates(
+    headline: str,
+    summary: str,
+    published_date: str,
+    today: Optional[datetime.date] = None,
+) -> List[str]:
+    """Extract standard ISO YYYY-MM-DD future event dates from headline or summary text.
+
+    Strips PR wire datelines (e.g. 'NEW YORK --(BUSINESS WIRE)--Aug. 19, 2026--')
+    and ignores past dates and publication dateline dates.
+    """
+    if today is None:
+        today = datetime.date.today()
+
+    # 1. Strip PR wire datelines
+    cleaned_summary = re.sub(
+        r"^[A-Z\s,]+--\([A-Za-z\s]+\)--[A-Za-z\s\d.,]+--\s*", "", summary or ""
+    )
+    cleaned_summary = re.sub(
+        r"^[A-Za-z\s,.]+[-—]\s*[A-Za-z]+\.?\s+\d{1,2},?\s*\d{4}\s*[-—]\s*",
+        "",
+        cleaned_summary,
+    )
+
+    search_text = f"{headline} {cleaned_summary}"
 
     months = "January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
     pattern = rf"\b({months})\.?\s+(\d{{1,2}})(?:st|nd|rd|th)?,?\s*(\d{{4}})?\b"
-    matches = re.finditer(pattern, text, re.IGNORECASE)
+    matches = re.finditer(pattern, search_text, re.IGNORECASE)
 
     month_map = {
         "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,
@@ -64,11 +95,20 @@ def parse_dates_from_text(text: str, reference_year: int = 2026) -> List[str]:
             continue
         try:
             day = int(d_str)
-            year = int(y_str) if y_str else reference_year
-            # Validate reasonable year bounds
+            year = int(y_str) if y_str else today.year
             if 2024 <= year <= 2028:
                 dt = datetime.date(year, month, day)
-                found.append(dt.isoformat())
+                iso = dt.isoformat()
+
+                # Rule 1: Exclude dates that match the press release publication date
+                if iso == published_date:
+                    continue
+
+                # Rule 2: Exclude dates in the past
+                if dt < today:
+                    continue
+
+                found.append(iso)
         except Exception:
             pass
 
@@ -117,8 +157,14 @@ def format_display_date(date_str: str) -> str:
         return date_str
 
 
-def calculate_sec_filing_deadlines(conn) -> List[Dict[str, Any]]:
-    """Compute statutory SEC Form 10-Q and 10-K filing deadlines for Large Accelerated Filers."""
+def calculate_sec_filing_deadlines(conn, today: Optional[datetime.date] = None) -> List[Dict[str, Any]]:
+    """Compute statutory SEC Form 10-Q and 10-K filing deadlines for Large Accelerated Filers.
+
+    Explicitly tagged as 'ESTIMATED_RULE'.
+    """
+    if today is None:
+        today = datetime.date.today()
+
     deadlines: List[Dict[str, Any]] = []
 
     # Get most recent 10-Q or 10-K for each ticker
@@ -152,14 +198,12 @@ def calculate_sec_filing_deadlines(conn) -> List[Dict[str, Any]]:
         report_date_str = m.group(1)
         try:
             rep_dt = datetime.date.fromisoformat(report_date_str)
-            # Standard quarterly cycle (+3 months for next quarter end)
-            # Month calculation
             month = rep_dt.month + 3
             year = rep_dt.year
             if month > 12:
                 month -= 12
                 year += 1
-            # End of next quarter (last day of month)
+
             if month in (1, 3, 5, 7, 8, 10, 12):
                 day = 31
             elif month in (4, 6, 9, 11):
@@ -172,35 +216,42 @@ def calculate_sec_filing_deadlines(conn) -> List[Dict[str, Any]]:
             # Form 10-K deadline: 60 calendar days after fiscal year end
             if form == "10-K":
                 deadline_dt = next_q_end + datetime.timedelta(days=40)
-                evt_type = "SEC 10-Q Filing Deadline"
-                headline = "Statutory SEC Form 10-Q Filing Deadline (Q1)"
-                details = f"Official SEC Large Accelerated Filer statutory deadline (40 days post-quarter ended {next_q_end.strftime('%b %d, %Y')})."
+                evt_type = "Statutory SEC Deadline (Estimated)"
+                headline = "Estimated SEC Form 10-Q Deadline (40d Rule)"
+                details = f"Computed via SEC Rule 13a-13 for Large Accelerated Filers (40 calendar days post-Q1 period ended {next_q_end.strftime('%b %d, %Y')})."
             else:
                 deadline_dt = next_q_end + datetime.timedelta(days=40)
-                evt_type = "SEC 10-Q Filing Deadline"
-                headline = "Statutory SEC Form 10-Q Filing Deadline"
-                details = f"Official SEC Large Accelerated Filer statutory deadline (40 days post-quarter ended {next_q_end.strftime('%b %d, %Y')})."
+                evt_type = "Statutory SEC Deadline (Estimated)"
+                headline = "Estimated SEC Form 10-Q Deadline (40d Rule)"
+                details = f"Computed via SEC Rule 13a-13 for Large Accelerated Filers (40 calendar days post-quarter ended {next_q_end.strftime('%b %d, %Y')})."
 
             deadline_iso = deadline_dt.isoformat()
-            deadlines.append({
-                "ticker": ticker,
-                "company_name": company_name,
-                "event_type": evt_type,
-                "event_date": deadline_iso,
-                "display_date": format_display_date(deadline_iso),
-                "relative_badge": calculate_relative_badge(deadline_iso),
-                "headline": headline,
-                "details": details,
-                "source_url": url,
-            })
+
+            # Only include if upcoming
+            if deadline_dt >= today:
+                deadlines.append({
+                    "ticker": ticker,
+                    "company_name": company_name,
+                    "event_type": evt_type,
+                    "source_type": "ESTIMATED_RULE",
+                    "event_date": deadline_iso,
+                    "display_date": format_display_date(deadline_iso),
+                    "relative_badge": calculate_relative_badge(deadline_iso, today=today),
+                    "headline": headline,
+                    "details": details,
+                    "source_url": url,
+                })
         except Exception as e:
             logger.warning("Error calculating SEC deadline for %s: %s", ticker, e)
 
     return deadlines
 
 
-def extract_events_from_news_items(conn) -> List[Dict[str, Any]]:
-    """Extract upcoming earnings dates, dividend dates, and conferences from news_items."""
+def extract_events_from_news_items(conn, today: Optional[datetime.date] = None) -> List[Dict[str, Any]]:
+    """Extract confirmed upcoming earnings dates, dividend dates, and conferences from company releases."""
+    if today is None:
+        today = datetime.date.today()
+
     events: List[Dict[str, Any]] = []
 
     cursor = conn.execute(
@@ -221,20 +272,27 @@ def extract_events_from_news_items(conn) -> List[Dict[str, Any]]:
     for r in rows:
         headline = r["headline"] or ""
         summary = r["summary"] or ""
-        combined = f"{headline} {summary}"
-        dates = parse_dates_from_text(combined)
+        published_date = r["published_date"] or ""
+
+        # Extract only verified future event dates (ignoring publication dateline)
+        dates = clean_and_extract_event_dates(
+            headline=headline,
+            summary=summary,
+            published_date=published_date,
+            today=today,
+        )
         if not dates:
             continue
 
         ticker = r["ticker"]
         company_name = r["company_name"]
         url = r["url"]
-        comb_lower = combined.lower()
+        comb_lower = f"{headline} {summary}".lower()
 
-        # Determine Category
+        # Determine Event Type
         evt_type = None
-        if "dividend" in comb_lower:
-            evt_type = "Dividend (Ex/Pay Date)"
+        if "dividend" in comb_lower and any(k in comb_lower for k in ["payable", "record", "ex-dividend", "declared"]):
+            evt_type = "Dividend (Payment/Record)"
         elif any(k in comb_lower for k in ["earnings", "financial results", "quarterly results", "conference call"]):
             evt_type = "Earnings Call / Results"
         elif "conference" in comb_lower or "present at" in comb_lower or "investor day" in comb_lower:
@@ -243,8 +301,7 @@ def extract_events_from_news_items(conn) -> List[Dict[str, Any]]:
         if not evt_type:
             continue
 
-        for d in set(dates):
-            # Format clean headline
+        for d in dates:
             clean_hl = headline
             if len(clean_hl) > 95:
                 clean_hl = clean_hl[:92] + "..."
@@ -253,9 +310,10 @@ def extract_events_from_news_items(conn) -> List[Dict[str, Any]]:
                 "ticker": ticker,
                 "company_name": company_name,
                 "event_type": evt_type,
+                "source_type": "SOURCED",
                 "event_date": d,
                 "display_date": format_display_date(d),
-                "relative_badge": calculate_relative_badge(d),
+                "relative_badge": calculate_relative_badge(d, today=today),
                 "headline": clean_hl,
                 "details": summary[:140] if summary else clean_hl,
                 "source_url": url,
@@ -267,36 +325,29 @@ def extract_events_from_news_items(conn) -> List[Dict[str, Any]]:
 def build_forthcoming_calendar(
     watchlist: Optional[List[Dict[str, Any]]] = None,
     db_path: Optional[str] = None,
-    lookback_days: int = 14,
 ) -> List[Dict[str, Any]]:
     """Build and persist forthcoming calendar events for all watchlist companies.
 
     Sorts strictly by soonest date first.
     """
     today = datetime.date.today()
-    cutoff_date = (today - datetime.timedelta(days=lookback_days)).isoformat()
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
     with get_db_connection(db_path) as conn:
         init_calendar_schema(conn)
 
-        # 1. Extract from news items
-        news_events = extract_events_from_news_items(conn)
+        # 1. Extract verified sourced events from company releases
+        news_events = extract_events_from_news_items(conn, today=today)
 
-        # 2. Extract statutory SEC deadlines
-        sec_deadlines = calculate_sec_filing_deadlines(conn)
+        # 2. Extract statutory SEC deadlines (clearly labeled as computed/estimated)
+        sec_deadlines = calculate_sec_filing_deadlines(conn, today=today)
 
         all_events = news_events + sec_deadlines
 
         # 3. Deduplicate events by (ticker, event_type, event_date)
         unique_events_map: Dict[str, Dict[str, Any]] = {}
         for ev in all_events:
-            ev_date = ev["event_date"]
-            # Omit dates older than lookback cutoff
-            if ev_date < cutoff_date:
-                continue
-
-            key = f"{ev['ticker']}|{ev['event_type']}|{ev_date}"
+            key = f"{ev['ticker']}|{ev['event_type']}|{ev['event_date']}"
             if key not in unique_events_map:
                 unique_events_map[key] = ev
 
@@ -305,20 +356,24 @@ def build_forthcoming_calendar(
             key=lambda x: (x["event_date"], x["ticker"]),
         )
 
+        # Clear prior calendar items to avoid stale entries
+        conn.execute("DELETE FROM calendar_events")
+
         # 4. Persist to SQLite
         for ev in sorted_events:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO calendar_events (
-                    ticker, company_name, event_type, event_date,
-                    display_date, relative_badge, headline, details,
-                    source_url, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ticker, company_name, event_type, source_type,
+                    event_date, display_date, relative_badge, headline,
+                    details, source_url, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ev["ticker"],
                     ev["company_name"],
                     ev["event_type"],
+                    ev["source_type"],
                     ev["event_date"],
                     ev["display_date"],
                     ev["relative_badge"],

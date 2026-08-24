@@ -826,6 +826,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
+    .calendar-card-estimated {
+      border: 1px dashed rgba(6, 182, 212, 0.45);
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .calendar-card-estimated:hover {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.18);
+    }
+
     .calendar-card-top {
       display: flex;
       align-items: flex-start;
@@ -884,13 +894,37 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .cal-type-sec {
       background: rgba(6, 182, 212, 0.15);
       color: #22d3ee;
-      border: 1px solid rgba(6, 182, 212, 0.35);
+      border: 1px dashed rgba(6, 182, 212, 0.45);
     }
 
     .cal-type-conference {
       background: rgba(245, 158, 11, 0.15);
       color: #fbbf24;
       border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .calendar-origin-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .origin-sourced {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .origin-estimated {
+      background: rgba(6, 182, 212, 0.12);
+      color: #22d3ee;
+      border: 1px dashed rgba(6, 182, 212, 0.35);
     }
 
     .calendar-card-headline {
@@ -1236,28 +1270,38 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <div class="calendar-header">
         <div class="section-header" style="margin-bottom:0;">
           <h2>📅 Forthcoming Corporate Calendar</h2>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0.2rem 0 0 0;">Upcoming earnings calls, dividend dates, statutory SEC filing deadlines & conferences</p>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0.2rem 0 0 0;">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC filing deadlines</p>
         </div>
         <div class="calendar-filter-bar">
           <button class="cal-filter-btn active" onclick="filterCalendar('ALL', this)">All ({{ calendar_events|length }})</button>
+          <button class="cal-filter-btn" onclick="filterCalendar('SOURCED', this)">📢 Sourced Events</button>
           <button class="cal-filter-btn" onclick="filterCalendar('Earnings', this)">📊 Earnings</button>
-          <button class="cal-filter-btn" onclick="filterCalendar('Dividend', this)">💰 Dividends</button>
-          <button class="cal-filter-btn" onclick="filterCalendar('SEC', this)">⚖️ SEC Deadlines</button>
           <button class="cal-filter-btn" onclick="filterCalendar('Conference', this)">🎤 Conferences</button>
+          <button class="cal-filter-btn" onclick="filterCalendar('Dividend', this)">💰 Dividends</button>
+          <button class="cal-filter-btn" onclick="filterCalendar('ESTIMATED', this)">⚙️ SEC Deadlines (Estimated)</button>
         </div>
       </div>
 
       <div class="calendar-grid" id="calendarGrid">
         {% for ev in calendar_events %}
-        <div class="calendar-card" data-event-type="{{ ev.event_type }}">
+        <div class="calendar-card {% if ev.source_type == 'ESTIMATED_RULE' %}calendar-card-estimated{% endif %}"
+             data-event-type="{{ ev.event_type }}"
+             data-source-type="{{ ev.source_type }}">
           <div>
             <div class="calendar-card-top">
-              <div style="display:flex; align-items:center; gap:0.5rem;">
-                <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
-                <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
-                  {% if 'Earnings' in ev.event_type %}📊 Earnings
+              <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                  <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
+                  {% if ev.source_type == 'ESTIMATED_RULE' %}
+                  <span class="calendar-origin-badge origin-estimated">⚙️ COMPUTED (40D RULE)</span>
+                  {% else %}
+                  <span class="calendar-origin-badge origin-sourced">📢 SOURCED</span>
+                  {% endif %}
+                </div>
+                <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
+                  {% if 'Earnings' in ev.event_type %}📊 Earnings Call
                   {% elif 'Dividend' in ev.event_type %}💰 Dividend
-                  {% elif 'SEC' in ev.event_type %}⚖️ SEC Deadline
+                  {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}⚖️ SEC Deadline (Estimated)
                   {% else %}🎤 Conference{% endif %}
                 </span>
               </div>
@@ -1277,7 +1321,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             </span>
             {% if ev.source_url %}
             <a href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.75rem;">
-              Source ↗
+              {% if ev.source_type == 'ESTIMATED_RULE' %}SEC Filings ↗{% else %}Source ↗{% endif %}
             </a>
             {% endif %}
           </div>
@@ -1777,10 +1821,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
       const cards = document.querySelectorAll('.calendar-card');
       cards.forEach(card => {
-        const evType = card.getAttribute('data-event-type') || '';
+        const evType = (card.getAttribute('data-event-type') || '').toLowerCase();
+        const srcType = (card.getAttribute('data-source-type') || '').toLowerCase();
+
         if (type === 'ALL') {
           card.style.display = 'flex';
-        } else if (evType.toLowerCase().includes(type.toLowerCase())) {
+        } else if (type === 'SOURCED' && srcType === 'sourced') {
+          card.style.display = 'flex';
+        } else if (type === 'ESTIMATED' && srcType === 'estimated_rule') {
+          card.style.display = 'flex';
+        } else if (evType.includes(type.toLowerCase())) {
           card.style.display = 'flex';
         } else {
           card.style.display = 'none';

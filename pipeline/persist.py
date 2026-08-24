@@ -327,7 +327,7 @@ def get_forthcoming_calendar(
 
         cursor = conn.execute(
             """
-            SELECT id, ticker, company_name, event_type, event_date,
+            SELECT id, ticker, company_name, event_type, source_type, event_date,
                    display_date, relative_badge, headline, details, source_url
             FROM calendar_events
             ORDER BY event_date ASC, ticker ASC
