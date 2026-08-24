@@ -231,10 +231,15 @@ def get_chart_data(db_path: Optional[str] = None) -> Dict[str, Any]:
     all_dates_set = sorted(list({r["published_date"] for r in time_rows}))
     recent_dates = all_dates_set[-14:] if len(all_dates_set) > 14 else all_dates_set
 
+    # Priority order for watchlist tickers
+    preferred_order = ["NVDA", "AAPL", "MSFT"]
     ticker_cursor = conn.execute(
-        "SELECT DISTINCT ticker FROM news_items ORDER BY ticker"
+        "SELECT DISTINCT ticker FROM news_items"
     )
-    tickers_list = [r["ticker"] for r in ticker_cursor.fetchall()]
+    found_tickers = {r["ticker"] for r in ticker_cursor.fetchall()}
+    tickers_list = [t for t in preferred_order if t in found_tickers] + sorted(
+        list(found_tickers - set(preferred_order))
+    )
 
     ticker_date_map: Dict[str, Dict[str, int]] = {
         t: {d: 0 for d in recent_dates} for t in tickers_list

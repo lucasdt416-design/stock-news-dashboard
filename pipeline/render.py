@@ -386,8 +386,37 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .chart-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
       margin-bottom: 1rem;
+    }
+
+    .chart-legend-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--bg-surface-elevated);
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-card);
+    }
+
+    .chart-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
     }
 
     .chart-title {
@@ -853,6 +882,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
               <h3 class="chart-title">📈 Filing & News Frequency Over Time</h3>
               <p class="chart-subtitle">Recent daily disclosure volume per company</p>
             </div>
+            <div class="chart-legend-wrap">
+              <span class="chart-legend-item"><span class="legend-dot" style="background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5);"></span> NVDA</span>
+              <span class="chart-legend-item"><span class="legend-dot" style="background:#3b82f6; box-shadow:0 0 6px rgba(59,130,246,0.5);"></span> AAPL</span>
+              <span class="chart-legend-item"><span class="legend-dot" style="background:#8b5cf6; box-shadow:0 0 6px rgba(139,92,246,0.5);"></span> MSFT</span>
+            </div>
           </div>
           <div class="chart-canvas-container">
             <canvas id="timelineChart"></canvas>
@@ -1031,20 +1065,31 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
       
       const tickerColors = {
-        'NVDA': { border: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' },
-        'AAPL': { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' },
-        'MSFT': { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' }
+        'NVDA': { border: '#10b981', bg: 'rgba(16, 185, 129, 0.14)' },
+        'AAPL': { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.14)' },
+        'MSFT': { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.14)' }
       };
 
-      const datasets = Object.keys(chartData.timeline_series).map(ticker => {
+      // Explicitly sort tickers so NVDA is guaranteed first, followed by AAPL and MSFT
+      const tickerOrder = ['NVDA', 'AAPL', 'MSFT'];
+      const presentTickers = Object.keys(chartData.timeline_series).sort((a, b) => {
+        const idxA = tickerOrder.indexOf(a);
+        const idxB = tickerOrder.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+      });
+
+      const datasets = presentTickers.map(ticker => {
         const colors = tickerColors[ticker] || { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' };
         return {
           label: ticker,
           data: chartData.timeline_series[ticker],
           borderColor: colors.border,
           backgroundColor: colors.bg,
-          borderWidth: 2.2,
-          pointRadius: 3,
+          borderWidth: 2.4,
+          pointRadius: 3.5,
           pointHoverRadius: 6,
           pointBackgroundColor: colors.border,
           tension: 0.35,
@@ -1067,15 +1112,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           },
           plugins: {
             legend: {
-              position: 'top',
-              align: 'end',
-              labels: {
-                boxWidth: 12,
-                boxHeight: 12,
-                useBorderRadius: true,
-                borderRadius: 3,
-                font: { weight: '600', size: 11 }
-              }
+              display: false
             },
             tooltip: {
               backgroundColor: '#1e293b',
