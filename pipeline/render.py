@@ -1,13 +1,11 @@
 """Multi-page static HTML dashboard generator with Cloudflare-inspired visual design (Phase 6).
 
-Features:
-- Clean light SaaS aesthetic (white/slate canvas, crisp borders, subtle shadows).
-- Left sidebar navigation with active indicator and status footer.
-- Hero greeting ("What's on the agenda?") with top badge pill.
-- Interactive Command/Search bar (⌘K) with instant Tab Suggestions dropdown linking to all pages.
-- Top preview widgets with direct deep-links.
-- Analytics section with Chart.js timeline and category breakdown charts.
-- Content clarity: human-readable executive titles, de-emphasized form badges, collapsible cross-reference accordions.
+Visual & UX Polish:
+- High quality SVG icon set (Lucide/Heroicons) replacing emoji icons across sidebar, badges, and filters.
+- Refined, darkened StockPulse logo mark with burnt orange / warm amber gradient.
+- Fully functional interactive "Ask AI" assistant modal querying disclosures and macro sensitivities.
+- Fixed spacebar typing in search bar / command palette.
+- Content clarity: human-readable executive titles, de-emphasized form subtitle badges, collapsible cross-references.
 
 Generates:
 1. site/index.html    - Home / Overview: Hero greeting, search with tab suggestions, widget preview cards & analytics
@@ -86,7 +84,7 @@ def format_human_headline(item: Dict[str, Any]) -> str:
 
 
 # ==============================================================================
-# SHARED BASE CSS & CLOUDFLARE-INSPIRED DESIGN SYSTEM
+# SHARED BASE CSS & DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
     :root {
@@ -102,7 +100,8 @@ SHARED_CSS = """
       --text-secondary: #475569;
       --text-muted: #64748b;
       --accent-blue: #2563eb;
-      --accent-orange: #f97316;
+      --accent-orange-dark: #c2410c;
+      --accent-orange-main: #ea580c;
       --accent-indigo: #4f46e5;
       --accent-emerald: #10b981;
       --accent-amber: #d97706;
@@ -116,6 +115,7 @@ SHARED_CSS = """
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07);
       --shadow-dropdown: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
       --transition-fast: 0.15s ease;
       --transition-normal: 0.25s ease;
     }
@@ -198,7 +198,7 @@ SHARED_CSS = """
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
       margin-bottom: 1.5rem;
     }
 
@@ -210,17 +210,34 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.4rem 0.8rem;
-      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      cursor: pointer;
       transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
     }
 
     .top-header-btn:hover {
       background: var(--bg-surface-elevated);
       color: var(--text-primary);
+      border-color: #cbd5e1;
     }
 
-    /* Sidebar Components */
+    .top-header-btn.btn-ai {
+      color: #4338ca;
+      background: #eef2ff;
+      border-color: #c7d2fe;
+    }
+
+    .top-header-btn.btn-ai:hover {
+      background: #e0e7ff;
+      border-color: #a5b4fc;
+      color: #3730a3;
+    }
+
+    /* Sidebar Brand (Darkened burnt orange logo) */
     .sidebar-brand {
       display: flex;
       align-items: center;
@@ -236,13 +253,12 @@ SHARED_CSS = """
       width: 36px;
       height: 36px;
       border-radius: var(--radius-md);
-      background: linear-gradient(135deg, #f97316, #ea580c);
+      background: linear-gradient(135deg, #c2410c, #9a3412);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
       color: #ffffff;
-      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+      box-shadow: 0 2px 8px rgba(194, 65, 12, 0.35);
       flex-shrink: 0;
     }
 
@@ -256,7 +272,7 @@ SHARED_CSS = """
 
     .brand-subtitle {
       font-size: 0.68rem;
-      color: var(--accent-orange);
+      color: #c2410c;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -309,10 +325,12 @@ SHARED_CSS = """
       gap: 0.75rem;
     }
 
-    .nav-icon {
-      font-size: 1.05rem;
-      width: 22px;
-      text-align: center;
+    .nav-svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+      stroke: currentColor;
+      flex-shrink: 0;
     }
 
     .nav-count {
@@ -396,7 +414,7 @@ SHARED_CSS = """
       margin-bottom: 1.75rem;
     }
 
-    /* Global Search & Command Bar (⌘K) with Tab Suggestions */
+    /* Global Search & Command Bar (⌘K) */
     .search-wrapper {
       position: relative;
       width: 100%;
@@ -421,8 +439,9 @@ SHARED_CSS = """
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), 0 4px 15px rgba(0, 0, 0, 0.06);
     }
 
-    .search-icon {
-      font-size: 1.1rem;
+    .search-icon-wrap {
+      display: flex;
+      align-items: center;
       color: var(--text-muted);
       margin-right: 0.75rem;
     }
@@ -517,7 +536,13 @@ SHARED_CSS = """
     }
 
     .dropdown-tab-icon {
-      font-size: 1.25rem;
+      width: 22px;
+      height: 22px;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
 
     .dropdown-tab-title {
@@ -563,7 +588,7 @@ SHARED_CSS = """
       color: #1d4ed8;
     }
 
-    /* Top Quick Preview Widgets Row (Cloudflare-style) */
+    /* Top Quick Preview Widgets Row */
     .quick-widgets-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -726,7 +751,7 @@ SHARED_CSS = """
       width: 100%;
     }
 
-    /* Ticker Badges */
+    /* Ticker & Form Badges */
     .ticker-badge {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
@@ -922,6 +947,9 @@ SHARED_CSS = """
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
     }
 
     /* Action Link */
@@ -954,6 +982,7 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.4rem;
       border: none;
+      cursor: pointer;
       transition: all var(--transition-fast);
       box-shadow: var(--shadow-sm);
     }
@@ -1121,6 +1150,9 @@ SHARED_CSS = """
       font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.05em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
     }
 
     .priority-grid {
@@ -1272,7 +1304,9 @@ SHARED_CSS = """
       font-weight: 700;
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
     }
 
     .cal-type-earnings   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
@@ -1524,15 +1558,150 @@ SHARED_CSS = """
       font-size: 0.72rem;
       color: var(--text-secondary);
     }
+
+    /* Ask AI Assistant Interactive Modal */
+    .ai-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .ai-modal-backdrop.active {
+      display: flex;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .ai-modal-card {
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      width: 100%;
+      max-width: 620px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .ai-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-card);
+    }
+
+    .ai-modal-icon-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #eef2ff;
+      color: #4338ca;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ai-modal-close {
+      background: transparent;
+      border: none;
+      font-size: 1.35rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      line-height: 1;
+    }
+
+    .ai-modal-close:hover {
+      color: var(--text-primary);
+      background: var(--bg-surface-elevated);
+    }
+
+    .ai-modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .ai-input-wrap {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--bg-base);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 0.35rem;
+    }
+
+    .ai-input-wrap input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 0.4rem 0.65rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text-primary);
+    }
+
+    .ai-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .ai-chip {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .ai-chip:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .ai-results-container {
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      background: var(--bg-base);
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 0.75rem;
+    }
 """
 
 # ==============================================================================
-# SIDEBAR NAVIGATION MACRO
+# SIDEBAR NAVIGATION MACRO (With SVG Icons)
 # ==============================================================================
 SIDEBAR_HTML = """
 <aside class="app-sidebar">
   <a href="index.html" class="sidebar-brand">
-    <div class="logo-badge">⚡</div>
+    <div class="logo-badge">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    </div>
     <div>
       <div class="brand-title">StockPulse</div>
       <div class="brand-subtitle">Cloud Intelligence</div>
@@ -1543,34 +1712,34 @@ SIDEBAR_HTML = """
   <nav class="sidebar-nav">
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}">
       <div class="nav-item-left">
-        <span class="nav-icon">🏠</span>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span class="nav-text">Home</span>
       </div>
     </a>
     <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}">
       <div class="nav-item-left">
-        <span class="nav-icon">⚡</span>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
         <span class="nav-text">Intelligence Feed</span>
       </div>
       <span class="nav-count">{{ stats.total }}</span>
     </a>
     <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}">
       <div class="nav-item-left">
-        <span class="nav-icon">📅</span>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
         <span class="nav-text">Corporate Calendar</span>
       </div>
       <span class="nav-count">{{ calendar_events|length }}</span>
     </a>
     <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}">
       <div class="nav-item-left">
-        <span class="nav-icon">🏛️</span>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <span class="nav-text">Economic Snapshot</span>
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
     </a>
     <a href="index.html#health" class="nav-link">
       <div class="nav-item-left">
-        <span class="nav-icon">🛡️</span>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         <span class="nav-text">System Health</span>
       </div>
     </a>
@@ -1616,11 +1785,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <!-- Top Right Bar -->
       <div class="top-header-bar">
-        <a href="https://github.com/lucasdt416-design/stock-news-dashboard" target="_blank" rel="noopener noreferrer" class="top-header-btn">
-          ✨ Ask AI
-        </a>
+        <button class="top-header-btn btn-ai" onclick="openAiModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          Ask AI
+        </button>
         <a href="index.html#health" class="top-header-btn">
-          🛡️ Telemetry
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Telemetry
         </a>
         <span class="section-time-pill" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
           <span class="pulse-dot" style="background:#10b981;"></span> Live
@@ -1630,7 +1801,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <!-- Hero Greeting Section -->
       <div class="hero-container">
         <div class="hero-badge">
-          Onboard your intelligence engine to StockPulse ⚡💥📊
+          <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem;"></span> StockPulse Intelligence Platform &bull; Overnight Run Complete
         </div>
         <h1 class="hero-title">What's on the agenda?</h1>
         <p class="hero-subtext">Review overnight SEC EDGAR filings, company announcements, corporate calendar dates, and FRED macroeconomic sensitivities.</p>
@@ -1638,8 +1809,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       <!-- Global Search & Command Bar (⌘K) with Tab Suggestions -->
       <div class="search-wrapper">
-        <div class="search-box" id="globalSearchBox" onclick="openSearchDropdown()">
-          <span class="search-icon">🔍</span>
+        <div class="search-box" id="globalSearchBox">
+          <span class="search-icon-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
           <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
           <span class="search-shortcut">⌘ K</span>
         </div>
@@ -1649,28 +1822,36 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
           <div class="dropdown-tabs-grid">
             <a href="news.html" class="dropdown-tab-card">
-              <span class="dropdown-tab-icon">⚡</span>
+              <div class="dropdown-tab-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+              </div>
               <div>
                 <div class="dropdown-tab-title">Intelligence Feed</div>
                 <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
               </div>
             </a>
             <a href="calendar.html" class="dropdown-tab-card">
-              <span class="dropdown-tab-icon">📅</span>
+              <div class="dropdown-tab-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </div>
               <div>
                 <div class="dropdown-tab-title">Corporate Calendar</div>
                 <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
               </div>
             </a>
             <a href="economic.html" class="dropdown-tab-card">
-              <span class="dropdown-tab-icon">🏛️</span>
+              <div class="dropdown-tab-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
               <div>
                 <div class="dropdown-tab-title">Economic Snapshot</div>
                 <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
               </div>
             </a>
             <a href="index.html#health" class="dropdown-tab-card" onclick="closeSearchDropdown()">
-              <span class="dropdown-tab-icon">🛡️</span>
+              <div class="dropdown-tab-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
               <div>
                 <div class="dropdown-tab-title">System Health</div>
                 <div class="dropdown-tab-sub">Collector Safeguards</div>
@@ -1689,7 +1870,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- Top Quick Preview Widgets Row (Cloudflare style) -->
+      <!-- Top Quick Preview Widgets Row -->
       <div class="quick-widgets-row">
         <a href="news.html" class="quick-widget-card">
           <div class="quick-widget-header">
@@ -1697,7 +1878,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <span class="quick-widget-arrow">›</span>
           </div>
           <div class="quick-widget-btn">
-            ⚡ {{ priority_items|length }} High-Impact Disclosures
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            {{ priority_items|length }} High-Impact Disclosures
           </div>
         </a>
 
@@ -1707,7 +1889,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <span class="quick-widget-arrow">›</span>
           </div>
           <div class="quick-widget-btn">
-            📅 {% if calendar_events %}Next: {{ calendar_events[0].ticker }} ({{ calendar_events[0].display_date }}){% else %}14 Scheduled Events{% endif %}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            {% if calendar_events %}Next: {{ calendar_events[0].ticker }} ({{ calendar_events[0].display_date }}){% else %}14 Scheduled Events{% endif %}
           </div>
         </a>
 
@@ -1717,7 +1900,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <span class="quick-widget-arrow">›</span>
           </div>
           <div class="quick-widget-btn">
-            🏛️ Fed Funds: 3.75% · CPI: 3.4%
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Fed Funds: 3.75% &bull; CPI: 3.4%
           </div>
         </a>
       </div>
@@ -1726,8 +1910,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <div class="section-header-row">
         <h2 class="section-heading">Analytics</h2>
         <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill">📅 Last 24 hours</span>
-          <button class="section-time-pill" onclick="window.location.reload()" style="cursor:pointer; border:1px solid var(--border-card);">🔄</button>
+          <span class="section-time-pill">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            Last 24 hours
+          </span>
+          <button class="section-time-pill" onclick="window.location.reload()" style="cursor:pointer; border:1px solid var(--border-card);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+          </button>
         </div>
       </div>
 
@@ -1768,10 +1957,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <section class="health-section" id="health">
         <div class="health-header">
           <div class="health-title-group">
-            <h3 class="health-title">🛡️ Pipeline Health &amp; Collector Safeguards</h3>
+            <h3 class="health-title">Pipeline Health &amp; Collector Safeguards</h3>
             <span class="health-status-badge health-badge-healthy">
               <span class="pulse-dot" style="background:#10b981;"></span>
-              HEALTHY · ALL COLLECTORS OPERATIONAL
+              HEALTHY &bull; ALL COLLECTORS OPERATIONAL
             </span>
           </div>
           <div style="font-size:0.75rem; color:var(--text-muted);">
@@ -1805,8 +1994,50 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     </main>
   </div>
 
+  <!-- Ask AI Assistant Interactive Modal -->
+  <div class="ai-modal-backdrop" id="aiModal" onclick="closeAiModal(event)">
+    <div class="ai-modal-card" onclick="event.stopPropagation()">
+      <div class="ai-modal-header">
+        <div style="display:flex; align-items:center; gap:0.65rem;">
+          <div class="ai-modal-icon-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          </div>
+          <div>
+            <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">StockPulse AI Assistant</h3>
+            <p style="font-size:0.75rem; color:var(--text-muted);">Query corporate disclosures, executive takeaways &amp; macroeconomic sensitivities</p>
+          </div>
+        </div>
+        <button class="ai-modal-close" onclick="closeAiModal()">&times;</button>
+      </div>
+
+      <div class="ai-modal-body">
+        <div class="ai-input-wrap">
+          <input type="text" id="aiQueryInput" placeholder="Ask e.g. 'What did NVIDIA disclose?', 'Interest rate sensitivity', 'Upcoming earnings calls'..." onkeydown="handleAiKeydown(event)">
+          <button class="btn-primary" style="padding:0.45rem 0.9rem;" onclick="runAiQuery()">Ask</button>
+        </div>
+
+        <div class="ai-chips-wrap">
+          <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Quick Queries:</span>
+          <button class="ai-chip" onclick="setAiQuery('NVIDIA latest disclosures')">NVIDIA Disclosures</button>
+          <button class="ai-chip" onclick="setAiQuery('Interest rates sensitivity')">Interest Rate Sensitivities</button>
+          <button class="ai-chip" onclick="setAiQuery('Upcoming earnings')">Upcoming Earnings</button>
+          <button class="ai-chip" onclick="setAiQuery('Insider executive trades')">Insider Trades</button>
+        </div>
+
+        <div class="ai-results-container" id="aiResults">
+          <div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.85rem;">
+            Ask any question about current filings, company events, or macroeconomic sensitivities.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Search Dropdown interactions
+    const allItems = {{ items|tojson|safe }};
+    const calendarEvents = {{ calendar_events|tojson|safe }};
+    const econIndicators = {{ economic_indicators|tojson|safe }};
+
     function openSearchDropdown() {
       const dropdown = document.getElementById('searchDropdown');
       dropdown.classList.add('active');
@@ -1819,6 +2050,113 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       document.getElementById('globalSearchBox').classList.remove('focused');
     }
 
+    // Modal AI Controls
+    function openAiModal() {
+      document.getElementById('aiModal').classList.add('active');
+      setTimeout(() => document.getElementById('aiQueryInput')?.focus(), 50);
+    }
+
+    function closeAiModal(e) {
+      if (!e || e.target.id === 'aiModal' || e.target.classList.contains('ai-modal-close')) {
+        document.getElementById('aiModal').classList.remove('active');
+      }
+    }
+
+    function setAiQuery(q) {
+      const input = document.getElementById('aiQueryInput');
+      if (input) {
+        input.value = q;
+        runAiQuery();
+      }
+    }
+
+    function handleAiKeydown(e) {
+      if (e.key === 'Enter') {
+        runAiQuery();
+      }
+    }
+
+    function runAiQuery() {
+      const q = (document.getElementById('aiQueryInput').value || '').toLowerCase().trim();
+      const container = document.getElementById('aiResults');
+      if (!q) return;
+
+      let matchedItems = allItems.filter(it => 
+        (it.clean_headline || '').toLowerCase().includes(q) ||
+        (it.ticker || '').toLowerCase().includes(q) ||
+        (it.llm_summary || '').toLowerCase().includes(q) ||
+        (it.category || '').toLowerCase().includes(q)
+      );
+
+      let matchedEcon = econIndicators.filter(ind =>
+        (ind.name || '').toLowerCase().includes(q) ||
+        (ind.relevant_tickers || '').toLowerCase().includes(q) ||
+        (ind.category || '').toLowerCase().includes(q)
+      );
+
+      let matchedCal = calendarEvents.filter(ev =>
+        (ev.headline || '').toLowerCase().includes(q) ||
+        (ev.ticker || '').toLowerCase().includes(q) ||
+        (ev.event_type || '').toLowerCase().includes(q)
+      );
+
+      if (matchedItems.length === 0 && matchedEcon.length === 0 && matchedCal.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.85rem;">No direct disclosures found for "<strong>${q}</strong>". Try searching for a specific company (e.g. <em>NVDA</em>, <em>AAPL</em>) or category.</div>`;
+        return;
+      }
+
+      let html = '<div style="display:flex; flex-direction:column; gap:0.65rem;">';
+      
+      if (matchedEcon.length > 0) {
+        html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Macroeconomic Indicators:</div>';
+        matchedEcon.forEach(ind => {
+          html += `
+            <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:6px; padding:0.65rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; font-size:0.85rem;">${ind.name}</span>
+                <span style="font-family:'JetBrains Mono'; font-weight:800; color:var(--accent-blue);">${ind.formatted_value}</span>
+              </div>
+              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.25rem;">${ind.context_note}</div>
+            </div>`;
+        });
+      }
+
+      if (matchedCal.length > 0) {
+        html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Upcoming Scheduled Events:</div>';
+        matchedCal.slice(0, 3).forEach(ev => {
+          html += `
+            <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:6px; padding:0.65rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; font-size:0.85rem;">[${ev.ticker}] ${ev.headline}</span>
+                <span style="font-size:0.72rem; color:var(--accent-blue); font-weight:700;">${ev.display_date}</span>
+              </div>
+            </div>`;
+        });
+      }
+
+      if (matchedItems.length > 0) {
+        html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Recent Company Disclosures:</div>';
+        matchedItems.slice(0, 4).forEach(it => {
+          html += `
+            <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:6px; padding:0.65rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                <span style="font-family:'JetBrains Mono'; font-weight:700; font-size:0.75rem; background:#f1f5f9; padding:0.1rem 0.35rem; border-radius:3px;">${it.ticker}</span>
+                <span style="font-family:'JetBrains Mono'; font-weight:800; font-size:0.75rem; color:#15803d;">★ ${it.score}</span>
+              </div>
+              <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">${it.clean_headline}</div>
+              ${it.llm_summary ? `<div style="font-size:0.78rem; color:#1e3a8a; background:#eff6ff; padding:0.35rem 0.5rem; border-radius:4px;">💡 ${it.llm_summary}</div>` : ''}
+              <div style="margin-top:0.4rem; text-align:right;">
+                <a href="${it.url}" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem; color:var(--accent-blue); font-weight:600; text-decoration:none;">View Source ↗</a>
+              </div>
+            </div>`;
+        });
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // Click outside search wrapper to close dropdown
     document.addEventListener('click', function(e) {
       const wrapper = document.querySelector('.search-wrapper');
       if (wrapper && !wrapper.contains(e.target)) {
@@ -1826,34 +2164,33 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
     });
 
+    // Keyboard Shortcuts: ⌘K or Ctrl+K
     document.addEventListener('keydown', function(e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         const input = document.getElementById('globalSearchInput');
         if (input) {
           input.focus();
           openSearchDropdown();
         }
-      }
-      if (e.key === 'Escape') {
+      } else if (e.key === 'Escape') {
         closeSearchDropdown();
+        closeAiModal();
       }
     });
 
-    function handleSearchType(val) {
-      if (val && val.trim().length > 1) {
-        // Redirect on Enter or direct search to news.html
-      }
-    }
-
-    document.getElementById('globalSearchInput')?.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        const val = this.value.trim();
-        if (val) {
-          window.location.href = `news.html?q=${encodeURIComponent(val)}`;
+    const searchInput = document.getElementById('globalSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = this.value.trim();
+          if (val) {
+            window.location.href = `news.html?q=${encodeURIComponent(val)}`;
+          }
         }
-      }
-    });
+      });
+    }
 
     // Charts Initialization
     const chartData = {{ chart_data_json|safe }};
@@ -1944,7 +2281,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">⚡ Full Intelligence Feed</h1>
+          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Full Intelligence Feed</h1>
           <p style="font-size:0.9rem; color:var(--text-muted);">Deduplicated, scored disclosures with transparent arithmetic and supply-chain cross-references</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -1959,14 +2296,17 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       <section class="priority-section">
         <div class="priority-header">
           <div class="priority-title-wrap">
-            <span class="priority-badge-icon">⚡ PRIORITY</span>
+            <span class="priority-badge-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              PRIORITY
+            </span>
             <div>
               <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
               <p style="font-size:0.8rem; color:var(--text-muted);">Top {{ priority_items|length }} highest scored stories with plain-English investor takeaways</p>
             </div>
           </div>
           <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.75rem; border-radius:6px; border:1px solid #86efac;">
-            ⚡ SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
+            SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
           </div>
         </div>
 
@@ -1999,7 +2339,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   {% set ref = item.cross_references_list[0] %}
                   <div class="crossref-badges-wrap">
                     <span class="crossref-badge" title="{{ ref.impact_note }}">
-                      🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                      <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
                       <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
                       ({{ ref.matched_entity }})
                     </span>
@@ -2008,7 +2349,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   <div class="crossref-badges-wrap">
                     <details class="crossref-accordion">
                       <summary class="crossref-summary-pill">
-                        🔗 Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
                       </summary>
                       <div class="crossref-dropdown-content">
                         {% for ref in item.cross_references_list %}
@@ -2026,7 +2368,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
               {% if item.llm_summary %}
               <div class="priority-why-box">
-                <span class="why-tag">💡 Takeaway:</span> {{ item.llm_summary }}
+                <span class="why-tag">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                  Takeaway:
+                </span>
+                {{ item.llm_summary }}
               </div>
               {% endif %}
 
@@ -2036,7 +2382,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             <div class="priority-card-footer">
               <span class="date-cell">{{ item.published_date }}</span>
               <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                View Source ↗
+                View Source
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
               </a>
             </div>
           </div>
@@ -2154,14 +2501,16 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                     {% if item.cross_references_list|length == 1 %}
                       {% set ref = item.cross_references_list[0] %}
                       <span class="crossref-badge" title="{{ ref.impact_note }}">
-                        🔗 <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
                         <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
                         ({{ ref.matched_entity }})
                       </span>
                     {% else %}
                       <details class="crossref-accordion">
                         <summary class="crossref-summary-pill">
-                          🔗 Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                          Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
                         </summary>
                         <div class="crossref-dropdown-content">
                           {% for ref in item.cross_references_list %}
@@ -2179,7 +2528,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
                 {% if item.llm_summary %}
                 <div class="why-matters-box">
-                  <span class="why-tag">💡 Why it matters:</span> {{ item.llm_summary }}
+                  <span class="why-tag">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    Why it matters:
+                  </span>
+                  {{ item.llm_summary }}
                 </div>
                 {% endif %}
 
@@ -2187,7 +2540,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               </td>
               <td>
                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  View ↗
+                  View
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
                 </a>
               </td>
             </tr>
@@ -2206,7 +2560,6 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     let activeCategoryFilter = 'ALL';
     let activeSourceFilter = 'ALL';
 
-    // Parse URL params for ?ticker=NVDA or ?q=
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const tickerParam = urlParams.get('ticker');
@@ -2317,12 +2670,12 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">📅 Forthcoming Corporate Calendar</h1>
+          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Corporate Calendar</h1>
           <p style="font-size:0.9rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.45rem;">
-          <span class="calendar-origin-badge origin-sourced">📢 SOURCED</span>
-          <span class="calendar-origin-badge origin-estimated">⚙️ COMPUTED (40D RULE)</span>
+          <span class="calendar-origin-badge origin-sourced">SOURCED</span>
+          <span class="calendar-origin-badge origin-estimated">COMPUTED (40D RULE)</span>
         </div>
       </header>
 
@@ -2331,10 +2684,22 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
         <div class="filter-row">
           <span class="filter-label">Filter:</span>
           <button class="filter-btn active cal-filter-btn" data-val="ALL" onclick="filterCalendar('ALL', this)">All Events ({{ calendar_events|length }})</button>
-          <button class="filter-btn cal-filter-btn" data-val="Earnings" onclick="filterCalendar('Earnings', this)">📊 Earnings Calls</button>
-          <button class="filter-btn cal-filter-btn" data-val="Dividend" onclick="filterCalendar('Dividend', this)">💰 Dividend Dates</button>
-          <button class="filter-btn cal-filter-btn" data-val="SEC" onclick="filterCalendar('SEC', this)">⚖️ SEC Filing Deadlines</button>
-          <button class="filter-btn cal-filter-btn" data-val="Conference" onclick="filterCalendar('Conference', this)">🎤 Conferences</button>
+          <button class="filter-btn cal-filter-btn" data-val="Earnings" onclick="filterCalendar('Earnings', this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+            Earnings Calls
+          </button>
+          <button class="filter-btn cal-filter-btn" data-val="Dividend" onclick="filterCalendar('Dividend', this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+            Dividend Dates
+          </button>
+          <button class="filter-btn cal-filter-btn" data-val="SEC" onclick="filterCalendar('SEC', this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+            SEC Filing Deadlines
+          </button>
+          <button class="filter-btn cal-filter-btn" data-val="Conference" onclick="filterCalendar('Conference', this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            Conferences
+          </button>
         </div>
       </div>
 
@@ -2350,16 +2715,16 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
                 <div style="display:flex; align-items:center; gap:0.4rem;">
                   <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
                   {% if ev.source_type == 'ESTIMATED_RULE' %}
-                  <span class="calendar-origin-badge origin-estimated">⚙️ COMPUTED (40D RULE)</span>
+                  <span class="calendar-origin-badge origin-estimated">COMPUTED (40D RULE)</span>
                   {% else %}
-                  <span class="calendar-origin-badge origin-sourced">📢 SOURCED</span>
+                  <span class="calendar-origin-badge origin-sourced">SOURCED</span>
                   {% endif %}
                 </div>
                 <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
-                  {% if 'Earnings' in ev.event_type %}📊 Earnings Call
-                  {% elif 'Dividend' in ev.event_type %}💰 Dividend
-                  {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}⚖️ SEC Deadline (Estimated)
-                  {% else %}🎤 Conference{% endif %}
+                  {% if 'Earnings' in ev.event_type %}Earnings Call
+                  {% elif 'Dividend' in ev.event_type %}Dividend
+                  {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}SEC Deadline (Estimated)
+                  {% else %}Conference{% endif %}
                 </span>
               </div>
               <div class="calendar-date-box">
@@ -2374,11 +2739,13 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 
           <div class="calendar-card-bottom">
             <span class="relative-badge">
-              ⏳ <strong>{{ ev.relative_badge }}</strong> ({{ ev.display_date }})
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <strong>{{ ev.relative_badge }}</strong> ({{ ev.display_date }})
             </span>
             {% if ev.source_url %}
             <a href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.75rem;">
-              {% if ev.source_type == 'ESTIMATED_RULE' %}SEC Filings ↗{% else %}Source ↗{% endif %}
+              {% if ev.source_type == 'ESTIMATED_RULE' %}SEC Filings{% else %}Source{% endif %}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
             </a>
             {% endif %}
           </div>
@@ -2440,12 +2807,13 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
-          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">🏛️ Macroeconomic Intelligence</h1>
+          <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Macroeconomic Intelligence</h1>
           <p style="font-size:0.9rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live indicators mapped to individual watchlist company sensitivities</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill" style="color:var(--accent-blue); font-weight:700;">
-            📈 St. Louis Fed (FRED) Feed
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            St. Louis Fed (FRED) Feed
           </span>
         </div>
       </header>
@@ -2496,7 +2864,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
       <!-- Watchlist Sensitivity Matrix Table -->
       <section style="background:#ffffff; border:1px solid var(--border-card); border-radius:var(--radius-lg); padding:1.75rem; box-shadow:var(--shadow-card);">
-        <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">📊 Watchlist Sensitivity Matrix</h3>
+        <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">Watchlist Sensitivity Matrix</h3>
         <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1.5rem;">Documented sensitivities driving company-specific macroeconomic exposure</p>
 
         <div class="table-container">
