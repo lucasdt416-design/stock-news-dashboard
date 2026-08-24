@@ -1567,14 +1567,16 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    if (document.getElementById('categoryChart') && chartData.category_labels) {
+    const catLabels = chartData.categories || chartData.category_labels || [];
+    const catCounts = chartData.category_counts || [];
+    if (document.getElementById('categoryChart') && catLabels.length > 0) {
       const ctxCat = document.getElementById('categoryChart').getContext('2d');
       new Chart(ctxCat, {
         type: 'doughnut',
         data: {
-          labels: chartData.category_labels,
+          labels: catLabels,
           datasets: [{
-            data: chartData.category_counts,
+            data: catCounts,
             backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ef4444', '#14b8a6', '#f43f5e', '#ea580c', '#eab308'],
             borderColor: '#0f172a',
             borderWidth: 2
@@ -1583,7 +1585,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { boxWidth: 8, font: { size: 10 }, color: '#cbd5e1' } } }
+          plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 }, color: '#cbd5e1', padding: 8 } } }
         }
       });
     }
