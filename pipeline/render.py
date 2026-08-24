@@ -1,18 +1,16 @@
-"""Multi-page static HTML dashboard generator with Cloudflare-inspired visual design (Phase 6).
+"""Multi-page static HTML dashboard generator with responsive mobile architecture (Phase 6).
 
-Visual & UX Polish:
-- Interactive live autocomplete & guessing search engine inside #globalSearchInput.
-- Helpful empty search state: "Sorry, what you are searching for cannot be found, try being less specific."
-- Actionable top hero badge: Next upcoming corporate catalyst with live date and priority disclosures count.
-- Rich line chart styling: vertical gradient fills, smooth curves, styled point nodes.
-- Category donut chart: custom canvas leader lines and direct callout percentage badges.
-- Top bar and navigation: Replaced "Telemetry" & shield icon with "Analytics" & bar chart SVG icon linked to #analyticsSection.
-- High quality SVG icon set (Lucide/Heroicons).
-- Refined darkened StockPulse logo mark.
-- Interactive "Ask AI" assistant modal.
+Mobile & UX Enhancements:
+- Responsive Mobile Header with Brand, Quick Ask AI, and slide-over hamburger drawer.
+- Floating/Pinned Mobile Bottom Navigation Bar (Home, Feed, Calendar, Macro) with safe-area insets.
+- Responsive Chart.js resizing with adaptive font sizes, axis skip rules, and legend positioning on narrow viewports.
+- Donut chart viewport clipping protection and stacked mobile legend grid.
+- Strict text wrapping (overflow-wrap: anywhere) and smooth horizontal swipe containers for tables at 375px, 390px, 414px viewports.
+- Live guessing search autocomplete & helpful empty state.
+- Next Catalyst hero badge tracker.
 
 Generates:
-1. site/index.html    - Home / Overview: Hero greeting, search with tab suggestions, widget preview cards & rich analytics
+1. site/index.html    - Home / Overview: Hero greeting, live search, widget preview cards & rich charts
 2. site/news.html     - Full Intelligence Feed: Priority Panel, Filters, Search, Sort & News Table
 3. site/calendar.html - Forthcoming Corporate Calendar: Earnings calls, Dividends, Filing Deadlines
 4. site/economic.html - Macroeconomic Intelligence: FRED indicators, Live Sensitivity Filtering & Matrix
@@ -88,7 +86,7 @@ def format_human_headline(item: Dict[str, Any]) -> str:
 
 
 # ==============================================================================
-# SHARED BASE CSS & DESIGN SYSTEM
+# SHARED BASE CSS & RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
     :root {
@@ -132,6 +130,7 @@ SHARED_CSS = """
 
     html {
       scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
     }
 
     body {
@@ -140,12 +139,16 @@ SHARED_CSS = """
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       line-height: 1.5;
+      overflow-x: hidden;
+      width: 100%;
     }
 
-    /* Layout with Persistent Sidebar */
+    /* Layout with Persistent Desktop Sidebar & Mobile Off-Canvas Drawer */
     .app-layout {
       display: flex;
       min-height: 100vh;
+      width: 100%;
+      position: relative;
     }
 
     .app-sidebar {
@@ -161,6 +164,7 @@ SHARED_CSS = """
       z-index: 100;
       overflow-y: auto;
       padding: 1.5rem 1.15rem;
+      transition: transform var(--transition-normal);
     }
 
     .app-main {
@@ -169,8 +173,131 @@ SHARED_CSS = """
       padding: 2rem 3rem 4rem 3rem;
       max-width: 1440px;
       width: calc(100% - 250px);
+      min-width: 0; /* Prevents flex children from bursting out */
     }
 
+    /* Mobile Header & Bottom Navigation Bar */
+    .mobile-top-header {
+      display: none;
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 900;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-card);
+      padding: 0.65rem 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mobile-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .mobile-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .mobile-hamburger-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .mobile-drawer-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(3px);
+      z-index: 1050;
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+
+    .mobile-drawer-backdrop.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 950;
+      background: #ffffff;
+      border-top: 1px solid var(--border-card);
+      padding: 0.4rem 0.25rem calc(0.4rem + env(safe-area-inset-bottom)) 0.25rem;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .mobile-tab-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      padding: 0.25rem 0.65rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.68rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+      flex: 1;
+      text-align: center;
+    }
+
+    .mobile-tab-link.active {
+      color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    .mobile-tab-link.active svg {
+      stroke: var(--accent-blue);
+    }
+
+    .mobile-tab-link svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+    }
+
+    .sidebar-close-btn {
+      display: none;
+      background: transparent;
+      border: none;
+      font-size: 1.35rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      line-height: 1;
+    }
+
+    /* Responsive Breakpoints */
     @media (max-width: 1080px) {
       .app-sidebar {
         width: 220px;
@@ -184,20 +311,63 @@ SHARED_CSS = """
     }
 
     @media (max-width: 768px) {
-      .app-layout {
-        flex-direction: column;
+      .mobile-top-header {
+        display: flex;
+      }
+      .mobile-bottom-nav {
+        display: flex;
+      }
+      .top-header-bar {
+        display: none !important;
+      }
+      .sidebar-close-btn {
+        display: block;
       }
       .app-sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border-card);
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 280px;
+        z-index: 1100;
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-modal);
+      }
+      .app-sidebar.mobile-open {
+        transform: translateX(0);
       }
       .app-main {
         margin-left: 0;
         width: 100%;
-        padding: 1.5rem 1rem 3rem 1rem;
+        padding: 1.25rem 1rem calc(5.5rem + env(safe-area-inset-bottom)) 1rem;
+      }
+      .hero-container {
+        margin: 0.75rem auto 1.75rem auto !important;
+      }
+      .hero-title {
+        font-size: 1.75rem !important;
+      }
+      .hero-subtext {
+        font-size: 0.85rem !important;
+        margin-bottom: 1.25rem !important;
+      }
+      .search-wrapper {
+        margin-bottom: 1.75rem !important;
+      }
+      .quick-widgets-row {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+        margin-bottom: 1.75rem !important;
+      }
+      .analytics-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+      }
+      .analytics-card {
+        padding: 1.1rem !important;
+      }
+      .priority-section, .controls-panel, .health-section {
+        padding: 1.1rem !important;
       }
     }
 
@@ -384,6 +554,7 @@ SHARED_CSS = """
       text-align: center;
       margin: 1.5rem auto 2.5rem auto;
       max-width: 780px;
+      width: 100%;
     }
 
     .hero-badge {
@@ -401,6 +572,10 @@ SHARED_CSS = """
       margin-bottom: 1.25rem;
       transition: all var(--transition-fast);
       text-decoration: none;
+      max-width: 100%;
+      text-align: center;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .hero-badge:hover {
@@ -416,6 +591,8 @@ SHARED_CSS = """
       letter-spacing: -0.03em;
       color: var(--text-primary);
       margin-bottom: 0.5rem;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .hero-subtext {
@@ -423,6 +600,8 @@ SHARED_CSS = """
       color: var(--text-muted);
       line-height: 1.5;
       margin-bottom: 1.75rem;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     /* Global Search & Command Bar (⌘K) */
@@ -455,14 +634,16 @@ SHARED_CSS = """
       align-items: center;
       color: var(--text-muted);
       margin-right: 0.75rem;
+      flex-shrink: 0;
     }
 
     .search-input {
       flex: 1;
+      min-width: 0;
       border: none;
       outline: none;
       background: transparent;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-family: inherit;
       color: var(--text-primary);
     }
@@ -483,6 +664,7 @@ SHARED_CSS = """
       font-size: 0.7rem;
       font-weight: 700;
       color: var(--text-muted);
+      flex-shrink: 0;
     }
 
     /* Tab Suggestions & Live Autocomplete Dropdown */
@@ -498,7 +680,7 @@ SHARED_CSS = """
       padding: 1rem;
       z-index: 200;
       display: none;
-      max-height: 420px;
+      max-height: 400px;
       overflow-y: auto;
     }
 
@@ -524,7 +706,7 @@ SHARED_CSS = """
 
     .dropdown-tabs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
@@ -540,6 +722,7 @@ SHARED_CSS = """
       text-decoration: none;
       color: var(--text-primary);
       transition: all var(--transition-fast);
+      min-width: 0;
     }
 
     .dropdown-tab-card:hover {
@@ -563,11 +746,17 @@ SHARED_CSS = """
       font-weight: 700;
       color: var(--text-primary);
       line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .dropdown-tab-sub {
       font-size: 0.72rem;
       color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .dropdown-tickers-wrap {
@@ -620,6 +809,7 @@ SHARED_CSS = """
       text-decoration: none;
       color: var(--text-primary);
       transition: all var(--transition-fast);
+      min-width: 0;
     }
 
     .search-result-item:hover {
@@ -679,17 +869,19 @@ SHARED_CSS = """
       font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 0.25rem;
+      word-break: break-word;
     }
 
     .no-results-sub {
       font-size: 0.75rem;
       color: var(--text-muted);
+      word-break: break-word;
     }
 
     /* Top Quick Preview Widgets Row */
     .quick-widgets-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 1.25rem;
       margin-bottom: 2.5rem;
     }
@@ -706,6 +898,7 @@ SHARED_CSS = """
       flex-direction: column;
       justify-content: space-between;
       transition: all var(--transition-fast);
+      min-width: 0;
     }
 
     .quick-widget-card:hover {
@@ -748,6 +941,8 @@ SHARED_CSS = """
       font-weight: 600;
       color: var(--text-secondary);
       transition: all var(--transition-fast);
+      text-align: center;
+      word-break: break-word;
     }
 
     .quick-widget-card:hover .quick-widget-btn {
@@ -762,7 +957,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
       margin-bottom: 1.25rem;
     }
 
@@ -771,6 +966,7 @@ SHARED_CSS = """
       font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--text-primary);
+      word-break: break-word;
     }
 
     .section-time-pill {
@@ -784,6 +980,8 @@ SHARED_CSS = """
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--text-secondary);
+      max-width: 100%;
+      flex-wrap: wrap;
     }
 
     /* Analytics Grid & Cards */
@@ -792,12 +990,6 @@ SHARED_CSS = """
       grid-template-columns: 3fr 2fr;
       gap: 1.25rem;
       margin-bottom: 2.5rem;
-    }
-
-    @media (max-width: 1040px) {
-      .analytics-grid {
-        grid-template-columns: 1fr;
-      }
     }
 
     .analytics-card {
@@ -809,6 +1001,7 @@ SHARED_CSS = """
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      min-width: 0;
     }
 
     .analytics-card-header {
@@ -816,6 +1009,8 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 1rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .analytics-card-title {
@@ -829,7 +1024,7 @@ SHARED_CSS = """
 
     .analytics-metric-val {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 2rem;
+      font-size: 1.85rem;
       font-weight: 800;
       color: var(--text-primary);
       display: flex;
@@ -838,7 +1033,7 @@ SHARED_CSS = """
     }
 
     .analytics-delta-pill {
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--accent-emerald);
       background: rgba(16, 185, 129, 0.1);
@@ -848,14 +1043,15 @@ SHARED_CSS = """
 
     .chart-canvas-container {
       position: relative;
-      height: 260px;
+      height: 250px;
       width: 100%;
+      min-height: 200px;
     }
 
     .category-legend-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.45rem;
       margin-top: 1rem;
       padding-top: 0.85rem;
       border-top: 1px solid var(--border-card);
@@ -864,19 +1060,29 @@ SHARED_CSS = """
     .category-legend-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.35rem;
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
       border-radius: 6px;
-      padding: 0.25rem 0.55rem;
-      font-size: 0.75rem;
+      padding: 0.3rem 0.5rem;
+      font-size: 0.72rem;
       color: var(--text-secondary);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .category-legend-pill strong {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .category-legend-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
+      flex-shrink: 0;
     }
 
     /* Ticker & Form Badges */
@@ -891,6 +1097,7 @@ SHARED_CSS = """
       background: #f1f5f9;
       color: #334155;
       border: 1px solid #cbd5e1;
+      flex-shrink: 0;
     }
 
     .form-type-pill {
@@ -903,6 +1110,7 @@ SHARED_CSS = """
       border-radius: 4px;
       border: 1px solid var(--border-card);
       display: inline-block;
+      flex-shrink: 0;
     }
 
     .category-badge {
@@ -915,6 +1123,7 @@ SHARED_CSS = """
       color: var(--text-secondary);
       border: 1px solid var(--border-card);
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .source-tag {
@@ -933,6 +1142,7 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.2rem;
+      flex-shrink: 0;
     }
 
     .score-high {
@@ -960,6 +1170,7 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.35rem;
       margin-top: 0.35rem;
+      max-width: 100%;
     }
 
     .crossref-badge {
@@ -973,6 +1184,8 @@ SHARED_CSS = """
       background: #eef2ff;
       color: #4338ca;
       border: 1px solid #c7d2fe;
+      max-width: 100%;
+      flex-wrap: wrap;
     }
 
     .crossref-rel-pill {
@@ -999,6 +1212,7 @@ SHARED_CSS = """
     .crossref-accordion {
       display: inline-block;
       margin-top: 0.2rem;
+      max-width: 100%;
     }
 
     .crossref-summary-pill {
@@ -1016,6 +1230,9 @@ SHARED_CSS = """
       gap: 0.35rem;
       transition: all var(--transition-fast);
       user-select: none;
+      max-width: 100%;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .crossref-summary-pill::-webkit-details-marker {
@@ -1047,14 +1264,18 @@ SHARED_CSS = """
       flex-direction: column;
       gap: 0.4rem;
       box-shadow: var(--shadow-dropdown);
+      max-width: 100%;
     }
 
     .crossref-dropdown-item {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 0.4rem;
       font-size: 0.75rem;
       padding: 0.15rem 0;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     /* Why It Matters Callout Box */
@@ -1064,9 +1285,11 @@ SHARED_CSS = """
       border-left: 3px solid var(--accent-blue);
       padding: 0.5rem 0.75rem;
       border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      font-size: 0.85rem;
+      font-size: 0.825rem;
       color: #1e3a8a;
-      line-height: 1.4;
+      line-height: 1.45;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .why-tag {
@@ -1090,6 +1313,7 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.25rem;
       transition: color var(--transition-fast);
+      white-space: nowrap;
     }
 
     .action-link:hover {
@@ -1113,6 +1337,7 @@ SHARED_CSS = """
       cursor: pointer;
       transition: all var(--transition-fast);
       box-shadow: var(--shadow-sm);
+      white-space: nowrap;
     }
 
     .btn-primary:hover {
@@ -1128,13 +1353,14 @@ SHARED_CSS = """
       padding: 1.35rem;
       margin-bottom: 1.75rem;
       box-shadow: var(--shadow-card);
+      min-width: 0;
     }
 
     .filter-row {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.45rem;
       margin-bottom: 0.85rem;
     }
 
@@ -1148,7 +1374,7 @@ SHARED_CSS = """
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
-      min-width: 80px;
+      min-width: 65px;
     }
 
     .filter-btn {
@@ -1157,13 +1383,14 @@ SHARED_CSS = """
       color: var(--text-secondary);
       font-size: 0.78rem;
       font-weight: 600;
-      padding: 0.35rem 0.75rem;
+      padding: 0.35rem 0.65rem;
       border-radius: var(--radius-sm);
       cursor: pointer;
       transition: all var(--transition-fast);
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      white-space: nowrap;
     }
 
     .filter-btn:hover {
@@ -1189,11 +1416,14 @@ SHARED_CSS = """
       border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       box-shadow: var(--shadow-card);
+      width: 100%;
     }
 
     table {
       width: 100%;
+      min-width: 680px; /* Allows smooth horizontal swipe on mobile */
       border-collapse: collapse;
       text-align: left;
       font-size: 0.875rem;
@@ -1208,6 +1438,7 @@ SHARED_CSS = """
       letter-spacing: 0.05em;
       padding: 0.85rem 1rem;
       border-bottom: 1px solid var(--border-card);
+      white-space: nowrap;
     }
 
     td {
@@ -1226,6 +1457,8 @@ SHARED_CSS = """
       margin-bottom: 0.25rem;
       font-size: 0.95rem;
       line-height: 1.35;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .summary-text {
@@ -1233,6 +1466,8 @@ SHARED_CSS = """
       font-size: 0.825rem;
       line-height: 1.45;
       margin-top: 0.35rem;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .date-cell {
@@ -1250,6 +1485,7 @@ SHARED_CSS = """
       padding: 1.75rem;
       margin-bottom: 2.25rem;
       box-shadow: var(--shadow-card);
+      min-width: 0;
     }
 
     .priority-header {
@@ -1257,7 +1493,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
       border-bottom: 1px solid var(--border-card);
@@ -1281,11 +1517,12 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
+      flex-shrink: 0;
     }
 
     .priority-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.25rem;
     }
 
@@ -1298,6 +1535,7 @@ SHARED_CSS = """
       flex-direction: column;
       justify-content: space-between;
       transition: all var(--transition-fast);
+      min-width: 0;
     }
 
     .priority-card:hover {
@@ -1312,6 +1550,8 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       margin-bottom: 0.75rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .priority-rank-pill {
@@ -1334,6 +1574,7 @@ SHARED_CSS = """
       border: 1px solid #bbf7d0;
       padding: 0.2rem 0.55rem;
       border-radius: 4px;
+      flex-shrink: 0;
     }
 
     .priority-card-headline {
@@ -1342,23 +1583,16 @@ SHARED_CSS = """
       color: var(--text-primary);
       margin: 0.5rem 0;
       line-height: 1.35;
-    }
-
-    .priority-why-box {
-      background: #eff6ff;
-      border-left: 3px solid var(--accent-blue);
-      padding: 0.5rem 0.75rem;
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      font-size: 0.8rem;
-      color: #1e3a8a;
-      margin: 0.65rem 0;
-      line-height: 1.4;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .priority-card-summary {
       font-size: 0.8rem;
       color: var(--text-secondary);
       line-height: 1.4;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .priority-card-footer {
@@ -1368,12 +1602,14 @@ SHARED_CSS = """
       padding-top: 0.85rem;
       border-top: 1px solid var(--border-card);
       margin-top: 1rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     /* Forthcoming Corporate Calendar Grid */
     .calendar-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.25rem;
     }
 
@@ -1387,6 +1623,7 @@ SHARED_CSS = """
       justify-content: space-between;
       transition: all var(--transition-fast);
       box-shadow: var(--shadow-sm);
+      min-width: 0;
     }
 
     .calendar-card:hover {
@@ -1405,6 +1642,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 0.85rem;
+      gap: 0.5rem;
     }
 
     .calendar-origin-badge {
@@ -1435,6 +1673,7 @@ SHARED_CSS = """
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
+      width: fit-content;
     }
 
     .cal-type-earnings   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
@@ -1448,7 +1687,8 @@ SHARED_CSS = """
       border-radius: var(--radius-md);
       padding: 0.4rem 0.65rem;
       text-align: center;
-      min-width: 58px;
+      min-width: 54px;
+      flex-shrink: 0;
     }
 
     .calendar-date-month {
@@ -1472,6 +1712,8 @@ SHARED_CSS = """
       color: var(--text-primary);
       margin: 0.4rem 0;
       line-height: 1.35;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .calendar-card-details {
@@ -1479,6 +1721,8 @@ SHARED_CSS = """
       color: var(--text-secondary);
       margin: 0 0 1rem 0;
       line-height: 1.45;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .calendar-card-bottom {
@@ -1487,6 +1731,8 @@ SHARED_CSS = """
       align-items: center;
       padding-top: 0.75rem;
       border-top: 1px solid var(--border-card);
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .relative-badge {
@@ -1501,7 +1747,7 @@ SHARED_CSS = """
     /* Macroeconomic Intelligence Grid & Cards */
     .economic-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.25rem;
     }
 
@@ -1515,6 +1761,7 @@ SHARED_CSS = """
       justify-content: space-between;
       transition: all var(--transition-fast);
       box-shadow: var(--shadow-sm);
+      min-width: 0;
     }
 
     .economic-card:hover {
@@ -1528,6 +1775,8 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 0.85rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .economic-category-badge {
@@ -1570,6 +1819,8 @@ SHARED_CSS = """
       font-weight: 700;
       color: var(--text-primary);
       margin: 0 0 0.35rem 0;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .economic-context {
@@ -1577,6 +1828,8 @@ SHARED_CSS = """
       color: var(--text-secondary);
       line-height: 1.45;
       margin-bottom: 1rem;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .economic-tickers-wrap {
@@ -1609,6 +1862,7 @@ SHARED_CSS = """
       padding: 1.75rem;
       box-shadow: var(--shadow-card);
       margin-top: 2.5rem;
+      min-width: 0;
     }
 
     .health-header {
@@ -1616,7 +1870,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
       padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border-card);
       margin-bottom: 1.5rem;
@@ -1626,6 +1880,7 @@ SHARED_CSS = """
       display: flex;
       align-items: center;
       gap: 0.85rem;
+      flex-wrap: wrap;
     }
 
     .health-title {
@@ -1652,7 +1907,7 @@ SHARED_CSS = """
 
     .health-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
@@ -1662,6 +1917,7 @@ SHARED_CSS = """
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 1.1rem;
+      min-width: 0;
     }
 
     .health-metric-title {
@@ -1696,11 +1952,11 @@ SHARED_CSS = """
       bottom: 0;
       background: rgba(15, 23, 42, 0.5);
       backdrop-filter: blur(4px);
-      z-index: 1000;
+      z-index: 2000;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem;
+      padding: 1rem;
     }
 
     .ai-modal-backdrop.active {
@@ -1715,7 +1971,7 @@ SHARED_CSS = """
       box-shadow: var(--shadow-modal);
       width: 100%;
       max-width: 620px;
-      max-height: 85vh;
+      max-height: 90vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -1725,7 +1981,7 @@ SHARED_CSS = """
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.25rem 1.5rem;
+      padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--border-card);
     }
 
@@ -1738,6 +1994,7 @@ SHARED_CSS = """
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     .ai-modal-close {
@@ -1757,11 +2014,11 @@ SHARED_CSS = """
     }
 
     .ai-modal-body {
-      padding: 1.5rem;
+      padding: 1.25rem;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.85rem;
     }
 
     .ai-input-wrap {
@@ -1775,6 +2032,7 @@ SHARED_CSS = """
 
     .ai-input-wrap input {
       flex: 1;
+      min-width: 0;
       border: none;
       outline: none;
       background: transparent;
@@ -1801,6 +2059,7 @@ SHARED_CSS = """
       padding: 0.2rem 0.65rem;
       cursor: pointer;
       transition: all var(--transition-fast);
+      white-space: nowrap;
     }
 
     .ai-chip:hover {
@@ -1820,54 +2079,82 @@ SHARED_CSS = """
 """
 
 # ==============================================================================
-# SIDEBAR NAVIGATION MACRO
+# RESPONSIVE NAVIGATION MACROS (SIDEBAR + MOBILE HEADER + MOBILE BOTTOM NAV)
 # ==============================================================================
-SIDEBAR_HTML = """
-<aside class="app-sidebar">
-  <a href="index.html" class="sidebar-brand">
-    <div class="logo-badge">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+NAVIGATION_LAYOUT_HTML = """
+<!-- Mobile Sticky Top Header -->
+<div class="mobile-top-header">
+  <a href="index.html" class="mobile-header-left">
+    <div class="logo-badge" style="width:30px; height:30px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
       </svg>
     </div>
-    <div>
-      <div class="brand-title">StockPulse</div>
-      <div class="brand-subtitle">Cloud Intelligence</div>
-    </div>
+    <span style="font-size:0.95rem; font-weight:800; color:var(--text-primary);">StockPulse</span>
   </a>
+  <div class="mobile-header-right">
+    <button class="top-header-btn btn-ai" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="openAiModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+      Ask AI
+    </button>
+    <button class="mobile-hamburger-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation drawer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Backdrop Overlay for Mobile Drawer -->
+<div class="mobile-drawer-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
+
+<!-- Slide-over Drawer / Desktop Sidebar -->
+<aside class="app-sidebar" id="appSidebar">
+  <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-card); padding-bottom:1.25rem; margin-bottom:1.25rem;">
+    <a href="index.html" class="sidebar-brand" style="border-bottom:none; margin-bottom:0; padding-bottom:0;">
+      <div class="logo-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">StockPulse</div>
+        <div class="brand-subtitle">Cloud Intelligence</div>
+      </div>
+    </a>
+    <button class="sidebar-close-btn" onclick="closeMobileNav()" aria-label="Close navigation">&times;</button>
+  </div>
 
   <div class="nav-section-title">Navigation</div>
   <nav class="sidebar-nav">
-    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}">
+    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span class="nav-text">Home</span>
       </div>
     </a>
-    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}">
+    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
         <span class="nav-text">Intelligence Feed</span>
       </div>
       <span class="nav-count">{{ stats.total }}</span>
     </a>
-    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}">
+    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
         <span class="nav-text">Corporate Calendar</span>
       </div>
       <span class="nav-count">{{ calendar_events|length }}</span>
     </a>
-    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}">
+    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
         <span class="nav-text">Economic Snapshot</span>
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
     </a>
-    <a href="index.html#analyticsSection" class="nav-link">
+    <a href="index.html#analyticsSection" class="nav-link" onclick="closeMobileNav()">
       <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span class="nav-text">Analytics &amp; Health</span>
       </div>
     </a>
@@ -1877,7 +2164,7 @@ SIDEBAR_HTML = """
     <div class="sidebar-health-box">
       <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
         <span class="pulse-dot" style="background:#10b981;"></span>
-        <span style="font-size:0.75rem; font-weight:700; color:#15803d;">ALL SYSTEMS OPERATIONAL</span>
+        <span style="font-size:0.75rem; font-weight:700; color:#15803d;">ALL SYSTEMS HEALTHY</span>
       </div>
       <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.4;">
         15 Watchlist Companies<br>
@@ -1886,6 +2173,52 @@ SIDEBAR_HTML = """
     </div>
   </div>
 </aside>
+
+<!-- Mobile Bottom Navigation Bar -->
+<div class="mobile-bottom-nav">
+  <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+    <span>Feed</span>
+  </a>
+  <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+    <span>Calendar</span>
+  </a>
+  <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+    <span>Macro</span>
+  </a>
+</div>
+"""
+
+# JavaScript for Mobile Drawer
+SHARED_MOBILE_JS = """
+function toggleMobileNav() {
+  const sidebar = document.getElementById('appSidebar');
+  const backdrop = document.getElementById('mobileBackdrop');
+  if (sidebar && backdrop) {
+    const isOpen = sidebar.classList.contains('mobile-open');
+    if (isOpen) {
+      closeMobileNav();
+    } else {
+      sidebar.classList.add('mobile-open');
+      backdrop.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+}
+
+function closeMobileNav() {
+  const sidebar = document.getElementById('appSidebar');
+  const backdrop = document.getElementById('mobileBackdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('active');
+  document.body.style.overflow = '';
+}
 """
 
 # ==============================================================================
@@ -1895,7 +2228,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Personal stock news dashboard overview with widget preview cards, rich disclosure trends, and instant search suggestions.">
   <title>StockPulse — What's on the agenda?</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1908,17 +2241,17 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
   <div class="app-layout">
-    """ + SIDEBAR_HTML + """
+    """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <!-- Top Right Bar -->
+      <!-- Top Right Bar for Desktop -->
       <div class="top-header-bar">
         <button class="top-header-btn btn-ai" onclick="openAiModal()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
           Ask AI
         </button>
         <a href="#analyticsSection" class="top-header-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           Analytics
         </a>
         <span class="section-time-pill" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
@@ -1929,22 +2262,22 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <!-- Hero Greeting Section -->
       <div class="hero-container">
         <a href="calendar.html" class="hero-badge">
-          <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem;"></span>
+          <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
           {% if calendar_events %}
-          ⚡ Next Catalyst: <strong>{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Disclosures Active ↗
+          ⚡ Next Catalyst: <strong>{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Disclosures ↗
           {% else %}
           ⚡ <strong>{{ priority_items|length }} Priority Disclosures Active</strong> &bull; 15 Companies Monitored ↗
           {% endif %}
         </a>
         <h1 class="hero-title">What's on the agenda?</h1>
-        <p class="hero-subtext">Review overnight SEC EDGAR filings, company announcements, corporate calendar dates, and FRED macroeconomic sensitivities.</p>
+        <p class="hero-subtext">Review overnight SEC filings, company announcements, corporate calendar dates, and FRED macroeconomic sensitivities.</p>
       </div>
 
       <!-- Global Search & Command Bar (⌘K) with Tab Suggestions & Live Autocomplete -->
       <div class="search-wrapper">
         <div class="search-box" id="globalSearchBox">
           <span class="search-icon-wrap">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           </span>
           <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
           <span class="search-shortcut">⌘ K</span>
@@ -1975,7 +2308,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               </a>
               <a href="economic.html" class="dropdown-tab-card">
                 <div class="dropdown-tab-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
                 </div>
                 <div>
                   <div class="dropdown-tab-title">Economic Snapshot</div>
@@ -2038,7 +2371,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <span class="quick-widget-arrow">›</span>
           </div>
           <div class="quick-widget-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
             Fed Funds: 3.75% &bull; CPI: 3.4%
           </div>
         </a>
@@ -2089,7 +2422,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               </div>
               <span class="section-time-pill" style="font-size:0.75rem;">Slices &amp; Callouts</span>
             </div>
-            <div class="chart-canvas-container" style="height: 200px;">
+            <div class="chart-canvas-container" style="height: 190px;">
               <canvas id="categoryChart"></canvas>
             </div>
           </div>
@@ -2104,10 +2437,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <section class="health-section" id="health">
         <div class="health-header">
           <div class="health-title-group">
-            <h3 class="health-title">Pipeline Health &amp; Collector Safeguards</h3>
+            <h3 class="health-title">Pipeline Health &amp; Safeguards</h3>
             <span class="health-status-badge health-badge-healthy">
               <span class="pulse-dot" style="background:#10b981;"></span>
-              HEALTHY &bull; ALL COLLECTORS OPERATIONAL
+              HEALTHY &bull; OPERATIONAL
             </span>
           </div>
           <div style="font-size:0.75rem; color:var(--text-muted);">
@@ -2159,7 +2492,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       <div class="ai-modal-body">
         <div class="ai-input-wrap">
-          <input type="text" id="aiQueryInput" placeholder="Ask e.g. 'What did NVIDIA disclose?', 'Interest rate sensitivity', 'Upcoming earnings calls'..." onkeydown="handleAiKeydown(event)">
+          <input type="text" id="aiQueryInput" placeholder="Ask e.g. 'What did NVIDIA disclose?', 'Interest rate sensitivity'..." onkeydown="handleAiKeydown(event)">
           <button class="btn-primary" style="padding:0.45rem 0.9rem;" onclick="runAiQuery()">Ask</button>
         </div>
 
@@ -2181,6 +2514,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   </div>
 
   <script>
+    """ + SHARED_MOBILE_JS + """
+
     const allItems = {{ items|tojson|safe }};
     const calendarEvents = {{ calendar_events|tojson|safe }};
     const econIndicators = {{ economic_indicators|tojson|safe }};
@@ -2273,7 +2608,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <span class="ticker-badge ticker-${c.symbol}">${c.symbol}</span>
                 <div>
                   <div class="search-result-title">${c.name}</div>
-                  <div class="search-result-sub">${c.sector} &bull; ${c.exchange}</div>
+                  <div class="search-result-sub">${c.sector}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">View Feed ↗</span>
@@ -2469,6 +2804,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       } else if (e.key === 'Escape') {
         closeSearchDropdown();
         closeAiModal();
+        closeMobileNav();
       }
     });
 
@@ -2486,11 +2822,12 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     }
 
     // =========================================================================
-    // RICH CHARTS INITIALIZATION
+    // RESPONSIVE RICH CHARTS INITIALIZATION
     // =========================================================================
     const chartData = {{ chart_data_json|safe }};
+    const isNarrowViewport = window.innerWidth < 640;
 
-    // 1. Line Chart: Multi-Gradient Curve with styled tooltips and tension
+    // 1. Line Chart: Multi-Gradient Curve with adaptive ticks and responsive styling
     if (document.getElementById('timelineChart') && chartData.timeline_dates) {
       const canvasEl = document.getElementById('timelineChart');
       const ctxTimeline = canvasEl.getContext('2d');
@@ -2515,13 +2852,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           borderColor: theme.stroke,
           backgroundColor: grad,
           fill: true,
-          borderWidth: 2.5,
+          borderWidth: isNarrowViewport ? 2.0 : 2.5,
           tension: 0.38,
           pointBackgroundColor: '#ffffff',
           pointBorderColor: theme.stroke,
-          pointBorderWidth: 2,
-          pointRadius: 3.5,
-          pointHoverRadius: 6,
+          pointBorderWidth: 1.5,
+          pointRadius: isNarrowViewport ? 2.5 : 3.5,
+          pointHoverRadius: 5,
           pointHoverBackgroundColor: theme.stroke,
           pointHoverBorderColor: '#ffffff',
           pointHoverBorderWidth: 2,
@@ -2540,36 +2877,42 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           },
           plugins: {
             legend: {
-              position: 'top',
-              align: 'end',
+              position: isNarrowViewport ? 'bottom' : 'top',
+              align: isNarrowViewport ? 'center' : 'end',
               labels: {
-                boxWidth: 10,
-                boxHeight: 10,
+                boxWidth: 8,
+                boxHeight: 8,
                 usePointStyle: true,
                 pointStyle: 'circle',
-                font: { family: 'Inter', size: 11, weight: '600' },
+                font: { family: 'Inter', size: isNarrowViewport ? 10 : 11, weight: '600' },
                 color: '#475569',
-                padding: 14
+                padding: isNarrowViewport ? 8 : 14
               }
             },
             tooltip: {
               backgroundColor: '#0f172a',
               titleColor: '#f8fafc',
               bodyColor: '#e2e8f0',
-              padding: 10,
-              cornerRadius: 8,
-              bodyFont: { family: 'JetBrains Mono', size: 12 },
-              titleFont: { family: 'Inter', size: 12, weight: '700' }
+              padding: 8,
+              cornerRadius: 6,
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              titleFont: { family: 'Inter', size: 11, weight: '700' }
             }
           },
           scales: {
             x: {
               grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
-              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
+              ticks: { 
+                color: '#64748b', 
+                font: { family: 'JetBrains Mono', size: isNarrowViewport ? 9 : 10 },
+                maxTicksLimit: isNarrowViewport ? 5 : 8,
+                autoSkip: true,
+                maxRotation: 0
+              }
             },
             y: {
               grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
-              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 }, stepSize: 1 },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: isNarrowViewport ? 9 : 10 }, stepSize: 1 },
               beginAtZero: true
             }
           }
@@ -2577,7 +2920,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    // 2. Donut Chart with Leader Line Callout Badges & Legend List
+    // 2. Donut Chart with Responsive Leader Line Callout Badges & Stacked Legend
     const catLabels = chartData.categories || chartData.category_labels || [];
     const catCounts = chartData.category_counts || [];
     if (document.getElementById('categoryChart') && catLabels.length > 0) {
@@ -2587,10 +2930,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const topCounts = catCounts.slice(0, 5);
       const totalCount = topCounts.reduce((a, b) => a + b, 0);
 
-      // Custom Leader-line & Data Callout Plugin
+      // Custom Leader-line & Data Callout Plugin (Adaptive for mobile)
       const donutCalloutPlugin = {
         id: 'donutCallouts',
         afterDraw(chart) {
+          if (chart.width < 340) return; // Prevent horizontal canvas clipping on small phones
           const { ctx } = chart;
           const meta = chart.getDatasetMeta(0);
           if (!meta || !meta.data) return;
@@ -2601,31 +2945,31 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             const midAngle = startAngle + (endAngle - startAngle) / 2;
             const val = chart.data.datasets[0].data[i];
             const pct = Math.round((val / totalCount) * 100);
-            if (pct < 5) return;
+            if (pct < 7) return;
 
-            const r1 = outerRadius + 6;
-            const r2 = outerRadius + 16;
+            const r1 = outerRadius + 4;
+            const r2 = outerRadius + 12;
             const sx = x + Math.cos(midAngle) * r1;
             const sy = y + Math.sin(midAngle) * r1;
             const ex = x + Math.cos(midAngle) * r2;
             const ey = y + Math.sin(midAngle) * r2;
 
             const isRight = Math.cos(midAngle) >= 0;
-            const endHorizontalX = ex + (isRight ? 12 : -12);
+            const endHorizontalX = ex + (isRight ? 10 : -10);
 
             ctx.beginPath();
             ctx.moveTo(sx, sy);
             ctx.lineTo(ex, ey);
             ctx.lineTo(endHorizontalX, ey);
             ctx.strokeStyle = '#94a3b8';
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = 1.0;
             ctx.stroke();
 
             ctx.textAlign = isRight ? 'left' : 'right';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.font = 'bold 10px Inter, sans-serif';
             ctx.fillStyle = '#0f172a';
-            ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 4 : -4), ey);
+            ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
           });
           ctx.restore();
         }
@@ -2639,8 +2983,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             data: topCounts,
             backgroundColor: sliceColors,
             borderColor: '#ffffff',
-            borderWidth: 2.5,
-            hoverOffset: 4
+            borderWidth: 2.0,
+            hoverOffset: 3
           }]
         },
         plugins: [donutCalloutPlugin],
@@ -2648,7 +2992,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           responsive: true,
           maintainAspectRatio: false,
           layout: {
-            padding: { top: 15, bottom: 15, left: 25, right: 25 }
+            padding: { top: 10, bottom: 10, left: 15, right: 15 }
           },
           plugins: {
             legend: { display: false },
@@ -2658,7 +3002,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               bodyColor: '#e2e8f0',
               padding: 8,
               cornerRadius: 6,
-              bodyFont: { family: 'JetBrains Mono', size: 12 },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
               callbacks: {
                 label: function(context) {
                   const val = context.parsed || 0;
@@ -2668,7 +3012,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               }
             }
           },
-          cutout: '62%'
+          cutout: '60%'
         }
       });
 
@@ -2702,7 +3046,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Full intelligence feed of scored stock news and SEC filings with interactive filtering and AI takeaways.">
   <title>StockPulse — Full Intelligence Feed</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2714,10 +3058,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
   <div class="app-layout">
-    """ + SIDEBAR_HTML + """
+    """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
         <div>
           <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Full Intelligence Feed</h1>
           <p style="font-size:0.9rem; color:var(--text-muted);">Deduplicated, scored disclosures with transparent arithmetic and supply-chain cross-references</p>
@@ -2740,10 +3084,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             </span>
             <div>
               <h2 style="font-size:1.15rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
-              <p style="font-size:0.8rem; color:var(--text-muted);">Top {{ priority_items|length }} highest scored stories with plain-English investor takeaways</p>
+              <p style="font-size:0.8rem; color:var(--text-muted);">Top {{ priority_items|length }} highest scored stories with investor takeaways</p>
             </div>
           </div>
-          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.75rem; border-radius:6px; border:1px solid #86efac;">
+          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.75rem; border-radius:6px; border:1px solid #86efac; width:fit-content;">
             SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
           </div>
         </div>
@@ -2753,7 +3097,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <div class="priority-card">
             <div>
               <div class="priority-card-top">
-                <div style="display:flex; align-items:center; gap:0.45rem;">
+                <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
                   <span class="priority-rank-pill">#{{ loop.index }}</span>
                   <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
                   {% if item.form_or_type %}
@@ -2765,9 +3109,9 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 </span>
               </div>
 
-              <div style="margin-top:0.4rem;">
+              <div style="margin-top:0.4rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
                 <span class="category-badge">{{ item.category }}</span>
-                <span class="source-tag" style="margin-left:0.4rem;">{{ item.source_label }}</span>
+                <span class="source-tag">{{ item.source_label }}</span>
               </div>
 
               <h3 class="priority-card-headline">{{ item.clean_headline }}</h3>
@@ -2795,7 +3139,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                         <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                           <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
                           <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
-                          <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
+                          <span style="font-size:0.75rem; color:var(--text-secondary);">${ref.impact_note}</span>
                         </div>
                         {% endfor %}
                       </div>
@@ -2869,15 +3213,15 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           </button>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-card);">
-          <div style="display:flex; align-items:center; gap:0.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-card);">
+          <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
             <span class="filter-label">Sort:</span>
-            <button class="filter-btn active" id="sortScoreBtn" onclick="sortRows('score')">Highest Score First</button>
-            <button class="filter-btn" id="sortDateBtn" onclick="sortRows('date')">Newest Date First</button>
+            <button class="filter-btn active" id="sortScoreBtn" onclick="sortRows('score')">Highest Score</button>
+            <button class="filter-btn" id="sortDateBtn" onclick="sortRows('date')">Newest Date</button>
           </div>
-          <div style="display:flex; align-items:center; gap:0.5rem;">
-            <input type="text" id="searchInput" placeholder="Search headlines, takeaways, suppliers..." oninput="filterItems()" 
-                   style="background:var(--bg-base); border:1px solid var(--border-card); color:var(--text-primary); padding:0.45rem 0.85rem; border-radius:var(--radius-sm); font-size:0.85rem; width:280px;">
+          <div style="display:flex; align-items:center; gap:0.5rem; width:100%; max-width:280px;">
+            <input type="text" id="searchInput" placeholder="Search headlines, takeaways..." oninput="filterItems()" 
+                   style="background:var(--bg-base); border:1px solid var(--border-card); color:var(--text-primary); padding:0.45rem 0.85rem; border-radius:var(--radius-sm); font-size:0.85rem; width:100%;">
           </div>
         </div>
       </div>
@@ -2994,6 +3338,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   </div>
 
   <script>
+    """ + SHARED_MOBILE_JS + """
+
     let activeTickerFilter = 'ALL';
     let activeCategoryFilter = 'ALL';
     let activeSourceFilter = 'ALL';
@@ -3091,7 +3437,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Forthcoming corporate calendar showing upcoming earnings dates, dividend ex-dates, and statutory SEC filing deadlines.">
   <title>StockPulse — Forthcoming Corporate Calendar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3103,15 +3449,15 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
   <div class="app-layout">
-    """ + SIDEBAR_HTML + """
+    """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
         <div>
           <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Corporate Calendar</h1>
           <p style="font-size:0.9rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
         </div>
-        <div style="display:flex; align-items:center; gap:0.45rem;">
+        <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
           <span class="calendar-origin-badge origin-sourced">SOURCED</span>
           <span class="calendar-origin-badge origin-estimated">COMPUTED (40D RULE)</span>
         </div>
@@ -3150,7 +3496,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
           <div>
             <div class="calendar-card-top">
               <div style="display:flex; flex-direction:column; gap:0.35rem;">
-                <div style="display:flex; align-items:center; gap:0.4rem;">
+                <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                   <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
                   {% if ev.source_type == 'ESTIMATED_RULE' %}
                   <span class="calendar-origin-badge origin-estimated">COMPUTED (40D RULE)</span>
@@ -3194,6 +3540,8 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   </div>
 
   <script>
+    """ + SHARED_MOBILE_JS + """
+
     function filterCalendar(type, btn) {
       document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
@@ -3228,7 +3576,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, CPI inflation, and unemployment to company sensitivities.">
   <title>StockPulse — Macroeconomic Snapshot &amp; Sensitivities</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3240,17 +3588,17 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
   <div class="app-layout">
-    """ + SIDEBAR_HTML + """
+    """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
         <div>
           <h1 class="hero-title" style="font-size:1.85rem; text-align:left; margin-bottom:0.25rem;">Macroeconomic Intelligence</h1>
           <p style="font-size:0.9rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live indicators mapped to individual watchlist company sensitivities</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill" style="color:var(--accent-blue); font-weight:700;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
             St. Louis Fed (FRED) Feed
           </span>
         </div>
@@ -3354,6 +3702,8 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   </div>
 
   <script>
+    """ + SHARED_MOBILE_JS + """
+
     function filterEconomicByTicker(ticker, btn) {
       document.querySelectorAll('.econ-filter-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
