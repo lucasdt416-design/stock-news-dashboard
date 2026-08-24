@@ -1,10 +1,12 @@
 """Supplier / Customer Cross-Reference Intelligence Engine (Category #12).
 
 Cross-references disclosures and news items across watchlist supply chains:
-- Identifies when a disclosure about Company A (or third-party supplier/customer)
-  materially impacts Company B based on key_customers and key_suppliers in watchlist.yaml.
+- Accurately assigns CUSTOMER vs. SUPPLIER roles relative to the item's focal company:
+  - On NVDA's disclosures: MSFT, GOOGL, AMZN, META, TSLA are tagged as CUSTOMERS.
+  - On AMZN / MSFT disclosures: NVDA is tagged as a SUPPLIER.
+  - Third-party suppliers (e.g., TSM, ASML, Spirit AeroSystems) are tagged as SUPPLIERS.
 - Tags items with related_tickers, structured relationship metadata, and UI badge summaries.
-- Allows filtering by a ticker to surface both direct disclosures and critical supply-chain intelligence.
+- Allows filtering by a ticker to surface direct disclosures and critical supply-chain intelligence.
 """
 
 import logging
@@ -23,7 +25,7 @@ GENERIC_STOPWORDS = {
 
 
 def build_supply_chain_index(watchlist: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Build fast lookup indexes for customers, suppliers, and ticker/name aliases."""
+    """Build lookup indexes for customers, suppliers, and ticker/name aliases."""
     customers_by_ticker: Dict[str, List[str]] = {}
     suppliers_by_ticker: Dict[str, List[str]] = {}
     ticker_to_name: Dict[str, str] = {}
@@ -34,8 +36,12 @@ def build_supply_chain_index(watchlist: List[Dict[str, Any]]) -> Dict[str, Any]:
         name = co.get("name", "")
         ticker_to_name[sym] = name
 
-        # Map common clean company names
-        clean_name = re.sub(r"\b(Inc\.|Corporation|Corp\.|Co\.|Company|Platforms|Holdings|The|Group)\b", "", name, flags=re.IGNORECASE).strip()
+        clean_name = re.sub(
+            r"\b(Inc\.|Corporation|Corp\.|Co\.|Company|Platforms|Holdings|The|Group)\b",
+            "",
+            name,
+            flags=re.IGNORECASE,
+        ).strip()
         if clean_name:
             name_to_ticker[clean_name.lower()] = sym
         name_to_ticker[sym.lower()] = sym
@@ -76,6 +82,7 @@ def find_supply_chain_matches_for_item(
     suppliers_by_ticker = sc_index["suppliers_by_ticker"]
     ticker_to_name = sc_index["ticker_to_name"]
 
+    # 1. Evaluate relationships with other watchlist companies
     for target_co in sc_index["watchlist"]:
         target_sym = target_co.get("symbol")
         if target_sym == item_ticker:
@@ -83,38 +90,102 @@ def find_supply_chain_matches_for_item(
 
         target_name = ticker_to_name.get(target_sym, target_sym)
 
-        # 1. Check if item_ticker is a key customer of target_sym
-        # (e.g. Item is about MSFT, MSFT is a customer of NVDA => Cross-ref NVDA)
-        for cust_entity in customers_by_ticker.get(target_sym, []):
+        # Check if target_sym is a CUSTOMER of item_ticker:
+        # (e.g. on NVDA's item, MSFT is a customer because NVDA supplies MSFT)
+        is_customer = False
+        matched_cust_entity = target_sym
+        for cust_entity in customers_by_ticker.get(item_ticker, []):
             pattern = rf"\b{re.escape(cust_entity)}\b"
-            # Match either exact ticker or entity name in full text
-            if cust_entity.upper() == item_ticker or re.search(pattern, full_text, re.IGNORECASE):
-                link_key = f"{target_sym}|Customer"
-                if link_key not in seen_links:
-                    seen_links.add(link_key)
-                    matches.append({
-                        "related_ticker": target_sym,
-                        "related_company": target_name,
-                        "relation_type": "Customer",
-                        "matched_entity": cust_entity,
-                        "impact_note": f"{cust_entity} is a key customer of {target_sym}",
-                    })
+            if cust_entity.upper() == target_sym or re.search(pattern, target_sym, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+                is_customer = True
+                matched_cust_entity = cust_entity
+                break
 
-        # 2. Check if item_ticker is a key supplier to target_sym
-        # (e.g. Item is about KO, KO is a supplier to WMT => Cross-ref WMT)
-        for supp_entity in suppliers_by_ticker.get(target_sym, []):
+        if not is_customer:
+            for supp_entity in suppliers_by_ticker.get(target_sym, []):
+                pattern = rf"\b{re.escape(supp_entity)}\b"
+                if supp_entity.upper() == item_ticker or re.search(pattern, item_ticker, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+                    is_customer = True
+                    matched_cust_entity = target_sym
+                    break
+
+        if is_customer:
+            link_key = f"{target_sym}|Customer"
+            if link_key not in seen_links:
+                seen_links.add(link_key)
+                matches.append({
+                    "related_ticker": target_sym,
+                    "related_company": target_name,
+                    "relation_type": "Customer",
+                    "matched_entity": matched_cust_entity,
+                    "impact_note": f"{target_sym} is a key customer of {item_ticker}",
+                })
+
+        # Check if target_sym is a SUPPLIER to item_ticker:
+        # (e.g. on AMZN's item, NVDA is a supplier because NVDA supplies AMZN)
+        is_supplier = False
+        matched_supp_entity = target_sym
+        for supp_entity in suppliers_by_ticker.get(item_ticker, []):
             pattern = rf"\b{re.escape(supp_entity)}\b"
-            if supp_entity.upper() == item_ticker or re.search(pattern, full_text, re.IGNORECASE):
-                link_key = f"{target_sym}|Supplier"
-                if link_key not in seen_links:
-                    seen_links.add(link_key)
-                    matches.append({
-                        "related_ticker": target_sym,
-                        "related_company": target_name,
-                        "relation_type": "Supplier",
-                        "matched_entity": supp_entity,
-                        "impact_note": f"{supp_entity} is a key supplier to {target_sym}",
-                    })
+            if supp_entity.upper() == target_sym or re.search(pattern, target_sym, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+                is_supplier = True
+                matched_supp_entity = supp_entity
+                break
+
+        if not is_supplier:
+            for cust_entity in customers_by_ticker.get(target_sym, []):
+                pattern = rf"\b{re.escape(cust_entity)}\b"
+                if cust_entity.upper() == item_ticker or re.search(pattern, item_ticker, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+                    is_supplier = True
+                    matched_supp_entity = target_sym
+                    break
+
+        if is_supplier:
+            link_key = f"{target_sym}|Supplier"
+            if link_key not in seen_links:
+                seen_links.add(link_key)
+                matches.append({
+                    "related_ticker": target_sym,
+                    "related_company": target_name,
+                    "relation_type": "Supplier",
+                    "matched_entity": matched_supp_entity,
+                    "impact_note": f"{target_sym} is a key supplier to {item_ticker}",
+                })
+
+    # 2. Check for third-party non-watchlist suppliers explicitly mentioned in full_text
+    # (e.g. TSM, ASML, Foxconn, Spirit AeroSystems)
+    for supp_entity in suppliers_by_ticker.get(item_ticker, []):
+        if supp_entity.upper() in sc_index["ticker_to_name"]:
+            continue
+        pattern = rf"\b{re.escape(supp_entity)}\b"
+        if re.search(pattern, full_text, re.IGNORECASE):
+            link_key = f"{supp_entity}|Supplier"
+            if link_key not in seen_links:
+                seen_links.add(link_key)
+                matches.append({
+                    "related_ticker": supp_entity,
+                    "related_company": supp_entity,
+                    "relation_type": "Supplier",
+                    "matched_entity": supp_entity,
+                    "impact_note": f"{supp_entity} is a key supplier to {item_ticker}",
+                })
+
+    # 3. Check for third-party non-watchlist customers explicitly mentioned in full_text
+    for cust_entity in customers_by_ticker.get(item_ticker, []):
+        if cust_entity.upper() in sc_index["ticker_to_name"]:
+            continue
+        pattern = rf"\b{re.escape(cust_entity)}\b"
+        if re.search(pattern, full_text, re.IGNORECASE):
+            link_key = f"{cust_entity}|Customer"
+            if link_key not in seen_links:
+                seen_links.add(link_key)
+                matches.append({
+                    "related_ticker": cust_entity,
+                    "related_company": cust_entity,
+                    "relation_type": "Customer",
+                    "matched_entity": cust_entity,
+                    "impact_note": f"{cust_entity} is a key customer of {item_ticker}",
+                })
 
     return matches
 
@@ -123,7 +194,7 @@ def apply_supply_chain_cross_references(
     items: List[Dict[str, Any]],
     watchlist: List[Dict[str, Any]],
 ) -> List[Dict[str, Any]]:
-    """Process news items, tagging each with relevant supply-chain cross-references."""
+    """Process news items, tagging each with properly labeled supply-chain cross-references."""
     if not items or not watchlist:
         return items
 
@@ -141,7 +212,7 @@ def apply_supply_chain_cross_references(
             # Create clean human-readable summary badges
             badge_parts = []
             for m in matches:
-                badge_parts.append(f"🔗 {m['related_ticker']} ({m['relation_type']}: {m['matched_entity']})")
+                badge_parts.append(f"🔗 {m['relation_type']}: {m['related_ticker']}")
             it["cross_ref_summary"] = " · ".join(badge_parts)
 
             # If item is general company announcement or press release, tag category relevance
