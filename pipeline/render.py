@@ -668,6 +668,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .ticker-NVDA { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
     .ticker-AAPL { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
     .ticker-MSFT { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .ticker-TSLA { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .ticker-AMZN { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .ticker-JPM  { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
     .ticker-default { background: rgba(156, 163, 175, 0.15); color: #d1d5db; border: 1px solid rgba(156, 163, 175, 0.3); }
 
     .category-badge {
@@ -886,6 +889,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
               <span class="chart-legend-item"><span class="legend-dot" style="background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5);"></span> NVDA</span>
               <span class="chart-legend-item"><span class="legend-dot" style="background:#3b82f6; box-shadow:0 0 6px rgba(59,130,246,0.5);"></span> AAPL</span>
               <span class="chart-legend-item"><span class="legend-dot" style="background:#8b5cf6; box-shadow:0 0 6px rgba(139,92,246,0.5);"></span> MSFT</span>
+              <span class="chart-legend-item"><span class="legend-dot" style="background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.5);"></span> TSLA</span>
+              <span class="chart-legend-item"><span class="legend-dot" style="background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.5);"></span> AMZN</span>
+              <span class="chart-legend-item"><span class="legend-dot" style="background:#06b6d4; box-shadow:0 0 6px rgba(6,182,212,0.5);"></span> JPM</span>
             </div>
           </div>
           <div class="chart-canvas-container">
@@ -1067,11 +1073,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       const tickerColors = {
         'NVDA': { border: '#10b981', bg: 'rgba(16, 185, 129, 0.14)' },
         'AAPL': { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.14)' },
-        'MSFT': { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.14)' }
+        'MSFT': { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.14)' },
+        'TSLA': { border: '#ef4444', bg: 'rgba(239, 68, 68, 0.14)' },
+        'AMZN': { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.14)' },
+        'JPM':  { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.14)' }
       };
 
-      // Explicitly sort tickers so NVDA is guaranteed first, followed by AAPL and MSFT
-      const tickerOrder = ['NVDA', 'AAPL', 'MSFT'];
+      // Explicitly sort tickers in order of watchlist priority
+      const tickerOrder = ['NVDA', 'AAPL', 'MSFT', 'TSLA', 'AMZN', 'JPM'];
       const presentTickers = Object.keys(chartData.timeline_series).sort((a, b) => {
         const idxA = tickerOrder.indexOf(a);
         const idxB = tickerOrder.indexOf(b);

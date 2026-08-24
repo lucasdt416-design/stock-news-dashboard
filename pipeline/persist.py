@@ -232,7 +232,7 @@ def get_chart_data(db_path: Optional[str] = None) -> Dict[str, Any]:
     recent_dates = all_dates_set[-14:] if len(all_dates_set) > 14 else all_dates_set
 
     # Priority order for watchlist tickers
-    preferred_order = ["NVDA", "AAPL", "MSFT"]
+    preferred_order = ["NVDA", "AAPL", "MSFT", "TSLA", "AMZN", "JPM"]
     ticker_cursor = conn.execute(
         "SELECT DISTINCT ticker FROM news_items"
     )

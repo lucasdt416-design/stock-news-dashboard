@@ -34,3 +34,39 @@ tickers:
     competitors: [GOOGL, AMZN, AAPL]
     macro_sensitivities: [cloud_growth, enterprise_it_spend]
     notes: "Key focus on Azure growth and Copilot monetization."
+
+  - symbol: TSLA
+    name: Tesla, Inc.
+    cik: "0001318605"
+    ir_feed_url: "https://ir.tesla.com/press-releases/rss"
+    sector: automotive_clean_energy
+    regulators: [NHTSA, SEC, EPA, EU_EC]
+    key_customers: [Retail, Fleet_Operators, Commercial_Energy]
+    key_suppliers: [Panasonic, CATL, NVDA, LG_Energy]
+    competitors: [BYD, RIVN, F, GM, LCID]
+    macro_sensitivities: [ev_subsidies, lithium_prices, interest_rates_auto_loans, china_ev_competition]
+    notes: "Track vehicle deliveries, Full Self-Driving (FSD) regulatory milestones, and energy storage deployments."
+
+  - symbol: AMZN
+    name: Amazon.com, Inc.
+    cik: "0001018724"
+    ir_feed_url: "https://www.aboutamazon.com/news/rss"
+    sector: ecommerce_cloud
+    regulators: [FTC, DOJ, EU_EC, SEC]
+    key_customers: [Retail, AWS_Enterprise, SMB_Sellers]
+    key_suppliers: [NVDA, INTC, AMD, Logistics_Partners]
+    competitors: [MSFT, GOOGL, WMT, BABA, SHOP]
+    macro_sensitivities: [consumer_discretionary_spending, enterprise_cloud_budget, fuel_logistics_costs]
+    notes: "Monitor AWS revenue growth, operating margins, and retail fulfillment efficiency."
+
+  - symbol: JPM
+    name: JPMorgan Chase & Co.
+    cik: "0000019617"
+    ir_feed_url: "https://jpmorganchaseco.gcs-web.com/rss/news-releases.xml"
+    sector: financial_banking
+    regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
+    key_customers: [Institutional_Clients, Corporations, Commercial, Retail_Banking]
+    key_suppliers: [Financial_Market_Infrastructure, Core_Banking_Tech, Cloud_Providers]
+    competitors: [BAC, C, MS, GS, WFC]
+    macro_sensitivities: [fed_interest_rates, yield_curve_inversion, credit_default_rates, investment_banking_m_and_a_volume]
+    notes: "Key bellwether for net interest income (NII), credit reserves, and macroeconomic lending health."

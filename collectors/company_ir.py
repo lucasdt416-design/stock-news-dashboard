@@ -5,13 +5,16 @@ from official company RSS / Atom feeds.
 """
 
 import logging
+import re
 import time
+import urllib.error
+import urllib.request
 from typing import Any, Dict, List
 import feedparser
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_USER_AGENT = "StockNewsDashboard/1.0 (Mozilla/5.0; IR Feed Reader; contact: admin@stocknewsdashboard.local)"
+DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (StockNewsDashboard/1.0; contact: admin@stocknewsdashboard.local)"
 
 
 def fetch_ir_feed(
@@ -19,19 +22,24 @@ def fetch_ir_feed(
     ticker: str,
     company_name: str,
     max_items: int = 30,
-    timeout: int = 15,
+    timeout: int = 6,
 ) -> List[Dict[str, Any]]:
-    """Fetch and parse an official company IR RSS/Atom feed."""
+    """Fetch and parse an official company IR RSS/Atom feed with a strict network timeout."""
     if not feed_url:
         return []
 
     try:
-        # feedparser supports custom request headers via agent/request_headers
-        parsed = feedparser.parse(
+        req = urllib.request.Request(
             feed_url,
-            agent=DEFAULT_USER_AGENT,
-            request_headers={"User-Agent": DEFAULT_USER_AGENT},
+            headers={
+                "User-Agent": DEFAULT_USER_AGENT,
+                "Accept": "application/rss+xml, application/atom+xml, text/xml, application/xml, text/html, */*",
+            },
         )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            content = resp.read()
+
+        parsed = feedparser.parse(content)
 
         if parsed.bozo and not parsed.entries:
             logger.warning(
@@ -61,14 +69,11 @@ def fetch_ir_feed(
             else:
                 raw_dt = entry.get("published") or entry.get("updated") or ""
                 if raw_dt:
-                    # Take first 10 characters if YYYY-MM-DD format
                     pub_date = raw_dt[:10] if len(raw_dt) >= 10 and raw_dt[4] == "-" else raw_dt
 
             # Summary / Description
             summary = entry.get("summary", "") or entry.get("description", "")
-            # Basic HTML tag stripping for summary preview
             if "<" in summary and ">" in summary:
-                import re
                 summary = re.sub(r"<[^>]+>", "", summary).strip()
 
             items.append({
@@ -87,8 +92,14 @@ def fetch_ir_feed(
 
         return items
 
+    except urllib.error.HTTPError as e:
+        logger.warning("HTTP %s when fetching IR feed for %s (%s): %s", e.code, ticker, feed_url, e.reason)
+        return []
+    except urllib.error.URLError as e:
+        logger.warning("Network error fetching IR feed for %s (%s): %s", ticker, feed_url, e.reason)
+        return []
     except Exception as e:
-        logger.error("Failed to fetch IR feed for %s from %s: %s", ticker, feed_url, e)
+        logger.warning("Failed to fetch IR feed for %s from %s: %s", ticker, feed_url, e)
         return []
 
 
