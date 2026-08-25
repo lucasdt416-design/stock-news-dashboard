@@ -316,15 +316,16 @@ def get_recent_pipeline_runs(limit: int = 5, db_path: Optional[str] = None) -> L
             conn.close()
             return []
 
+        cursor = conn.execute("PRAGMA table_info(pipeline_runs)")
+        cols = [r["name"] for r in cursor.fetchall()]
+        has_news = "news_media_count" in cols
+        select_cols = (
+            "id, run_timestamp, edgar_count, company_ir_count, "
+            + ("news_media_count, " if has_news else "0 AS news_media_count, ")
+            + "total_raw, total_unique, high_impact_count, status, health_message, moving_avg_raw"
+        )
         cursor = conn.execute(
-            """
-            SELECT id, run_timestamp, edgar_count, company_ir_count,
-                   total_raw, total_unique, high_impact_count,
-                   status, health_message, moving_avg_raw
-            FROM pipeline_runs
-            ORDER BY id DESC
-            LIMIT ?
-            """,
+            f"SELECT {select_cols} FROM pipeline_runs ORDER BY id DESC LIMIT ?",
             (limit,),
         )
         rows = [dict(r) for r in cursor.fetchall()]

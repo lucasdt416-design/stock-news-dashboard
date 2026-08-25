@@ -1,7 +1,7 @@
 """Health monitoring, collector telemetry, and anomaly detection engine.
 
 Implements build-plan.md Section 10:
-- Tracks per-source item yield (SEC EDGAR, Company IR, total raw, unique).
+- Tracks per-source item yield (SEC EDGAR, Company IR, News Media, total raw, unique).
 - Evaluates moving averages across previous runs.
 - Flags anomalies (e.g. source returning 0 items, total volume < 33% of 7-run average).
 - Persists health reports to SQLite 'pipeline_runs' table.
@@ -20,7 +20,7 @@ STATUS_CRITICAL = "CRITICAL"
 
 
 def init_health_schema(conn: sqlite3.Connection) -> None:
-    """Create pipeline_runs table if it does not exist."""
+    """Create pipeline_runs table if it does not exist and ensure columns exist."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS pipeline_runs (
@@ -28,6 +28,7 @@ def init_health_schema(conn: sqlite3.Connection) -> None:
             run_timestamp TEXT NOT NULL,
             edgar_count INTEGER NOT NULL,
             company_ir_count INTEGER NOT NULL,
+            news_media_count INTEGER DEFAULT 0,
             total_raw INTEGER NOT NULL,
             total_unique INTEGER NOT NULL,
             high_impact_count INTEGER NOT NULL,
@@ -37,6 +38,14 @@ def init_health_schema(conn: sqlite3.Connection) -> None:
         );
         """
     )
+    # Check if news_media_count column exists in existing database
+    cursor = conn.execute("PRAGMA table_info(pipeline_runs)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if "news_media_count" not in columns:
+        try:
+            conn.execute("ALTER TABLE pipeline_runs ADD COLUMN news_media_count INTEGER DEFAULT 0")
+        except Exception as e:
+            logger.debug("Could not add news_media_count to pipeline_runs: %s", e)
     conn.commit()
 
 
@@ -50,7 +59,7 @@ def calculate_historical_baseline(
     """
     cursor = conn.execute(
         """
-        SELECT total_raw FROM pipeline_runs 
+        SELECT total_raw FROM pipeline_runs
         ORDER BY id DESC LIMIT ?
         """,
         (window_size,),
@@ -70,6 +79,7 @@ def calculate_historical_baseline(
 def evaluate_run_health(
     edgar_count: int,
     company_ir_count: int,
+    news_media_count: int,
     total_raw: int,
     total_unique: int,
     moving_avg_raw: float,
@@ -80,7 +90,7 @@ def evaluate_run_health(
     is_critical = False
     is_warning = False
 
-    # 1. Critical Checks: Primary source (EDGAR) completely empty or 0 total items
+    # 1. Critical Checks: All collectors failed or EDGAR returned 0
     if total_raw == 0:
         issues.append("Total items collected is 0 (all scrapers/APIs failed)")
         is_critical = True
@@ -130,6 +140,7 @@ def record_pipeline_run_health(
 
     edgar_count = collector_counts.get("sec_edgar", 0)
     ir_count = collector_counts.get("company_ir", 0)
+    news_count = collector_counts.get("news_media", 0)
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
     with get_db_connection(db_path) as conn:
@@ -139,6 +150,7 @@ def record_pipeline_run_health(
         status, message = evaluate_run_health(
             edgar_count=edgar_count,
             company_ir_count=ir_count,
+            news_media_count=news_count,
             total_raw=total_raw,
             total_unique=total_unique,
             moving_avg_raw=moving_avg,
@@ -148,15 +160,16 @@ def record_pipeline_run_health(
         conn.execute(
             """
             INSERT INTO pipeline_runs (
-                run_timestamp, edgar_count, company_ir_count,
+                run_timestamp, edgar_count, company_ir_count, news_media_count,
                 total_raw, total_unique, high_impact_count,
                 status, health_message, moving_avg_raw
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 now_iso,
                 edgar_count,
                 ir_count,
+                news_count,
                 total_raw,
                 total_unique,
                 high_impact_count,
@@ -171,6 +184,7 @@ def record_pipeline_run_health(
         "run_timestamp": now_iso,
         "edgar_count": edgar_count,
         "company_ir_count": ir_count,
+        "news_media_count": news_count,
         "total_raw": total_raw,
         "total_unique": total_unique,
         "high_impact_count": high_impact_count,

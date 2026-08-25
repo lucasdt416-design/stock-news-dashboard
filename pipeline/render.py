@@ -1359,6 +1359,16 @@ SHARED_CSS = """
       flex-shrink: 0;
       white-space: nowrap !important;
       word-break: keep-all !important;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      cursor: pointer;
+    }
+
+    .ticker-badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-color: #94a3b8;
+      text-decoration: none;
     }
 
     .form-type-pill {
@@ -1395,6 +1405,39 @@ SHARED_CSS = """
       white-space: nowrap;
     }
 
+    /* Distinct Source Badges */
+    .source-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.18rem 0.55rem;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .source-badge-edgar {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .source-badge-ir {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .source-badge-news {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+
     /* Score Badges */
     .score-badge {
       font-family: 'JetBrains Mono', monospace;
@@ -1425,6 +1468,174 @@ SHARED_CSS = """
       background: #f1f5f9;
       color: #64748b;
       border: 1px solid #e2e8f0;
+    }
+
+    /* Company Page Specific Styles */
+    .company-strip-wrap {
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      -webkit-overflow-scrolling: touch;
+    }
+    .company-strip {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      min-width: max-content;
+    }
+    .company-strip-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .company-strip-pill:hover {
+      border-color: var(--border-accent);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+    .company-strip-pill.active {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .company-strip-pill.active .ticker-badge {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .company-hero-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .company-hero-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-card);
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .company-hero-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .company-hero-symbol {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 800;
+      padding: 0.35rem 0.95rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-elevated);
+      border: 2px solid var(--border-card);
+      color: var(--text-primary);
+    }
+    .company-hero-name {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0;
+      line-height: 1.2;
+    }
+    .company-meta-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      margin-top: 0.35rem;
+    }
+    .company-notes-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1.1rem;
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .company-grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 1.5rem;
+    }
+    @media (max-width: 1024px) {
+      .company-grid-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .company-card-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .company-side-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .company-feed-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1.25rem;
+      transition: all 0.15s ease;
+    }
+    .company-feed-item:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-sm);
+    }
+    .company-feed-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .company-feed-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+      line-height: 1.4;
+    }
+    .company-side-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .company-side-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--border-card);
     }
 
     /* Collapsible Cross-Reference Accordion */
@@ -2527,6 +2738,13 @@ NAVIGATION_LAYOUT_HTML = """
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
     </a>
+    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()">
+      <div class="nav-item-left">
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <span class="nav-text">Company View</span>
+      </div>
+      <span class="nav-count">{{ watchlist_companies|length }}</span>
+    </a>
     <a href="index.html#analyticsSection" class="nav-link" onclick="closeMobileNav()">
       <div class="nav-item-left">
         <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -2566,6 +2784,10 @@ NAVIGATION_LAYOUT_HTML = """
   <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
     <span>Macro</span>
+  </a>
+  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+    <span>Stocks</span>
   </a>
 </div>
 """
@@ -2705,7 +2927,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <div class="dropdown-section-title">Jump to Watchlist Ticker</div>
               <div class="dropdown-tickers-list">
                 {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA'] %}
-                <a href="news.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
+                <a href="company.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
                 {% endfor %}
               </div>
             </div>
@@ -2870,7 +3092,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <div class="health-grid">
+        <div class="health-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
           <div class="health-metric-card">
             <div class="health-metric-title">SEC EDGAR Filings</div>
             <div class="health-metric-val" style="color:#15803d;">{{ latest_run.edgar_count if latest_run else 450 }}</div>
@@ -2880,6 +3102,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <div class="health-metric-title">Company IR Releases</div>
             <div class="health-metric-val" style="color:var(--accent-blue);">{{ latest_run.company_ir_count if latest_run else 100 }}</div>
             <div class="health-metric-sub">Official press room feeds</div>
+          </div>
+          <div class="health-metric-card">
+            <div class="health-metric-title">News Media Coverage</div>
+            <div class="health-metric-val" style="color:#047857;">{{ latest_run.news_media_count if latest_run and latest_run.news_media_count is defined else stats.by_source.get('News Media', 0) }}</div>
+            <div class="health-metric-sub">Finnhub 3rd-party journalism</div>
           </div>
           <div class="health-metric-card">
             <div class="health-metric-title">Total Unique Yield</div>
@@ -3033,7 +3260,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         html += '<div class="dropdown-section-title">Matching Companies</div>';
         matchedCompanies.slice(0, 3).forEach(c => {
           html += `
-            <a href="news.html?ticker=${c.symbol}" class="search-result-item">
+            <a href="company.html?ticker=${c.symbol}" class="search-result-item">
               <div class="search-result-left">
                 <span class="ticker-badge ticker-${c.symbol}">${c.symbol}</span>
                 <div class="search-result-info">
@@ -3041,7 +3268,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${c.sector}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">View Feed ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Company View ↗</span>
             </a>
           `;
         });
@@ -3580,12 +3807,12 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               <div class="priority-card-top">
                 <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                   <span class="priority-lead-badge">TOP IMPACT #1</span>
-                  <span class="ticker-badge ticker-{{ lead.ticker }}" style="font-size:0.88rem; padding:0.25rem 0.65rem;">{{ lead.ticker }}</span>
+                  <a href="company.html?ticker={{ lead.ticker }}" class="ticker-badge ticker-{{ lead.ticker }}" style="font-size:0.88rem; padding:0.25rem 0.65rem;">{{ lead.ticker }}</a>
                   {% if lead.form_or_type %}
                   <span class="form-type-pill">{{ lead.form_or_type }}</span>
                   {% endif %}
                   <span class="category-badge">{{ lead.category }}</span>
-                  <span class="source-tag">{{ lead.source_label }}</span>
+                  <span class="source-badge {% if lead.source == 'sec_edgar' %}source-badge-edgar{% elif lead.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">{{ lead.source_label }}</span>
                 </div>
                 <span class="priority-score-pill score-pill-lead" title="{{ lead.score_breakdown }}">
                   ★ {{ lead.score }} / 10.0
@@ -3601,7 +3828,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                     <span class="crossref-badge" title="{{ ref.impact_note }}">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                       <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                      <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                      <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
                       ({{ ref.matched_entity }})
                     </span>
                   </div>
@@ -3616,7 +3843,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                         {% for ref in lead.cross_references_list %}
                         <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                           <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                          <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                          <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
                           <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
                         </div>
                         {% endfor %}
@@ -3642,7 +3869,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             <div class="priority-card-footer">
               <span class="date-cell">{{ lead.published_date }}</span>
               <a href="{{ lead.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                View Official Filing ↗
+                {% if lead.source == 'sec_edgar' %}View Official Filing ↗{% elif lead.source == 'company_ir' %}View Press Release ↗{% else %}Read Article ↗{% endif %}
               </a>
             </div>
           </div>
@@ -3656,7 +3883,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 <div class="priority-card-top">
                   <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
                     <span class="priority-rank-pill">#{{ loop.index + 1 }}</span>
-                    <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
+                    <a href="company.html?ticker={{ item.ticker }}" class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</a>
                     {% if item.form_or_type %}
                     <span class="form-type-pill">{{ item.form_or_type }}</span>
                     {% endif %}
@@ -3668,7 +3895,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
                 <div style="margin-top:0.4rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
                   <span class="category-badge">{{ item.category }}</span>
-                  <span class="source-tag">{{ item.source_label }}</span>
+                  <span class="source-badge {% if item.source == 'sec_edgar' %}source-badge-edgar{% elif item.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">{{ item.source_label }}</span>
                 </div>
 
                 <h3 class="priority-card-headline">{{ item.clean_headline }}</h3>
@@ -3680,7 +3907,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                       <span class="crossref-badge" title="{{ ref.impact_note }}">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                         <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                        <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
                         ({{ ref.matched_entity }})
                       </span>
                     </div>
@@ -3695,7 +3922,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                           {% for ref in item.cross_references_list %}
                           <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                             <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                            <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
                             <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
                           </div>
                           {% endfor %}
@@ -3721,7 +3948,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               <div class="priority-card-footer">
                 <span class="date-cell">{{ item.published_date }}</span>
                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  View Source ↗
+                  {% if item.source == 'sec_edgar' %}View Filing ↗{% elif item.source == 'company_ir' %}View PR ↗{% else %}Read Article ↗{% endif %}
                 </a>
               </div>
             </div>
@@ -3769,6 +3996,9 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <button class="filter-btn" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">
             Company IR
           </button>
+          <button class="filter-btn" data-filter-type="source" data-val="news_media" onclick="setSourceFilter('news_media', this)">
+            News Media
+          </button>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border-card);">
@@ -3814,15 +4044,17 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               </td>
               <td>
                 <div>
-                  <span class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</span>
+                  <a href="company.html?ticker={{ item.ticker }}" class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</a>
                   <div class="summary-text" style="margin-top: 0.25rem;">{{ item.company_name }}</div>
                 </div>
               </td>
               <td>
                 <div>
                   <span class="category-badge">{{ item.category }}</span>
-                  <div class="source-tag" style="margin-top: 0.35rem;">
-                    {{ item.source_label }}
+                  <div style="margin-top: 0.35rem;">
+                    <span class="source-badge {% if item.source == 'sec_edgar' %}source-badge-edgar{% elif item.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">
+                      {{ item.source_label }}
+                    </span>
                   </div>
                 </div>
               </td>
@@ -3843,7 +4075,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                       <span class="crossref-badge" title="{{ ref.impact_note }}">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                         <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                        <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
                         ({{ ref.matched_entity }})
                       </span>
                     {% else %}
@@ -3856,7 +4088,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                           {% for ref in item.cross_references_list %}
                           <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
                             <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <strong class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</strong>
+                            <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
                             <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
                           </div>
                           {% endfor %}
@@ -3880,7 +4112,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               </td>
               <td>
                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  View
+                  {% if item.source == 'sec_edgar' %}Filing{% elif item.source == 'company_ir' %}IR Release{% else %}Article{% endif %}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
                 </a>
               </td>
@@ -4036,7 +4268,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
           </div>
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.35rem;">
-              <span class="ticker-badge ticker-{{ spot.ticker }}" style="font-size:0.88rem; padding:0.22rem 0.65rem;">{{ spot.ticker }}</span>
+              <a href="company.html?ticker={{ spot.ticker }}" class="ticker-badge ticker-{{ spot.ticker }}" style="font-size:0.88rem; padding:0.22rem 0.65rem;">{{ spot.ticker }}</a>
               <span class="calendar-type-pill {% if 'Earnings' in spot.event_type %}cal-type-earnings{% elif 'Dividend' in spot.event_type %}cal-type-dividend{% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
                 {% if 'Earnings' in spot.event_type %}Earnings Call
                 {% elif 'Dividend' in spot.event_type %}Dividend
@@ -4096,7 +4328,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
           <div>
             <div class="calendar-card-header">
               <div class="calendar-card-identity">
-                <span class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</span>
+                <a href="company.html?ticker={{ ev.ticker }}" class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</a>
                 {% if ev.source_type == 'ESTIMATED_RULE' %}
                 <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
                 {% else %}
@@ -4241,7 +4473,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
             <div class="economic-tickers-label">Direct Watchlist Sensitivities ({{ ind.tickers_list|length }} Companies):</div>
             <div class="economic-tickers-list">
               {% for sym in ind.tickers_list %}
-              <span class="ticker-badge ticker-{{ sym }}">{{ sym }}</span>
+              <a href="company.html?ticker={{ sym }}" class="ticker-badge ticker-{{ sym }}">{{ sym }}</a>
               {% endfor %}
             </div>
           </div>
@@ -4268,7 +4500,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
               {% for co in watchlist_companies %}
               <tr>
                 <td>
-                  <span class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</span>
+                  <a href="company.html?ticker={{ co.symbol }}" class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</a>
                 </td>
                 <td style="font-weight:700; color:var(--text-primary);">
                   {{ co.name }}
@@ -4314,6 +4546,406 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
+# ==============================================================================
+# 5. PER-COMPANY DEEP-DIVE TEMPLATE (site/company.html)
+# ==============================================================================
+COMPANY_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company IR, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
+  <title>StockPulse — Company Deep-Dive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+""" + SHARED_CSS + """
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    """ + NAVIGATION_LAYOUT_HTML + """
+
+    <main class="app-main">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.5rem;">
+        <div>
+          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Company Deep-Dive</h1>
+          <p style="font-size:0.92rem; color:var(--text-muted);">Dedicated 360° view per stock: news across all 3 sources, forthcoming milestones, FRED sensitivities, and supply chain network</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span class="section-time-pill">
+            <span class="pulse-dot" style="background:#10b981;"></span> {{ watchlist_companies|length }} Watchlist Stocks
+          </span>
+        </div>
+      </header>
+
+      <!-- Horizontal Quick-Switcher Ticker Strip -->
+      <div class="company-strip-wrap">
+        <div class="company-strip">
+          {% for co in watchlist_companies %}
+          <button class="company-strip-pill {% if loop.first %}active{% endif %}" 
+                  data-ticker="{{ co.symbol }}" 
+                  onclick="switchCompany('{{ co.symbol }}')">
+            <span class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</span>
+            <span>{{ co.name }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Container for each company (one shown at a time) -->
+      {% for co in watchlist_companies %}
+      <div class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}" style="{% if not loop.first %}display:none;{% endif %}">
+        
+        <!-- Company Hero Header Box -->
+        <div class="company-hero-box">
+          <div class="company-hero-header">
+            <div class="company-hero-left">
+              <div class="company-hero-symbol ticker-{{ co.symbol }}">{{ co.symbol }}</div>
+              <div>
+                <h2 class="company-hero-name">{{ co.name }}</h2>
+                <div class="company-meta-pills">
+                  <span class="category-badge" style="font-size:0.75rem;">{{ co.sector | replace('_', ' ') | title }}</span>
+                  {% if co.cik %}
+                  <a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View SEC EDGAR Submissions">
+                    CIK: {{ co.cik }} ↗
+                  </a>
+                  {% endif %}
+                  {% if co.ir_feed_url %}
+                  <a href="{{ co.ir_feed_url }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View Investor Relations Feed">
+                    IR Feed ↗
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem;">
+              <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Key Regulators</div>
+              <div style="display:flex; gap:0.35rem; flex-wrap:wrap; justify-content:flex-end;">
+                {% if co.regulators %}
+                  {% for reg in co.regulators %}
+                  <span class="form-type-pill" style="background:#f8fafc; color:#334155; border-color:#cbd5e1;">{{ reg }}</span>
+                  {% endfor %}
+                {% else %}
+                  <span class="form-type-pill">SEC</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          {% if co.notes %}
+          <div class="company-notes-card">
+            <strong style="color:var(--text-primary);">Analyst Strategic Focus:</strong> {{ co.notes }}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- 2-Column Main Deck -->
+        <div class="company-grid-layout">
+          
+          <!-- Left Main Column: Intelligence Feed across all 3 sources -->
+          <div class="company-card-deck">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; background:var(--bg-surface); padding:1rem 1.25rem; border:1px solid var(--border-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">
+              <div>
+                <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Intelligence Feed</h3>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">SEC EDGAR &bull; Company IR &bull; Finnhub News Media</div>
+              </div>
+
+              <!-- In-Page Source Filters -->
+              <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                <button class="filter-btn active company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'ALL', this)">All</button>
+                <button class="filter-btn company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'sec_edgar', this)">SEC EDGAR</button>
+                <button class="filter-btn company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'company_ir', this)">Company IR</button>
+                <button class="filter-btn company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'news_media', this)">News Media</button>
+              </div>
+            </div>
+
+            <!-- Feed Items List -->
+            {% set co_news = [] %}
+            {% for it in items %}
+              {% if it.ticker == co.symbol or (it.related_tickers_list and co.symbol in it.related_tickers_list) %}
+                {% set _ = co_news.append(it) %}
+              {% endif %}
+            {% endfor %}
+
+            {% if co_news %}
+              {% for it in co_news %}
+              <div class="company-feed-item company-news-item" data-source="{{ it.source }}">
+                <div class="company-feed-top">
+                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                    <span class="score-badge {% if it.score >= 7.0 %}score-high{% elif it.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ it.score_breakdown }}">
+                      {{ it.score }}
+                    </span>
+                    <span class="source-badge {% if it.source == 'sec_edgar' %}source-badge-edgar{% elif it.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">
+                      {{ it.source_label }}
+                    </span>
+                    {% if it.form_or_type %}
+                    <span class="form-type-pill">{{ it.form_or_type }}</span>
+                    {% endif %}
+                    <span class="category-badge">{{ it.category }}</span>
+                  </div>
+                  <span class="date-cell">{{ it.published_date }}</span>
+                </div>
+
+                <div class="company-feed-title">{{ it.clean_headline }}</div>
+
+                {% if it.cross_references_list %}
+                  {% if it.cross_references_list|length == 1 %}
+                    {% set ref = it.cross_references_list[0] %}
+                    <div class="crossref-badges-wrap" style="margin-bottom:0.45rem;">
+                      <span class="crossref-badge" title="{{ ref.impact_note }}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                        <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
+                        ({{ ref.matched_entity }})
+                      </span>
+                    </div>
+                  {% else %}
+                    <div class="crossref-badges-wrap" style="margin-bottom:0.45rem;">
+                      <details class="crossref-accordion">
+                        <summary class="crossref-summary-pill">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                          Also relevant to {{ it.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
+                        </summary>
+                        <div class="crossref-dropdown-content">
+                          {% for ref in it.cross_references_list %}
+                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
+                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
+                            <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
+                          </div>
+                          {% endfor %}
+                        </div>
+                      </details>
+                    </div>
+                  {% endif %}
+                {% endif %}
+
+                {% if it.llm_summary %}
+                <div class="why-matters-box" style="margin-top:0.4rem; margin-bottom:0.5rem;">
+                  <span class="why-tag">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    Takeaway:
+                  </span>
+                  {{ it.llm_summary }}
+                </div>
+                {% endif %}
+
+                <p class="summary-text" style="font-size:0.835rem; margin-bottom:0.65rem;">{{ it.summary }}</p>
+
+                <div style="display:flex; justify-content:flex-end;">
+                  <a href="{{ it.url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.78rem;">
+                    {% if it.source == 'sec_edgar' %}View SEC Filing ↗{% elif it.source == 'company_ir' %}View PR Release ↗{% else %}Read Full Article ↗{% endif %}
+                  </a>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="company-feed-item" style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
+                <div style="font-size:1.5rem; margin-bottom:0.5rem;">📰</div>
+                <div style="font-weight:700; color:var(--text-primary);">No Recent Disclosures Found</div>
+                <div style="font-size:0.82rem; margin-top:0.25rem;">No filings, IR releases, or news media recorded in this period for {{ co.symbol }}.</div>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Right Sidebar Column: Calendar, Sensitivities, Supply Chain -->
+          <div class="company-side-deck">
+            
+            <!-- Box 1: Upcoming Corporate Calendar -->
+            <div class="company-side-box">
+              <div class="company-side-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                Forthcoming Calendar
+              </div>
+
+              {% set co_events = [] %}
+              {% for ev in calendar_events %}
+                {% if ev.ticker == co.symbol %}
+                  {% set _ = co_events.append(ev) %}
+                {% endif %}
+              {% endfor %}
+
+              {% if co_events %}
+                <div style="display:flex; flex-direction:column; gap:0.65rem;">
+                  {% for ev in co_events %}
+                  <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0.75rem; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-card);">
+                    <div class="calendar-date-box" style="width:42px; min-width:42px; padding:0.18rem 0.35rem;">
+                      <div class="calendar-date-month" style="font-size:0.6rem;">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
+                      <div class="calendar-date-day" style="font-size:1.05rem;">{{ ev.event_date[8:10] }}</div>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:0.835rem; font-weight:700; color:var(--text-primary); line-height:1.3;">{{ ev.headline }}</div>
+                      <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem;">{{ ev.relative_badge }} &bull; {{ ev.event_type }}</div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div style="font-size:0.82rem; color:var(--text-muted); text-align:center; padding:1rem 0;">
+                  No scheduled earnings or dividend dates in next 60 days.
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Box 2: Macroeconomic Sensitivities (FRED) -->
+            <div class="company-side-box">
+              <div class="company-side-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                Macroeconomic Sensitivities
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:0.65rem;">
+                {% for ind in economic_indicators %}
+                  {% if ind.tickers_list and co.symbol in ind.tickers_list %}
+                  <div style="padding:0.65rem 0.85rem; background:var(--bg-base); border:1px solid var(--border-card); border-radius:var(--radius-md);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                      <span style="font-size:0.82rem; font-weight:700; color:var(--text-primary);">{{ ind.name }}</span>
+                      <span style="font-family:'JetBrains Mono', monospace; font-size:0.88rem; font-weight:800; color:var(--accent-blue);">{{ ind.formatted_value }}</span>
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">{{ ind.context_note }}</div>
+                  </div>
+                  {% endif %}
+                {% endfor %}
+                
+                {% if co.macro_sensitivities %}
+                <div style="margin-top:0.4rem; padding-top:0.65rem; border-top:1px solid var(--border-card);">
+                  <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">Specific Macro Factors</div>
+                  <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
+                    {% for m in co.macro_sensitivities %}
+                    <span class="category-badge" style="font-size:0.7rem;">{{ m | replace('_', ' ') | title }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Box 3: Supply Chain & Corporate Ecosystem -->
+            <div class="company-side-box">
+              <div class="company-side-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Corporate Ecosystem
+              </div>
+
+              <!-- Key Customers -->
+              {% if co.key_customers %}
+              <div style="margin-bottom:0.85rem;">
+                <div style="font-size:0.72rem; font-weight:700; color:#15803d; text-transform:uppercase; margin-bottom:0.35rem;">Key Customers</div>
+                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
+                  {% for cust in co.key_customers %}
+                  <a href="company.html?ticker={{ cust }}" class="crossref-badge" style="text-decoration:none;">
+                    <span class="crossref-rel-pill crossref-customer">Customer</span>
+                    <strong>{{ cust }}</strong>
+                  </a>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Key Suppliers -->
+              {% if co.key_suppliers %}
+              <div style="margin-bottom:0.85rem;">
+                <div style="font-size:0.72rem; font-weight:700; color:#4338ca; text-transform:uppercase; margin-bottom:0.35rem;">Key Suppliers</div>
+                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
+                  {% for supp in co.key_suppliers %}
+                  <a href="company.html?ticker={{ supp }}" class="crossref-badge" style="text-decoration:none;">
+                    <span class="crossref-rel-pill crossref-supplier">Supplier</span>
+                    <strong>{{ supp }}</strong>
+                  </a>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Competitors -->
+              {% if co.competitors %}
+              <div>
+                <div style="font-size:0.72rem; font-weight:700; color:#b45309; text-transform:uppercase; margin-bottom:0.35rem;">Competitors</div>
+                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
+                  {% for comp in co.competitors %}
+                  <a href="company.html?ticker={{ comp }}" class="ticker-badge ticker-{{ comp }}" style="font-size:0.72rem;">{{ comp }}</a>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </main>
+  </div>
+
+  <script>
+    """ + SHARED_MOBILE_JS + """
+
+    function switchCompany(ticker, pushState = true) {
+      const allProfiles = document.querySelectorAll('.company-profile-container');
+      allProfiles.forEach(el => el.style.display = 'none');
+      
+      const target = document.getElementById('profile-' + ticker);
+      if (target) {
+        target.style.display = 'block';
+      } else if (allProfiles.length > 0) {
+        allProfiles[0].style.display = 'block';
+        ticker = allProfiles[0].getAttribute('data-ticker');
+      }
+
+      // Update switcher pills
+      document.querySelectorAll('.company-strip-pill').forEach(pill => {
+        if (pill.getAttribute('data-ticker') === ticker) {
+          pill.classList.add('active');
+          pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else {
+          pill.classList.remove('active');
+        }
+      });
+
+      if (pushState) {
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set('ticker', ticker);
+        window.history.pushState({ ticker: ticker }, '', newUrl);
+      }
+    }
+
+    function filterCompanyNews(ticker, source, btn) {
+      const container = document.getElementById('profile-' + ticker);
+      if (!container) return;
+
+      container.querySelectorAll('.company-source-filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const rows = container.querySelectorAll('.company-news-item');
+      rows.forEach(row => {
+        const rowSource = row.getAttribute('data-source');
+        if (source === 'ALL' || rowSource === source) {
+          row.style.display = 'block';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    window.addEventListener('popstate', (e) => {
+      const params = new URLSearchParams(window.location.search);
+      const ticker = params.get('ticker') || 'NVDA';
+      switchCompany(ticker, false);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const ticker = (params.get('ticker') || 'NVDA').toUpperCase();
+      switchCompany(ticker, false);
+    });
+  </script>
+</body>
+</html>
+"""
+
 
 # ==============================================================================
 # MASTER RENDER ENGINE
@@ -4322,7 +4954,7 @@ def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> str:
-    """Render all 4 static HTML pages (Overview, Feed, Calendar, Macro) to disk."""
+    """Render all 5 static HTML pages (Overview, Feed, Calendar, Macro, Company Detail) to disk."""
     if output_path is None:
         site_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "site")
         os.makedirs(site_dir, exist_ok=True)
@@ -4377,12 +5009,13 @@ def render_dashboard(
         "watchlist_companies": watchlist_companies,
     }
 
-    # 4. Render and save all 4 pages
+    # 4. Render and save all 5 pages
     pages = [
         ("index.html", INDEX_TEMPLATE, "home"),
         ("news.html", NEWS_TEMPLATE, "news"),
         ("calendar.html", CALENDAR_TEMPLATE, "calendar"),
         ("economic.html", ECONOMIC_TEMPLATE, "economic"),
+        ("company.html", COMPANY_TEMPLATE, "company"),
     ]
 
     for fname, tmpl_str, active_page in pages:

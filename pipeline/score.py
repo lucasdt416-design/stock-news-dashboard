@@ -95,13 +95,17 @@ def score_item(item: Dict[str, Any]) -> Dict[str, Any]:
 
     # 2. Source Authority Adjustment
     source = item.get("source", "")
+    source_type = item.get("source_type", "")
     source_adj = 0.0
-    if source == "sec_edgar" or item.get("source_type") == "regulatory_filing":
+    if source == "sec_edgar" or source_type == "regulatory_filing":
         source_adj = 3.0
         breakdown_parts.append("Source: +3 (Regulatory Filing)")
-    elif source == "company_ir" or item.get("source_type") == "company_announcement":
+    elif source == "company_ir" or source_type == "company_announcement":
         source_adj = 2.0
         breakdown_parts.append("Source: +2 (Company Announcement)")
+    elif source in ("news_media", "finnhub") or source_type in ("press", "third_party_journalism"):
+        source_adj = 1.0
+        breakdown_parts.append("Source: +1 (News Media / Press)")
     else:
         source_adj = 1.0
         breakdown_parts.append("Source: +1 (Press)")

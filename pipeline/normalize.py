@@ -5,13 +5,24 @@ from typing import Any, Dict, List
 from urllib.parse import urlparse, urlunparse
 
 
+TRACKING_PARAMS = {
+    "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+    "fbclid", "gclid", "_ga", "ref", "ref_src", "feature",
+}
+
+
 def canonicalize_url(url: str) -> str:
-    """Strip tracking query parameters and fragments for consistent URL matching."""
+    """Strip tracking query parameters and fragments for consistent URL matching while preserving resource IDs."""
     if not url:
         return ""
     parsed = urlparse(url.strip())
-    # Keep path, scheme, netloc, clear fragment
-    return urlunparse((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", "", ""))
+    query_str = ""
+    if parsed.query:
+        from urllib.parse import parse_qsl, urlencode
+        pairs = parse_qsl(parsed.query, keep_blank_values=True)
+        filtered = sorted([(k, v) for k, v in pairs if k.lower() not in TRACKING_PARAMS])
+        query_str = urlencode(filtered)
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", query_str, ""))
 
 
 def generate_item_uid(source: str, raw_id: str, url: str) -> str:
@@ -112,6 +123,39 @@ def normalize_company_ir_item(item: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def normalize_news_media_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize a raw 3rd-party News Media item (Finnhub / Reuters / Bloomberg, etc.)."""
+    ticker = item.get("ticker", "").upper()
+    url = item.get("url") or item.get("link", "")
+    raw_id = item.get("raw_id") or item.get("id") or url
+    headline = item.get("headline") or item.get("title", "News Media Story")
+    summary = item.get("summary", "")
+    publisher = (
+        item.get("publisher")
+        or item.get("source_publisher")
+        or item.get("form_or_type")
+        or "News Media"
+    )
+
+    return {
+        "item_uid": generate_item_uid("news_media", str(raw_id), url),
+        "ticker": ticker,
+        "company_name": item.get("company_name", ticker),
+        "source": "news_media",
+        "source_label": "News Media",
+        "source_type": "press",
+        "publisher": publisher,
+        "headline": headline,
+        "summary": summary[:350] + ("..." if len(summary) > 350 else ""),
+        "url": url,
+        "image_url": item.get("image_url") or item.get("image", ""),
+        "published_date": item.get("published_date", ""),
+        "published_time": item.get("published_time", ""),
+        "form_or_type": publisher if publisher and publisher != "news_media" else "NEWS_ARTICLE",
+        "raw_id": str(raw_id),
+    }
+
+
 def normalize_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Normalize an arbitrary list of collected items from any source."""
     normalized: List[Dict[str, Any]] = []
@@ -120,7 +164,11 @@ def normalize_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         source = item.get("source")
         if source == "sec_edgar" or "accession_number" in item:
             normalized.append(normalize_edgar_item(item))
-        elif source == "company_ir" or "link" in item:
+        elif source == "company_ir":
+            normalized.append(normalize_company_ir_item(item))
+        elif source in ("news_media", "finnhub") or item.get("source_label") == "News Media":
+            normalized.append(normalize_news_media_item(item))
+        elif "link" in item and not item.get("url"):
             normalized.append(normalize_company_ir_item(item))
         else:
             # General fallback

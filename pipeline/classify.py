@@ -1,4 +1,4 @@
-"""Rule-based classification engine for news items and SEC filings."""
+"""Rule-based classification engine for news items, journalism, and SEC filings."""
 
 from typing import Any, Dict
 
@@ -42,6 +42,11 @@ def classify_item(item: Dict[str, Any]) -> str:
             "reports q4",
             "earnings release",
             "annual revenue",
+            "eps beats",
+            "revenue miss",
+            "quarterly revenue",
+            "profit surges",
+            "earnings beat",
         )
     ):
         return CAT_EARNINGS
@@ -49,13 +54,13 @@ def classify_item(item: Dict[str, Any]) -> str:
     # 2. Insider Transactions (Form 4, 144, 3, 5)
     if form in ("4", "144", "3", "5", "FORM 4", "FORM 144", "FORM 3"):
         return CAT_INSIDER
-    if "beneficial ownership" in full_text or "proposed sale of securities" in full_text:
+    if "beneficial ownership" in full_text or "proposed sale of securities" in full_text or "insider trade" in full_text:
         return CAT_INSIDER
 
     # 3. Institutional Ownership & Activist stakes (13F, 13G, 13D)
     if "13F" in form or "13G" in form or "13G/A" in form:
         return CAT_INSTITUTIONAL
-    if "13D" in form or "activist stake" in full_text or "schedule 13d" in full_text:
+    if "13D" in form or "activist stake" in full_text or "schedule 13d" in full_text or "activist investor" in full_text:
         return CAT_M_AND_A
 
     # 4. M&A & Strategic Deals
@@ -70,11 +75,15 @@ def classify_item(item: Dict[str, Any]) -> str:
             "strategic partnership with",
             "joint venture",
             "buyout",
+            "takeover bid",
+            "takeover target",
+            "in talks to buy",
+            "agrees to purchase",
         )
     ):
         return CAT_M_AND_A
 
-    # 5. Leadership & Governance (DEF 14A, appointments, departures)
+    # 5. Leadership & Governance / Labour Actions
     if "DEF 14A" in form or "DEFA14A" in form or "PX14A6G" in form:
         return CAT_LEADERSHIP
     if any(
@@ -89,6 +98,12 @@ def classify_item(item: Dict[str, Any]) -> str:
             "named president",
             "leadership transition",
             "executive appointment",
+            "ousted as",
+            "union strike",
+            "labor union",
+            "worker walkout",
+            "board seat",
+            "proxy fight",
         )
     ):
         return CAT_LEADERSHIP
@@ -105,11 +120,13 @@ def classify_item(item: Dict[str, Any]) -> str:
             "declares dividend",
             "share repurchase program",
             "stock buyback",
+            "priced offering",
+            "secondary offering",
         )
     ):
         return CAT_CAPITAL
 
-    # 7. Regulatory & Policy / Litigation
+    # 7. Regulatory & Policy / Litigation / External Safety Incidents (plane crash, recall, lawsuits)
     if any(
         kw in full_text
         for kw in (
@@ -124,8 +141,27 @@ def classify_item(item: Dict[str, Any]) -> str:
             "regulatory approval",
             "compliance",
             "lawsuit",
+            "sued by",
+            "sues",
             "patent infringement",
             "settlement agreement",
+            "plane crash",
+            "crash",
+            "emergency landing",
+            "faa audit",
+            "faa probe",
+            "grounding",
+            "safety incident",
+            "product recall",
+            "recall",
+            "recalls",
+            "safety defect",
+            "sec probe",
+            "class action lawsuit",
+            "judge rules",
+            "court hearing",
+            "cybersecurity breach",
+            "ransomware",
         )
     ):
         return CAT_REGULATORY
@@ -149,11 +185,14 @@ def classify_item(item: Dict[str, Any]) -> str:
             "manufacturing center",
             "ai center",
             "open source",
+            "fda approval",
+            "clinical trial",
+            "phase 3 study",
         )
     ):
         return CAT_PRODUCT_TECH
 
-    # 9. Guidance, Commentary & Shareholder meetings
+    # 9. Guidance, Analyst Actions & Commentary
     if any(
         kw in full_text
         for kw in (
@@ -164,6 +203,15 @@ def classify_item(item: Dict[str, Any]) -> str:
             "keynote address",
             "webcast",
             "presents at",
+            "upgrade",
+            "downgrade",
+            "price target",
+            "maintains buy",
+            "initiates coverage",
+            "overweight",
+            "underweight",
+            "outperform",
+            "analyst says",
         )
     ):
         return CAT_GUIDANCE_COMMENTARY
