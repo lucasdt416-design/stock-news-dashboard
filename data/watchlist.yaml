@@ -5,12 +5,12 @@ tickers:
     ir_feed_url: "https://nvidianews.nvidia.com/releases.xml"
     sector: semiconductors
     regulators: [BIS, SEC]
-    key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Supermicro, SMCI]
+    key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Supermicro, SMCI, Tesla, TSLA, XPeng, XPEV, Rivian, RIVN, BYD]
     key_suppliers: [TSM, TSMC, Taiwan Semiconductor, ASML, SK Hynix, Micron, Samsung Foundry]
     competitors: [AMD, INTC, AVGO]
     macro_sensitivities: [export_controls_china, datacenter_capex]
     economic_sensitivities: [interest_rates]
-    notes: "Watch hyperscaler capital spending guidance closely."
+    notes: "Watch hyperscaler capital spending guidance and automotive AI chip adoption (DRIVE platform)."
 
   - symbol: AAPL
     name: Apple Inc.

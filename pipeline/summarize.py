@@ -15,57 +15,79 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional
 
+from pipeline.normalize import clean_text, extract_headline_subject
+
 logger = logging.getLogger(__name__)
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
 
 
 def generate_fallback_summary(item: Dict[str, Any]) -> str:
-    """Generate a contextual plain-English 'why it matters' summary based on category and form."""
+    """Generate a contextual plain-English 'why it matters' summary based on category, focal company, and content."""
     ticker = item.get("ticker", "")
+    company_name = item.get("company_name", ticker)
     category = item.get("category", "")
     form = (item.get("form_or_type") or "").upper().strip()
-    headline = item.get("headline", "")
-    summary = (item.get("summary") or "").lower()
+    headline = clean_text(item.get("headline", ""))
+    summary = clean_text(item.get("summary", "")).lower()
+
+    # Extract true focal subject (e.g. XPeng (XPEV) vs Tesla)
+    subject = item.get("subject_name")
+    if not subject or subject == ticker:
+        subject = extract_headline_subject(
+            headline=headline,
+            summary=summary,
+            default_ticker=ticker,
+            default_company=company_name,
+        )
+
+    # Check for comparative investment articles (e.g., "A: A Better Bet Than B")
+    if "better bet than" in headline.lower() or " vs " in headline.lower() or " vs. " in headline.lower():
+        return f"Comparative investment analysis evaluating {subject} competitive positioning and market outlook."
 
     if category == "Earnings & Financials":
         if "10-K" in form or "10-k" in headline.lower():
-            return f"Annual financial report detailing {ticker}'s full-year audited revenue, margins, and operational risk factors."
+            return f"Annual financial report detailing {subject}'s full-year audited revenue, margins, and operational risk factors."
         if "10-Q" in form or "10-q" in headline.lower():
-            return f"Quarterly financial filing providing essential updates on {ticker}'s recent quarterly balance sheet, revenue, and cash flow."
-        return f"Key financial results release providing quarterly revenue, earnings per share, and forward guidance for {ticker}."
+            return f"Quarterly financial filing providing essential updates on {subject}'s recent quarterly balance sheet, revenue, and cash flow."
+        if "preview" in headline.lower():
+            return f"Financial outlook and analyst consensus preview evaluating upcoming earnings expectations for {subject}."
+        return f"Key financial results release providing quarterly revenue, earnings per share, and forward guidance for {subject}."
 
     if category == "Insider Transactions":
         if "144" in form or "144" in headline:
-            return "Notice of proposed securities sale by an insider or affiliate under Rule 144."
+            return f"Notice of proposed securities sale by an insider or affiliate of {subject} under Rule 144."
         if "4" in form or "beneficial ownership" in summary:
-            return "Routine insider transaction disclosure documenting executive/director share acquisition, disposition, or scheduled 10b5-1 plan execution."
-        return "Insider disclosure tracking changes in executive or director share ownership."
+            return f"Routine insider transaction disclosure documenting executive/director share positioning for {subject}."
+        return f"Insider disclosure tracking changes in executive or director share ownership for {subject}."
 
     if category == "Regulation & Policy / Litigation":
         if "8-K" in form:
-            return "Material corporate event disclosure requiring immediate SEC disclosure outside routine reporting cycles."
-        return f"Regulatory or legal development potentially affecting {ticker}'s operational compliance, antitrust posture, or market access."
+            return f"Material corporate event disclosure requiring immediate SEC disclosure for {subject} outside routine reporting cycles."
+        return f"Regulatory or legal development potentially affecting {subject}'s operational compliance, antitrust posture, or market access."
 
     if category == "Leadership & Governance":
-        return "Governance disclosure documenting executive leadership changes, board elections, or key management restructuring."
+        return f"Governance disclosure documenting executive leadership changes, board elections, or key management restructuring for {subject}."
 
     if category == "Product Launches & Technology":
-        return f"Commercial product announcement expanding {ticker}'s core technology roadmap, partner ecosystem, or market footprint."
+        return f"Commercial product announcement expanding {subject}'s core technology roadmap, partner ecosystem, or market footprint."
 
     if category == "Capital Structure & Offerings":
-        return "Capital markets disclosure regarding debt issuance, equity offerings, credit agreements, or share repurchase programs."
+        return f"Capital markets disclosure regarding debt issuance, equity offerings, credit agreements, or share repurchase programs for {subject}."
 
     if category == "Institutional Ownership":
-        return "Institutional holding update disclosing major institutional fund positioning or passive ownership changes."
+        return f"Institutional holding update disclosing major institutional fund positioning or ownership changes in {subject}."
 
     if category == "M&A & Strategic Deals":
-        return "Strategic transaction announcement covering acquisitions, joint ventures, or partnership agreements."
+        return f"Strategic transaction announcement covering acquisitions, joint ventures, or partnership agreements involving {subject}."
 
     if "8-K" in form:
-        return "Material SEC Form 8-K disclosure reporting unscheduled corporate events or company announcements."
+        return f"Material SEC Form 8-K disclosure reporting unscheduled corporate events or company announcements for {subject}."
 
-    return f"Official company announcement detailing current business updates and strategic initiatives for {ticker}."
+    if item.get("source") == "news_media":
+        return f"Press coverage reporting key business updates, sector dynamics, and market developments involving {subject}."
+
+    return f"Official company announcement detailing current business updates and strategic initiatives for {subject}."
 
 
 def summarize_batch_with_gemini(

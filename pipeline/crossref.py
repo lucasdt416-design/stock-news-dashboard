@@ -89,24 +89,33 @@ def find_supply_chain_matches_for_item(
             continue
 
         target_name = ticker_to_name.get(target_sym, target_sym)
+        target_clean_name = re.sub(
+            r"\b(Inc\.|Corporation|Corp\.|Co\.|Company|Platforms|Holdings|The|Group)\b",
+            "",
+            target_name,
+            flags=re.IGNORECASE,
+        ).strip()
 
-        # Check if target_sym is a CUSTOMER of item_ticker:
-        # (e.g. on NVDA's item, MSFT is a customer because NVDA supplies MSFT)
+        # Target company must be explicitly named in full_text
+        target_mentioned = (
+            bool(re.search(rf"\b{re.escape(target_sym)}\b", full_text, re.IGNORECASE))
+            or (len(target_clean_name) >= 3 and bool(re.search(rf"\b{re.escape(target_clean_name)}\b", full_text, re.IGNORECASE)))
+        )
+
+        if not target_mentioned:
+            continue
+
+        # Target IS mentioned in the article: Determine role relative to item_ticker
+        # A. Check if target_sym is a CUSTOMER of item_ticker
         is_customer = False
-        matched_cust_entity = target_sym
         for cust_entity in customers_by_ticker.get(item_ticker, []):
-            pattern = rf"\b{re.escape(cust_entity)}\b"
-            if cust_entity.upper() == target_sym or re.search(pattern, target_sym, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+            if cust_entity.upper() == target_sym or (len(target_clean_name) >= 3 and target_clean_name.lower() in cust_entity.lower()):
                 is_customer = True
-                matched_cust_entity = cust_entity
                 break
-
         if not is_customer:
             for supp_entity in suppliers_by_ticker.get(target_sym, []):
-                pattern = rf"\b{re.escape(supp_entity)}\b"
-                if supp_entity.upper() == item_ticker or re.search(pattern, item_ticker, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+                if supp_entity.upper() == item_ticker:
                     is_customer = True
-                    matched_cust_entity = target_sym
                     break
 
         if is_customer:
@@ -117,27 +126,21 @@ def find_supply_chain_matches_for_item(
                     "related_ticker": target_sym,
                     "related_company": target_name,
                     "relation_type": "Customer",
-                    "matched_entity": matched_cust_entity,
+                    "matched_entity": target_sym,
                     "impact_note": f"{target_sym} is a key customer of {item_ticker}",
                 })
+            continue
 
-        # Check if target_sym is a SUPPLIER to item_ticker:
-        # (e.g. on AMZN's item, NVDA is a supplier because NVDA supplies AMZN)
+        # B. Check if target_sym is a SUPPLIER to item_ticker
         is_supplier = False
-        matched_supp_entity = target_sym
         for supp_entity in suppliers_by_ticker.get(item_ticker, []):
-            pattern = rf"\b{re.escape(supp_entity)}\b"
-            if supp_entity.upper() == target_sym or re.search(pattern, target_sym, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+            if supp_entity.upper() == target_sym or (len(target_clean_name) >= 3 and target_clean_name.lower() in supp_entity.lower()):
                 is_supplier = True
-                matched_supp_entity = supp_entity
                 break
-
         if not is_supplier:
             for cust_entity in customers_by_ticker.get(target_sym, []):
-                pattern = rf"\b{re.escape(cust_entity)}\b"
-                if cust_entity.upper() == item_ticker or re.search(pattern, item_ticker, re.IGNORECASE) or re.search(pattern, full_text, re.IGNORECASE):
+                if cust_entity.upper() == item_ticker:
                     is_supplier = True
-                    matched_supp_entity = target_sym
                     break
 
         if is_supplier:
@@ -148,7 +151,7 @@ def find_supply_chain_matches_for_item(
                     "related_ticker": target_sym,
                     "related_company": target_name,
                     "relation_type": "Supplier",
-                    "matched_entity": matched_supp_entity,
+                    "matched_entity": target_sym,
                     "impact_note": f"{target_sym} is a key supplier to {item_ticker}",
                 })
 
@@ -171,6 +174,7 @@ def find_supply_chain_matches_for_item(
                 })
 
     # 3. Check for third-party non-watchlist customers explicitly mentioned in full_text
+    # (e.g. XPeng, Rivian, BYD, Supermicro, Oracle)
     for cust_entity in customers_by_ticker.get(item_ticker, []):
         if cust_entity.upper() in sc_index["ticker_to_name"]:
             continue

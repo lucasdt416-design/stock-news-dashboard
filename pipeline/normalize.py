@@ -5,10 +5,76 @@ from typing import Any, Dict, List
 from urllib.parse import urlparse, urlunparse
 
 
+import html
+import re
+
 TRACKING_PARAMS = {
     "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
     "fbclid", "gclid", "_ga", "ref", "ref_src", "feature",
 }
+
+KNOWN_THIRD_PARTY_ENTITIES = [
+    ("xpeng", "XPeng (XPEV)"),
+    ("xpev", "XPeng (XPEV)"),
+    ("rivian", "Rivian (RIVN)"),
+    ("rivn", "Rivian (RIVN)"),
+    ("nio", "NIO (NIO)"),
+    ("lucid", "Lucid (LCID)"),
+    ("lcid", "Lucid (LCID)"),
+    ("polestar", "Polestar (PSNY)"),
+    ("byd", "BYD (BYDDF)"),
+    ("alibaba", "Alibaba (BABA)"),
+    ("baba", "Alibaba (BABA)"),
+    ("samsung", "Samsung"),
+    ("supermicro", "Supermicro (SMCI)"),
+    ("smci", "Supermicro (SMCI)"),
+    ("tsmc", "TSMC (TSM)"),
+    ("asml", "ASML (ASML)"),
+    ("intel", "Intel (INTC)"),
+    ("intc", "Intel (INTC)"),
+    ("amd", "AMD (AMD)"),
+    ("spacex", "SpaceX"),
+    ("smartkem", "Smartkem"),
+    ("nordson", "Nordson"),
+    ("spirit aerosystems", "Spirit AeroSystems"),
+    ("boeing", "The Boeing Company (BA)"),
+]
+
+
+def clean_text(text: str) -> str:
+    """Unescape HTML entities (&#39;, &amp;, &quot;, etc.), strip stray tags, and normalize whitespace."""
+    if not text:
+        return ""
+    res = html.unescape(str(text))
+    if "&" in res:
+        res = html.unescape(res)  # handle double-escaped entities like &amp;#39;
+    res = re.sub(r"<[^>]+>", " ", res)
+    return re.sub(r"\s+", " ", res).strip()
+
+
+def extract_headline_subject(
+    headline: str, summary: str = "", default_ticker: str = "", default_company: str = ""
+) -> str:
+    """Determine the primary company/subject entity of a headline or story.
+    
+    If the article headline is primarily about a distinct third party (e.g. XPeng, Rivian, Alibaba),
+    returns that specific entity designation rather than the watchlist query ticker.
+    """
+    clean_h = clean_text(headline)
+    h_lower = clean_h.lower()
+
+    for key, display_name in KNOWN_THIRD_PARTY_ENTITIES:
+        if re.search(rf"\b{re.escape(key)}\b", h_lower):
+            if h_lower.startswith(key) or f"{key}:" in h_lower or f"{key}'s" in h_lower or f"{key} " in h_lower:
+                return display_name
+
+    m = re.match(r"^([A-Z][a-zA-Z0-9\s\.\-]{2,25}):", clean_h)
+    if m:
+        candidate = m.group(1).strip()
+        if candidate.lower() not in {"exclusive", "breaking", "update", "analysis", "opinion", "preview", "the market", "why"}:
+            return candidate
+
+    return default_company or default_ticker
 
 
 def canonicalize_url(url: str) -> str:
@@ -55,7 +121,7 @@ def format_edgar_human_headline(
     elif form_clean in ("SC 13G", "SC 13G/A", "SC 13D"):
         return f"{company} Discloses Beneficial Ownership Stake"
     elif primary_desc and not primary_desc.lower().endswith((".htm", ".xml", ".txt")):
-        return f"{company} Files SEC {form_clean} — {primary_desc}"
+        return f"{company} Files SEC {form_clean} — {clean_text(primary_desc)}"
     else:
         return f"{company} Files Official Regulatory Disclosure ({form_clean})"
 
@@ -88,8 +154,8 @@ def normalize_edgar_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "source": "sec_edgar",
         "source_label": "SEC EDGAR",
         "source_type": "regulatory_filing",
-        "headline": headline,
-        "summary": summary,
+        "headline": clean_text(headline),
+        "summary": clean_text(summary),
         "url": url,
         "published_date": item.get("filing_date", ""),
         "published_time": item.get("acceptance_date_time", ""),
@@ -103,8 +169,8 @@ def normalize_company_ir_item(item: Dict[str, Any]) -> Dict[str, Any]:
     ticker = item.get("ticker", "").upper()
     url = item.get("link", "")
     guid = item.get("guid", url)
-    title = item.get("title", "Company Announcement")
-    summary = item.get("summary", "")
+    title = clean_text(item.get("title", "Company Announcement"))
+    summary = clean_text(item.get("summary", ""))
 
     return {
         "item_uid": generate_item_uid("company_ir", guid, url),
@@ -126,21 +192,30 @@ def normalize_company_ir_item(item: Dict[str, Any]) -> Dict[str, Any]:
 def normalize_news_media_item(item: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize a raw 3rd-party News Media item (Finnhub / Reuters / Bloomberg, etc.)."""
     ticker = item.get("ticker", "").upper()
+    company_name = item.get("company_name", ticker)
     url = item.get("url") or item.get("link", "")
     raw_id = item.get("raw_id") or item.get("id") or url
-    headline = item.get("headline") or item.get("title", "News Media Story")
-    summary = item.get("summary", "")
-    publisher = (
+    headline = clean_text(item.get("headline") or item.get("title", "News Media Story"))
+    summary = clean_text(item.get("summary", ""))
+    publisher = clean_text(
         item.get("publisher")
         or item.get("source_publisher")
         or item.get("form_or_type")
         or "News Media"
     )
 
+    subject_entity = extract_headline_subject(
+        headline=headline,
+        summary=summary,
+        default_ticker=ticker,
+        default_company=company_name,
+    )
+
     return {
         "item_uid": generate_item_uid("news_media", str(raw_id), url),
         "ticker": ticker,
-        "company_name": item.get("company_name", ticker),
+        "company_name": company_name,
+        "subject_name": subject_entity,
         "source": "news_media",
         "source_label": "News Media",
         "source_type": "press",

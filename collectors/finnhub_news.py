@@ -68,13 +68,14 @@ def fetch_company_news_finnhub(
                 logger.warning("Unexpected Finnhub response format for %s: %s", symbol, type(data))
                 return []
 
+            import html
             items: List[Dict[str, Any]] = []
             for entry in data[:max_items]:
                 article_id = entry.get("id") or ""
-                headline = (entry.get("headline") or "").strip()
-                summary = (entry.get("summary") or "").strip()
+                headline = html.unescape(html.unescape((entry.get("headline") or "").strip()))
+                summary = html.unescape(html.unescape((entry.get("summary") or "").strip()))
                 article_url = (entry.get("url") or "").strip()
-                publisher = (entry.get("source") or "").strip() or "News Media"
+                publisher = html.unescape((entry.get("source") or "").strip()) or "News Media"
                 image_url = entry.get("image") or ""
                 category = entry.get("category") or "company news"
 

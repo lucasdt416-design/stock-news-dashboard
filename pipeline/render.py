@@ -25,6 +25,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 import yaml
 from jinja2 import Template
+from pipeline.normalize import clean_text
 from pipeline.persist import (
     get_all_news_items,
     get_chart_data,
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 def format_human_headline(item: Dict[str, Any]) -> str:
     """Produce a clean human-readable executive title for any news or filing item."""
-    raw = item.get("headline", "") or ""
+    raw = clean_text(item.get("headline", "") or "")
     co_name = item.get("company_name") or item.get("ticker", "")
     form = (item.get("form_or_type") or "").upper().strip()
     category = item.get("category", "")
