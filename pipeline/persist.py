@@ -97,6 +97,39 @@ def save_news_items(
     return (new_count, len(items))
 
 
+def rescore_database_items(db_path: Optional[str] = None) -> int:
+    """Re-compute scores and breakdowns for all existing records in SQLite database."""
+    from pipeline.score import score_item
+
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute("SELECT * FROM news_items").fetchall()
+    updated_count = 0
+
+    with conn:
+        for r in rows:
+            it = dict(r)
+            scored = score_item(it)
+            conn.execute(
+                """
+                UPDATE news_items
+                SET score = ?, score_breakdown = ?, category = ?
+                WHERE item_uid = ?
+                """,
+                (
+                    scored["score"],
+                    scored["score_breakdown"],
+                    scored["category"],
+                    scored["item_uid"],
+                ),
+            )
+            updated_count += 1
+
+    conn.close()
+    return updated_count
+
+
 def _hydrate_news_row(r: sqlite3.Row) -> Dict[str, Any]:
     """Helper to hydrate database row into Python dict with parsed JSON fields."""
     d = dict(r)

@@ -50,7 +50,7 @@ from pipeline.health import (
     STATUS_WARNING,
 )
 from pipeline.normalize import normalize_items
-from pipeline.persist import get_news_stats, save_news_items
+from pipeline.persist import get_news_stats, rescore_database_items, save_news_items
 from pipeline.render import render_dashboard
 from pipeline.score import score_items
 from pipeline.summarize import summarize_items
@@ -139,7 +139,8 @@ def main() -> None:
     # 9. Stage 7: Persist News Records
     logger.info("--- Stage 7: Persist News Records ---")
     new_count, total_processed = save_news_items(summarized_items, db_path=str(db_file))
-    logger.info("Persistence complete: %d records updated/inserted (%d processed)", new_count, total_processed)
+    rescored_total = rescore_database_items(db_path=str(db_file))
+    logger.info("Persistence complete: %d records updated/inserted (%d processed, %d total records rescored)", new_count, total_processed, rescored_total)
 
     # 10. Stage 8: Health Monitoring & Telemetry Safeguards
     logger.info("--- Stage 8: Health Monitoring Safeguards ---")

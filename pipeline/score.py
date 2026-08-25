@@ -26,12 +26,36 @@ CATEGORY_BASE_SCORES: Dict[str, float] = {
     CAT_LEADERSHIP: 6.0,
     CAT_SUPPLY_CHAIN: 5.0,
     CAT_PRODUCT_TECH: 5.0,
-    CAT_INSIDER: 4.0,
     CAT_CAPITAL: 4.0,
+    CAT_INSIDER: 3.5,
     CAT_INSTITUTIONAL: 3.0,
     CAT_GUIDANCE_COMMENTARY: 3.0,
     CAT_GENERAL: 2.0,
 }
+
+# Categories where SEC EDGAR being the source genuinely signals material importance
+MATERIAL_SEC_CATEGORIES = {
+    CAT_EARNINGS,
+    CAT_REGULATORY,
+    CAT_M_AND_A,
+    CAT_LEADERSHIP,
+}
+
+# Routine/procedural SEC forms where filing existence is not inherently high-impact
+ROUTINE_SEC_FORMS_PREFIXES = (
+    "4",
+    "144",
+    "3",
+    "5",
+    "FORM 4",
+    "FORM 144",
+    "424B",
+    "FWP",
+    "11-K",
+    "S-8",
+    "POS AM",
+    "PX14A6G",
+)
 
 
 def calculate_recency_adjustment(pub_date_str: str, pub_time_str: str) -> Tuple[float, str]:
@@ -93,22 +117,48 @@ def score_item(item: Dict[str, Any]) -> Dict[str, Any]:
     base_score = CATEGORY_BASE_SCORES.get(category, 2.0)
     breakdown_parts = [f"Base: {base_score:g} ({category})"]
 
-    # 2. Source Authority Adjustment
+    # 2. Selective Source Authority Adjustment (Section 6 fix)
     source = item.get("source", "")
     source_type = item.get("source_type", "")
+    form = (item.get("form_or_type") or "").upper().strip()
     source_adj = 0.0
+
     if source == "sec_edgar" or source_type == "regulatory_filing":
-        source_adj = 3.0
-        breakdown_parts.append("Source: +3 (Regulatory Filing)")
+        is_routine_sec = any(
+            form == rf or form.startswith(rf) for rf in ROUTINE_SEC_FORMS_PREFIXES
+        )
+        if is_routine_sec or category == CAT_INSIDER:
+            # Routine procedural paperwork (Form 4, 144, 424B2, 424B5, FWP, 11-K) gets no source bonus
+            source_adj = 0.0
+            breakdown_parts.append("Source: +0 (Routine SEC Filing)")
+        elif category in MATERIAL_SEC_CATEGORIES:
+            # Material official filings (10-K, 10-Q, 8-K material events, M&A, proxy leadership)
+            source_adj = 3.0
+            breakdown_parts.append("Source: +3 (Material SEC Filing)")
+        elif category == CAT_CAPITAL:
+            # Non-routine material capital restructurings
+            source_adj = 1.0
+            breakdown_parts.append("Source: +1 (Capital SEC Filing)")
+        else:
+            source_adj = 0.0
+            breakdown_parts.append("Source: +0 (SEC Filing)")
     elif source == "company_ir" or source_type == "company_announcement":
-        source_adj = 2.0
-        breakdown_parts.append("Source: +2 (Company Announcement)")
+        if category in MATERIAL_SEC_CATEGORIES:
+            source_adj = 2.0
+            breakdown_parts.append("Source: +2 (Material Company Announcement)")
+        else:
+            source_adj = 1.0
+            breakdown_parts.append("Source: +1 (Company Announcement)")
     elif source in ("news_media", "finnhub") or source_type in ("press", "third_party_journalism"):
-        source_adj = 1.0
-        breakdown_parts.append("Source: +1 (News Media / Press)")
+        if category in MATERIAL_SEC_CATEGORIES:
+            source_adj = 1.0
+            breakdown_parts.append("Source: +1 (News Media / Press)")
+        else:
+            source_adj = 0.5
+            breakdown_parts.append("Source: +0.5 (News Media)")
     else:
-        source_adj = 1.0
-        breakdown_parts.append("Source: +1 (Press)")
+        source_adj = 0.5
+        breakdown_parts.append("Source: +0.5 (Press)")
 
     # 3. Recency Adjustment
     recency_adj, recency_label = calculate_recency_adjustment(
