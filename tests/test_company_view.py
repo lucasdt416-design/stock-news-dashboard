@@ -56,6 +56,23 @@ class TestCompanyViewAndRender(unittest.TestCase):
             econ_html = f.read()
         self.assertIn("company.html?ticker=", econ_html)
 
+    def test_recently_viewed_section(self):
+        index_path = os.path.join(self.site_dir, "index.html")
+        company_path = os.path.join(self.site_dir, "company.html")
+
+        with open(index_path, "r", encoding="utf-8") as f:
+            index_html = f.read()
+        self.assertIn("recentlyViewedSection", index_html)
+        self.assertIn("recentlyViewedGrid", index_html)
+        self.assertIn("Recently Viewed Companies", index_html)
+        self.assertIn("renderRecentlyViewed", index_html)
+        self.assertIn("clearRecentlyViewed", index_html)
+
+        with open(company_path, "r", encoding="utf-8") as f:
+            company_html = f.read()
+        self.assertIn("trackRecentlyViewedCompany", company_html)
+        self.assertIn("stockpulse_recently_viewed", company_html)
+
 
 if __name__ == "__main__":
     unittest.main()
