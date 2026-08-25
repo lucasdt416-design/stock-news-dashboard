@@ -32,6 +32,10 @@ class TestCompanyViewAndRender(unittest.TestCase):
         self.assertIn("Forthcoming Calendar", content)
         self.assertIn("Intelligence Feed", content)
 
+        # Verify human-readable Newsroom links
+        self.assertIn("https://nvidianews.nvidia.com", content)
+        self.assertIn("Newsroom ↗", content)
+
     def test_ticker_links_across_pages(self):
         index_path = os.path.join(self.site_dir, "index.html")
         news_path = os.path.join(self.site_dir, "news.html")

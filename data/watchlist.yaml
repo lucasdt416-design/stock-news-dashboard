@@ -3,6 +3,7 @@ tickers:
     name: NVIDIA Corporation
     cik: "0001045810"
     ir_feed_url: "https://nvidianews.nvidia.com/releases.xml"
+    newsroom_url: "https://nvidianews.nvidia.com"
     sector: semiconductors
     regulators: [BIS, SEC]
     key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Supermicro, SMCI, Tesla, TSLA, XPeng, XPEV, Rivian, RIVN, BYD]
@@ -16,6 +17,7 @@ tickers:
     name: Apple Inc.
     cik: "0000320193"
     ir_feed_url: "https://www.apple.com/newsroom/rss-feed.rss"
+    newsroom_url: "https://www.apple.com/newsroom"
     sector: consumer_electronics
     regulators: [DOJ, FTC, EU_EC, SEC]
     key_customers: [Global Consumers, Enterprise Fleet]
@@ -29,6 +31,7 @@ tickers:
     name: Microsoft Corporation
     cik: "0000789019"
     ir_feed_url: "https://news.microsoft.com/feed/"
+    newsroom_url: "https://news.microsoft.com"
     sector: software_cloud
     regulators: [FTC, CMA, EU_EC, SEC]
     key_customers: [Enterprise Cloud, Fortune 500, US Department of Defense]
@@ -42,6 +45,7 @@ tickers:
     name: Alphabet Inc.
     cik: "0001652044"
     ir_feed_url: "https://blog.google/rss/"
+    newsroom_url: "https://blog.google"
     sector: search_cloud_ai
     regulators: [DOJ, FTC, EU_EC, SEC]
     key_customers: [Digital Advertisers, Enterprise Cloud, Android Ecosystem]
@@ -55,6 +59,7 @@ tickers:
     name: Amazon.com, Inc.
     cik: "0001018724"
     ir_feed_url: "https://www.aboutamazon.com/news/rss"
+    newsroom_url: "https://www.aboutamazon.com/news"
     sector: ecommerce_cloud
     regulators: [FTC, DOJ, EU_EC, SEC]
     key_customers: [Retail Consumers, AWS Enterprise Clients, Prime Members]
@@ -68,6 +73,7 @@ tickers:
     name: Meta Platforms, Inc.
     cik: "0001326801"
     ir_feed_url: "https://about.fb.com/news/feed/"
+    newsroom_url: "https://about.fb.com/news"
     sector: social_media_digital_ads
     regulators: [FTC, EU_EC, SEC]
     key_customers: [Digital Advertisers, App Developers, Content Creators]
@@ -81,6 +87,7 @@ tickers:
     name: Tesla, Inc.
     cik: "0001318605"
     ir_feed_url: "https://ir.tesla.com/press-releases/rss"
+    newsroom_url: "https://ir.tesla.com/press-releases"
     sector: automotive_clean_energy
     regulators: [NHTSA, SEC, EPA, EU_EC]
     key_customers: [Retail Drivers, Fleet Operators, Hertz]
@@ -94,6 +101,7 @@ tickers:
     name: JPMorgan Chase & Co.
     cik: "0000019617"
     ir_feed_url: "https://jpmorganchaseco.gcs-web.com/rss/news-releases.xml"
+    newsroom_url: "https://www.jpmorganchase.com/news-stories"
     sector: financial_banking
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
     key_customers: [Institutional Asset Managers, Corporate Borrowers, Retail Depositors]
@@ -107,6 +115,7 @@ tickers:
     name: Johnson & Johnson
     cik: "0000200406"
     ir_feed_url: "https://investor.jnj.com/rss/news-releases.xml"
+    newsroom_url: "https://www.jnj.com/media-center/press-releases"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
     key_customers: [Hospital Systems, McKesson, AmerisourceBergen, Cardinal Health, Global Health Agencies]
@@ -120,6 +129,7 @@ tickers:
     name: Exxon Mobil Corporation
     cik: "0000034088"
     ir_feed_url: "https://corporate.exxonmobil.com/rss/news-releases.xml"
+    newsroom_url: "https://corporate.exxonmobil.com/news"
     sector: energy_oil_gas
     regulators: [EPA, DOE, SEC, FTC]
     key_customers: [Refineries, Industrial Manufacturers, Aviation Fuel Buyers]
@@ -133,6 +143,7 @@ tickers:
     name: Walmart Inc.
     cik: "0000104169"
     ir_feed_url: "https://corporate.walmart.com/news/rss"
+    newsroom_url: "https://corporate.walmart.com/news"
     sector: retail_consumer_staples
     regulators: [FTC, DOJ, SEC, OSHA]
     key_customers: [Retail Shoppers, Sam's Club Members, Walmart+ Subscribers]
@@ -146,6 +157,7 @@ tickers:
     name: The Walt Disney Company
     cik: "0001744489"
     ir_feed_url: "https://thewaltdisneycompany.com/feed/"
+    newsroom_url: "https://thewaltdisneycompany.com/news"
     sector: entertainment_media
     regulators: [FCC, FTC, SEC, DOJ]
     key_customers: [Park Guests, Streaming Subscribers, Moviegoers, Linear Advertisers]
@@ -159,6 +171,7 @@ tickers:
     name: The Coca-Cola Company
     cik: "0000021344"
     ir_feed_url: "https://www.coca-colacompany.com/news-releases.rss"
+    newsroom_url: "https://www.coca-colacompany.com/media-center"
     sector: consumer_staples_beverages
     regulators: [FDA, FTC, SEC, International_Food_Agencies]
     key_customers: [Coca-Cola FEMSA, McDonald's, MCD, Walmart, WMT, Target, TGT, Restaurant Brands]
@@ -172,6 +185,7 @@ tickers:
     name: Pfizer Inc.
     cik: "0000078003"
     ir_feed_url: "https://investors.pfizer.com/rss/news-releases.xml"
+    newsroom_url: "https://www.pfizer.com/news/press-releases"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
     key_customers: [Governments, McKesson, MCK, Cardinal Health, CAH, Hospital Networks]
@@ -185,6 +199,7 @@ tickers:
     name: The Boeing Company
     cik: "0000012927"
     ir_feed_url: "https://boeing.mediaroom.com/index.php?s=43&news_releases&format=rss"
+    newsroom_url: "https://boeing.mediaroom.com/news-releases-statements"
     sector: aerospace_defense
     regulators: [FAA, DOD, SEC, EASA]
     key_customers: [United Airlines, UAL, Delta Air Lines, DAL, American Airlines, AAL, Southwest Airlines, LUV, Ryanair, RYAAY, US Air Force]
@@ -198,6 +213,7 @@ tickers:
     name: Advanced Micro Devices, Inc.
     cik: "0000002488"
     ir_feed_url: "https://ir.amd.com/rss/news-releases.xml"
+    newsroom_url: "https://ir.amd.com/news-events/press-releases"
     sector: semiconductors
     regulators: [BIS, SEC, FTC]
     key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Dell, DELL, Lenovo, Sony]

@@ -5253,9 +5253,9 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                     CIK: {{ co.cik }} ↗
                   </a>
                   {% endif %}
-                  {% if co.ir_feed_url %}
-                  <a href="{{ co.ir_feed_url }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View Investor Relations Feed">
-                    IR Feed ↗
+                  {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}
+                  <a href="{{ co.newsroom_url or co.ir_page_url or co.ir_feed_url }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View {{ co.name }} Official Newsroom &amp; Press Releases">
+                    Newsroom ↗
                   </a>
                   {% endif %}
                 </div>
