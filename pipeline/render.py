@@ -2718,6 +2718,13 @@ NAVIGATION_LAYOUT_HTML = """
         <span class="nav-text">Home</span>
       </div>
     </a>
+    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()">
+      <div class="nav-item-left">
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <span class="nav-text">Company Deep Dive</span>
+      </div>
+      <span class="nav-count">{{ watchlist_companies|length }}</span>
+    </a>
     <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
         <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
@@ -2738,13 +2745,6 @@ NAVIGATION_LAYOUT_HTML = """
         <span class="nav-text">Economic Snapshot</span>
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
-    </a>
-    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-        <span class="nav-text">Company View</span>
-      </div>
-      <span class="nav-count">{{ watchlist_companies|length }}</span>
     </a>
     <a href="index.html#analyticsSection" class="nav-link" onclick="closeMobileNav()">
       <div class="nav-item-left">
@@ -2774,6 +2774,10 @@ NAVIGATION_LAYOUT_HTML = """
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Home</span>
   </a>
+  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+    <span>Deep Dive</span>
+  </a>
   <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
     <span>Feed</span>
@@ -2785,10 +2789,6 @@ NAVIGATION_LAYOUT_HTML = """
   <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
     <span>Macro</span>
-  </a>
-  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-    <span>Stocks</span>
   </a>
 </div>
 """
@@ -3991,14 +3991,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <button class="filter-btn active" data-filter-type="source" data-val="ALL" onclick="setSourceFilter('ALL', this)">
             All Sources
           </button>
+          <button class="filter-btn" data-filter-type="source" data-val="news_media" onclick="setSourceFilter('news_media', this)">
+            News Media
+          </button>
           <button class="filter-btn" data-filter-type="source" data-val="sec_edgar" onclick="setSourceFilter('sec_edgar', this)">
             SEC EDGAR
           </button>
           <button class="filter-btn" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">
             Company IR
-          </button>
-          <button class="filter-btn" data-filter-type="source" data-val="news_media" onclick="setSourceFilter('news_media', this)">
-            News Media
           </button>
         </div>
 
@@ -4651,15 +4651,15 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; background:var(--bg-surface); padding:1rem 1.25rem; border:1px solid var(--border-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">
               <div>
                 <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Intelligence Feed</h3>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">SEC EDGAR &bull; Company IR &bull; Finnhub News Media</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">News Media &bull; SEC EDGAR &bull; Company IR</div>
               </div>
 
               <!-- In-Page Source Filters -->
               <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
                 <button class="filter-btn active company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'ALL', this)">All</button>
+                <button class="filter-btn company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'news_media', this)">News Media</button>
                 <button class="filter-btn company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'sec_edgar', this)">SEC EDGAR</button>
                 <button class="filter-btn company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'company_ir', this)">Company IR</button>
-                <button class="filter-btn company-source-filter-btn" onclick="filterCompanyNews('{{ co.symbol }}', 'news_media', this)">News Media</button>
               </div>
             </div>
 
