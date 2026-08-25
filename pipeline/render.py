@@ -2801,6 +2801,95 @@ SHARED_CSS = """
       overflow-y: auto;
       padding: 0.85rem;
     }
+
+    /* Comparative Stock Performance Module */
+    .comparative-perf-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem 1.75rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.75rem;
+    }
+    .comparative-perf-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.15rem;
+      border-bottom: 1px solid var(--border-card);
+    }
+    .comparative-select {
+      background: var(--bg-base);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 0.45rem 1rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      outline: none;
+      cursor: pointer;
+    }
+    .perf-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .perf-kpi-box {
+      background: var(--bg-base);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .perf-kpi-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+    .perf-kpi-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .perf-kpi-sub {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+    .perf-table-wrap {
+      margin-top: 1.25rem;
+      overflow-x: auto;
+    }
+    .perf-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .perf-table th {
+      text-align: left;
+      font-weight: 700;
+      color: var(--text-muted);
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-card);
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+    }
+    .perf-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-card);
+      color: var(--text-primary);
+    }
 """
 
 # ==============================================================================
@@ -3233,6 +3322,48 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div class="category-legend-list" id="categoryLegendList">
             <!-- Dynamically populated legend badges with counts & percentages -->
           </div>
+        </div>
+      </div>
+
+      <!-- 3-Month Comparative Performance vs Competitors & S&P 500 Benchmark -->
+      <div class="comparative-perf-card" style="margin-top:1.5rem;">
+        <div class="comparative-perf-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
+              <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
+            </div>
+            <p style="font-size:0.835rem; color:var(--text-muted); margin:0.35rem 0 0 0;">
+              Contextual move analysis: Normalized % return (Day 0 = 0.0%) against top 3 competitors and the S&amp;P 500 (SPY) benchmark.
+            </p>
+          </div>
+
+          <!-- Watchlist Company Selector Dropdown -->
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <label for="perfCompanySelect" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Stock:</label>
+            <select id="perfCompanySelect" class="comparative-select" onchange="renderComparativePerformanceChart(this.value)">
+              {% for co in watchlist_companies %}
+              <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Real-time Alpha & Return Metrics Ribbon -->
+        <div class="perf-kpi-grid" id="perfKpiGrid">
+          <!-- Dynamically populated via JS based on selected company -->
+        </div>
+
+        <!-- Interactive Chart Canvas -->
+        <div style="position:relative; height:320px; width:100%;">
+          <canvas id="comparativeChartCanvas"></canvas>
+        </div>
+
+        <!-- Competitor Breakdown Table -->
+        <div class="perf-table-wrap">
+          <table class="perf-table" id="perfBreakdownTable">
+            <!-- Dynamically populated table -->
+          </table>
         </div>
       </div>
 
@@ -3985,9 +4116,229 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
     }
 
+    // =========================================================================
+    // 3-MONTH COMPARATIVE STOCK PERFORMANCE VS COMPETITORS & S&P 500
+    // =========================================================================
+    const perfData = {{ performance_data_json|safe }};
+    let comparativeChartInstance = null;
+
+    function renderComparativePerformanceChart(symbol) {
+      if (!perfData || !perfData.companies) return;
+      const coData = perfData.companies[symbol];
+      if (!coData) return;
+
+      const kpiGrid = document.getElementById('perfKpiGrid');
+      const table = document.getElementById('perfBreakdownTable');
+      const canvas = document.getElementById('comparativeChartCanvas');
+      if (!canvas) return;
+
+      const target = coData.target;
+      const comps = coData.competitors || [];
+      const spy = coData.benchmark;
+
+      const targetColor = '#2563eb';
+      const compColors = ['#ea580c', '#0284c7', '#9333ea'];
+      const spyColor = '#64748b';
+
+      // 1. Populate KPI Ribbon
+      if (kpiGrid && target) {
+        const tgtPct = target.total_pct_change;
+        const tgtColor = tgtPct >= 0 ? '#15803d' : '#b91c1c';
+        const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
+
+        const alphaPeers = coData.alpha_vs_peers;
+        const alphaPeersColor = alphaPeers >= 0 ? '#15803d' : '#b91c1c';
+
+        const spyPct = spy ? spy.total_pct_change : 0;
+        const avgPeerPct = coData.avg_competitor_pct;
+
+        kpiGrid.innerHTML = `
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">${symbol} 3M Return</div>
+            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)} (Base: $${target.base_price.toFixed(2)})</div>
+          </div>
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">Top Peers Avg</div>
+            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? '#15803d' : '#b91c1c'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">${comps.map(c => c.symbol).join(', ') || 'None'}</div>
+          </div>
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">S&P 500 (SPY)</div>
+            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? '#15803d' : '#b91c1c'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">Broad Market Benchmark</div>
+          </div>
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">Peer Relative Alpha</div>
+            <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
+            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? '#15803d' : (coData.assessment_type === 'negative' ? '#b91c1c' : '#475569')};">${coData.assessment}</div>
+          </div>
+        `;
+      }
+
+      // 2. Populate Table
+      if (table && target) {
+        let rowsHtml = `
+          <thead>
+            <tr>
+              <th>Ticker / Entity</th>
+              <th>Role</th>
+              <th>Base Price (3M Ago)</th>
+              <th>Latest Price</th>
+              <th>3-Month % Change</th>
+              <th>Alpha vs ${symbol}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
+              <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
+              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target Stock</span></td>
+              <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family:'JetBrains Mono'; color:var(--text-muted);">&mdash;</td>
+            </tr>
+        `;
+
+        comps.forEach((c, idx) => {
+          const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
+          rowsHtml += `
+            <tr>
+              <td><a href="company.html?ticker=${c.symbol}" class="ticker-badge" style="font-size:0.75rem;">${c.symbol}</a></td>
+              <td><span class="form-type-pill">Competitor #${idx+1}</span></td>
+              <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family:'JetBrains Mono'; color:${delta >= 0 ? '#15803d' : '#b91c1c'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+            </tr>
+          `;
+        });
+
+        if (spy) {
+          const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
+          rowsHtml += `
+            <tr style="border-top:2px dashed var(--border-card);">
+              <td><span class="form-type-pill" style="background:#f1f5f9; color:#334155; font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
+              <td><span class="form-type-pill">Benchmark</span></td>
+              <td style="font-family:'JetBrains Mono';">$${spy.base_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono';">$${spy.latest_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono'; color:${spy.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family:'JetBrains Mono'; color:${spyDelta >= 0 ? '#15803d' : '#b91c1c'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+            </tr>
+          `;
+        }
+
+        rowsHtml += `</tbody>`;
+        table.innerHTML = rowsHtml;
+      }
+
+      // 3. Render Chart.js
+      if (comparativeChartInstance) {
+        comparativeChartInstance.destroy();
+      }
+
+      if (!target || !target.series) return;
+      const labels = target.series.map(pt => pt.date);
+
+      const datasets = [
+        {
+          label: `${symbol} (Target)`,
+          data: target.series.map(pt => pt.pct_change),
+          borderColor: targetColor,
+          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.25,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        }
+      ];
+
+      comps.forEach((c, idx) => {
+        const color = compColors[idx % compColors.length];
+        datasets.push({
+          label: `${c.symbol} (Competitor)`,
+          data: c.series.map(pt => pt.pct_change),
+          borderColor: color,
+          borderWidth: 2,
+          fill: false,
+          tension: 0.25,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+        });
+      });
+
+      if (spy && spy.series) {
+        datasets.push({
+          label: 'S&P 500 (SPY Benchmark)',
+          data: spy.series.map(pt => pt.pct_change),
+          borderColor: spyColor,
+          borderWidth: 2,
+          borderDash: [6, 6],
+          fill: false,
+          tension: 0.25,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+        });
+      }
+
+      comparativeChartInstance = new Chart(canvas, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                boxWidth: 14,
+                boxHeight: 3,
+                font: { family: 'Inter', size: 11, weight: '600' },
+                color: '#475569',
+              }
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleFont: { family: 'Inter', size: 12, weight: '700' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                maxTicksLimit: 8,
+                font: { family: 'JetBrains Mono', size: 10 },
+                color: '#94a3b8',
+              }
+            },
+            y: {
+              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              ticks: {
+                callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
+                font: { family: 'JetBrains Mono', size: 10 },
+                color: '#94a3b8',
+              }
+            }
+          }
+        }
+      });
+    }
+
     function initHomePage() {
       initCharts();
       renderRecentlyViewed();
+      renderComparativePerformanceChart('NVDA');
     }
 
     window.addEventListener('focus', renderRecentlyViewed);
@@ -4815,6 +5166,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -4839,10 +5191,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       <!-- Quick-Switcher Ticker Strip with Live Filter -->
       <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.75rem; flex-wrap:wrap;">
         <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">
-          Select Company (15 Monitored)
+          Select Company (16 Monitored)
         </div>
         <div style="position:relative; width:100%; max-width:260px;">
-          <input type="text" id="companyStripFilter" placeholder="Quick find stock (e.g. TSLA, NVDA)..." oninput="filterCompanyStrip(this.value)" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-card); border-radius:var(--radius-full); padding:0.38rem 0.95rem; font-size:0.82rem; color:var(--text-primary); outline:none;">
+          <input type="text" id="companyStripFilter" placeholder="Quick find stock (e.g. TSLA, NVDA, AMD)..." oninput="filterCompanyStrip(this.value)" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-card); border-radius:var(--radius-full); padding:0.38rem 0.95rem; font-size:0.82rem; color:var(--text-primary); outline:none;">
         </div>
       </div>
 
@@ -4971,6 +5323,38 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 {{ co.key_customers|length if co.key_customers else 0 }} Cust &bull; {{ co.key_suppliers|length if co.key_suppliers else 0 }} Supp &bull; {{ co.competitors|length if co.competitors else 0 }} Comp
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- 3-Month Comparative Performance Card for this stock -->
+        <div class="comparative-perf-card" style="margin-bottom:1.5rem;">
+          <div class="comparative-perf-header">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
+                <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
+              </div>
+              <p style="font-size:0.82rem; color:var(--text-muted); margin:0.3rem 0 0 0;">
+                Is {{ co.symbol }}'s move normal or unusual? Normalized % change since Day 0 relative to top 3 competitors and the S&amp;P 500 (SPY).
+              </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.85rem; padding:0.25rem 0.6rem;">{{ co.symbol }}</span>
+            </div>
+          </div>
+
+          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}">
+            <!-- Dynamically populated via JS -->
+          </div>
+
+          <div style="position:relative; height:280px; width:100%;">
+            <canvas id="compPerfCanvas-{{ co.symbol }}"></canvas>
+          </div>
+
+          <div class="perf-table-wrap">
+            <table class="perf-table" id="compPerfTable-{{ co.symbol }}">
+              <!-- Dynamically populated via JS -->
+            </table>
           </div>
         </div>
 
@@ -5207,6 +5591,9 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
+    const perfData = {{ performance_data_json|safe }};
+    const companyChartInstances = {};
+
     function trackRecentlyViewedCompany(ticker) {
       if (!ticker) return;
       try {
@@ -5225,6 +5612,219 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       } catch (e) {
         console.error('Failed to track recently viewed company:', e);
       }
+    }
+
+    function renderCompanyComparativeChart(symbol) {
+      if (!perfData || !perfData.companies) return;
+      const coData = perfData.companies[symbol];
+      if (!coData) return;
+
+      const kpiGrid = document.getElementById('compPerfKpi-' + symbol);
+      const table = document.getElementById('compPerfTable-' + symbol);
+      const canvas = document.getElementById('compPerfCanvas-' + symbol);
+      if (!canvas) return;
+
+      const target = coData.target;
+      const comps = coData.competitors || [];
+      const spy = coData.benchmark;
+
+      const targetColor = '#2563eb';
+      const compColors = ['#ea580c', '#0284c7', '#9333ea'];
+      const spyColor = '#64748b';
+
+      // 1. KPI Ribbon
+      if (kpiGrid && target) {
+        const tgtPct = target.total_pct_change;
+        const tgtColor = tgtPct >= 0 ? '#15803d' : '#b91c1c';
+        const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
+
+        const alphaPeers = coData.alpha_vs_peers;
+        const alphaPeersColor = alphaPeers >= 0 ? '#15803d' : '#b91c1c';
+
+        const spyPct = spy ? spy.total_pct_change : 0;
+        const avgPeerPct = coData.avg_competitor_pct;
+
+        kpiGrid.innerHTML = `
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">${symbol} 3M Return</div>
+            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)} (Base: $${target.base_price.toFixed(2)})</div>
+          </div>
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">Top Peers Avg</div>
+            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? '#15803d' : '#b91c1c'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">${comps.map(c => c.symbol).join(', ') || 'None'}</div>
+          </div>
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">S&P 500 (SPY)</div>
+            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? '#15803d' : '#b91c1c'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">Broad Market Benchmark</div>
+          </div>
+          <div class="perf-kpi-box">
+            <div class="perf-kpi-label">Peer Relative Alpha</div>
+            <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
+            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? '#15803d' : (coData.assessment_type === 'negative' ? '#b91c1c' : '#475569')};">${coData.assessment}</div>
+          </div>
+        `;
+      }
+
+      // 2. Peer Table
+      if (table && target) {
+        let rowsHtml = `
+          <thead>
+            <tr>
+              <th>Ticker / Entity</th>
+              <th>Role</th>
+              <th>Base Price (3M Ago)</th>
+              <th>Latest Price</th>
+              <th>3-Month % Change</th>
+              <th>Alpha vs ${symbol}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
+              <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
+              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target Stock</span></td>
+              <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family:'JetBrains Mono'; color:var(--text-muted);">&mdash;</td>
+            </tr>
+        `;
+
+        comps.forEach((c, idx) => {
+          const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
+          rowsHtml += `
+            <tr>
+              <td><a href="company.html?ticker=${c.symbol}" onclick="event.preventDefault(); switchCompany('${c.symbol}')" class="ticker-badge" style="font-size:0.75rem; cursor:pointer;">${c.symbol}</a></td>
+              <td><span class="form-type-pill">Competitor #${idx+1}</span></td>
+              <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family:'JetBrains Mono'; color:${delta >= 0 ? '#15803d' : '#b91c1c'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+            </tr>
+          `;
+        });
+
+        if (spy) {
+          const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
+          rowsHtml += `
+            <tr style="border-top:2px dashed var(--border-card);">
+              <td><span class="form-type-pill" style="background:#f1f5f9; color:#334155; font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
+              <td><span class="form-type-pill">Benchmark</span></td>
+              <td style="font-family:'JetBrains Mono';">$${spy.base_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono';">$${spy.latest_price.toFixed(2)}</td>
+              <td style="font-family:'JetBrains Mono'; color:${spy.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family:'JetBrains Mono'; color:${spyDelta >= 0 ? '#15803d' : '#b91c1c'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+            </tr>
+          `;
+        }
+
+        rowsHtml += `</tbody>`;
+        table.innerHTML = rowsHtml;
+      }
+
+      // 3. Render Chart
+      if (companyChartInstances[symbol]) {
+        companyChartInstances[symbol].destroy();
+      }
+
+      if (!target || !target.series) return;
+      const labels = target.series.map(pt => pt.date);
+
+      const datasets = [
+        {
+          label: `${symbol} (Target)`,
+          data: target.series.map(pt => pt.pct_change),
+          borderColor: targetColor,
+          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.25,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        }
+      ];
+
+      comps.forEach((c, idx) => {
+        const color = compColors[idx % compColors.length];
+        datasets.push({
+          label: `${c.symbol} (Competitor)`,
+          data: c.series.map(pt => pt.pct_change),
+          borderColor: color,
+          borderWidth: 2,
+          fill: false,
+          tension: 0.25,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+        });
+      });
+
+      if (spy && spy.series) {
+        datasets.push({
+          label: 'S&P 500 (SPY Benchmark)',
+          data: spy.series.map(pt => pt.pct_change),
+          borderColor: spyColor,
+          borderWidth: 2,
+          borderDash: [6, 6],
+          fill: false,
+          tension: 0.25,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+        });
+      }
+
+      companyChartInstances[symbol] = new Chart(canvas, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                boxWidth: 14,
+                boxHeight: 3,
+                font: { family: 'Inter', size: 11, weight: '600' },
+                color: '#475569',
+              }
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleFont: { family: 'Inter', size: 12, weight: '700' },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                maxTicksLimit: 8,
+                font: { family: 'JetBrains Mono', size: 10 },
+                color: '#94a3b8',
+              }
+            },
+            y: {
+              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              ticks: {
+                callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
+                font: { family: 'JetBrains Mono', size: 10 },
+                color: '#94a3b8',
+              }
+            }
+          }
+        }
+      });
     }
 
     function filterCompanyStrip(rawVal) {
@@ -5279,6 +5879,9 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
       // Track visit in localStorage for Home page quick access
       trackRecentlyViewedCompany(ticker);
+
+      // Render comparative chart for this company
+      renderCompanyComparativeChart(ticker);
 
       // Update switcher pills
       document.querySelectorAll('.company-strip-pill').forEach(pill => {
@@ -5348,6 +5951,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
+    performance_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Render all 5 static HTML pages (Overview, Feed, Calendar, Macro, Company Detail) to disk."""
     if output_path is None:
@@ -5391,6 +5995,15 @@ def render_dashboard(
             cfg = yaml.safe_load(f) or {}
             watchlist_companies = cfg.get("tickers", [])
 
+    # 4. Comparative stock performance data
+    if performance_data is None:
+        try:
+            from collectors.stock_prices import collect_comparative_performance
+            performance_data = collect_comparative_performance(watchlist_path=watchlist_path)
+        except Exception as e:
+            logger.warning("Could not collect comparative performance data: %s", e)
+            performance_data = {}
+
     common_context = {
         "items": items,
         "priority_items": enriched_priority,
@@ -5402,6 +6015,8 @@ def render_dashboard(
         "latest_run": latest_run,
         "generated_at": now_str,
         "watchlist_companies": watchlist_companies,
+        "performance_data": performance_data,
+        "performance_data_json": json.dumps(performance_data or {}),
     }
 
     # 4. Render and save all 5 pages

@@ -39,6 +39,7 @@ if env_file.exists():
 from collectors.company_ir import collect_company_ir
 from collectors.edgar import collect_sec_edgar
 from collectors.finnhub_news import collect_finnhub_news
+from collectors.stock_prices import collect_comparative_performance
 from pipeline.calendar import build_forthcoming_calendar
 from pipeline.crossref import apply_supply_chain_cross_references
 from pipeline.db import init_db
@@ -169,9 +170,18 @@ def main() -> None:
     )
     logger.info("Macroeconomic indicators updated: %d indicators mapped", len(economic_indicators))
 
-    # 13. Stage 11: Render Static Dashboard (5 Static Pages)
-    logger.info("--- Stage 11: Render Static Site (5 Pages) ---")
-    output_html = render_dashboard(output_path=str(site_output), db_path=str(db_file))
+    # 13. Stage 11: 3-Month Comparative Stock & Peer Performance
+    logger.info("--- Stage 11: 3-Month Comparative Stock & Peer Performance Collector ---")
+    performance_data = collect_comparative_performance(watchlist_path=str(watchlist_path))
+    logger.info("Stock performance collected for %d companies", len(performance_data.get("companies", {})))
+
+    # 14. Stage 12: Render Static Dashboard (5 Static Pages)
+    logger.info("--- Stage 12: Render Static Site (5 Pages) ---")
+    output_html = render_dashboard(
+        output_path=str(site_output),
+        db_path=str(db_file),
+        performance_data=performance_data,
+    )
     logger.info("Rendered static dashboard to %s", output_html)
 
     # 14. Summary Stats

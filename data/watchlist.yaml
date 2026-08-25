@@ -20,7 +20,7 @@ tickers:
     regulators: [DOJ, FTC, EU_EC, SEC]
     key_customers: [Global Consumers, Enterprise Fleet]
     key_suppliers: [TSM, TSMC, Taiwan Semiconductor, Foxconn, Hon Hai, Qualcomm, QCOM, Broadcom, AVGO, Sony, LG Display]
-    competitors: [GOOGL, MSFT, Samsung]
+    competitors: [MSFT, GOOGL, DELL]
     macro_sensitivities: [china_demand, consumer_spending]
     economic_sensitivities: [inflation, unemployment]
     notes: "Monitor services revenue growth and AI feature rollouts."
@@ -46,7 +46,7 @@ tickers:
     regulators: [DOJ, FTC, EU_EC, SEC]
     key_customers: [Digital Advertisers, Enterprise Cloud, Android Ecosystem]
     key_suppliers: [NVDA, NVIDIA, Broadcom, AVGO, TSM, TSMC, Samsung]
-    competitors: [MSFT, META, AMZN, AAPL]
+    competitors: [MSFT, META, AMZN]
     macro_sensitivities: [digital_ad_spending, antitrust_remedies, ai_search_competition]
     economic_sensitivities: [interest_rates]
     notes: "Track Google Search ad growth, GCP cloud margins, and antitrust ruling outcomes."
@@ -59,7 +59,7 @@ tickers:
     regulators: [FTC, DOJ, EU_EC, SEC]
     key_customers: [Retail Consumers, AWS Enterprise Clients, Prime Members]
     key_suppliers: [NVDA, NVIDIA, Intel, INTC, AMD, FedEx, UPS]
-    competitors: [MSFT, GOOGL, WMT, BABA, SHOP]
+    competitors: [MSFT, GOOGL, WMT]
     macro_sensitivities: [consumer_discretionary_spending, enterprise_cloud_budget, fuel_logistics_costs]
     economic_sensitivities: [inflation, unemployment]
     notes: "Monitor AWS revenue growth, operating margins, and retail fulfillment efficiency."
@@ -72,7 +72,7 @@ tickers:
     regulators: [FTC, EU_EC, SEC]
     key_customers: [Digital Advertisers, App Developers, Content Creators]
     key_suppliers: [NVDA, NVIDIA, AMD, Arista Networks, ANET]
-    competitors: [GOOGL, ByteDance_TikTok, SNAP, AAPL]
+    competitors: [GOOGL, SNAP, PINS]
     macro_sensitivities: [digital_ad_pricing, ai_capex_spend, privacy_regulations]
     economic_sensitivities: [inflation]
     notes: "Watch AI-driven ad conversion improvements and Reality Labs operating losses."
@@ -85,7 +85,7 @@ tickers:
     regulators: [NHTSA, SEC, EPA, EU_EC]
     key_customers: [Retail Drivers, Fleet Operators, Hertz]
     key_suppliers: [Panasonic, CATL, NVDA, NVIDIA, LG Energy Solution]
-    competitors: [BYD, RIVN, F, GM, LCID]
+    competitors: [RIVN, F, GM]
     macro_sensitivities: [ev_subsidies, lithium_prices, interest_rates_auto_loans, china_ev_competition]
     economic_sensitivities: [interest_rates, inflation]
     notes: "Track vehicle deliveries, Full Self-Driving (FSD) regulatory milestones, and energy storage deployments."
@@ -98,7 +98,7 @@ tickers:
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
     key_customers: [Institutional Asset Managers, Corporate Borrowers, Retail Depositors]
     key_suppliers: [Bloomberg, S&P Global, Amazon AWS, Microsoft Azure]
-    competitors: [BAC, C, MS, GS, WFC]
+    competitors: [BAC, MS, GS]
     macro_sensitivities: [fed_interest_rates, yield_curve_inversion, credit_default_rates, investment_banking_m_and_a_volume]
     economic_sensitivities: [interest_rates, unemployment]
     notes: "Key bellwether for net interest income (NII), credit reserves, and macroeconomic lending health."
@@ -111,7 +111,7 @@ tickers:
     regulators: [FDA, EMA, SEC, FTC]
     key_customers: [Hospital Systems, McKesson, AmerisourceBergen, Cardinal Health, Global Health Agencies]
     key_suppliers: [Lonza, Catalent, Samsung Biologics, West Pharmaceutical]
-    competitors: [PFE, MRK, ABBV, LLY, NVO]
+    competitors: [PFE, MRK, ABBV]
     macro_sensitivities: [drug_price_negotiations_medicare, patent_cliff_expirations, litigation_liabilities]
     economic_sensitivities: [inflation]
     notes: "Focus on oncology/immunology pipeline readouts and MedTech device segment growth."
@@ -124,7 +124,7 @@ tickers:
     regulators: [EPA, DOE, SEC, FTC]
     key_customers: [Refineries, Industrial Manufacturers, Aviation Fuel Buyers]
     key_suppliers: [SLB, Schlumberger, Halliburton, HAL, Baker Hughes, BKR, Enterprise Products]
-    competitors: [CVX, SHEL, TTE, BP, COP]
+    competitors: [CVX, COP, BP]
     macro_sensitivities: [brent_wti_crude_prices, opec_production_quotas, refining_crack_spreads]
     economic_sensitivities: [inflation]
     notes: "Monitor Permian basin production volumes, Pioneer integration synergies, and capital returns."
@@ -137,7 +137,7 @@ tickers:
     regulators: [FTC, DOJ, SEC, OSHA]
     key_customers: [Retail Shoppers, Sam's Club Members, Walmart+ Subscribers]
     key_suppliers: [Procter & Gamble, PG, Coca-Cola, KO, PepsiCo, PEP, Unilever, Tyson Foods, TSN, Kraft Heinz, KHC]
-    competitors: [AMZN, TGT, COST, DG, KR]
+    competitors: [TGT, COST, AMZN]
     macro_sensitivities: [inflation_food_prices, consumer_real_wage_growth, supply_chain_tariffs]
     economic_sensitivities: [inflation, unemployment]
     notes: "Benchmark for grocery market share, Walmart+ membership growth, and high-margin advertising revenue."
@@ -150,7 +150,7 @@ tickers:
     regulators: [FCC, FTC, SEC, DOJ]
     key_customers: [Park Guests, Streaming Subscribers, Moviegoers, Linear Advertisers]
     key_suppliers: [Sony Pictures, IMAX, Dolby Laboratories, Amazon AWS]
-    competitors: [NFLX, CMCSA, WBD, AMZN, AAPL]
+    competitors: [NFLX, CMCSA, WBD]
     macro_sensitivities: [theme_park_discretionary_spend, linear_tv_cord_cutting, streaming_subscriber_growth]
     economic_sensitivities: [inflation, unemployment]
     notes: "Track direct-to-consumer (Disney+/Hulu) profitability, box office performance, and Experiences segment margins."
@@ -163,7 +163,7 @@ tickers:
     regulators: [FDA, FTC, SEC, International_Food_Agencies]
     key_customers: [Coca-Cola FEMSA, McDonald's, MCD, Walmart, WMT, Target, TGT, Restaurant Brands]
     key_suppliers: [Ball Corporation, BLL, Crown Holdings, CCK, Archer-Daniels-Midland, ADM]
-    competitors: [PEP, KDP, MNST, CELH]
+    competitors: [PEP, KDP, MNST]
     macro_sensitivities: [fx_dollar_strength, packaging_commodity_costs, emerging_market_demand]
     economic_sensitivities: [inflation]
     notes: "Defensive consumer staple focus on pricing power, unit case volume growth, and refranchising margins."
@@ -176,7 +176,7 @@ tickers:
     regulators: [FDA, EMA, SEC, FTC]
     key_customers: [Governments, McKesson, MCK, Cardinal Health, CAH, Hospital Networks]
     key_suppliers: [BioNTech, BNTX, Lonza, Catalent, Thermo Fisher Scientific, TMO]
-    competitors: [JNJ, MRK, BMY, LLY, AZN]
+    competitors: [JNJ, MRK, BMY]
     macro_sensitivities: [patent_expirations_loes, clinical_trial_success_rates, post_covid_demand_normalization]
     economic_sensitivities: [inflation]
     notes: "Monitor Seagen oncology integration pipeline, cost realignment program, and commercial execution."
@@ -189,7 +189,20 @@ tickers:
     regulators: [FAA, DOD, SEC, EASA]
     key_customers: [United Airlines, UAL, Delta Air Lines, DAL, American Airlines, AAL, Southwest Airlines, LUV, Ryanair, RYAAY, US Air Force]
     key_suppliers: [Spirit AeroSystems, SPR, GE Aerospace, GE, Raytheon, Safran, Honeywell, HON]
-    competitors: [Airbus, LMT, NOC, GD]
+    competitors: [LMT, NOC, GD]
     macro_sensitivities: [commercial_aviation_passenger_traffic, defense_budget_allocations, supply_chain_manufacturing_quality]
     economic_sensitivities: [interest_rates, inflation]
     notes: "Crucial scrutiny on 737 MAX production rate recovery, FAA quality audits, and free cash flow generation."
+
+  - symbol: AMD
+    name: Advanced Micro Devices, Inc.
+    cik: "0000002488"
+    ir_feed_url: "https://ir.amd.com/rss/news-releases.xml"
+    sector: semiconductors
+    regulators: [BIS, SEC, FTC]
+    key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Dell, DELL, Lenovo, Sony]
+    key_suppliers: [TSM, TSMC, Taiwan Semiconductor, ASML, ASE Technology]
+    competitors: [NVDA, INTC, AVGO]
+    macro_sensitivities: [datacenter_capex, pc_market_demand, export_controls_china]
+    economic_sensitivities: [interest_rates]
+    notes: "Track MI300/MI325 AI GPU accelerator ramp, datacenter EPYC CPU market share gains against Intel, and client AI PC adoption."
