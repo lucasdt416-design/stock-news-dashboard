@@ -207,11 +207,12 @@ SHARED_CSS = """
       top: 0;
       left: 0;
       right: 0;
-      z-index: 900;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
+      z-index: 950;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border-card);
-      padding: 0.75rem 1.15rem;
+      padding: 0.65rem 1rem;
       align-items: center;
       justify-content: space-between;
     }
@@ -230,19 +231,31 @@ SHARED_CSS = """
       gap: 0.5rem;
     }
 
-    .mobile-hamburger-btn {
+    .mobile-action-btn, .mobile-hamburger-btn {
       width: 38px;
       height: 38px;
+      min-width: 38px;
       border-radius: var(--radius-sm);
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-card);
       color: var(--text-primary);
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       padding: 0;
       transition: all var(--transition-fast);
+      touch-action: manipulation;
+    }
+
+    .mobile-action-btn:hover, .mobile-hamburger-btn:hover {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: var(--accent-blue);
+    }
+
+    .mobile-action-btn:active, .mobile-hamburger-btn:active {
+      transform: scale(0.95);
     }
 
     .mobile-drawer-backdrop {
@@ -253,7 +266,8 @@ SHARED_CSS = """
       right: 0;
       bottom: 0;
       background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       z-index: 1050;
       opacity: 0;
       transition: opacity var(--transition-normal);
@@ -264,18 +278,20 @@ SHARED_CSS = """
       opacity: 1;
     }
 
+    /* Native Phone Bottom Navigation Dock (5 Tabs) */
     .mobile-bottom-nav {
       display: none;
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 950;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(16px);
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--border-card);
-      padding: 0.45rem 0.25rem calc(0.45rem + env(safe-area-inset-bottom)) 0.25rem;
-      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+      padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom)) 0.25rem;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
       justify-content: space-around;
       align-items: center;
     }
@@ -285,16 +301,30 @@ SHARED_CSS = """
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.15rem;
-      padding: 0.25rem 0.65rem;
+      gap: 0.2rem;
+      padding: 0.3rem 0.25rem;
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 600;
       border-radius: var(--radius-sm);
       transition: all var(--transition-fast);
       flex: 1;
       text-align: center;
+      min-height: 44px;
+      touch-action: manipulation;
+      position: relative;
+    }
+
+    .mobile-tab-link svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+      transition: transform var(--transition-fast);
+    }
+
+    .mobile-tab-link:active {
+      transform: scale(0.92);
     }
 
     .mobile-tab-link.active {
@@ -304,12 +334,17 @@ SHARED_CSS = """
 
     .mobile-tab-link.active svg {
       stroke: var(--accent-blue);
+      transform: translateY(-1px);
     }
 
-    .mobile-tab-link svg {
-      width: 20px;
-      height: 20px;
-      stroke-width: 2;
+    .mobile-tab-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: 1px;
+      width: 16px;
+      height: 3px;
+      border-radius: var(--radius-full);
+      background: var(--accent-blue);
     }
 
     .sidebar-close-btn {
@@ -321,6 +356,81 @@ SHARED_CSS = """
       cursor: pointer;
       padding: 0.25rem 0.5rem;
       line-height: 1;
+    }
+
+    /* Watchlist Horizontal Ticker Ribbon (Robinhood / Apple Stocks Style) */
+    .watchlist-ticker-strip {
+      display: flex;
+      overflow-x: auto;
+      gap: 0.5rem;
+      padding: 0.35rem 0 0.65rem 0;
+      margin-bottom: 1.25rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .watchlist-ticker-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ticker-strip-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-full);
+      padding: 0.35rem 0.75rem;
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      flex-shrink: 0;
+      transition: all var(--transition-fast);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      min-height: 36px;
+    }
+
+    .ticker-strip-pill:hover {
+      border-color: #cbd5e1;
+      background: var(--bg-surface-elevated);
+      transform: translateY(-1px);
+    }
+
+    .ticker-strip-pill:active {
+      transform: scale(0.96);
+    }
+
+    /* Mobile Segmented View Toggle (Comparative Performance Module) */
+    .perf-mobile-toggle {
+      display: none;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-full);
+      padding: 0.25rem;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+      width: 100%;
+    }
+
+    .perf-toggle-btn {
+      flex: 1;
+      padding: 0.4rem 0.75rem;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+    }
+
+    .perf-toggle-btn.active {
+      background: #ffffff;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
     }
 
     /* Responsive Viewports */
@@ -367,24 +477,25 @@ SHARED_CSS = """
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        padding: 1.5rem 1.25rem calc(5.5rem + env(safe-area-inset-bottom)) 1.25rem !important;
+        padding: 1.25rem 1rem calc(5.5rem + env(safe-area-inset-bottom)) 1rem !important;
+        box-sizing: border-box !important;
       }
 
       .hero-container {
-        margin: 0.75rem auto 1.75rem auto !important;
+        margin: 0.5rem auto 1.5rem auto !important;
       }
 
       .hero-title {
-        font-size: 2rem !important;
+        font-size: 1.85rem !important;
       }
 
       .hero-subtext {
-        font-size: 0.9rem !important;
-        margin-bottom: 1.35rem !important;
+        font-size: 0.88rem !important;
+        margin-bottom: 1.25rem !important;
       }
 
       .search-wrapper {
-        margin-bottom: 2rem !important;
+        margin-bottom: 1.75rem !important;
       }
 
       .hero-bento-deck {
@@ -398,36 +509,179 @@ SHARED_CSS = """
       }
 
       .priority-section, .controls-panel, .health-section {
-        padding: 1.35rem !important;
+        padding: 1.25rem !important;
       }
     }
 
-    /* Narrow Phone Viewports (<= 640px) */
+    /* Dedicated Phone Viewports (<= 640px and <= 480px / 375px - 414px) */
     @media (max-width: 640px) {
+      .app-main {
+        padding: 0.85rem 0.85rem calc(5.5rem + env(safe-area-inset-bottom)) 0.85rem !important;
+      }
+
       .hero-title {
-        font-size: 1.65rem !important;
+        font-size: 1.5rem !important;
+        line-height: 1.25 !important;
       }
 
-      .analytics-card {
-        padding: 1.15rem !important;
-      }
-
-      .priority-section, .controls-panel, .health-section {
-        padding: 1.15rem !important;
+      .hero-subtext {
+        font-size: 0.82rem !important;
+        margin-bottom: 1rem !important;
       }
 
       .hero-badge {
-        font-size: 0.75rem !important;
-        padding: 0.35rem 0.85rem !important;
+        font-size: 0.72rem !important;
+        padding: 0.3rem 0.75rem !important;
+        max-width: 100% !important;
+        white-space: normal !important;
+        text-align: left !important;
+        line-height: 1.3 !important;
+      }
+
+      .search-wrapper {
+        margin-bottom: 1.25rem !important;
+      }
+
+      .search-box {
+        padding: 0.6rem 0.85rem !important;
+        min-height: 44px !important;
+      }
+
+      .search-shortcut {
+        display: none !important;
+      }
+
+      .bento-card {
+        padding: 1.15rem !important;
+        border-radius: var(--radius-lg) !important;
+      }
+
+      .bento-score-hero {
+        margin: 0.5rem 0 0.75rem 0 !important;
+      }
+
+      .bento-count {
+        font-size: 2rem !important;
+      }
+
+      .priority-section {
+        padding: 1rem !important;
+        border-radius: var(--radius-lg) !important;
+      }
+
+      .priority-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.65rem !important;
+        margin-bottom: 1rem !important;
+      }
+
+      .priority-card {
+        padding: 1rem !important;
+        border-radius: var(--radius-md) !important;
+      }
+
+      .priority-lead-card {
+        padding: 1.15rem !important;
+      }
+
+      .priority-lead-headline {
+        font-size: 1.1rem !important;
+        line-height: 1.35 !important;
+      }
+
+      .priority-subgrid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+      }
+
+      .news-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
       }
 
       .calendar-grid {
         grid-template-columns: 1fr !important;
+        gap: 0.85rem !important;
       }
 
-      .spotlight-content-row {
+      .econ-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.85rem !important;
+      }
+
+      .recently-viewed-grid {
+        display: flex !important;
+        overflow-x: auto !important;
+        gap: 0.75rem !important;
+        padding-bottom: 0.5rem !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      .recent-card {
+        flex: 0 0 240px !important;
+        scroll-snap-align: start !important;
+      }
+
+      .comparative-perf-card {
+        padding: 1rem !important;
+        border-radius: var(--radius-lg) !important;
+      }
+
+      .comparative-perf-header {
         flex-direction: column !important;
         align-items: flex-start !important;
+        gap: 0.75rem !important;
+      }
+
+      .perf-mobile-toggle {
+        display: flex !important;
+      }
+
+      .perf-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+      }
+
+      .perf-kpi-card {
+        padding: 0.65rem !important;
+      }
+
+      .perf-kpi-val {
+        font-size: 1.05rem !important;
+      }
+
+      .analytics-card {
+        padding: 1rem !important;
+        border-radius: var(--radius-lg) !important;
+      }
+
+      .health-section {
+        padding: 1rem !important;
+        border-radius: var(--radius-lg) !important;
+      }
+
+      .health-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.65rem !important;
+      }
+
+      .health-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+      }
+
+      .company-profile-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+      }
+
+      .company-metric-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
       }
     }
 
@@ -464,18 +718,6 @@ SHARED_CSS = """
       border-color: #cbd5e1;
       transform: translateY(-1px);
       box-shadow: var(--shadow-card);
-    }
-
-    .top-header-btn.btn-ai {
-      color: #4338ca;
-      background: #eef2ff;
-      border-color: #c7d2fe;
-    }
-
-    .top-header-btn.btn-ai:hover {
-      background: #e0e7ff;
-      border-color: #a5b4fc;
-      color: #3730a3;
     }
 
     /* Sidebar Brand (Logo and Title Only - No Tagline) */
@@ -2667,141 +2909,6 @@ SHARED_CSS = """
       color: var(--text-secondary);
     }
 
-    /* Ask AI Assistant Interactive Modal */
-    .ai-modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(15, 23, 42, 0.5);
-      backdrop-filter: blur(6px);
-      z-index: 2000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    .ai-modal-backdrop.active {
-      display: flex;
-      animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .ai-modal-card {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-modal);
-      width: 100%;
-      max-width: 620px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .ai-modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    .ai-modal-icon-badge {
-      width: 34px;
-      height: 34px;
-      border-radius: var(--radius-sm);
-      background: #eef2ff;
-      color: #4338ca;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .ai-modal-close {
-      background: transparent;
-      border: none;
-      font-size: 1.4rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0.25rem;
-      border-radius: var(--radius-xs);
-      line-height: 1;
-    }
-
-    .ai-modal-close:hover {
-      color: var(--text-primary);
-      background: var(--bg-surface-elevated);
-    }
-
-    .ai-modal-body {
-      padding: 1.5rem;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .ai-input-wrap {
-      display: flex;
-      gap: 0.5rem;
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.4rem;
-    }
-
-    .ai-input-wrap input {
-      flex: 1;
-      min-width: 0;
-      border: none;
-      outline: none;
-      background: transparent;
-      padding: 0.4rem 0.75rem;
-      font-size: 0.92rem;
-      font-family: inherit;
-      color: var(--text-primary);
-    }
-
-    .ai-chips-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .ai-chip {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-full);
-      padding: 0.25rem 0.75rem;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      white-space: nowrap;
-    }
-
-    .ai-chip:hover {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      color: #1d4ed8;
-      transform: translateY(-1px);
-    }
-
-    .ai-results-container {
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      background: var(--bg-base);
-      max-height: 280px;
-      overflow-y: auto;
-      padding: 0.85rem;
-    }
-
     /* Comparative Stock Performance Module */
     .comparative-perf-card {
       background: var(--bg-surface);
@@ -2899,17 +3006,19 @@ NAVIGATION_LAYOUT_HTML = """
 <!-- Mobile Sticky Top Header -->
 <div class="mobile-top-header">
   <a href="index.html" class="mobile-header-left">
-    <div class="logo-badge" style="width:30px; height:30px;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <div class="logo-badge" style="width:32px; height:32px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
       </svg>
     </div>
-    <span style="font-size:1rem; font-weight:800; color:var(--text-primary);">StockPulse</span>
+    <div style="display:flex; align-items:center; gap:0.45rem;">
+      <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.01em;">StockPulse</span>
+      <span class="pulse-dot" style="background:#10b981; width:7px; height:7px;" title="Live Disclosures Active"></span>
+    </div>
   </a>
   <div class="mobile-header-right">
-    <button class="top-header-btn btn-ai" style="padding:0.35rem 0.75rem; font-size:0.75rem;" onclick="openAiModal()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-      Ask AI
+    <button class="mobile-action-btn" onclick="focusMobileSearch()" aria-label="Search">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
     </button>
     <button class="mobile-hamburger-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation drawer">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -2970,7 +3079,7 @@ NAVIGATION_LAYOUT_HTML = """
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
     </a>
-    <a href="index.html#analyticsSection" class="nav-link" onclick="closeMobileNav()">
+    <a href="index.html#analyticsSection" class="nav-link {% if active_page == 'health' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
         <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span class="nav-text">Analytics &amp; Health</span>
@@ -2992,15 +3101,11 @@ NAVIGATION_LAYOUT_HTML = """
   </div>
 </aside>
 
-<!-- Mobile Bottom Navigation Bar -->
+<!-- Dedicated Mobile Phone Bottom Navigation Bar (5 Tabs: Home / Feed / Calendar / Economic / Health) -->
 <div class="mobile-bottom-nav">
   <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Home</span>
-  </a>
-  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-    <span>Deep Dive</span>
   </a>
   <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
@@ -3012,12 +3117,16 @@ NAVIGATION_LAYOUT_HTML = """
   </a>
   <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-    <span>Macro</span>
+    <span>Economic</span>
+  </a>
+  <a href="index.html#analyticsSection" class="mobile-tab-link {% if active_page == 'health' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span>Health</span>
   </a>
 </div>
 """
 
-# JavaScript for Mobile Drawer
+# JavaScript for Mobile Drawer & Header Actions
 SHARED_MOBILE_JS = """
 function toggleMobileNav() {
   const sidebar = document.getElementById('appSidebar');
@@ -3040,6 +3149,19 @@ function closeMobileNav() {
   if (sidebar) sidebar.classList.remove('mobile-open');
   if (backdrop) backdrop.classList.remove('active');
   document.body.style.overflow = '';
+}
+
+function focusMobileSearch() {
+  const input = document.getElementById('globalSearchInput');
+  if (input) {
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      input.focus();
+      if (typeof openSearchDropdown === 'function') openSearchDropdown();
+    }, 200);
+  } else {
+    window.location.href = 'index.html#globalSearchBox';
+  }
 }
 """
 
@@ -3068,10 +3190,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <!-- Top Right Bar for Desktop -->
       <div class="top-header-bar">
-        <button class="top-header-btn btn-ai" onclick="openAiModal()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-          Ask AI
-        </button>
         <a href="#analyticsSection" class="top-header-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           Analytics
@@ -3093,6 +3211,16 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </a>
         <h1 class="hero-title">What's on the agenda?</h1>
         <p class="hero-subtext">Review overnight SEC filings, corporate announcements, forthcomming milestones, and FRED macroeconomic sensitivities.</p>
+      </div>
+
+      <!-- Watchlist Horizontal Ticker Ribbon (Robinhood / Apple Stocks Mobile Style) -->
+      <div class="watchlist-ticker-strip">
+        {% for co in watchlist_companies %}
+        <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} ({{ co.symbol }}) deep dive">
+          <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
+          <span>{{ co.symbol }}</span>
+        </a>
+        {% endfor %}
       </div>
 
       <!-- Global Search & Command Bar (⌘K) with Tab Suggestions & Live Autocomplete -->
@@ -3329,7 +3457,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <div class="comparative-perf-card" style="margin-top:1.5rem;">
         <div class="comparative-perf-header">
           <div>
-            <div style="display:flex; align-items:center; gap:0.6rem;">
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
               <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
               <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
             </div>
@@ -3339,9 +3467,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           </div>
 
           <!-- Watchlist Company Selector Dropdown -->
-          <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div style="display:flex; align-items:center; gap:0.6rem; width:100%; max-width:280px;">
             <label for="perfCompanySelect" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Stock:</label>
-            <select id="perfCompanySelect" class="comparative-select" onchange="renderComparativePerformanceChart(this.value)">
+            <select id="perfCompanySelect" class="comparative-select" style="flex:1;" onchange="renderComparativePerformanceChart(this.value)">
               {% for co in watchlist_companies %}
               <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
               {% endfor %}
@@ -3349,18 +3477,24 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Mobile Segmented View Toggle (Chart vs Table) -->
+        <div class="perf-mobile-toggle">
+          <button class="perf-toggle-btn active" id="perfToggleChartBtn" onclick="switchPerfView('chart')">📈 Chart View</button>
+          <button class="perf-toggle-btn" id="perfToggleTableBtn" onclick="switchPerfView('table')">📊 Comparison Table</button>
+        </div>
+
         <!-- Real-time Alpha & Return Metrics Ribbon -->
         <div class="perf-kpi-grid" id="perfKpiGrid">
           <!-- Dynamically populated via JS based on selected company -->
         </div>
 
-        <!-- Interactive Chart Canvas -->
-        <div style="position:relative; height:320px; width:100%;">
+        <!-- Interactive Chart Canvas Container -->
+        <div id="perfChartContainer" style="position:relative; height:280px; width:100%;">
           <canvas id="comparativeChartCanvas"></canvas>
         </div>
 
-        <!-- Competitor Breakdown Table -->
-        <div class="perf-table-wrap">
+        <!-- Competitor Breakdown Table Container -->
+        <div class="perf-table-wrap" id="perfTableContainer">
           <table class="perf-table" id="perfBreakdownTable">
             <!-- Dynamically populated table -->
           </table>
@@ -3411,45 +3545,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </div>
       </section>
     </main>
-  </div>
-
-  <!-- Ask AI Assistant Interactive Modal -->
-  <div class="ai-modal-backdrop" id="aiModal" onclick="closeAiModal(event)">
-    <div class="ai-modal-card" onclick="event.stopPropagation()">
-      <div class="ai-modal-header">
-        <div style="display:flex; align-items:center; gap:0.65rem;">
-          <div class="ai-modal-icon-badge">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-          </div>
-          <div>
-            <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">StockPulse AI Assistant</h3>
-            <p style="font-size:0.75rem; color:var(--text-muted);">Query corporate disclosures, executive takeaways &amp; macroeconomic sensitivities</p>
-          </div>
-        </div>
-        <button class="ai-modal-close" onclick="closeAiModal()">&times;</button>
-      </div>
-
-      <div class="ai-modal-body">
-        <div class="ai-input-wrap">
-          <input type="text" id="aiQueryInput" placeholder="Ask e.g. 'What did NVIDIA disclose?', 'Interest rate sensitivity'..." onkeydown="handleAiKeydown(event)">
-          <button class="btn-primary" style="padding:0.45rem 0.9rem;" onclick="runAiQuery()">Ask</button>
-        </div>
-
-        <div class="ai-chips-wrap">
-          <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Quick Queries:</span>
-          <button class="ai-chip" onclick="setAiQuery('NVIDIA latest disclosures')">NVIDIA Disclosures</button>
-          <button class="ai-chip" onclick="setAiQuery('Interest rates sensitivity')">Interest Rate Sensitivities</button>
-          <button class="ai-chip" onclick="setAiQuery('Upcoming earnings')">Upcoming Earnings</button>
-          <button class="ai-chip" onclick="setAiQuery('Insider executive trades')">Insider Trades</button>
-        </div>
-
-        <div class="ai-results-container" id="aiResults">
-          <div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.85rem;">
-            Ask any question about current filings, company events, or macroeconomic sensitivities.
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -3715,121 +3810,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       liveResults.innerHTML = html;
     }
 
-    // Modal AI Controls
-    function openAiModal() {
-      document.getElementById('aiModal').classList.add('active');
-      setTimeout(() => document.getElementById('aiQueryInput')?.focus(), 50);
-    }
-
-    function closeAiModal(e) {
-      if (!e || e.target.id === 'aiModal' || e.target.classList.contains('ai-modal-close')) {
-        document.getElementById('aiModal').classList.remove('active');
-      }
-    }
-
-    function setAiQuery(q) {
-      const input = document.getElementById('aiQueryInput');
-      if (input) {
-        input.value = q;
-        runAiQuery();
-      }
-    }
-
-    function handleAiKeydown(e) {
-      if (e.key === 'Enter') {
-        runAiQuery();
-      }
-    }
-
-    function runAiQuery() {
-      const input = document.getElementById('aiQueryInput');
-      const container = document.getElementById('aiResults');
-      const q = (input ? input.value : '').toLowerCase().trim();
-
-      if (!q || !container) return;
-
-      container.innerHTML = '<div style="text-align:center; padding:1.25rem; color:var(--accent-blue); font-weight:600;"><span class="pulse-dot" style="background:var(--accent-blue); margin-right:0.4rem;"></span> Synthesizing answer across SEC EDGAR &amp; FRED feeds...</div>';
-
-      setTimeout(() => {
-        let matchedItems = allItems.filter(it => 
-          (it.clean_headline || '').toLowerCase().includes(q) ||
-          (it.ticker || '').toLowerCase().includes(q) ||
-          (it.llm_summary || '').toLowerCase().includes(q) ||
-          (it.category || '').toLowerCase().includes(q)
-        );
-
-        let matchedEcon = econIndicators.filter(ind =>
-          (ind.name || '').toLowerCase().includes(q) ||
-          (ind.relevant_tickers || '').toLowerCase().includes(q) ||
-          (ind.category || '').toLowerCase().includes(q)
-        );
-
-        let matchedCal = calendarEvents.filter(ev =>
-          (ev.headline || '').toLowerCase().includes(q) ||
-          (ev.ticker || '').toLowerCase().includes(q) ||
-          (ev.event_type || '').toLowerCase().includes(q)
-        );
-
-        if (matchedItems.length === 0 && matchedEcon.length === 0 && matchedCal.length === 0) {
-          container.innerHTML = `<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.85rem;">No direct disclosures found for "<strong>${q}</strong>". Try searching for a specific company (e.g. <em>NVDA</em>, <em>AAPL</em>) or category.</div>`;
-          return;
-        }
-
-        let html = '<div style="display:flex; flex-direction:column; gap:0.65rem;">';
-        
-        if (matchedEcon.length > 0) {
-          html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Macroeconomic Indicators:</div>';
-          matchedEcon.forEach(ind => {
-            html += `
-              <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:8px; padding:0.65rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-weight:700; font-size:0.85rem;">${ind.name}</span>
-                  <span style="font-family:\'JetBrains Mono\'; font-weight:800; color:var(--accent-blue);">${ind.formatted_value}</span>
-                </div>
-                <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.25rem;">${ind.context_note || ind.category}</div>
-              </div>`;
-          });
-        }
-
-        if (matchedCal.length > 0) {
-          html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Upcoming Events:</div>';
-          matchedCal.slice(0, 2).forEach(ev => {
-            html += `
-              <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:8px; padding:0.65rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-weight:700; font-size:0.85rem;"><span class="ticker-badge ticker-${ev.ticker}">${ev.ticker}</span> ${ev.headline}</span>
-                  <span style="font-size:0.75rem; color:var(--text-muted);">${ev.display_date}</span>
-                </div>
-              </div>`;
-          });
-        }
-
-        if (matchedItems.length > 0) {
-          html += '<div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-top:0.35rem;">Key Disclosures:</div>';
-          matchedItems.slice(0, 3).forEach(top => {
-            html += `
-              <div style="background:#ffffff; border:1px solid var(--border-card); border-radius:8px; padding:0.75rem;">
-                <div style="font-weight:700; color:#1d4ed8; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
-                  <span class="ticker-badge ticker-${top.ticker}">${top.ticker}</span>
-                  ${top.clean_headline}
-                </div>
-                <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.4;">
-                  <strong>Takeaway:</strong> ${top.llm_summary || top.summary}
-                </div>
-                <div style="font-size:0.72rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:0.35rem;">
-                  <span>Score: ★ ${top.score} / 10.0 &bull; ${top.published_date}</span>
-                  <a href="${top.url}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.72rem;">Source ↗</a>
-                </div>
-              </div>
-            `;
-          });
-        }
-
-        html += '</div>';
-        container.innerHTML = html;
-      }, 300);
-    }
-
     // Close search dropdown on click outside
     document.addEventListener('click', (e) => {
       const searchWrap = document.querySelector('.search-wrapper');
@@ -3850,7 +3830,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
       if (e.key === 'Escape') {
         closeSearchDropdown();
-        closeAiModal();
       }
     });
 
@@ -3862,6 +3841,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     function initCharts() {
       if (typeof Chart === 'undefined') return;
 
+      const isPhone = window.innerWidth <= 480;
       const isNarrow = window.innerWidth <= 768;
 
       // 1. Per-Ticker Timeline Line Chart with Interactive Legend
@@ -3882,7 +3862,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           return sumB - sumA;
         });
 
-        const displayTickers = sortedTickers.slice(0, 5);
+        // On mobile phones, focus on top 3-4 series to avoid cramped line clutter
+        const displayTickers = sortedTickers.slice(0, isPhone ? 3 : 5);
 
         const datasets = displayTickers.map((ticker, idx) => {
           const theme = linePalette[idx % linePalette.length];
@@ -3895,14 +3876,14 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             data: rawChartData.timeline_series[ticker] || [],
             borderColor: theme.stroke,
             backgroundColor: grad,
-            borderWidth: isNarrow ? 2.0 : 2.5,
+            borderWidth: isPhone ? 1.8 : (isNarrow ? 2.0 : 2.5),
             fill: true,
             tension: 0.38,
             pointBackgroundColor: '#ffffff',
             pointBorderColor: theme.stroke,
             pointBorderWidth: 1.5,
-            pointRadius: isNarrow ? 2.5 : 3.5,
-            pointHoverRadius: 5.5,
+            pointRadius: isPhone ? 2 : (isNarrow ? 2.5 : 3.5),
+            pointHoverRadius: 5,
             pointHoverBackgroundColor: theme.stroke,
             pointHoverBorderColor: '#ffffff',
             pointHoverBorderWidth: 2,
@@ -3926,15 +3907,15 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               legend: {
                 display: true,
                 position: 'top',
-                align: 'end',
+                align: isPhone ? 'center' : 'end',
                 labels: {
                   boxWidth: 8,
                   boxHeight: 8,
                   usePointStyle: true,
                   pointStyle: 'circle',
-                  font: { family: 'Inter', size: isNarrow ? 10 : 11, weight: '600' },
+                  font: { family: 'Inter', size: isPhone ? 10 : (isNarrow ? 10 : 11), weight: '600' },
                   color: '#475569',
-                  padding: isNarrow ? 8 : 14
+                  padding: isPhone ? 6 : (isNarrow ? 8 : 14)
                 }
               },
               tooltip: {
@@ -3955,9 +3936,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               x: {
                 grid: { display: false, drawBorder: false },
                 ticks: { 
-                  font: { family: 'JetBrains Mono', size: isNarrow ? 9 : 10 }, 
+                  font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
                   color: '#64748b',
-                  maxTicksLimit: isNarrow ? 5 : 8,
+                  maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
                   autoSkip: true,
                   maxRotation: 0
                 }
@@ -3965,7 +3946,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               y: {
                 beginAtZero: true,
                 grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
-                ticks: { precision: 0, font: { family: 'JetBrains Mono', size: isNarrow ? 9 : 10 }, color: '#64748b', stepSize: 1 }
+                ticks: { 
+                  precision: 0, 
+                  font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  color: '#64748b', 
+                  maxTicksLimit: isPhone ? 4 : 6,
+                  stepSize: 1 
+                }
               }
             }
           }
@@ -3979,18 +3966,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       if (ctxCat && catLabels.length > 0) {
         const sliceColors = [
-          '#2563eb', // Blue
-          '#10b981', // Emerald
-          '#7c3aed', // Purple
-          '#f59e0b', // Amber
-          '#0284c7', // Sky Cyan
-          '#e11d48', // Rose
-          '#8b5cf6', // Violet
-          '#ec4899', // Pink
-          '#059669', // Teal
-          '#d97706', // Gold / Bronze
-          '#64748b', // Slate
-          '#0ea5e9'  // Light Blue
+          '#2563eb', '#10b981', '#7c3aed', '#f59e0b', '#0284c7', 
+          '#e11d48', '#8b5cf6', '#ec4899', '#059669', '#d97706', '#64748b', '#0ea5e9'
         ];
 
         const totalCount = catCounts.reduce((a, b) => a + b, 0) || 1;
@@ -3998,7 +3975,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         const donutCalloutPlugin = {
           id: 'donutCallouts',
           afterDraw(chart) {
-            if (chart.width < 280) return;
+            if (chart.width < 250) return;
             const { ctx } = chart;
             const meta = chart.getDatasetMeta(0);
             if (!meta || !meta.data) return;
@@ -4022,7 +3999,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               const ex = x + cos * r2;
               const ey = y + sin * r2;
 
-              // Ensure horizontal line and label stay safely inside canvas edges
               const horizLen = 10;
               let endHorizontalX = ex + (isRight ? horizLen : -horizLen);
               if (isRight) {
@@ -4066,7 +4042,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-              padding: { top: 15, bottom: 15, left: 45, right: 45 }
+              padding: { top: 15, bottom: 15, left: isPhone ? 15 : 45, right: isPhone ? 15 : 45 }
             },
             cutout: '64%',
             plugins: {
@@ -4122,10 +4098,33 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     const perfData = {{ performance_data_json|safe }};
     let comparativeChartInstance = null;
 
+    function switchPerfView(view) {
+      const chartContainer = document.getElementById('perfChartContainer');
+      const tableContainer = document.getElementById('perfTableContainer');
+      const chartBtn = document.getElementById('perfToggleChartBtn');
+      const tableBtn = document.getElementById('perfToggleTableBtn');
+
+      if (view === 'table') {
+        if (chartContainer) chartContainer.style.display = 'none';
+        if (tableContainer) tableContainer.style.display = 'block';
+        chartBtn?.classList.remove('active');
+        tableBtn?.classList.add('active');
+      } else {
+        if (chartContainer) chartContainer.style.display = 'block';
+        if (tableContainer) tableContainer.style.display = 'none';
+        tableBtn?.classList.remove('active');
+        chartBtn?.classList.add('active');
+        if (comparativeChartInstance) comparativeChartInstance.resize();
+      }
+    }
+
     function renderComparativePerformanceChart(symbol) {
       if (!perfData || !perfData.companies) return;
       const coData = perfData.companies[symbol];
       if (!coData) return;
+
+      const isPhone = window.innerWidth <= 480;
+      const isNarrow = window.innerWidth <= 768;
 
       const kpiGrid = document.getElementById('perfKpiGrid');
       const table = document.getElementById('perfBreakdownTable');
@@ -4156,7 +4155,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">${symbol} 3M Return</div>
             <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)} (Base: $${target.base_price.toFixed(2)})</div>
+            <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
@@ -4183,16 +4182,16 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <tr>
               <th>Ticker / Entity</th>
               <th>Role</th>
-              <th>Base Price (3M Ago)</th>
-              <th>Latest Price</th>
-              <th>3-Month % Change</th>
-              <th>Alpha vs ${symbol}</th>
+              <th>Base (3M)</th>
+              <th>Latest</th>
+              <th>3M % Change</th>
+              <th>Alpha</th>
             </tr>
           </thead>
           <tbody>
             <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
               <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
-              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target Stock</span></td>
+              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target</span></td>
               <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
@@ -4205,7 +4204,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           rowsHtml += `
             <tr>
               <td><a href="company.html?ticker=${c.symbol}" class="ticker-badge" style="font-size:0.75rem;">${c.symbol}</a></td>
-              <td><span class="form-type-pill">Competitor #${idx+1}</span></td>
+              <td><span class="form-type-pill">Peer #${idx+1}</span></td>
               <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
@@ -4246,7 +4245,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           data: target.series.map(pt => pt.pct_change),
           borderColor: targetColor,
           backgroundColor: 'rgba(37, 99, 235, 0.08)',
-          borderWidth: 3,
+          borderWidth: isPhone ? 2.2 : 3,
           fill: true,
           tension: 0.25,
           pointRadius: 0,
@@ -4257,10 +4256,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       comps.forEach((c, idx) => {
         const color = compColors[idx % compColors.length];
         datasets.push({
-          label: `${c.symbol} (Competitor)`,
+          label: `${c.symbol} (Peer)`,
           data: c.series.map(pt => pt.pct_change),
           borderColor: color,
-          borderWidth: 2,
+          borderWidth: isPhone ? 1.5 : 2,
           fill: false,
           tension: 0.25,
           pointRadius: 0,
@@ -4270,11 +4269,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       if (spy && spy.series) {
         datasets.push({
-          label: 'S&P 500 (SPY Benchmark)',
+          label: 'S&P 500 (SPY)',
           data: spy.series.map(pt => pt.pct_change),
           borderColor: spyColor,
-          borderWidth: 2,
-          borderDash: [6, 6],
+          borderWidth: isPhone ? 1.5 : 2,
+          borderDash: [5, 5],
           fill: false,
           tension: 0.25,
           pointRadius: 0,
@@ -4293,11 +4292,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             legend: {
               display: true,
               position: 'top',
+              align: isPhone ? 'center' : 'end',
               labels: {
-                boxWidth: 14,
+                boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Inter', size: 11, weight: '600' },
+                font: { family: 'Inter', size: isPhone ? 10 : 11, weight: '600' },
                 color: '#475569',
+                padding: isPhone ? 6 : 10
               }
             },
             tooltip: {
@@ -4317,17 +4318,19 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             x: {
               grid: { display: false },
               ticks: {
-                maxTicksLimit: 8,
-                font: { family: 'JetBrains Mono', size: 10 },
+                maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
+                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
                 color: '#94a3b8',
+                maxRotation: 0
               }
             },
             y: {
               grid: { color: 'rgba(226, 232, 240, 0.8)' },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'JetBrains Mono', size: 10 },
+                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
                 color: '#94a3b8',
+                maxTicksLimit: isPhone ? 4 : 6
               }
             }
           }
@@ -5619,6 +5622,9 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       const coData = perfData.companies[symbol];
       if (!coData) return;
 
+      const isPhone = window.innerWidth <= 480;
+      const isNarrow = window.innerWidth <= 768;
+
       const kpiGrid = document.getElementById('compPerfKpi-' + symbol);
       const table = document.getElementById('compPerfTable-' + symbol);
       const canvas = document.getElementById('compPerfCanvas-' + symbol);
@@ -5648,7 +5654,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">${symbol} 3M Return</div>
             <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)} (Base: $${target.base_price.toFixed(2)})</div>
+            <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
@@ -5675,16 +5681,16 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             <tr>
               <th>Ticker / Entity</th>
               <th>Role</th>
-              <th>Base Price (3M Ago)</th>
-              <th>Latest Price</th>
-              <th>3-Month % Change</th>
-              <th>Alpha vs ${symbol}</th>
+              <th>Base (3M)</th>
+              <th>Latest</th>
+              <th>3M % Change</th>
+              <th>Alpha</th>
             </tr>
           </thead>
           <tbody>
             <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
               <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
-              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target Stock</span></td>
+              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target</span></td>
               <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
@@ -5697,7 +5703,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           rowsHtml += `
             <tr>
               <td><a href="company.html?ticker=${c.symbol}" onclick="event.preventDefault(); switchCompany('${c.symbol}')" class="ticker-badge" style="font-size:0.75rem; cursor:pointer;">${c.symbol}</a></td>
-              <td><span class="form-type-pill">Competitor #${idx+1}</span></td>
+              <td><span class="form-type-pill">Peer #${idx+1}</span></td>
               <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
               <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
@@ -5738,7 +5744,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           data: target.series.map(pt => pt.pct_change),
           borderColor: targetColor,
           backgroundColor: 'rgba(37, 99, 235, 0.08)',
-          borderWidth: 3,
+          borderWidth: isPhone ? 2.2 : 3,
           fill: true,
           tension: 0.25,
           pointRadius: 0,
@@ -5749,10 +5755,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       comps.forEach((c, idx) => {
         const color = compColors[idx % compColors.length];
         datasets.push({
-          label: `${c.symbol} (Competitor)`,
+          label: `${c.symbol} (Peer)`,
           data: c.series.map(pt => pt.pct_change),
           borderColor: color,
-          borderWidth: 2,
+          borderWidth: isPhone ? 1.5 : 2,
           fill: false,
           tension: 0.25,
           pointRadius: 0,
@@ -5762,11 +5768,11 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
       if (spy && spy.series) {
         datasets.push({
-          label: 'S&P 500 (SPY Benchmark)',
+          label: 'S&P 500 (SPY)',
           data: spy.series.map(pt => pt.pct_change),
           borderColor: spyColor,
-          borderWidth: 2,
-          borderDash: [6, 6],
+          borderWidth: isPhone ? 1.5 : 2,
+          borderDash: [5, 5],
           fill: false,
           tension: 0.25,
           pointRadius: 0,
@@ -5785,11 +5791,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             legend: {
               display: true,
               position: 'top',
+              align: isPhone ? 'center' : 'end',
               labels: {
-                boxWidth: 14,
+                boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Inter', size: 11, weight: '600' },
+                font: { family: 'Inter', size: isPhone ? 10 : 11, weight: '600' },
                 color: '#475569',
+                padding: isPhone ? 6 : 10
               }
             },
             tooltip: {
@@ -5809,17 +5817,19 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             x: {
               grid: { display: false },
               ticks: {
-                maxTicksLimit: 8,
-                font: { family: 'JetBrains Mono', size: 10 },
+                maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
+                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
                 color: '#94a3b8',
+                maxRotation: 0
               }
             },
             y: {
               grid: { color: 'rgba(226, 232, 240, 0.8)' },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'JetBrains Mono', size: 10 },
+                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
                 color: '#94a3b8',
+                maxTicksLimit: isPhone ? 4 : 6
               }
             }
           }

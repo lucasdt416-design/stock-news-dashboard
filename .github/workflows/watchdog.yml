@@ -1,0 +1,49 @@
+name: Pipeline Watchdog & Self-Healing Guard
+
+on:
+  schedule:
+    # Runs every 4 hours at minute 25 (offset from top of the hour to avoid GitHub scheduler queue congestion)
+    - cron: '25 */4 * * *'
+  workflow_dispatch:
+    inputs:
+      max_hours:
+        description: 'Threshold in hours since last successful run before triggering catch-up'
+        required: false
+        default: '20'
+      dry_run:
+        description: 'Evaluate status without triggering workflow dispatch'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  watchdog:
+    name: "Evaluate Pipeline Health & Self-Heal"
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: write   # Required to query workflow runs and dispatch catch-up runs
+      contents: read   # Required to check out scripts
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🛡️ Run Watchdog Check & Auto-Recovery
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          WATCHDOG_MAX_HOURS: ${{ inputs.max_hours || '20' }}
+          DRY_RUN_FLAG: ${{ inputs.dry_run == true && '--dry-run' || '' }}
+        run: |
+          python scripts/watchdog.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow "daily-run.yml" \
+            --max-hours "$WATCHDOG_MAX_HOURS" \
+            --ref "main" \
+            $DRY_RUN_FLAG
