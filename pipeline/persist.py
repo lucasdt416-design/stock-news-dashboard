@@ -3,6 +3,7 @@
 import json
 import logging
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from pipeline.db import get_db_connection, init_db
 
@@ -449,3 +450,117 @@ def get_economic_indicators(
         logger.warning("Could not fetch economic indicators: %s", e)
         conn.close()
         return []
+
+
+def prune_news_items(
+    max_age_days: int = 90,
+    max_total_items: int = 1000,
+    db_path: Optional[str] = None,
+    reference_date: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """Archive / prune news items older than ~90 days and enforce a hard safety cap of 1,000 items.
+
+    This implements build-plan.md's recommendation to keep database size optimal
+    and performant across CI/CD caching runs. The `pipeline_runs` health table is
+    intentionally untouched and preserved indefinitely.
+
+    Args:
+        max_age_days: Delete items with published_date older than this number of days (default 90).
+        max_total_items: Hard safety cap on total news items retained (default 1,000).
+        db_path: Optional path to SQLite database.
+        reference_date: Optional reference datetime for cutoff calculation (defaults to current UTC).
+
+    Returns:
+        Dictionary with initial_count, cutoff_date, deleted_by_age, deleted_by_cap, total_deleted, remaining_count.
+    """
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+
+    ref_dt = reference_date or datetime.now(timezone.utc)
+    cutoff_str = (ref_dt - timedelta(days=max_age_days)).strftime("%Y-%m-%d")
+
+    initial_count = 0
+    deleted_by_age = 0
+    deleted_by_cap = 0
+    deleted_filings = 0
+
+    with conn:
+        # 1. Get starting item count
+        cursor = conn.execute("SELECT count(*) FROM news_items")
+        initial_count = cursor.fetchone()[0]
+
+        # 2. Step A: Prune items older than 90 days
+        del_cursor = conn.execute(
+            """
+            DELETE FROM news_items
+            WHERE (published_date IS NOT NULL AND published_date != '' AND published_date < ?)
+               OR ((published_date IS NULL OR published_date = '') AND created_at < ?)
+            """,
+            (cutoff_str, cutoff_str),
+        )
+        deleted_by_age = del_cursor.rowcount
+
+        # Also prune legacy filings table if present
+        try:
+            filings_check = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='filings'"
+            ).fetchone()
+            if filings_check:
+                f_cursor = conn.execute(
+                    """
+                    DELETE FROM filings
+                    WHERE (filing_date IS NOT NULL AND filing_date != '' AND filing_date < ?)
+                       OR ((filing_date IS NULL OR filing_date = '') AND created_at < ?)
+                    """,
+                    (cutoff_str, cutoff_str),
+                )
+                deleted_filings = f_cursor.rowcount
+        except Exception as e:
+            logger.debug("Legacy filings table cleanup skipped: %s", e)
+
+        # 3. Step B: Enforce hard safety cap of max_total_items (e.g. 1000)
+        cursor = conn.execute("SELECT count(*) FROM news_items")
+        count_after_age = cursor.fetchone()[0]
+
+        if count_after_age > max_total_items:
+            cap_cursor = conn.execute(
+                """
+                DELETE FROM news_items
+                WHERE id NOT IN (
+                    SELECT id FROM news_items
+                    ORDER BY published_date DESC, created_at DESC, id DESC
+                    LIMIT ?
+                )
+                """,
+                (max_total_items,),
+            )
+            deleted_by_cap = cap_cursor.rowcount
+
+        # 4. Final remaining count
+        cursor = conn.execute("SELECT count(*) FROM news_items")
+        final_count = cursor.fetchone()[0]
+
+    conn.close()
+
+    total_deleted = deleted_by_age + deleted_by_cap
+    logger.info(
+        "Database pruning complete: %d items removed (%d by >%dd age cutoff [%s], %d by %d-item cap). %d remaining in news_items.",
+        total_deleted,
+        deleted_by_age,
+        max_age_days,
+        cutoff_str,
+        deleted_by_cap,
+        max_total_items,
+        final_count,
+    )
+
+    return {
+        "initial_count": initial_count,
+        "cutoff_date": cutoff_str,
+        "deleted_by_age": deleted_by_age,
+        "deleted_by_cap": deleted_by_cap,
+        "deleted_filings": deleted_filings,
+        "total_deleted": total_deleted,
+        "remaining_count": final_count,
+    }
+

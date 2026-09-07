@@ -51,7 +51,12 @@ from pipeline.health import (
     STATUS_WARNING,
 )
 from pipeline.normalize import normalize_items
-from pipeline.persist import get_news_stats, rescore_database_items, save_news_items
+from pipeline.persist import (
+    get_news_stats,
+    prune_news_items,
+    rescore_database_items,
+    save_news_items,
+)
 from pipeline.render import render_dashboard
 from pipeline.score import score_items
 from pipeline.summarize import summarize_items
@@ -73,6 +78,23 @@ def main() -> None:
         default=os.environ.get("FAIL_ON_CRITICAL", "false").lower() in ("true", "1", "yes"),
         help="Exit with non-zero code if health check returns CRITICAL status (for CI/GitHub Actions)",
     )
+    parser.add_argument(
+        "--prune-only",
+        action="store_true",
+        help="Only run database pruning and retention maintenance, then exit",
+    )
+    parser.add_argument(
+        "--retention-days",
+        type=int,
+        default=90,
+        help="Maximum age in days for retained news items (default: 90)",
+    )
+    parser.add_argument(
+        "--max-items",
+        type=int,
+        default=1000,
+        help="Hard safety cap for total news items retained (default: 1000)",
+    )
     args = parser.parse_args()
 
     print("\n" + "=" * 70)
@@ -93,6 +115,28 @@ def main() -> None:
     # 2. Initialize Database Schema
     logger.info("Initializing database schema at %s", db_file)
     init_db(str(db_file))
+
+    # If --prune-only flag is set, perform database pruning and exit
+    if args.prune_only:
+        logger.info("--- Standalone Database Pruning & Retention ---")
+        prune_stats = prune_news_items(
+            max_age_days=args.retention_days,
+            max_total_items=args.max_items,
+            db_path=str(db_file),
+        )
+        print("\n" + "-" * 70)
+        print("🧹 Database Pruning & Retention Summary")
+        print("-" * 70)
+        print(f"• Initial Item Count:       {prune_stats['initial_count']}")
+        print(f"• Cutoff Date (~{args.retention_days} days):      {prune_stats['cutoff_date']}")
+        print(f"• Removed by Age (> {args.retention_days}d):   {prune_stats['deleted_by_age']}")
+        print(f"• Removed by Safety Cap:    {prune_stats['deleted_by_cap']} (cap: {args.max_items})")
+        if prune_stats.get("deleted_filings", 0) > 0:
+            print(f"• Removed Legacy Filings:   {prune_stats['deleted_filings']}")
+        print(f"• Total Items Removed:      {prune_stats['total_deleted']}")
+        print(f"• Remaining Active Items:   {prune_stats['remaining_count']}")
+        print("-" * 70 + "\n")
+        return
 
     # 3. Stage 1: Collectors (3 Distinct Sources)
     logger.info("--- Stage 1: Collectors (3 Distinct Sources) ---")
@@ -143,7 +187,25 @@ def main() -> None:
     rescored_total = rescore_database_items(db_path=str(db_file))
     logger.info("Persistence complete: %d records updated/inserted (%d processed, %d total records rescored)", new_count, total_processed, rescored_total)
 
-    # 10. Stage 8: Health Monitoring & Telemetry Safeguards
+    # 10. Stage 7b: Database Retention & Pruning (90-Day Policy + 1,000 Item Cap)
+    logger.info("--- Stage 7b: Database Retention & Pruning ---")
+    prune_stats = prune_news_items(
+        max_age_days=args.retention_days,
+        max_total_items=args.max_items,
+        db_path=str(db_file),
+    )
+    if prune_stats["total_deleted"] > 0:
+        logger.info(
+            "Pruned %d stale/excess items from database (%d older than %s, %d beyond %d-item cap). %d items remain.",
+            prune_stats["total_deleted"],
+            prune_stats["deleted_by_age"],
+            prune_stats["cutoff_date"],
+            prune_stats["deleted_by_cap"],
+            args.max_items,
+            prune_stats["remaining_count"],
+        )
+
+    # 11. Stage 8: Health Monitoring & Telemetry Safeguards
     logger.info("--- Stage 8: Health Monitoring Safeguards ---")
     health_report = record_pipeline_run_health(
         collector_counts={
@@ -191,8 +253,9 @@ def main() -> None:
     print("-" * 70)
     print(f"• System Health Status:       {health_report['status']} ({health_report['health_message']})")
     print(f"• Collector Yields:           SEC EDGAR: {health_report['edgar_count']} | Company IR: {health_report['company_ir_count']} | News Media: {health_report.get('news_media_count', 0)}")
-    print(f"• Total Raw Collected:        {health_report['total_raw']} (7-run avg: {health_report['moving_avg_raw']:.0f})")
     print(f"• Total Unique Items in DB:    {stats['total']}")
+    if prune_stats["total_deleted"] > 0:
+        print(f"• Pruned Stale Items:         {prune_stats['total_deleted']} removed ({prune_stats['deleted_by_age']} > {args.retention_days}d, {prune_stats['deleted_by_cap']} > {args.max_items} cap)")
     print(f"• High Impact Stories (≥ 7.0): {stats['high_priority_count']}")
     print(f"• Average Score:              {stats['avg_score']} / 10.0")
     print(f"• Breakdown by Source:        {stats['by_source']}")
