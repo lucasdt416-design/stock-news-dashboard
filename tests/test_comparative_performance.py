@@ -1,9 +1,13 @@
 """Unit tests for Comparative Stock Performance vs Competitors & S&P 500 Benchmark."""
 
 import os
+import sys
 from pathlib import Path
 import pytest
 import yaml
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from collectors.stock_prices import (
     BENCHMARK_TICKER,

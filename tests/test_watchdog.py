@@ -4,10 +4,14 @@ from datetime import datetime, timezone, timedelta
 import io
 import json
 import os
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 import urllib.error
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.watchdog import (
     parse_iso_datetime,

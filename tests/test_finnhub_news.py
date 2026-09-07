@@ -1,6 +1,10 @@
 import os
+import sys
 import unittest
 from unittest.mock import patch, MagicMock
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from collectors.finnhub_news import fetch_company_news_finnhub, collect_finnhub_news
 from pipeline.normalize import normalize_items
 from pipeline.classify import classify_item

@@ -1,5 +1,10 @@
 import os
+import sys
 import unittest
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from pipeline.render import render_dashboard
 
 
@@ -7,8 +12,8 @@ class TestCompanyViewAndRender(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Render static site to test directory or verify existing
-        render_dashboard()
+        # Fast render static site without slow external network dependencies
+        render_dashboard(performance_data={})
         cls.site_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "site")
 
     def test_company_html_exists(self):
