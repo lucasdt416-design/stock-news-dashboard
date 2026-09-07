@@ -124,12 +124,20 @@ def test_rendered_comparative_performance_markup(tmp_path):
 
     render_dashboard(output_path=str(out_index), performance_data=mock_perf)
 
-    # Check index.html
+    # Check analytics.html has full comparative performance suite
+    analytics_file = out_dir / "analytics.html"
+    assert analytics_file.exists()
+    with open(analytics_file, "r", encoding="utf-8") as f:
+        analytics_content = f.read()
+    assert "comparativeChartCanvas" in analytics_content
+    assert "perfCompanySelect" in analytics_content
+    assert "3-Month Comparative Performance vs. Peers &amp; S&amp;P 500" in analytics_content
+
+    # Check index.html is simplified (recently viewed present, heavy comparative chart removed)
     with open(out_index, "r", encoding="utf-8") as f:
         idx_content = f.read()
-    assert "comparativeChartCanvas" in idx_content
-    assert "perfCompanySelect" in idx_content
-    assert "3-Month Comparative Performance vs. Peers &amp; S&amp;P 500" in idx_content
+    assert "recentlyViewedSection" in idx_content
+    assert "comparativeChartCanvas" not in idx_content
 
     # Check company.html
     comp_file = out_dir / "company.html"

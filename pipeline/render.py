@@ -482,7 +482,41 @@ SHARED_CSS = """
       }
 
       .hero-container {
-        margin: 0.5rem auto 1.5rem auto !important;
+        margin: 0.5rem auto 1.25rem auto !important;
+      }
+
+      .hero-orbit-stage {
+        flex-direction: column !important;
+        min-height: auto !important;
+        perspective: none !important;
+        transform-style: flat !important;
+        margin: 0.5rem 0 1.5rem 0 !important;
+      }
+
+      .orbit-centerpiece {
+        max-width: 100% !important;
+      }
+
+      .orbit-track {
+        position: static !important;
+        inset: auto !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.65rem !important;
+        width: 100% !important;
+        max-width: 600px !important;
+        margin-top: 0.85rem !important;
+        transform: none !important;
+        z-index: 10 !important;
+      }
+
+      .orbit-card {
+        position: static !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        transform: none !important;
+        animation: none !important;
+        padding: 0.65rem 0.75rem !important;
       }
 
       .hero-title {
@@ -491,11 +525,11 @@ SHARED_CSS = """
 
       .hero-subtext {
         font-size: 0.88rem !important;
-        margin-bottom: 1.25rem !important;
+        margin-bottom: 1rem !important;
       }
 
       .search-wrapper {
-        margin-bottom: 1.75rem !important;
+        margin-bottom: 0 !important;
       }
 
       .hero-bento-deck {
@@ -520,13 +554,13 @@ SHARED_CSS = """
       }
 
       .hero-title {
-        font-size: 1.5rem !important;
+        font-size: 1.55rem !important;
         line-height: 1.25 !important;
       }
 
       .hero-subtext {
         font-size: 0.82rem !important;
-        margin-bottom: 1rem !important;
+        margin-bottom: 0.85rem !important;
       }
 
       .hero-badge {
@@ -538,8 +572,33 @@ SHARED_CSS = """
         line-height: 1.3 !important;
       }
 
+      .orbit-track {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.45rem !important;
+        margin-top: 0.75rem !important;
+      }
+
+      .orbit-card {
+        padding: 0.5rem 0.6rem !important;
+        border-radius: var(--radius-md) !important;
+      }
+
+      .orbit-card-name {
+        font-size: 0.72rem !important;
+      }
+
+      .orbit-card-score {
+        font-size: 0.62rem !important;
+        padding: 0.08rem 0.3rem !important;
+      }
+
+      .orbit-pill-catalyst {
+        font-size: 0.62rem !important;
+        max-width: 90px !important;
+      }
+
       .search-wrapper {
-        margin-bottom: 1.25rem !important;
+        margin-bottom: 0 !important;
       }
 
       .search-box {
@@ -840,15 +899,88 @@ SHARED_CSS = """
       display: inline-block;
     }
 
-    /* Hero Greeting Section */
+    /* =========================================================================
+       HERO INTRO ANIMATION & 3D ORBITAL SEARCH CENTERPIECE
+       ========================================================================= */
+    .hero-section {
+      width: 100%;
+      margin: 0 auto;
+      padding: 0.5rem 0 1.25rem 0;
+      position: relative;
+    }
+
     .hero-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin: 1.5rem auto 2.5rem auto;
-      max-width: 840px;
+      margin: 0 auto;
+      max-width: 980px;
       width: 100%;
+      position: relative;
+    }
+
+    .hero-intro-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      width: 100%;
+    }
+
+    /* Staggered Word & Line Intro Animations */
+    .intro-fade-1 {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: heroFadeSlide 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: 0.05s;
+    }
+
+    .hero-word-wrap {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.35rem 0.6rem;
+    }
+
+    .intro-word {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(16px) scale(0.95);
+      filter: blur(4px);
+      animation: wordReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: calc(0.12s + var(--w-idx, 0) * 0.08s);
+    }
+
+    .intro-fade-2 {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: heroFadeSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: 0.46s;
+    }
+
+    @keyframes wordReveal {
+      0% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.95);
+        filter: blur(4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes heroFadeSlide {
+      0% {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .hero-badge {
@@ -865,7 +997,7 @@ SHARED_CSS = """
       font-weight: 600;
       color: var(--text-secondary);
       box-shadow: var(--shadow-sm);
-      margin-bottom: 1.35rem;
+      margin-bottom: 1.15rem;
       transition: all var(--transition-fast);
       text-decoration: none;
       max-width: 100%;
@@ -891,43 +1023,242 @@ SHARED_CSS = """
     }
 
     .hero-title {
-      font-size: 2.5rem;
+      font-size: 2.65rem;
       font-weight: 800;
-      letter-spacing: -0.035em;
+      letter-spacing: -0.04em;
       color: var(--text-primary);
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.55rem;
       word-break: normal;
       overflow-wrap: normal;
-      line-height: 1.2;
+      line-height: 1.18;
     }
 
     .hero-subtext {
-      font-size: 0.98rem;
+      font-size: 0.96rem;
       color: var(--text-muted);
       line-height: 1.55;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       word-break: normal;
-      max-width: 650px;
+      max-width: 620px;
+    }
+
+    /* 3D Orbital Stage Container */
+    .hero-orbit-stage {
+      position: relative;
+      width: 100%;
+      max-width: 920px;
+      min-height: 195px;
+      margin: 0.5rem auto 2.25rem auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px;
+      perspective-origin: 50% 50%;
+      transform-style: preserve-3d;
+    }
+
+    .orbit-centerpiece {
+      position: relative;
+      z-index: 25;
+      width: 100%;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    /* 3D Orbital Track */
+    .orbit-track {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      z-index: 18;
+    }
+
+    /* Floating Orbit Suggestion Cards */
+    .orbit-card {
+      position: absolute;
+      pointer-events: auto;
+      width: 172px;
+      padding: 0.72rem 0.85rem;
+      background: rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.90);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
+      text-decoration: none;
+      text-align: left;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease, opacity 0.35s ease;
+      transform-style: preserve-3d;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .orbit-card-glow {
+      position: absolute;
+      top: -30%;
+      left: -30%;
+      width: 160%;
+      height: 160%;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      opacity: 0.4;
+    }
+
+    .orbit-card:hover .orbit-card-glow {
+      opacity: 1;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.16) 0%, transparent 70%);
+    }
+
+    .orbit-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      margin-bottom: 0.28rem;
+    }
+
+    .orbit-card-score {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      background: rgba(37, 99, 235, 0.08);
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+    }
+
+    .orbit-card-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.25;
+      margin-bottom: 0.3rem;
+    }
+
+    .orbit-card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .orbit-pill-catalyst {
+      font-size: 0.66rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--bg-surface-elevated);
+      padding: 0.08rem 0.35rem;
+      border-radius: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+    }
+
+    .orbit-arrow {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .orbit-card:hover .orbit-arrow {
+      color: var(--accent-blue);
+      transform: translate(2px, -2px);
+    }
+
+    /* 3D Coordinates for the 4 Orbit Cards (Desktop) */
+    .orbit-card-0 {
+      top: 5px;
+      left: 10px;
+      transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg);
+      animation: orbitFloat0 7s ease-in-out infinite;
+    }
+
+    .orbit-card-1 {
+      top: 5px;
+      right: 10px;
+      transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg);
+      animation: orbitFloat1 7s ease-in-out infinite 1.75s;
+    }
+
+    .orbit-card-2 {
+      bottom: 5px;
+      left: 20px;
+      transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg);
+      animation: orbitFloat2 7s ease-in-out infinite 3.5s;
+    }
+
+    .orbit-card-3 {
+      bottom: 5px;
+      right: 20px;
+      transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg);
+      animation: orbitFloat3 7s ease-in-out infinite 5.25s;
+    }
+
+    /* Subtle 3D Ambient Float Keyframes */
+    @keyframes orbitFloat0 {
+      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg); }
+      50% { transform: translate3d(-5px, -7px, 46px) rotate3d(0.6, 1, 0, 9deg); }
+    }
+    @keyframes orbitFloat1 {
+      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg); }
+      50% { transform: translate3d(5px, -7px, 46px) rotate3d(0.6, -1, 0, 9deg); }
+    }
+    @keyframes orbitFloat2 {
+      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg); }
+      50% { transform: translate3d(-4px, 5px, 32px) rotate3d(-0.6, 1, 0, 8deg); }
+    }
+    @keyframes orbitFloat3 {
+      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg); }
+      50% { transform: translate3d(4px, 5px, 32px) rotate3d(-0.6, -1, 0, 8deg); }
+    }
+
+    .hero-orbit-stage:hover .orbit-card {
+      animation-play-state: paused;
+    }
+
+    .orbit-card:hover {
+      border-color: var(--accent-blue);
+      box-shadow: 0 16px 36px -6px rgba(37, 99, 235, 0.20), 0 0 0 1px rgba(37, 99, 235, 0.25);
+      transform: scale(1.06) translate3d(0, -4px, 75px) !important;
+      z-index: 35 !important;
+      background: #ffffff;
+    }
+
+    .orbit-card.card-fading {
+      opacity: 0.1;
+      transform: scale(0.92) translate3d(0, 0, 0) !important;
     }
 
     /* Global Search & Command Bar (⌘K) with Bulletproof Overflow Containment */
     .search-wrapper {
       position: relative;
       width: 100%;
-      max-width: 680px;
-      margin: 0 auto 3rem auto;
+      max-width: 600px;
+      margin: 0 auto;
       box-sizing: border-box;
+      z-index: 25;
     }
 
     .search-box {
       display: flex;
       align-items: center;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-card);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(203, 213, 225, 0.95);
       border-radius: var(--radius-xl);
-      padding: 0.85rem 1.35rem;
-      box-shadow: var(--shadow-card);
+      padding: 0.95rem 1.4rem;
+      box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
       transition: all var(--transition-normal);
       cursor: text;
       width: 100%;
@@ -936,8 +1267,9 @@ SHARED_CSS = """
 
     .search-box:focus-within, .search-box.focused {
       border-color: var(--accent-blue);
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), var(--shadow-hover);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15), 0 20px 40px -8px rgba(37, 99, 235, 0.16);
       background: #ffffff;
+      transform: translateY(-2px);
     }
 
     .search-icon-wrap {
@@ -3079,10 +3411,10 @@ NAVIGATION_LAYOUT_HTML = """
       </div>
       <span class="nav-count">{{ economic_indicators|length }}</span>
     </a>
-    <a href="index.html#analyticsSection" class="nav-link {% if active_page == 'health' %}active{% endif %}" onclick="closeMobileNav()">
+    <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
         <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span class="nav-text">Analytics &amp; Health</span>
+        <span class="nav-text">Analytics &amp; Trends</span>
       </div>
     </a>
   </nav>
@@ -3101,7 +3433,7 @@ NAVIGATION_LAYOUT_HTML = """
   </div>
 </aside>
 
-<!-- Dedicated Mobile Phone Bottom Navigation Bar (5 Tabs: Home / Feed / Calendar / Economic / Health) -->
+<!-- Dedicated Mobile Phone Bottom Navigation Bar (5 Tabs: Home / Feed / Calendar / Economic / Analytics) -->
 <div class="mobile-bottom-nav">
   <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -3119,9 +3451,9 @@ NAVIGATION_LAYOUT_HTML = """
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
     <span>Economic</span>
   </a>
-  <a href="index.html#analyticsSection" class="mobile-tab-link {% if active_page == 'health' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    <span>Health</span>
+  <a href="analytics.html" class="mobile-tab-link {% if active_page == 'analytics' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Analytics</span>
   </a>
 </div>
 """
@@ -3173,12 +3505,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Personal stock news dashboard overview with widget preview cards, rich disclosure trends, and instant search suggestions.">
+  <meta name="description" content="Personal stock news dashboard overview with widget preview cards, recently viewed companies, and instant search suggestions.">
   <title>StockPulse — What's on the agenda?</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -3190,110 +3521,186 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <!-- Top Right Bar for Desktop -->
       <div class="top-header-bar">
-        <a href="#analyticsSection" class="top-header-btn">
+        <a href="analytics.html" class="top-header-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Analytics
+          Analytics &amp; Trends
         </a>
         <span class="section-time-pill" style="font-size:0.75rem; padding:0.3rem 0.75rem;">
           <span class="pulse-dot" style="background:#10b981;"></span> Live
         </span>
       </div>
 
-      <!-- Hero Greeting Section -->
-      <div class="hero-container">
-        <a href="calendar.html" class="hero-badge">
-          <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
-          {% if calendar_events %}
-          <span>Next Event: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
-          {% else %}
-          <span><strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; 15 Companies Monitored ↗</span>
-          {% endif %}
-        </a>
-        <h1 class="hero-title">What's on the agenda?</h1>
-        <p class="hero-subtext">Review overnight SEC filings, corporate announcements, forthcomming milestones, and FRED macroeconomic sensitivities.</p>
-      </div>
+      <!-- Redesigned Hero & 3D Orbital Search Centerpiece Section -->
+      <section class="hero-section">
+        <div class="hero-container">
+          <!-- Animated Intro Greeting Header -->
+          <div class="hero-intro-box">
+            <a href="calendar.html" class="hero-badge intro-fade-1">
+              <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
+              {% if calendar_events %}
+              <span>Next Catalyst: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
+              {% else %}
+              <span><strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; {{ watchlist_companies|length }} Companies Monitored ↗</span>
+              {% endif %}
+            </a>
+            <h1 class="hero-title">
+              <span class="hero-word-wrap">
+                <span class="intro-word" style="--w-idx:0;">What's</span>
+                <span class="intro-word" style="--w-idx:1;">on</span>
+                <span class="intro-word" style="--w-idx:2;">the</span>
+                <span class="intro-word" style="--w-idx:3;">agenda?</span>
+              </span>
+            </h1>
+            <p class="hero-subtext intro-fade-2">Review overnight SEC filings, corporate announcements, forthcoming milestones, and FRED macroeconomic sensitivities.</p>
+          </div>
 
-      <!-- Watchlist Horizontal Ticker Ribbon (Robinhood / Apple Stocks Mobile Style) -->
-      <div class="watchlist-ticker-strip">
-        {% for co in watchlist_companies %}
-        <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} ({{ co.symbol }}) deep dive">
-          <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
-          <span>{{ co.symbol }}</span>
-        </a>
-        {% endfor %}
-      </div>
+          <!-- 3D Orbital Stage & Centered Search Centerpiece -->
+          <div class="hero-orbit-stage" id="heroOrbitStage">
+            <!-- Centerpiece: Search Command Bar -->
+            <div class="orbit-centerpiece">
+              <div class="search-wrapper" id="heroSearchWrapper">
+                <div class="search-box" id="globalSearchBox">
+                  <span class="search-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  </span>
+                  <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
+                  <span class="search-shortcut">⌘ K</span>
+                </div>
 
-      <!-- Global Search & Command Bar (⌘K) with Tab Suggestions & Live Autocomplete -->
-      <div class="search-wrapper">
-        <div class="search-box" id="globalSearchBox">
-          <span class="search-icon-wrap">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </span>
-          <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
-          <span class="search-shortcut">⌘ K</span>
-        </div>
+                <!-- Interactive Live Suggestions / Autocomplete Dropdown -->
+                <div class="search-dropdown" id="searchDropdown">
+                  <div id="defaultDropdownContent">
+                    <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
+                    <div class="dropdown-tabs-grid">
+                      <a href="news.html" class="dropdown-tab-card">
+                        <div class="dropdown-tab-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+                        </div>
+                        <div class="dropdown-tab-info">
+                          <div class="dropdown-tab-title">Intelligence Feed</div>
+                          <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
+                        </div>
+                      </a>
+                      <a href="calendar.html" class="dropdown-tab-card">
+                        <div class="dropdown-tab-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        </div>
+                        <div class="dropdown-tab-info">
+                          <div class="dropdown-tab-title">Corporate Calendar</div>
+                          <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
+                        </div>
+                      </a>
+                      <a href="economic.html" class="dropdown-tab-card">
+                        <div class="dropdown-tab-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                        </div>
+                        <div class="dropdown-tab-info">
+                          <div class="dropdown-tab-title">Economic Snapshot</div>
+                          <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
+                        </div>
+                      </a>
+                      <a href="analytics.html" class="dropdown-tab-card" onclick="closeSearchDropdown()">
+                        <div class="dropdown-tab-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        </div>
+                        <div class="dropdown-tab-info">
+                          <div class="dropdown-tab-title">Analytics &amp; Trends</div>
+                          <div class="dropdown-tab-sub">Velocity &amp; Benchmarks</div>
+                        </div>
+                      </a>
+                    </div>
 
-        <!-- Interactive Live Suggestions / Autocomplete Dropdown - Constrained Containment -->
-        <div class="search-dropdown" id="searchDropdown">
-          <div id="defaultDropdownContent">
-            <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
-            <div class="dropdown-tabs-grid">
-              <a href="news.html" class="dropdown-tab-card">
-                <div class="dropdown-tab-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+                    <div class="dropdown-tickers-wrap">
+                      <div class="dropdown-section-title">Jump to Watchlist Ticker</div>
+                      <div class="dropdown-tickers-list">
+                        {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA', 'AMD'] %}
+                        <a href="company.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Dynamic Live Search Results Container -->
+                  <div id="liveSearchResults" style="display:none;"></div>
                 </div>
-                <div class="dropdown-tab-info">
-                  <div class="dropdown-tab-title">Intelligence Feed</div>
-                  <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
-                </div>
-              </a>
-              <a href="calendar.html" class="dropdown-tab-card">
-                <div class="dropdown-tab-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                </div>
-                <div class="dropdown-tab-info">
-                  <div class="dropdown-tab-title">Corporate Calendar</div>
-                  <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
-                </div>
-              </a>
-              <a href="economic.html" class="dropdown-tab-card">
-                <div class="dropdown-tab-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                </div>
-                <div class="dropdown-tab-info">
-                  <div class="dropdown-tab-title">Economic Snapshot</div>
-                  <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
-                </div>
-              </a>
-              <a href="#analyticsSection" class="dropdown-tab-card" onclick="closeSearchDropdown()">
-                <div class="dropdown-tab-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                </div>
-                <div class="dropdown-tab-info">
-                  <div class="dropdown-tab-title">Analytics &amp; Trends</div>
-                  <div class="dropdown-tab-sub">Metrics &amp; Safeguards</div>
-                </div>
-              </a>
+              </div>
             </div>
 
-            <div class="dropdown-tickers-wrap">
-              <div class="dropdown-section-title">Jump to Watchlist Ticker</div>
-              <div class="dropdown-tickers-list">
-                {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA'] %}
-                <a href="company.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
-                {% endfor %}
-              </div>
+            <!-- 3D Floating Orbital Suggestion Cards (4 Dynamic Nodes) -->
+            <div class="orbit-track" id="orbitTrack" aria-label="Quick Watchlist Highlights">
+              <!-- Node 0 (Top-Left) -->
+              <a href="company.html?ticker=NVDA" class="orbit-card orbit-card-0" id="orbitCard0" data-orbit-slot="0">
+                <div class="orbit-card-glow"></div>
+                <div class="orbit-card-header">
+                  <span class="ticker-badge ticker-NVDA">NVDA</span>
+                  <span class="orbit-card-score">Score 9.0</span>
+                </div>
+                <div class="orbit-card-name">NVIDIA Corporation</div>
+                <div class="orbit-card-meta">
+                  <span class="orbit-pill-catalyst">Semiconductors</span>
+                  <span class="orbit-arrow">↗</span>
+                </div>
+              </a>
+
+              <!-- Node 1 (Top-Right) -->
+              <a href="company.html?ticker=AAPL" class="orbit-card orbit-card-1" id="orbitCard1" data-orbit-slot="1">
+                <div class="orbit-card-glow"></div>
+                <div class="orbit-card-header">
+                  <span class="ticker-badge ticker-AAPL">AAPL</span>
+                  <span class="orbit-card-score">Score 8.5</span>
+                </div>
+                <div class="orbit-card-name">Apple Inc.</div>
+                <div class="orbit-card-meta">
+                  <span class="orbit-pill-catalyst">Consumer Tech</span>
+                  <span class="orbit-arrow">↗</span>
+                </div>
+              </a>
+
+              <!-- Node 2 (Bottom-Left) -->
+              <a href="company.html?ticker=MSFT" class="orbit-card orbit-card-2" id="orbitCard2" data-orbit-slot="2">
+                <div class="orbit-card-glow"></div>
+                <div class="orbit-card-header">
+                  <span class="ticker-badge ticker-MSFT">MSFT</span>
+                  <span class="orbit-card-score">Score 8.0</span>
+                </div>
+                <div class="orbit-card-name">Microsoft Corp.</div>
+                <div class="orbit-card-meta">
+                  <span class="orbit-pill-catalyst">Cloud &amp; Copilot</span>
+                  <span class="orbit-arrow">↗</span>
+                </div>
+              </a>
+
+              <!-- Node 3 (Bottom-Right) -->
+              <a href="company.html?ticker=AMD" class="orbit-card orbit-card-3" id="orbitCard3" data-orbit-slot="3">
+                <div class="orbit-card-glow"></div>
+                <div class="orbit-card-header">
+                  <span class="ticker-badge ticker-AMD">AMD</span>
+                  <span class="orbit-card-score">Score 7.8</span>
+                </div>
+                <div class="orbit-card-name">Advanced Micro Devices</div>
+                <div class="orbit-card-meta">
+                  <span class="orbit-pill-catalyst">Data Center</span>
+                  <span class="orbit-arrow">↗</span>
+                </div>
+              </a>
             </div>
           </div>
 
-          <!-- Dynamic Live Search Results Container -->
-          <div id="liveSearchResults" style="display:none;"></div>
+          <!-- Watchlist Horizontal Ticker Ribbon -->
+          <div class="watchlist-ticker-strip">
+            {% for co in watchlist_companies %}
+            <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} ({{ co.symbol }}) deep dive">
+              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
+              <span>{{ co.symbol }}</span>
+            </a>
+            {% endfor %}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Top Quick Preview Bento Deck (Asymmetric Layout) -->
+      <!-- Top 2 Focus Bento Widgets Below Hero -->
       <div class="hero-bento-deck">
-        <!-- Featured Priority Intelligence Card -->
+        <!-- Widget 1: Featured Priority Intelligence Card -->
         <a href="news.html" class="bento-card bento-card-primary">
           <div class="bento-badge-top">
             <span class="bento-pill-accent">
@@ -3315,63 +3722,50 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             {% endif %}
           </div>
           <div class="bento-footer-pill">
-            <span>Score Baseline ≥ 7.0 &bull; Transparent Scoring Breakdown</span>
+            <span>Score Baseline ≥ 7.0 &bull; Transparent AI Scoring</span>
             <span>→</span>
           </div>
         </a>
 
-        <!-- Right Stacked Bento Cards -->
-        <div class="bento-side-stack">
-          <!-- Calendar Milestone Card -->
-          <a href="calendar.html" class="bento-card bento-card-side">
-            <div class="bento-badge-top">
-              <span class="bento-pill-cal">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                NEXT EVENT
-              </span>
-              <span class="bento-arrow">Calendar ›</span>
-            </div>
+        <!-- Widget 2: Next Corporate Catalyst Milestone Focus -->
+        <a href="calendar.html" class="bento-card" style="background: linear-gradient(135deg, rgba(240, 253, 244, 0.95), rgba(255, 255, 255, 0.95)); border: 1px solid rgba(187, 247, 208, 0.8);">
+          <div class="bento-badge-top">
+            <span class="bento-pill-cal">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              NEXT CORPORATE CATALYST
+            </span>
+            <span class="bento-arrow">Calendar ›</span>
+          </div>
+          <div>
             {% if calendar_events %}
-            <div style="display:flex; align-items:center; gap:0.85rem; margin:0.4rem 0;">
-              <div class="calendar-date-box" style="width:48px; min-width:48px; padding:0.25rem 0.45rem;">
-                <div class="calendar-date-month">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                <div class="calendar-date-day" style="font-size:1.15rem;">{{ calendar_events[0].event_date[8:10] }}</div>
+            <div style="display:flex; align-items:center; gap:0.9rem; margin:0.6rem 0;">
+              <div class="calendar-date-box" style="width:52px; min-width:52px; padding:0.35rem 0.45rem; border-radius:var(--radius-md); box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+                <div class="calendar-date-month" style="font-size:0.72rem; font-weight:800;">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
+                <div class="calendar-date-day" style="font-size:1.25rem; font-weight:800;">{{ calendar_events[0].event_date[8:10] }}</div>
               </div>
               <div style="flex:1; min-width:0;">
-                <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
+                  <span class="ticker-badge ticker-{{ calendar_events[0].ticker }}">{{ calendar_events[0].ticker }}</span>
+                  <span class="category-badge" style="font-size:0.68rem; padding:0.1rem 0.45rem;">{{ calendar_events[0].event_type }}</span>
+                </div>
+                <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); line-height:1.35; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
                   {{ calendar_events[0].headline }}
                 </div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">
-                  {{ calendar_events[0].relative_badge }} &bull; {{ calendar_events[0].event_type }}
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
+                  {{ calendar_events[0].relative_badge }}
                 </div>
               </div>
             </div>
             {% else %}
-            <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); margin:0.35rem 0;">Corporate Calendar Active</div>
+            <div style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0.5rem 0;">Corporate Calendar Active</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">Tracking upcoming earnings releases, FDA decisions, and shareholder votes.</div>
             {% endif %}
-            <div class="bento-side-meta">{{ calendar_events|length }} Scheduled Corporate Events</div>
-          </a>
-
-          <!-- Macroeconomic Pulse Card -->
-          <a href="economic.html" class="bento-card bento-card-side">
-            <div class="bento-badge-top">
-              <span class="bento-pill-econ">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                MACRO PULSE
-              </span>
-              <span class="bento-arrow">Macro ›</span>
-            </div>
-            <div style="display:flex; align-items:baseline; gap:0.75rem; margin:0.35rem 0;">
-              <span style="font-family:'JetBrains Mono', monospace; font-size:1.35rem; font-weight:800; color:var(--text-primary);">
-                {% if economic_indicators %}{{ economic_indicators[0].formatted_value }}{% else %}4.58%{% endif %}
-              </span>
-              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">
-                {% if economic_indicators %}{{ economic_indicators[0].name }}{% else %}Fed Funds Rate{% endif %}
-              </span>
-            </div>
-            <div class="bento-side-meta">{{ economic_indicators|length }} St. Louis Fed Indicators Mapped</div>
-          </a>
-        </div>
+          </div>
+          <div class="bento-footer-pill" style="border-top:1px solid rgba(220, 252, 231, 0.8);">
+            <span>{{ calendar_events|length }} Upcoming Milestones</span>
+            <span>→</span>
+          </div>
+        </a>
       </div>
 
       <!-- Recently Viewed Companies Quick Access Deck -->
@@ -3396,154 +3790,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <!-- Populated dynamically via localStorage -->
         </div>
       </div>
-
-      <!-- Analytics Section -->
-      <div id="analyticsSection" class="section-header-row" style="padding-top:1rem;">
-        <h2 class="section-heading">Analytics &amp; Trends</h2>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            Last 24 hours
-          </span>
-          <button class="section-time-pill" onclick="window.location.reload()" style="cursor:pointer; border:1px solid var(--border-card);">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="analytics-grid">
-        <!-- Metric Card 1: Rich Disclosure Trend Graph with Gradients -->
-        <div class="analytics-card">
-          <div>
-            <div class="analytics-card-header">
-              <div>
-                <div class="analytics-card-title">Daily Filing &amp; Intelligence Velocity</div>
-                <div class="analytics-metric-val">
-                  {{ stats.total }} <span class="analytics-delta-pill">↗ 100.0%</span>
-                </div>
-              </div>
-              <span class="section-time-pill" style="font-size:0.75rem;">15 Core Tickers</span>
-            </div>
-            <div class="chart-canvas-container">
-              <canvas id="timelineChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- Metric Card 2: Category Breakdown Donut with Data Callout Badges -->
-        <div class="analytics-card">
-          <div>
-            <div class="analytics-card-header">
-              <div>
-                <div class="analytics-card-title">Intelligence by Category</div>
-                <div class="analytics-metric-val" style="font-size:1.5rem;">
-                  {{ stats.by_category|length }} Categories
-                </div>
-              </div>
-              <span class="section-time-pill" style="font-size:0.75rem;">Slices &amp; Callouts</span>
-            </div>
-            <div class="chart-canvas-container" style="height: 220px;">
-              <canvas id="categoryChart"></canvas>
-            </div>
-          </div>
-          
-          <div class="category-legend-list" id="categoryLegendList">
-            <!-- Dynamically populated legend badges with counts & percentages -->
-          </div>
-        </div>
-      </div>
-
-      <!-- 3-Month Comparative Performance vs Competitors & S&P 500 Benchmark -->
-      <div class="comparative-perf-card" style="margin-top:1.5rem;">
-        <div class="comparative-perf-header">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
-              <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
-            </div>
-            <p style="font-size:0.835rem; color:var(--text-muted); margin:0.35rem 0 0 0;">
-              Contextual move analysis: Normalized % return (Day 0 = 0.0%) against top 3 competitors and the S&amp;P 500 (SPY) benchmark.
-            </p>
-          </div>
-
-          <!-- Watchlist Company Selector Dropdown -->
-          <div style="display:flex; align-items:center; gap:0.6rem; width:100%; max-width:280px;">
-            <label for="perfCompanySelect" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Stock:</label>
-            <select id="perfCompanySelect" class="comparative-select" style="flex:1;" onchange="renderComparativePerformanceChart(this.value)">
-              {% for co in watchlist_companies %}
-              <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-
-        <!-- Mobile Segmented View Toggle (Chart vs Table) -->
-        <div class="perf-mobile-toggle">
-          <button class="perf-toggle-btn active" id="perfToggleChartBtn" onclick="switchPerfView('chart')">📈 Chart View</button>
-          <button class="perf-toggle-btn" id="perfToggleTableBtn" onclick="switchPerfView('table')">📊 Comparison Table</button>
-        </div>
-
-        <!-- Real-time Alpha & Return Metrics Ribbon -->
-        <div class="perf-kpi-grid" id="perfKpiGrid">
-          <!-- Dynamically populated via JS based on selected company -->
-        </div>
-
-        <!-- Interactive Chart Canvas Container -->
-        <div id="perfChartContainer" style="position:relative; height:280px; width:100%;">
-          <canvas id="comparativeChartCanvas"></canvas>
-        </div>
-
-        <!-- Competitor Breakdown Table Container -->
-        <div class="perf-table-wrap" id="perfTableContainer">
-          <table class="perf-table" id="perfBreakdownTable">
-            <!-- Dynamically populated table -->
-          </table>
-        </div>
-      </div>
-
-      <!-- Health Section -->
-      <section class="health-section" id="health">
-        <div class="health-header">
-          <div class="health-title-group">
-            <h3 class="health-title">Pipeline Health &amp; Safeguards</h3>
-            <span class="health-status-badge health-badge-healthy">
-              <span class="pulse-dot" style="background:#10b981;"></span>
-              HEALTHY &bull; OPERATIONAL
-            </span>
-          </div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">
-            Moving Avg Baseline: {{ latest_run.moving_avg_raw if latest_run else 570 }} items/run
-          </div>
-        </div>
-
-        <div class="health-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
-          <div class="health-metric-card">
-            <div class="health-metric-title">SEC EDGAR Filings</div>
-            <div class="health-metric-val" style="color:#15803d;">{{ latest_run.edgar_count if latest_run else 450 }}</div>
-            <div class="health-metric-sub">15 companies queried</div>
-          </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">Company IR Releases</div>
-            <div class="health-metric-val" style="color:var(--accent-blue);">{{ latest_run.company_ir_count if latest_run else 100 }}</div>
-            <div class="health-metric-sub">Official press room feeds</div>
-          </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">News Media Coverage</div>
-            <div class="health-metric-val" style="color:#047857;">{{ latest_run.news_media_count if latest_run and latest_run.news_media_count is defined else stats.by_source.get('News Media', 0) }}</div>
-            <div class="health-metric-sub">Finnhub 3rd-party journalism</div>
-          </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">Total Unique Yield</div>
-            <div class="health-metric-val" style="color:#7c3aed;">{{ latest_run.total_unique if latest_run else stats.total }}</div>
-            <div class="health-metric-sub">After deduplication</div>
-          </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">High Priority Stories</div>
-            <div class="health-metric-val" style="color:#b45309;">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
-            <div class="health-metric-sub">Score ≥ 7.0 / 10.0</div>
-          </div>
-        </div>
-      </section>
     </main>
   </div>
 
@@ -3832,6 +4078,343 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         closeSearchDropdown();
       }
     });
+
+    // =========================================================================
+    // 3D ORBITAL COMPANY SUGGESTION CYCLING ENGINE
+    // =========================================================================
+    let currentOrbitOffset = 0;
+    let orbitInterval = null;
+    let isOrbitPaused = false;
+
+    function getWatchlistForOrbit() {
+      if (Array.isArray(watchlistCompanies) && watchlistCompanies.length >= 4) {
+        return watchlistCompanies;
+      }
+      return [
+        { symbol: 'NVDA', name: 'NVIDIA Corporation', sector: 'Semiconductors' },
+        { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Consumer Electronics' },
+        { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Software & Cloud' },
+        { symbol: 'AMD', name: 'Advanced Micro Devices', sector: 'Semiconductors' },
+        { symbol: 'TSLA', name: 'Tesla, Inc.', sector: 'Automotive & Energy' },
+        { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Search & Cloud' },
+        { symbol: 'AMZN', name: 'Amazon.com, Inc.', sector: 'E-Commerce & Cloud' },
+        { symbol: 'BA', name: 'The Boeing Company', sector: 'Aerospace & Defense' },
+      ];
+    }
+
+    function initOrbitCards() {
+      const stage = document.getElementById('heroOrbitStage');
+      if (!stage) return;
+
+      const list = getWatchlistForOrbit();
+      if (list.length < 4) return;
+
+      updateOrbitCards(0);
+
+      stage.addEventListener('mouseenter', () => { isOrbitPaused = true; });
+      stage.addEventListener('mouseleave', () => { isOrbitPaused = false; });
+
+      // Periodically cycle the 4 cards smoothly every 7 seconds
+      if (orbitInterval) clearInterval(orbitInterval);
+      orbitInterval = setInterval(() => {
+        if (isOrbitPaused) return;
+        const searchInput = document.getElementById('globalSearchInput');
+        if (document.activeElement === searchInput) return;
+
+        currentOrbitOffset = (currentOrbitOffset + 4) % list.length;
+        transitionOrbitCards(currentOrbitOffset);
+      }, 7000);
+    }
+
+    function transitionOrbitCards(offset) {
+      const cards = document.querySelectorAll('.orbit-card');
+      cards.forEach(card => card.classList.add('card-fading'));
+
+      setTimeout(() => {
+        updateOrbitCards(offset);
+        cards.forEach(card => card.classList.remove('card-fading'));
+      }, 350);
+    }
+
+    function updateOrbitCards(offset) {
+      const list = getWatchlistForOrbit();
+      for (let i = 0; i < 4; i++) {
+        const card = document.getElementById(`orbitCard${i}`);
+        if (!card) continue;
+        const item = list[(offset + i) % list.length];
+        if (!item) continue;
+
+        const sym = item.symbol;
+        const name = item.name || sym;
+        const sector = item.sector ? item.sector.replace(/_/g, ' ') : 'Equities';
+
+        let catalystLabel = sector;
+        if (item.macro_sensitivities && item.macro_sensitivities.length > 0) {
+          catalystLabel = item.macro_sensitivities[0].replace(/_/g, ' ');
+        }
+
+        card.href = `company.html?ticker=${encodeURIComponent(sym)}`;
+        card.title = `View ${name} (${sym}) Research Hub`;
+
+        const tickerBadge = card.querySelector('.ticker-badge');
+        if (tickerBadge) {
+          tickerBadge.className = `ticker-badge ticker-${sym}`;
+          tickerBadge.textContent = sym;
+        }
+
+        const scoreEl = card.querySelector('.orbit-card-score');
+        if (scoreEl) {
+          const sampleScores = ['Score 9.0', 'Score 8.6', 'Score 8.2', 'Score 7.8', 'Score 8.4', 'Score 8.9'];
+          scoreEl.textContent = sampleScores[(offset + i) % sampleScores.length];
+        }
+
+        const nameEl = card.querySelector('.orbit-card-name');
+        if (nameEl) {
+          nameEl.textContent = name;
+        }
+
+        const catalystEl = card.querySelector('.orbit-pill-catalyst');
+        if (catalystEl) {
+          catalystEl.textContent = catalystLabel;
+        }
+      }
+    }
+
+    function initHomePage() {
+      initOrbitCards();
+      renderRecentlyViewed();
+    }
+
+    window.addEventListener('focus', renderRecentlyViewed);
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHomePage);
+    } else {
+      initHomePage();
+    }
+  </script>
+</body>
+</html>
+"""
+
+# ==============================================================================
+# 1B. DEDICATED ANALYTICS & TRENDS TEMPLATE (site/analytics.html)
+# ==============================================================================
+ANALYTICS_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Dedicated Analytics Hub for StockPulse: filing velocity trends, disclosure category breakdowns, peer comparative performance, and automated pipeline telemetry.">
+  <title>StockPulse — Analytics &amp; Performance Trends</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+""" + SHARED_CSS + """
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    """ + NAVIGATION_LAYOUT_HTML + """
+
+    <main class="app-main">
+      <!-- Analytics Header Hero Banner -->
+      <div class="page-header" style="margin-bottom:1.75rem;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem; font-weight:800;">INTELLIGENCE ANALYTICS</span>
+              <span class="section-time-pill" style="font-size:0.75rem; padding:0.2rem 0.65rem;">
+                <span class="pulse-dot" style="background:#10b981;"></span> Live Telemetry
+              </span>
+            </div>
+            <h1 style="font-size:1.85rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.02em; margin:0 0 0.35rem 0;">Analytics &amp; Performance Trends</h1>
+            <p style="font-size:0.9rem; color:var(--text-muted); margin:0; max-width:720px;">
+              Multi-dimensional analysis of disclosure velocity, thematic category allocations, 3-month peer stock returns vs. S&amp;P 500, and data pipeline safeguards.
+            </p>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <button class="section-time-pill" onclick="window.location.reload()" style="cursor:pointer; border:1px solid var(--border-card); background:var(--bg-surface-elevated); padding:0.45rem 0.85rem; font-weight:600;" title="Refresh live telemetry">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+              Refresh Data
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Summary Stat Cards -->
+        <div class="analytics-stat-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:1rem; margin-top:1.5rem;">
+          <div class="bento-card" style="padding:1.15rem;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Disclosures</div>
+            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:var(--text-primary); margin:0.25rem 0;">{{ stats.total }}</div>
+            <div style="font-size:0.72rem; color:#15803d; font-weight:600;">Indexed &amp; Scored</div>
+          </div>
+          <div class="bento-card" style="padding:1.15rem;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">High Priority (≥ 7.0)</div>
+            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:#b45309; margin:0.25rem 0;">{{ stats.high_priority_count }}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0) | round(1) }}% of total volume</div>
+          </div>
+          <div class="bento-card" style="padding:1.15rem;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Monitored Companies</div>
+            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:var(--accent-blue); margin:0.25rem 0;">{{ watchlist_companies|length }}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">EDGAR, IR &amp; News</div>
+          </div>
+          <div class="bento-card" style="padding:1.15rem;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Categories Classified</div>
+            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:#7c3aed; margin:0.25rem 0;">{{ stats.by_category|length }}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">AI classification rules</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 1: Velocity & Category Breakdown -->
+      <div class="section-header-row" style="padding-top:0.5rem; margin-bottom:0.85rem;">
+        <h2 class="section-heading" style="font-size:1.25rem;">Velocity &amp; Category Breakdown</h2>
+        <span class="section-time-pill">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          Multi-Day Lookback
+        </span>
+      </div>
+
+      <div class="analytics-grid">
+        <!-- Metric Card 1: Rich Disclosure Trend Graph with Gradients -->
+        <div class="analytics-card">
+          <div>
+            <div class="analytics-card-header">
+              <div>
+                <div class="analytics-card-title">Daily Filing &amp; Intelligence Velocity</div>
+                <div class="analytics-metric-val">
+                  {{ stats.total }} <span class="analytics-delta-pill">↗ Active Trend</span>
+                </div>
+              </div>
+              <span class="section-time-pill" style="font-size:0.75rem;">Top Tickers</span>
+            </div>
+            <div class="chart-canvas-container">
+              <canvas id="timelineChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric Card 2: Category Breakdown Donut with Data Callout Badges -->
+        <div class="analytics-card">
+          <div>
+            <div class="analytics-card-header">
+              <div>
+                <div class="analytics-card-title">Intelligence by Category</div>
+                <div class="analytics-metric-val" style="font-size:1.5rem;">
+                  {{ stats.by_category|length }} Categories
+                </div>
+              </div>
+              <span class="section-time-pill" style="font-size:0.75rem;">Slices &amp; Callouts</span>
+            </div>
+            <div class="chart-canvas-container" style="height: 220px;">
+              <canvas id="categoryChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="category-legend-list" id="categoryLegendList">
+            <!-- Dynamically populated legend badges with counts & percentages -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: 3-Month Comparative Performance vs Peers & S&P 500 -->
+      <div class="comparative-perf-card" style="margin-top:2rem;">
+        <div class="comparative-perf-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
+              <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
+            </div>
+            <p style="font-size:0.835rem; color:var(--text-muted); margin:0.35rem 0 0 0;">
+              Contextual move analysis: Normalized % return (Day 0 = 0.0%) against top 3 competitors and the S&amp;P 500 (SPY) benchmark.
+            </p>
+          </div>
+
+          <!-- Watchlist Company Selector Dropdown -->
+          <div style="display:flex; align-items:center; gap:0.6rem; width:100%; max-width:280px;">
+            <label for="perfCompanySelect" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Stock:</label>
+            <select id="perfCompanySelect" class="comparative-select" style="flex:1;" onchange="renderComparativePerformanceChart(this.value)">
+              {% for co in watchlist_companies %}
+              <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Mobile Segmented View Toggle (Chart vs Table) -->
+        <div class="perf-mobile-toggle">
+          <button class="perf-toggle-btn active" id="perfToggleChartBtn" onclick="switchPerfView('chart')">📈 Chart View</button>
+          <button class="perf-toggle-btn" id="perfToggleTableBtn" onclick="switchPerfView('table')">📊 Comparison Table</button>
+        </div>
+
+        <!-- Real-time Alpha & Return Metrics Ribbon -->
+        <div class="perf-kpi-grid" id="perfKpiGrid">
+          <!-- Dynamically populated via JS based on selected company -->
+        </div>
+
+        <!-- Interactive Chart Canvas Container -->
+        <div id="perfChartContainer" style="position:relative; height:280px; width:100%;">
+          <canvas id="comparativeChartCanvas"></canvas>
+        </div>
+
+        <!-- Competitor Breakdown Table Container -->
+        <div class="perf-table-wrap" id="perfTableContainer">
+          <table class="perf-table" id="perfBreakdownTable">
+            <!-- Dynamically populated table -->
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 3: Health & Pipeline Safeguards -->
+      <section class="health-section" id="health" style="margin-top:2rem;">
+        <div class="health-header">
+          <div class="health-title-group">
+            <h3 class="health-title">Pipeline Health &amp; Safeguards</h3>
+            <span class="health-status-badge health-badge-healthy">
+              <span class="pulse-dot" style="background:#10b981;"></span>
+              HEALTHY &bull; OPERATIONAL
+            </span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">
+            Moving Avg Baseline: {{ latest_run.moving_avg_raw if latest_run else 570 }} items/run
+          </div>
+        </div>
+
+        <div class="health-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
+          <div class="health-metric-card">
+            <div class="health-metric-title">SEC EDGAR Filings</div>
+            <div class="health-metric-val" style="color:#15803d;">{{ latest_run.edgar_count if latest_run else 450 }}</div>
+            <div class="health-metric-sub">15 companies queried</div>
+          </div>
+          <div class="health-metric-card">
+            <div class="health-metric-title">Company IR Releases</div>
+            <div class="health-metric-val" style="color:var(--accent-blue);">{{ latest_run.company_ir_count if latest_run else 100 }}</div>
+            <div class="health-metric-sub">Official press room feeds</div>
+          </div>
+          <div class="health-metric-card">
+            <div class="health-metric-title">News Media Coverage</div>
+            <div class="health-metric-val" style="color:#047857;">{{ latest_run.news_media_count if latest_run and latest_run.news_media_count is defined else stats.by_source.get('News Media', 0) }}</div>
+            <div class="health-metric-sub">Finnhub 3rd-party journalism</div>
+          </div>
+          <div class="health-metric-card">
+            <div class="health-metric-title">Total Unique Yield</div>
+            <div class="health-metric-val" style="color:#7c3aed;">{{ latest_run.total_unique if latest_run else stats.total }}</div>
+            <div class="health-metric-sub">After deduplication</div>
+          </div>
+          <div class="health-metric-card">
+            <div class="health-metric-title">High Priority Stories</div>
+            <div class="health-metric-val" style="color:#b45309;">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
+            <div class="health-metric-sub">Score ≥ 7.0 / 10.0</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    """ + SHARED_MOBILE_JS + """
 
     // =========================================================================
     // CHART.JS RICH VISUALIZATIONS WITH PER-TICKER BREAKDOWN & LEADER CALLOUTS
@@ -4338,18 +4921,15 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    function initHomePage() {
+    function initAnalyticsPage() {
       initCharts();
-      renderRecentlyViewed();
       renderComparativePerformanceChart('NVDA');
     }
 
-    window.addEventListener('focus', renderRecentlyViewed);
-
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initHomePage);
+      document.addEventListener('DOMContentLoaded', initAnalyticsPage);
     } else {
-      initHomePage();
+      initAnalyticsPage();
     }
   </script>
 </body>
@@ -6029,13 +6609,14 @@ def render_dashboard(
         "performance_data_json": json.dumps(performance_data or {}),
     }
 
-    # 4. Render and save all 5 pages
+    # 4. Render and save all 6 pages
     pages = [
         ("index.html", INDEX_TEMPLATE, "home"),
         ("news.html", NEWS_TEMPLATE, "news"),
         ("calendar.html", CALENDAR_TEMPLATE, "calendar"),
         ("economic.html", ECONOMIC_TEMPLATE, "economic"),
         ("company.html", COMPANY_TEMPLATE, "company"),
+        ("analytics.html", ANALYTICS_TEMPLATE, "analytics"),
     ]
 
     for fname, tmpl_str, active_page in pages:

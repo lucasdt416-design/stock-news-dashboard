@@ -10,7 +10,7 @@ Executes all 10 pipeline stages:
 7. Gemini AI / Heuristic 'Why It Matters' summarization
 8. Persist to SQLite
 9. Health monitoring & moving average anomaly check
-10. Render static dashboard & visual analytics (5 static pages)
+10. Render static dashboard & visual analytics (6 static pages)
 """
 
 import argparse
@@ -237,8 +237,8 @@ def main() -> None:
     performance_data = collect_comparative_performance(watchlist_path=str(watchlist_path))
     logger.info("Stock performance collected for %d companies", len(performance_data.get("companies", {})))
 
-    # 14. Stage 12: Render Static Dashboard (5 Static Pages)
-    logger.info("--- Stage 12: Render Static Site (5 Pages) ---")
+    # 14. Stage 12: Render Static Dashboard (6 Static Pages)
+    logger.info("--- Stage 12: Render Static Site (6 Pages: Home, Feed, Calendar, Economic, Company, Analytics) ---")
     output_html = render_dashboard(
         output_path=str(site_output),
         db_path=str(db_file),

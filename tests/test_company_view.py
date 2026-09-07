@@ -82,6 +82,21 @@ class TestCompanyViewAndRender(unittest.TestCase):
         self.assertIn("trackRecentlyViewedCompany", company_html)
         self.assertIn("stockpulse_recently_viewed", company_html)
 
+    def test_analytics_page_exists_and_renders(self):
+        analytics_path = os.path.join(self.site_dir, "analytics.html")
+        self.assertTrue(os.path.exists(analytics_path), "analytics.html must be generated")
+
+        with open(analytics_path, "r", encoding="utf-8") as f:
+            analytics_html = f.read()
+
+        # Check charts, comparative perf, and telemetry
+        self.assertIn("timelineChart", analytics_html)
+        self.assertIn("categoryChart", analytics_html)
+        self.assertIn("comparativeChartCanvas", analytics_html)
+        self.assertIn("perfCompanySelect", analytics_html)
+        self.assertIn("Pipeline Health &amp; Safeguards", analytics_html)
+        self.assertIn("SEC EDGAR Filings", analytics_html)
+
 
 if __name__ == "__main__":
     unittest.main()
