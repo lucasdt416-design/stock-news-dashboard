@@ -907,6 +907,7 @@ SHARED_CSS = """
       margin: 0 auto;
       padding: 0.5rem 0 1.25rem 0;
       position: relative;
+      z-index: 50;
     }
 
     .hero-container {
@@ -1059,7 +1060,7 @@ SHARED_CSS = """
 
     .orbit-centerpiece {
       position: relative;
-      z-index: 25;
+      z-index: 20;
       width: 100%;
       max-width: 580px;
       margin: 0 auto;
@@ -1074,7 +1075,7 @@ SHARED_CSS = """
       align-items: center;
       justify-content: center;
       transform-style: preserve-3d;
-      z-index: 18;
+      z-index: 30;
     }
 
     /* Floating Orbit Suggestion Cards */
@@ -1095,6 +1096,7 @@ SHARED_CSS = """
       transform-style: preserve-3d;
       cursor: pointer;
       overflow: hidden;
+      z-index: 30;
     }
 
     .orbit-card-glow {
@@ -1230,7 +1232,7 @@ SHARED_CSS = """
       border-color: var(--accent-blue);
       box-shadow: 0 16px 36px -6px rgba(37, 99, 235, 0.20), 0 0 0 1px rgba(37, 99, 235, 0.25);
       transform: scale(1.06) translate3d(0, -4px, 75px) !important;
-      z-index: 35 !important;
+      z-index: 45 !important;
       background: #ffffff;
     }
 
@@ -1246,7 +1248,7 @@ SHARED_CSS = """
       max-width: 600px;
       margin: 0 auto;
       box-sizing: border-box;
-      z-index: 25;
+      z-index: 20;
     }
 
     .search-box {
@@ -1325,7 +1327,7 @@ SHARED_CSS = """
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-dropdown);
       padding: 1.15rem;
-      z-index: 500;
+      z-index: 100;
       display: none;
       max-height: 420px;
       overflow-x: hidden;
@@ -1579,6 +1581,8 @@ SHARED_CSS = """
       gap: 1.35rem;
       margin-bottom: 3.5rem;
       width: 100%;
+      position: relative;
+      z-index: 1;
     }
 
     .bento-card {
@@ -1750,6 +1754,8 @@ SHARED_CSS = """
     .recently-viewed-section {
       margin-bottom: 2.75rem;
       width: 100%;
+      position: relative;
+      z-index: 1;
     }
 
     .recently-viewed-grid {
