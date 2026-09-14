@@ -16,6 +16,7 @@ import datetime
 import logging
 import re
 from typing import Any, Dict, List, Optional
+from collectors.earnings_calendar import collect_finnhub_earnings_calendar
 from pipeline.db import get_db_connection
 
 logger = logging.getLogger(__name__)
@@ -172,7 +173,7 @@ def calculate_sec_filing_deadlines(conn, today: Optional[datetime.date] = None) 
         """
         SELECT ticker, company_name, form_or_type, published_date, summary, url
         FROM news_items
-        WHERE form_or_type IN ('10-Q', '10-K')
+        WHERE form_or_type IN ('10-Q', '10-K', '10-Q/A', '10-K/A')
         ORDER BY published_date DESC
         """
     )
@@ -214,7 +215,7 @@ def calculate_sec_filing_deadlines(conn, today: Optional[datetime.date] = None) 
 
             # Form 10-Q deadline: 40 calendar days after quarter end
             # Form 10-K deadline: 60 calendar days after fiscal year end
-            if form == "10-K":
+            if "10-K" in form:
                 deadline_dt = next_q_end + datetime.timedelta(days=40)
                 evt_type = "Statutory SEC Deadline (Estimated)"
                 headline = "Estimated SEC Form 10-Q Deadline (40d Rule)"
@@ -325,26 +326,62 @@ def extract_events_from_news_items(conn, today: Optional[datetime.date] = None) 
 def build_forthcoming_calendar(
     watchlist: Optional[List[Dict[str, Any]]] = None,
     db_path: Optional[str] = None,
+    api_key: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Build and persist forthcoming calendar events for all watchlist companies.
+
+    Combines:
+    1. Structured earnings releases from Finnhub's /calendar/earnings API.
+    2. Statutory SEC Form 10-Q/10-K filing deadlines for Large Accelerated Filers.
+    3. Confirmed dividend ex-dates and investor conferences from PR/news items.
 
     Sorts strictly by soonest date first.
     """
     today = datetime.date.today()
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
+    # Load watchlist if not passed
+    wl = watchlist or []
+    if not wl:
+        try:
+            import yaml
+            import os
+            wl_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml"
+            )
+            if os.path.exists(wl_path):
+                with open(wl_path, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+                    wl = data.get("companies", [])
+        except Exception as e:
+            logger.warning("Could not auto-load watchlist in calendar: %s", e)
+
+    # 1. Fetch structured earnings calendar from Finnhub
+    finnhub_events: List[Dict[str, Any]] = []
+    if wl:
+        raw_finnhub = collect_finnhub_earnings_calendar(
+            watchlist=wl,
+            api_key=api_key,
+            days_forward=120,
+            today=today,
+        )
+        for ev in raw_finnhub:
+            ev["relative_badge"] = calculate_relative_badge(ev["event_date"], today=today)
+            finnhub_events.append(ev)
+
     with get_db_connection(db_path) as conn:
         init_calendar_schema(conn)
-
-        # 1. Extract verified sourced events from company releases
-        news_events = extract_events_from_news_items(conn, today=today)
 
         # 2. Extract statutory SEC deadlines (clearly labeled as computed/estimated)
         sec_deadlines = calculate_sec_filing_deadlines(conn, today=today)
 
-        all_events = news_events + sec_deadlines
+        # 3. Extract verified sourced events from company releases (dividends, conferences)
+        news_events = extract_events_from_news_items(conn, today=today)
 
-        # 3. Deduplicate events by (ticker, event_type, event_date)
+        # Prioritize structured Finnhub events over heuristic news text extractions
+        all_events = finnhub_events + sec_deadlines + news_events
+
+        # 4. Deduplicate events by (ticker, event_type, event_date)
         unique_events_map: Dict[str, Dict[str, Any]] = {}
         for ev in all_events:
             key = f"{ev['ticker']}|{ev['event_type']}|{ev['event_date']}"
@@ -359,7 +396,7 @@ def build_forthcoming_calendar(
         # Clear prior calendar items to avoid stale entries
         conn.execute("DELETE FROM calendar_events")
 
-        # 4. Persist to SQLite
+        # 5. Persist to SQLite
         for ev in sorted_events:
             conn.execute(
                 """
@@ -385,5 +422,11 @@ def build_forthcoming_calendar(
             )
         conn.commit()
 
-    logger.info("Forthcoming Calendar built: %d upcoming scheduled events", len(sorted_events))
+    logger.info(
+        "Forthcoming Calendar built: %d upcoming scheduled events (Finnhub: %d, SEC: %d, News: %d)",
+        len(sorted_events),
+        len(finnhub_events),
+        len(sec_deadlines),
+        len(news_events),
+    )
     return sorted_events

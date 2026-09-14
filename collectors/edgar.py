@@ -90,10 +90,31 @@ def parse_submissions(
     primary_doc_descriptions = recent.get("primaryDocDescription", [])
 
     total_available = len(accession_numbers)
-    items_to_take = min(total_available, max_items)
+
+    # Guarantee latest 10-Q and 10-K filings are captured regardless of Form 4 volume
+    latest_10q_idx = next(
+        (i for i, f in enumerate(forms) if f in ("10-Q", "10-Q/A")), None
+    )
+    latest_10k_idx = next(
+        (i for i, f in enumerate(forms) if f in ("10-K", "10-K/A")), None
+    )
+
+    chosen_indices = set()
+    if latest_10q_idx is not None:
+        chosen_indices.add(latest_10q_idx)
+    if latest_10k_idx is not None:
+        chosen_indices.add(latest_10k_idx)
+
+    # Fill remaining quota with most recent filings
+    for i in range(total_available):
+        if len(chosen_indices) >= max_items:
+            break
+        chosen_indices.add(i)
+
+    sorted_indices = sorted(list(chosen_indices))
 
     filings = []
-    for i in range(items_to_take):
+    for i in sorted_indices:
         acc_num = accession_numbers[i]
         acc_clean = acc_num.replace("-", "")
         form = forms[i] if i < len(forms) else "UNKNOWN"

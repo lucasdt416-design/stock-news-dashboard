@@ -221,7 +221,11 @@ def main() -> None:
 
     # 11. Stage 9: Forthcoming Corporate Calendar (Category #24)
     logger.info("--- Stage 9: Forthcoming Corporate Calendar ---")
-    calendar_events = build_forthcoming_calendar(watchlist=tickers, db_path=str(db_file))
+    calendar_events = build_forthcoming_calendar(
+        watchlist=tickers,
+        db_path=str(db_file),
+        api_key=os.environ.get("FINNHUB_API_KEY", "").strip(),
+    )
     logger.info("Corporate calendar populated: %d upcoming scheduled events", len(calendar_events))
 
     # 12. Stage 10: Macroeconomic Intelligence Engine (Category #15)

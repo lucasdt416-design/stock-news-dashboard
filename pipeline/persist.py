@@ -489,12 +489,15 @@ def prune_news_items(
         cursor = conn.execute("SELECT count(*) FROM news_items")
         initial_count = cursor.fetchone()[0]
 
-        # 2. Step A: Prune items older than 90 days
+        # 2. Step A: Prune items older than 90 days (exempting latest statutory 10-Q/10-K filings)
         del_cursor = conn.execute(
             """
             DELETE FROM news_items
-            WHERE (published_date IS NOT NULL AND published_date != '' AND published_date < ?)
-               OR ((published_date IS NULL OR published_date = '') AND created_at < ?)
+            WHERE (form_or_type IS NULL OR form_or_type NOT IN ('10-Q', '10-K', '10-Q/A', '10-K/A'))
+              AND (
+                  (published_date IS NOT NULL AND published_date != '' AND published_date < ?)
+                  OR ((published_date IS NULL OR published_date = '') AND created_at < ?)
+              )
             """,
             (cutoff_str, cutoff_str),
         )
@@ -518,7 +521,7 @@ def prune_news_items(
         except Exception as e:
             logger.debug("Legacy filings table cleanup skipped: %s", e)
 
-        # 3. Step B: Enforce hard safety cap of max_total_items (e.g. 1000)
+        # 3. Step B: Enforce hard safety cap of max_total_items (e.g. 1000), preserving statutory filings
         cursor = conn.execute("SELECT count(*) FROM news_items")
         count_after_age = cursor.fetchone()[0]
 
@@ -527,9 +530,16 @@ def prune_news_items(
                 """
                 DELETE FROM news_items
                 WHERE id NOT IN (
-                    SELECT id FROM news_items
-                    ORDER BY published_date DESC, created_at DESC, id DESC
-                    LIMIT ?
+                    SELECT id FROM (
+                        SELECT id FROM news_items
+                        WHERE form_or_type IN ('10-Q', '10-K', '10-Q/A', '10-K/A')
+                        UNION
+                        SELECT id FROM (
+                            SELECT id FROM news_items
+                            ORDER BY published_date DESC, created_at DESC, id DESC
+                            LIMIT ?
+                        )
+                    )
                 )
                 """,
                 (max_total_items,),
