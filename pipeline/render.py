@@ -89,6 +89,93 @@ def format_human_headline(item: Dict[str, Any]) -> str:
 
 
 # ==============================================================================
+# SECTOR DIRECTORY & CATEGORIZATION SYSTEM (10 MACRO SECTORS)
+# ==============================================================================
+SECTOR_METADATA = {
+    "Technology": {
+        "icon": "",
+        "description": "Semiconductors, Cloud Software, AI & Consumer Tech",
+        "symbols": ["NVDA", "AMD", "INTC", "AAPL", "MSFT", "GOOGL", "META", "TSLA"],
+    },
+    "Finance": {
+        "icon": "",
+        "description": "Global Banking & Investment Management",
+        "symbols": ["JPM", "BAC", "GS"],
+    },
+    "Healthcare": {
+        "icon": "",
+        "description": "Pharmaceuticals, Biotechnology & Managed Care",
+        "symbols": ["JNJ", "PFE", "ABBV", "UNH"],
+    },
+    "Energy": {
+        "icon": "",
+        "description": "Integrated Oil, Natural Gas & Energy Infrastructure",
+        "symbols": ["XOM", "CVX"],
+    },
+    "Industrials": {
+        "icon": "",
+        "description": "Heavy Machinery & Industrial Equipment",
+        "symbols": ["CAT"],
+    },
+    "Aerospace": {
+        "icon": "",
+        "description": "Commercial Aviation & Defense Propulsion",
+        "symbols": ["BA", "GE"],
+    },
+    "Retail": {
+        "icon": "",
+        "description": "Retail Chains, Wholesale & E-Commerce",
+        "symbols": ["WMT", "COST", "HD", "AMZN"],
+    },
+    "Consumer Staples": {
+        "icon": "",
+        "description": "Household Products, Beverages, Dining & Media",
+        "symbols": ["PG", "KO", "MCD", "DIS"],
+    },
+    "Telecom": {
+        "icon": "",
+        "description": "Broadband, 5G Wireless & Telecom Infrastructure",
+        "symbols": ["VZ"],
+    },
+    "Utilities": {
+        "icon": "",
+        "description": "Clean Power Generation & Electric Grid Utilities",
+        "symbols": ["NEE"],
+    },
+}
+
+
+def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
+    """Classify any stock symbol or sector string into one of the 10 macro sectors."""
+    sym = (symbol or "").upper().strip()
+    for sec_name, meta in SECTOR_METADATA.items():
+        if sym in meta["symbols"]:
+            return sec_name
+    sec = (sector_str or "").lower()
+    if any(k in sec for k in ["semi", "software", "search", "social", "cloud", "tech"]):
+        return "Technology"
+    if any(k in sec for k in ["bank", "financ"]):
+        return "Finance"
+    if any(k in sec for k in ["health", "pharma", "managed_care"]):
+        return "Healthcare"
+    if any(k in sec for k in ["oil", "gas", "energy"]):
+        return "Energy"
+    if any(k in sec for k in ["industr", "machin"]):
+        return "Industrials"
+    if any(k in sec for k in ["aero", "defen"]):
+        return "Aerospace"
+    if any(k in sec for k in ["retail", "ecom", "home_improvement"]):
+        return "Retail"
+    if any(k in sec for k in ["staple", "bever", "restaur", "entertain"]):
+        return "Consumer Staples"
+    if any(k in sec for k in ["tele"]):
+        return "Telecom"
+    if any(k in sec for k in ["util"]):
+        return "Utilities"
+    return "Technology"
+
+
+# ==============================================================================
 # SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
@@ -3335,6 +3422,618 @@ SHARED_CSS = """
       border-bottom: 1px solid var(--border-card);
       color: var(--text-primary);
     }
+
+    /* =========================================================================
+       HOLDINGS DIRECTORY MODAL & SECTOR NAVIGATION SYSTEM
+       ========================================================================= */
+    .holdings-directory-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .holdings-directory-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .holdings-directory-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.96);
+      width: 92%;
+      max-width: 1060px;
+      max-height: 88vh;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      z-index: 10001;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .holdings-directory-modal.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .holdings-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--border-card);
+      background: var(--bg-surface);
+    }
+    .holdings-modal-close-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-full);
+      font-size: 1.3rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      line-height: 1;
+      transition: all var(--transition-fast);
+    }
+    .holdings-modal-close-btn:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+    .holdings-modal-filter-bar {
+      padding: 1rem 1.75rem;
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border-card);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .holdings-search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .holdings-search-input-wrap svg {
+      position: absolute;
+      left: 1rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .holdings-search-input-wrap input {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-card);
+      border-radius: var(--radius-full);
+      padding: 0.6rem 1rem 0.6rem 2.6rem;
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      outline: none;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+    .holdings-search-input-wrap input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .holdings-sector-tabs-row {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.2rem;
+    }
+    .holdings-sector-tabs-row::-webkit-scrollbar {
+      display: none;
+    }
+    .holdings-sector-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+      flex-shrink: 0;
+    }
+    .holdings-sector-tab .tab-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      padding: 0.05rem 0.4rem;
+      border-radius: var(--radius-full);
+    }
+    .holdings-sector-tab:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+    .holdings-sector-tab.active {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    }
+    .holdings-sector-tab.active .tab-count {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+    .holdings-modal-body {
+      padding: 1.5rem 1.75rem;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+    .directory-sector-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .directory-sector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.45rem;
+      border-bottom: 1.5px solid var(--border-card);
+    }
+    .directory-sector-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .directory-sector-desc {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-left: 0.35rem;
+    }
+    @media (max-width: 640px) {
+      .directory-sector-desc { display: none; }
+    }
+    .directory-sector-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      background: var(--accent-blue-soft);
+      border: 1px solid #bfdbfe;
+      padding: 0.15rem 0.55rem;
+      border-radius: var(--radius-full);
+    }
+    .directory-sector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+    .directory-holding-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      text-decoration: none;
+      transition: all var(--transition-fast);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      min-height: 96px;
+    }
+    .directory-holding-card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.12);
+      background: #fafcff;
+    }
+    .holding-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+    }
+    .holding-card-perf {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-full);
+    }
+    .perf-pos { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .perf-neg { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .perf-neutral { background: var(--bg-surface-elevated); color: var(--text-muted); border: 1px solid var(--border-card); }
+    .holding-card-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 0.35rem;
+    }
+    .holding-card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .holding-card-count {
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+
+    /* Sidebar Holdings Directory Button & Tree */
+    .sidebar-directory-btn {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(124, 58, 237, 0.08));
+      border: 1.5px solid rgba(37, 99, 235, 0.25);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.85rem;
+      color: var(--accent-blue);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 1.25rem;
+      transition: all var(--transition-fast);
+    }
+    .sidebar-directory-btn:hover {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(124, 58, 237, 0.14));
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
+    .sidebar-dir-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      background: var(--accent-blue);
+      color: #ffffff;
+      padding: 0.1rem 0.45rem;
+      border-radius: var(--radius-full);
+    }
+
+    .sidebar-holdings-tree {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border-card);
+      padding-top: 1rem;
+    }
+    .sidebar-sectors-scroll {
+      max-height: 240px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding-right: 0.2rem;
+    }
+    .sidebar-sector-details {
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      overflow: hidden;
+    }
+    .sidebar-sector-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.45rem 0.65rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-surface);
+      list-style: none;
+    }
+    .sidebar-sector-summary::-webkit-details-marker {
+      display: none;
+    }
+    .sidebar-sector-summary:hover {
+      background: var(--bg-surface-elevated);
+    }
+    .sidebar-sec-title {
+      font-weight: 700;
+    }
+    .sidebar-sec-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .sidebar-sector-details[open] .sec-caret {
+      transform: rotate(180deg);
+    }
+    .sec-caret {
+      transition: transform 0.2s ease;
+      font-size: 0.65rem;
+    }
+    .sidebar-sector-tickers {
+      padding: 0.35rem 0.5rem 0.5rem 0.5rem;
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .sidebar-ticker-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.25rem 0.4rem;
+      border-radius: var(--radius-xs);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.74rem;
+      transition: all var(--transition-fast);
+    }
+    .sidebar-ticker-row:hover {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+    }
+    .sidebar-ticker-name {
+      flex: 1;
+      margin-left: 0.4rem;
+      margin-right: 0.4rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+    .sidebar-ticker-stories {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    /* Company Page Categorized Directory Browser */
+    .company-directory-browser {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .company-browser-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .company-browser-sectors {
+      display: flex;
+      gap: 0.35rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    .company-browser-sectors::-webkit-scrollbar {
+      display: none;
+    }
+    .company-browser-sec-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+    }
+    .company-browser-sec-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-primary);
+    }
+    .company-browser-sec-btn.active {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+    }
+    .company-browser-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.65rem;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+    .company-browser-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-card);
+      cursor: pointer;
+      text-align: left;
+      transition: all var(--transition-fast);
+      width: 100%;
+    }
+    .company-browser-card:hover {
+      border-color: var(--accent-blue);
+      background: #f8fbff;
+      transform: translateY(-1px);
+    }
+    .company-browser-card.active {
+      border-color: var(--accent-blue);
+      background: var(--accent-blue-soft);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    .company-browser-card.active .company-browser-card-name {
+      color: var(--accent-blue);
+      font-weight: 800;
+    }
+    .company-browser-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .company-browser-card-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .company-browser-card-sec {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* Feed Sector Filter Bar & Ticker Popover */
+    .feed-sector-bar {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.75rem;
+    }
+    .feed-sector-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .feed-sector-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+    }
+    .feed-sector-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--text-primary);
+    }
+    .feed-sector-btn.active {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+    }
+    .feed-ticker-picker-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .feed-ticker-picker-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.95rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-card);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+    }
+    .feed-ticker-picker-btn:hover {
+      border-color: var(--accent-blue);
+    }
+    .feed-ticker-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 290px;
+      max-height: 340px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-dropdown);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .feed-ticker-dropdown-menu.active {
+      display: flex;
+    }
+    .feed-ticker-dropdown-search {
+      padding: 0.6rem;
+      border-bottom: 1px solid var(--border-card);
+      background: var(--bg-base);
+    }
+    .feed-ticker-dropdown-search input {
+      width: 100%;
+      padding: 0.38rem 0.65rem;
+      font-size: 0.82rem;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      outline: none;
+    }
+    .feed-ticker-dropdown-list {
+      overflow-y: auto;
+      max-height: 270px;
+      padding: 0.35rem 0;
+    }
+    .feed-ticker-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.45rem 0.85rem;
+      cursor: pointer;
+      font-size: 0.78rem;
+      color: var(--text-primary);
+      transition: background 0.15s ease;
+    }
+    .feed-ticker-item:hover {
+      background: var(--bg-surface-elevated);
+    }
+    .feed-ticker-item.active {
+      background: var(--accent-blue-soft);
+      color: var(--accent-blue);
+      font-weight: 700;
+    }
 """
 
 # ==============================================================================
@@ -3355,6 +4054,9 @@ NAVIGATION_LAYOUT_HTML = """
     </div>
   </a>
   <div class="mobile-header-right">
+    <button class="mobile-action-btn" onclick="openHoldingsDirectory()" aria-label="Open Holdings Directory" title="Browse 30 Holdings by Sector">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+    </button>
     <button class="mobile-action-btn" onclick="focusMobileSearch()" aria-label="Search">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
     </button>
@@ -3366,6 +4068,87 @@ NAVIGATION_LAYOUT_HTML = """
 
 <!-- Backdrop Overlay for Mobile Drawer -->
 <div class="mobile-drawer-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
+
+<!-- Global Holdings Directory Modal & Backdrop -->
+<div class="holdings-directory-backdrop" id="holdingsDirectoryBackdrop" onclick="closeHoldingsDirectory()"></div>
+<div class="holdings-directory-modal" id="holdingsDirectoryModal" role="dialog" aria-modal="true" aria-labelledby="holdingsModalTitle">
+  <div class="holdings-modal-header">
+    <div style="display:flex; align-items:center; gap:0.75rem;">
+      <div class="logo-badge" style="width:36px; height:36px; background:linear-gradient(135deg, #2563eb, #7c3aed);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/>
+          <rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+        </svg>
+      </div>
+      <div>
+        <h2 id="holdingsModalTitle" style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">
+          Company Holdings Directory
+        </h2>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:0;">
+          {{ watchlist_companies|length }} Monitored Holdings across {{ sector_directory|length }} Sectors
+        </p>
+      </div>
+    </div>
+    <button class="holdings-modal-close-btn" onclick="closeHoldingsDirectory()" aria-label="Close directory">&times;</button>
+  </div>
+
+  <div class="holdings-modal-filter-bar">
+    <div class="holdings-search-input-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input type="text" id="globalDirectorySearch" placeholder="Search by ticker (e.g. NVDA, GS), company name, or sector..." oninput="filterGlobalDirectoryModal(this.value)">
+    </div>
+    
+    <div class="holdings-sector-tabs-row" id="globalDirectorySectorTabs">
+      <button class="holdings-sector-tab active" data-sector="ALL" onclick="selectGlobalDirectorySector('ALL', this)">
+        All Sectors <span class="tab-count">{{ watchlist_companies|length }}</span>
+      </button>
+      {% for sec in sector_directory %}
+      <button class="holdings-sector-tab" data-sector="{{ sec.name }}" onclick="selectGlobalDirectorySector('{{ sec.name }}', this)">
+        {{ sec.name }} <span class="tab-count">{{ sec.count }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="holdings-modal-body" id="globalDirectoryBody">
+    {% for sec in sector_directory %}
+    <div class="directory-sector-group" data-sector="{{ sec.name }}">
+      <div class="directory-sector-header">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span class="directory-sector-name">{{ sec.name }}</span>
+          <span class="directory-sector-desc">{{ sec.description }}</span>
+        </div>
+        <span class="directory-sector-badge">{{ sec.count }} Holdings</span>
+      </div>
+
+      <div class="directory-sector-grid">
+        {% for co in sec.companies %}
+        <a href="company.html?ticker={{ co.symbol }}" class="directory-holding-card" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name|lower }}">
+          <div class="holding-card-top">
+            <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.82rem; padding:0.2rem 0.55rem;">{{ co.symbol }}</span>
+            <span class="holding-card-perf {% if co.alpha_vs_spy > 0 %}perf-pos{% elif co.alpha_vs_spy < 0 %}perf-neg{% else %}perf-neutral{% endif %}">
+              {% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}% vs SPY
+            </span>
+          </div>
+          <div class="holding-card-name" title="{{ co.name }}">{{ co.name }}</div>
+          <div class="holding-card-bottom">
+            <span class="holding-card-subsector">{{ co.sector | replace('_', ' ') | title }}</span>
+            <span class="holding-card-count">{{ co.story_count }} stories ↗</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <div id="globalDirectoryNoResults" style="display:none; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+      <div style="margin-bottom:0.5rem; color:var(--text-muted);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+      <div style="font-size:1.05rem; font-weight:700; color:var(--text-primary);">No companies found</div>
+      <div style="font-size:0.85rem; margin-top:0.25rem;">Try searching for a different ticker, name, or clear your sector filter.</div>
+    </div>
+  </div>
+</div>
 
 <!-- Slide-over Drawer / Desktop Sidebar -->
 <aside class="app-sidebar" id="appSidebar">
@@ -3380,6 +4163,18 @@ NAVIGATION_LAYOUT_HTML = """
     </a>
     <button class="sidebar-close-btn" onclick="closeMobileNav()" aria-label="Close navigation">&times;</button>
   </div>
+
+  <!-- Holdings Directory Quick Trigger Button -->
+  <button class="sidebar-directory-btn" onclick="openHoldingsDirectory()" aria-label="Open Holdings Directory">
+    <div style="display:flex; align-items:center; gap:0.6rem;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/>
+        <rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+      </svg>
+      <span>Holdings Directory</span>
+    </div>
+    <span class="sidebar-dir-badge">{{ watchlist_companies|length }}</span>
+  </button>
 
   <div class="nav-section-title">Navigation</div>
   <nav class="sidebar-nav">
@@ -3425,6 +4220,35 @@ NAVIGATION_LAYOUT_HTML = """
     </a>
   </nav>
 
+  <!-- Sidebar Holdings by Sector Explorer Tree -->
+  <div class="sidebar-holdings-tree">
+    <div class="nav-section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+      <span>Holdings by Sector</span>
+      <span style="font-size:0.7rem; font-weight:700; color:var(--accent-blue); cursor:pointer;" onclick="openHoldingsDirectory()">View All ↗</span>
+    </div>
+    <div class="sidebar-sectors-scroll">
+      {% for sec in sector_directory %}
+      <details class="sidebar-sector-details">
+        <summary class="sidebar-sector-summary">
+          <span style="display:flex; align-items:center; gap:0.45rem;">
+            <span class="sidebar-sec-title">{{ sec.name }}</span>
+          </span>
+          <span class="sidebar-sec-count">{{ sec.count }} <span class="sec-caret">▾</span></span>
+        </summary>
+        <div class="sidebar-sector-tickers">
+          {% for co in sec.companies %}
+          <a href="company.html?ticker={{ co.symbol }}" class="sidebar-ticker-row" title="{{ co.name }}">
+            <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.1rem 0.35rem;">{{ co.symbol }}</span>
+            <span class="sidebar-ticker-name">{{ co.name }}</span>
+            <span class="sidebar-ticker-stories">{{ co.story_count }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+
   <div class="sidebar-footer">
     <div class="sidebar-health-box">
       <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
@@ -3432,7 +4256,7 @@ NAVIGATION_LAYOUT_HTML = """
         <span style="font-size:0.75rem; font-weight:700; color:#15803d;">ALL SYSTEMS HEALTHY</span>
       </div>
       <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.4;">
-        15 Watchlist Companies<br>
+        {{ watchlist_companies|length }} Watchlist Holdings Monitored<br>
         Updated: {{ generated_at }}
       </div>
     </div>
@@ -3464,7 +4288,7 @@ NAVIGATION_LAYOUT_HTML = """
 </div>
 """
 
-# JavaScript for Mobile Drawer & Header Actions
+# JavaScript for Mobile Drawer, Directory Modal & Header Actions
 SHARED_MOBILE_JS = """
 function toggleMobileNav() {
   const sidebar = document.getElementById('appSidebar');
@@ -3489,6 +4313,80 @@ function closeMobileNav() {
   document.body.style.overflow = '';
 }
 
+function openHoldingsDirectory() {
+  closeMobileNav();
+  const modal = document.getElementById('holdingsDirectoryModal');
+  const backdrop = document.getElementById('holdingsDirectoryBackdrop');
+  if (modal && backdrop) {
+    modal.classList.add('active');
+    backdrop.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    const input = document.getElementById('globalDirectorySearch');
+    if (input) {
+      setTimeout(() => input.focus(), 150);
+    }
+  }
+}
+
+function closeHoldingsDirectory() {
+  const modal = document.getElementById('holdingsDirectoryModal');
+  const backdrop = document.getElementById('holdingsDirectoryBackdrop');
+  if (modal) modal.classList.remove('active');
+  if (backdrop) backdrop.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+let currentDirectorySector = 'ALL';
+
+function selectGlobalDirectorySector(secName, btn) {
+  currentDirectorySector = secName;
+  document.querySelectorAll('.holdings-sector-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  
+  const searchInput = document.getElementById('globalDirectorySearch');
+  const q = searchInput ? searchInput.value : '';
+  filterGlobalDirectoryModal(q);
+}
+
+function filterGlobalDirectoryModal(query) {
+  const q = (query || '').toLowerCase().trim();
+  const groups = document.querySelectorAll('#globalDirectoryBody .directory-sector-group');
+  let visibleCardsCount = 0;
+
+  groups.forEach(group => {
+    const groupSector = group.getAttribute('data-sector');
+    const sectorMatch = (currentDirectorySector === 'ALL' || groupSector === currentDirectorySector);
+    
+    let groupVisibleCards = 0;
+    const cards = group.querySelectorAll('.directory-holding-card');
+    cards.forEach(card => {
+      const ticker = (card.getAttribute('data-ticker') || '').toLowerCase();
+      const name = (card.getAttribute('data-name') || '').toLowerCase();
+      const subsector = (card.getAttribute('data-sector') || '').toLowerCase();
+      const textMatch = (!q || ticker.includes(q) || name.includes(q) || subsector.includes(q));
+
+      if (sectorMatch && textMatch) {
+        card.style.display = 'flex';
+        groupVisibleCards++;
+        visibleCardsCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    if (sectorMatch && groupVisibleCards > 0) {
+      group.style.display = 'flex';
+    } else {
+      group.style.display = 'none';
+    }
+  });
+
+  const noRes = document.getElementById('globalDirectoryNoResults');
+  if (noRes) {
+    noRes.style.display = (visibleCardsCount === 0) ? 'block' : 'none';
+  }
+}
+
 function focusMobileSearch() {
   const input = document.getElementById('globalSearchInput');
   if (input) {
@@ -3501,7 +4399,24 @@ function focusMobileSearch() {
     window.location.href = 'index.html#globalSearchBox';
   }
 }
+
+// Global Keyboard Shortcut: Press Cmd+K or Ctrl+K to open Holdings Directory
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    const modal = document.getElementById('holdingsDirectoryModal');
+    if (modal && modal.classList.contains('active')) {
+      closeHoldingsDirectory();
+    } else {
+      openHoldingsDirectory();
+    }
+  } else if (e.key === 'Escape') {
+    closeHoldingsDirectory();
+    closeMobileNav();
+  }
+});
 """
+
 
 # ==============================================================================
 # 1. HOME / OVERVIEW TEMPLATE (site/index.html)
@@ -3617,10 +4532,22 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                     </div>
 
                     <div class="dropdown-tickers-wrap">
-                      <div class="dropdown-section-title">Jump to Watchlist Ticker</div>
-                      <div class="dropdown-tickers-list">
-                        {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA', 'AMD'] %}
-                        <a href="company.html?ticker={{ sym }}" class="ticker-jump-pill">{{ sym }}</a>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                        <div class="dropdown-section-title" style="margin-bottom:0;">Browse Holdings by Sector ({{ watchlist_companies|length }})</div>
+                        <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.7rem; font-weight:700;">Full Directory ↗</button>
+                      </div>
+                      <div class="dropdown-sectors-grid" style="display:flex; flex-direction:column; gap:0.45rem; margin-top:0.5rem; max-height:200px; overflow-y:auto; padding-right:0.25rem;">
+                        {% for sec in sector_directory %}
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.35rem 0.55rem; background:var(--bg-surface-elevated); border-radius:var(--radius-sm);">
+                          <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:flex; align-items:center; gap:0.35rem;">
+                            {{ sec.name }}
+                          </span>
+                          <div style="display:flex; gap:0.25rem; flex-wrap:wrap; justify-content:flex-end;">
+                            {% for co in sec.companies %}
+                            <a href="company.html?ticker={{ co.symbol }}" class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.1rem 0.35rem; text-decoration:none;" title="{{ co.name }}">{{ co.symbol }}</a>
+                            {% endfor %}
+                          </div>
+                        </div>
                         {% endfor %}
                       </div>
                     </div>
@@ -3692,10 +4619,20 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- Watchlist Horizontal Ticker Ribbon -->
+          <!-- Watchlist Sector Holdings Ribbon & Directory Quick Trigger -->
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-top:0.85rem; margin-bottom:0.35rem; width:100%; max-width:920px;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.4rem;">
+              <span>Watchlist Holdings ({{ watchlist_companies|length }})</span>
+            </div>
+            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#f8fafc; border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              Sector Directory (⌘K) ↗
+            </button>
+          </div>
+
           <div class="watchlist-ticker-strip">
             {% for co in watchlist_companies %}
-            <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} ({{ co.symbol }}) deep dive">
+            <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} &bull; {{ co.macro_sector }}">
               <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
               <span>{{ co.symbol }}</span>
             </a>
@@ -3972,7 +4909,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       if (totalMatches === 0) {
         liveResults.innerHTML = `
           <div class="search-no-results">
-            <div class="no-results-icon">🔍</div>
+            <div class="no-results-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
             <div class="no-results-title">Sorry, what you are searching for cannot be found, try being less specific.</div>
             <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>), form type (<em>8-K</em>), category, or indicator.</div>
           </div>
@@ -4011,7 +4948,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <span class="ticker-badge ticker-${ev.ticker}">${ev.ticker}</span>
                 <div class="search-result-info">
                   <div class="search-result-title">${ev.headline}</div>
-                  <div class="search-result-sub">📅 ${ev.display_date} &bull; ${ev.event_type}</div>
+                  <div class="search-result-sub">${ev.display_date} &bull; ${ev.event_type}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Calendar ↗</span>
@@ -4027,7 +4964,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           html += `
             <a href="economic.html" class="search-result-item">
               <div class="search-result-left">
-                <div class="search-result-icon">🏛️</div>
+                <div class="search-result-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
                 <div class="search-result-info">
                   <div class="search-result-title">${ind.name}: ${ind.formatted_value}</div>
                   <div class="search-result-sub">${ind.category} &bull; Relevant: ${ind.relevant_tickers}</div>
@@ -4049,7 +4986,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <span class="ticker-badge ticker-${it.ticker}">${it.ticker}</span>
                 <div class="search-result-info">
                   <div class="search-result-title">${it.clean_headline}</div>
-                  <div class="search-result-sub">${it.category} &bull; ${it.published_date} &bull; ★ ${it.score}</div>
+                  <div class="search-result-sub">${it.category} &bull; ${it.published_date} &bull; Score: ${it.score}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Feed ↗</span>
@@ -4339,11 +5276,15 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           </div>
 
           <!-- Watchlist Company Selector Dropdown -->
-          <div style="display:flex; align-items:center; gap:0.6rem; width:100%; max-width:280px;">
+          <div style="display:flex; align-items:center; gap:0.6rem; width:100%; max-width:320px;">
             <label for="perfCompanySelect" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Stock:</label>
             <select id="perfCompanySelect" class="comparative-select" style="flex:1;" onchange="renderComparativePerformanceChart(this.value)">
-              {% for co in watchlist_companies %}
-              <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
+              {% for sec in sector_directory %}
+              <optgroup label="{{ sec.name }} ({{ sec.count }})">
+                {% for co in sec.companies %}
+                <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
+                {% endfor %}
+              </optgroup>
               {% endfor %}
             </select>
           </div>
@@ -4351,8 +5292,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
         <!-- Mobile Segmented View Toggle (Chart vs Table) -->
         <div class="perf-mobile-toggle">
-          <button class="perf-toggle-btn active" id="perfToggleChartBtn" onclick="switchPerfView('chart')">📈 Chart View</button>
-          <button class="perf-toggle-btn" id="perfToggleTableBtn" onclick="switchPerfView('table')">📊 Comparison Table</button>
+          <button class="perf-toggle-btn active" id="perfToggleChartBtn" onclick="switchPerfView('chart')">Chart View</button>
+          <button class="perf-toggle-btn" id="perfToggleTableBtn" onclick="switchPerfView('table')">Comparison Table</button>
         </div>
 
         <!-- Real-time Alpha & Return Metrics Ribbon -->
@@ -4392,7 +5333,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           <div class="health-metric-card">
             <div class="health-metric-title">SEC EDGAR Filings</div>
             <div class="health-metric-val" style="color:#15803d;">{{ latest_run.edgar_count if latest_run else 450 }}</div>
-            <div class="health-metric-sub">15 companies queried</div>
+            <div class="health-metric-sub">{{ watchlist_companies|length }} companies queried</div>
           </div>
           <div class="health-metric-card">
             <div class="health-metric-title">Company IR Releases</div>
@@ -5011,7 +5952,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   <span class="source-badge {% if lead.source == 'sec_edgar' %}source-badge-edgar{% elif lead.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">{{ lead.source_label }}</span>
                 </div>
                 <span class="priority-score-pill score-pill-lead" title="{{ lead.score_breakdown }}">
-                  ★ {{ lead.score }} / 10.0
+                  Score {{ lead.score }} / 10.0
                 </span>
               </div>
 
@@ -5085,7 +6026,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                     {% endif %}
                   </div>
                   <span class="priority-score-pill" title="{{ item.score_breakdown }}">
-                    ★ {{ item.score }}
+                    Score {{ item.score }}
                   </span>
                 </div>
 
@@ -5157,16 +6098,72 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
       <!-- Controls & Filters Panel -->
       <div class="controls-panel">
-        <div class="filter-row">
-          <span class="filter-label">Ticker:</span>
-          <button class="filter-btn active" data-filter-type="ticker" data-val="ALL" onclick="setTickerFilter('ALL', this)">
-            All Tickers <span class="pill-count">{{ items|length }}</span>
-          </button>
-          {% for ticker, count in stats.by_ticker.items() %}
-          <button class="filter-btn" data-filter-type="ticker" data-val="{{ ticker }}" onclick="setTickerFilter('{{ ticker }}', this)">
-            {{ ticker }} <span class="pill-count">{{ count }}</span>
-          </button>
-          {% endfor %}
+        <!-- 1. Sector Filter Tabs Bar -->
+        <div style="margin-bottom:0.75rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
+            <span class="filter-label" style="margin-bottom:0;">Browse by Sector:</span>
+            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Holdings Directory (⌘K) ↗</button>
+          </div>
+          <div class="feed-sector-bar">
+            <button class="feed-sector-btn active" data-sector="ALL" onclick="setFeedSectorFilter('ALL', this)">
+              All Sectors <span class="pill-count">{{ items|length }}</span>
+            </button>
+            {% for sec in sector_directory %}
+            <button class="feed-sector-btn" data-sector="{{ sec.name }}" onclick="setFeedSectorFilter('{{ sec.name }}', this)">
+              {{ sec.name }} <span class="pill-count">{{ sec.count }}</span>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- 2. Company / Ticker Selector Row with Search Popover & Quick Chips -->
+        <div class="filter-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <span class="filter-label">Company:</span>
+          
+          <div class="feed-ticker-picker-wrap" id="feedTickerPickerWrap">
+            <button class="feed-ticker-picker-btn" id="feedTickerPickerBtn" onclick="toggleFeedTickerDropdown()" type="button">
+              <span id="selectedTickerLabel">All Monitored Holdings</span>
+              <span style="font-size:0.7rem; color:var(--text-muted);">▾</span>
+            </button>
+            <div class="feed-ticker-dropdown-menu" id="feedTickerDropdownMenu">
+              <div class="feed-ticker-dropdown-search">
+                <input type="text" id="feedTickerSearchInput" placeholder="Search ticker, name, or sector..." oninput="filterFeedTickerDropdown(this.value)">
+              </div>
+              <div class="feed-ticker-dropdown-list" id="feedTickerDropdownList">
+                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" onclick="selectFeedTicker('ALL', 'All Monitored Holdings')">
+                  <span><strong>All Monitored Holdings</strong></span>
+                  <span class="pill-count">{{ items|length }}</span>
+                </div>
+                {% for sec in sector_directory %}
+                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}" style="padding:0.35rem 0.85rem; font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-card);">
+                  {{ sec.name }}
+                </div>
+                {% for co in sec.companies %}
+                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" onclick="selectFeedTicker('{{ co.symbol }}', '{{ co.symbol }} — {{ co.name }}')">
+                  <div style="display:flex; align-items:center; gap:0.45rem;">
+                    <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.72rem; padding:0.1rem 0.35rem;">{{ co.symbol }}</span>
+                    <span style="font-size:0.78rem;">{{ co.name }}</span>
+                  </div>
+                  <span class="pill-count">{{ co.story_count }}</span>
+                </div>
+                {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Selector Pills for Active Sector -->
+          <div id="feedQuickTickerPills" style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:center;">
+            <button class="filter-btn active" data-filter-type="ticker" data-val="ALL" onclick="setTickerFilter('ALL', this)">
+              All
+            </button>
+            {% for co in watchlist_companies %}
+            <button class="filter-btn" data-filter-type="ticker" data-val="{{ co.symbol }}" data-sector="{{ co.macro_sector }}" onclick="setTickerFilter('{{ co.symbol }}', this)" title="{{ co.name }}">
+              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.05rem 0.3rem;">{{ co.symbol }}</span>
+              <span class="pill-count">{{ stats.by_ticker.get(co.symbol, 0) }}</span>
+            </button>
+            {% endfor %}
+          </div>
         </div>
 
         <div class="filter-row">
@@ -5230,9 +6227,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 data-date="{{ item.published_date }}"
                 data-ticker="{{ item.ticker }}"
                 data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
+                data-sector="{{ item.macro_sector }}"
                 data-source="{{ item.source }}" 
                 data-category="{{ item.category }}"
-                data-text="{{ item.ticker }} {{ item.company_name }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
+                data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
               <td>
                 <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
                   {{ item.score }}
@@ -5323,14 +6321,110 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
+    let currentSector = 'ALL';
     let currentTicker = 'ALL';
     let currentCategory = 'ALL';
     let currentSource = 'ALL';
+
+    function setFeedSectorFilter(secName, btn) {
+      currentSector = secName;
+      document.querySelectorAll('.feed-sector-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const pills = document.querySelectorAll('#feedQuickTickerPills button[data-filter-type="ticker"]');
+      pills.forEach(pill => {
+        const pSec = pill.getAttribute('data-sector');
+        const pVal = pill.getAttribute('data-val');
+        if (pVal === 'ALL') {
+          pill.style.display = 'inline-flex';
+        } else if (secName === 'ALL' || pSec === secName) {
+          pill.style.display = 'inline-flex';
+        } else {
+          pill.style.display = 'none';
+        }
+      });
+
+      if (currentTicker !== 'ALL') {
+        const activePill = document.querySelector(`#feedQuickTickerPills button[data-val="${currentTicker}"]`);
+        if (activePill && activePill.style.display === 'none') {
+          setTickerFilter('ALL', document.querySelector('#feedQuickTickerPills button[data-val="ALL"]'));
+        }
+      }
+
+      filterItems();
+    }
+
+    function toggleFeedTickerDropdown() {
+      const menu = document.getElementById('feedTickerDropdownMenu');
+      if (menu) {
+        menu.classList.toggle('active');
+        if (menu.classList.contains('active')) {
+          const inp = document.getElementById('feedTickerSearchInput');
+          if (inp) {
+            inp.value = '';
+            filterFeedTickerDropdown('');
+            setTimeout(() => inp.focus(), 100);
+          }
+        }
+      }
+    }
+
+    function filterFeedTickerDropdown(query) {
+      const q = (query || '').toLowerCase().trim();
+      const items = document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item');
+      const headers = document.querySelectorAll('#feedTickerDropdownList .feed-dropdown-sec-header');
+      
+      items.forEach(it => {
+        const t = (it.getAttribute('data-ticker') || '').toLowerCase();
+        const n = (it.getAttribute('data-name') || '').toLowerCase();
+        const s = (it.getAttribute('data-sector') || '').toLowerCase();
+        if (!q || t.includes(q) || n.includes(q) || s.includes(q)) {
+          it.style.display = 'flex';
+        } else {
+          it.style.display = 'none';
+        }
+      });
+
+      headers.forEach(h => {
+        h.style.display = q ? 'none' : 'block';
+      });
+    }
+
+    function selectFeedTicker(ticker, label) {
+      const lbl = document.getElementById('selectedTickerLabel');
+      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All Monitored Holdings' : ticker;
+      
+      const menu = document.getElementById('feedTickerDropdownMenu');
+      if (menu) menu.classList.remove('active');
+
+      document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
+        it.classList.toggle('active', it.getAttribute('data-ticker') === ticker);
+      });
+
+      const quickBtn = document.querySelector(`#feedQuickTickerPills button[data-val="${ticker}"]`);
+      setTickerFilter(ticker, quickBtn);
+    }
+
+    document.addEventListener('click', (e) => {
+      const wrap = document.getElementById('feedTickerPickerWrap');
+      if (wrap && !wrap.contains(e.target)) {
+        const menu = document.getElementById('feedTickerDropdownMenu');
+        if (menu) menu.classList.remove('active');
+      }
+    });
 
     function setTickerFilter(ticker, btn) {
       currentTicker = ticker;
       document.querySelectorAll('[data-filter-type="ticker"]').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
+
+      const lbl = document.getElementById('selectedTickerLabel');
+      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All Monitored Holdings' : ticker;
+
+      document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
+        it.classList.toggle('active', it.getAttribute('data-ticker') === ticker);
+      });
+
       filterItems();
     }
 
@@ -5355,16 +6449,18 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       rows.forEach(row => {
         const rowTicker = row.getAttribute('data-ticker');
         const rowTickers = (row.getAttribute('data-tickers') || '').split(',');
+        const rowSector = row.getAttribute('data-sector');
         const rowCategory = row.getAttribute('data-category');
         const rowSource = row.getAttribute('data-source');
         const rowText = (row.getAttribute('data-text') || '').toLowerCase();
 
+        let matchSector = (currentSector === 'ALL') || (rowSector === currentSector);
         let matchTicker = (currentTicker === 'ALL') || rowTickers.includes(currentTicker);
         let matchCat = (currentCategory === 'ALL') || (rowCategory === currentCategory);
         let matchSrc = (currentSource === 'ALL') || (rowSource === currentSource);
         let matchQuery = !q || rowText.includes(q);
 
-        if (matchTicker && matchCat && matchSrc && matchQuery) {
+        if (matchSector && matchTicker && matchCat && matchSrc && matchQuery) {
           row.style.display = '';
         } else {
           row.style.display = 'none';
@@ -5398,7 +6494,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
       if (urlTicker) {
         const btn = document.querySelector(`[data-filter-type="ticker"][data-val="${urlTicker}"]`);
-        if (btn) setTickerFilter(urlTicker, btn);
+        setTickerFilter(urlTicker, btn);
       }
       if (urlQ) {
         const searchBox = document.getElementById('searchInput');
@@ -5633,13 +6729,33 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         </div>
       </header>
 
-      <!-- Ticker Filter for Sensitivities -->
+      <!-- Sector & Ticker Filter for Sensitivities -->
       <div class="controls-panel">
-        <div class="filter-row">
+        <div style="margin-bottom:0.75rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
+            <span class="filter-label" style="margin-bottom:0;">Filter by Sector:</span>
+            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Holdings Directory (⌘K) ↗</button>
+          </div>
+          <div class="feed-sector-bar">
+            <button class="feed-sector-btn active econ-sec-btn" data-sector="ALL" onclick="filterEconomicBySector('ALL', this)">
+              All Sectors <span class="pill-count">{{ watchlist_companies|length }}</span>
+            </button>
+            {% for sec in sector_directory %}
+            <button class="feed-sector-btn econ-sec-btn" data-sector="{{ sec.name }}" onclick="filterEconomicBySector('{{ sec.name }}', this)">
+              {{ sec.name }} <span class="pill-count">{{ sec.count }}</span>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="filter-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
           <span class="filter-label">Filter Company:</span>
-          <button class="filter-btn active econ-filter-btn" data-val="ALL" onclick="filterEconomicByTicker('ALL', this)">All Watchlist Tickers</button>
-          {% for sym in ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM', 'JNJ', 'XOM', 'WMT', 'DIS', 'KO', 'PFE', 'BA'] %}
-          <button class="filter-btn econ-filter-btn" data-val="{{ sym }}" onclick="filterEconomicByTicker('{{ sym }}', this)">{{ sym }}</button>
+          <button class="filter-btn active econ-filter-btn" data-val="ALL" data-sector="ALL" onclick="filterEconomicByTicker('ALL', this)">All Watchlist Tickers</button>
+          {% for co in watchlist_companies %}
+          <button class="filter-btn econ-filter-btn" data-val="{{ co.symbol }}" data-sector="{{ co.macro_sector }}" onclick="filterEconomicByTicker('{{ co.symbol }}', this)" title="{{ co.name }}">
+            <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.05rem 0.3rem;">{{ co.symbol }}</span>
+            <span>{{ co.symbol }}</span>
+          </button>
           {% endfor %}
         </div>
       </div>
@@ -5692,9 +6808,9 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
                 <th>Key Macro Sensitivities</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="matrixTableBody">
               {% for co in watchlist_companies %}
-              <tr>
+              <tr class="matrix-row" data-ticker="{{ co.symbol }}" data-sector="{{ co.macro_sector }}">
                 <td>
                   <a href="company.html?ticker={{ co.symbol }}" class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</a>
                 </td>
@@ -5702,7 +6818,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
                   {{ co.name }}
                 </td>
                 <td>
-                  <span class="category-badge">{{ co.sector }}</span>
+                  <span class="category-badge">{{ co.sector | replace('_', ' ') | title }}</span>
                 </td>
                 <td style="font-size:0.835rem; color:var(--text-secondary); line-height:1.45;">
                   {% if co.sensitivities %}
@@ -5723,17 +6839,68 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
-    function filterEconomicByTicker(ticker, btn) {
-      document.querySelectorAll('.econ-filter-btn').forEach(b => b.classList.remove('active'));
+    let currentEconSector = 'ALL';
+    let currentEconTicker = 'ALL';
+
+    function filterEconomicBySector(sector, btn) {
+      currentEconSector = sector;
+      document.querySelectorAll('.econ-sec-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
+      const pills = document.querySelectorAll('.econ-filter-btn');
+      pills.forEach(pill => {
+        const pSec = pill.getAttribute('data-sector');
+        const pVal = pill.getAttribute('data-val');
+        if (pVal === 'ALL') {
+          pill.style.display = 'inline-flex';
+        } else if (sector === 'ALL' || pSec === sector) {
+          pill.style.display = 'inline-flex';
+        } else {
+          pill.style.display = 'none';
+        }
+      });
+
+      // If current ticker is hidden, reset to ALL
+      if (currentEconTicker !== 'ALL') {
+        const activePill = document.querySelector(`.econ-filter-btn[data-val="${currentEconTicker}"]`);
+        if (activePill && activePill.style.display === 'none') {
+          filterEconomicByTicker('ALL', document.querySelector('.econ-filter-btn[data-val="ALL"]'));
+        }
+      }
+
+      applyEconomicFilters();
+    }
+
+    function filterEconomicByTicker(ticker, btn) {
+      currentEconTicker = ticker;
+      document.querySelectorAll('.econ-filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      applyEconomicFilters();
+    }
+
+    function applyEconomicFilters() {
       const cards = document.querySelectorAll('.economic-card');
       cards.forEach(card => {
         const relevant = (card.getAttribute('data-relevant-tickers') || '').split(',').map(s => s.trim());
-        if (ticker === 'ALL' || relevant.includes(ticker)) {
+        if (currentEconTicker === 'ALL') {
+          card.style.display = 'flex';
+        } else if (relevant.includes(currentEconTicker)) {
           card.style.display = 'flex';
         } else {
           card.style.display = 'none';
+        }
+      });
+
+      const matrixRows = document.querySelectorAll('.matrix-row');
+      matrixRows.forEach(row => {
+        const rTicker = row.getAttribute('data-ticker');
+        const rSector = row.getAttribute('data-sector');
+        const secMatch = (currentEconSector === 'ALL' || rSector === currentEconSector);
+        const tickMatch = (currentEconTicker === 'ALL' || rTicker === currentEconTicker);
+        if (secMatch && tickMatch) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
         }
       });
     }
@@ -5777,30 +6944,67 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         </div>
       </header>
 
-      <!-- Quick-Switcher Ticker Strip with Live Filter -->
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.75rem; flex-wrap:wrap;">
-        <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">
-          Select Company (16 Monitored)
+      <!-- Institutional Holdings Directory & Sector Browser Component -->
+      <section class="company-directory-browser">
+        <div class="company-browser-top">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.45rem;">
+              <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">Holdings Directory</span>
+              <span class="category-badge" style="font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Monitored</span>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem;">Browse by economic sector or search directly to load deep-dive profile</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <div style="position:relative; width:100%; max-width:260px;">
+              <input type="text" id="companyStripFilter" placeholder="Search ticker, company, or sector..." oninput="filterCompanyStrip(this.value)" style="width:100%; background:var(--bg-base); border:1.5px solid var(--border-card); border-radius:var(--radius-full); padding:0.42rem 0.95rem; font-size:0.82rem; color:var(--text-primary); outline:none;">
+            </div>
+            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.35rem;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              Full Modal (⌘K)
+            </button>
+          </div>
         </div>
-        <div style="position:relative; width:100%; max-width:260px;">
-          <input type="text" id="companyStripFilter" placeholder="Quick find stock (e.g. TSLA, NVDA, AMD)..." oninput="filterCompanyStrip(this.value)" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-card); border-radius:var(--radius-full); padding:0.38rem 0.95rem; font-size:0.82rem; color:var(--text-primary); outline:none;">
-        </div>
-      </div>
 
-      <div class="company-strip-wrap">
-        <div class="company-strip" id="companyStripContainer">
-          {% for co in watchlist_companies %}
-          <button class="company-strip-pill {% if loop.first %}active{% endif %}" 
-                  data-ticker="{{ co.symbol }}" 
-                  data-name="{{ co.name|lower }}"
-                  data-sector="{{ co.sector|lower }}"
-                  onclick="switchCompany('{{ co.symbol }}')">
-            <span class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</span>
-            <span>{{ co.name }}</span>
+        <!-- Sector Category Filter Tabs -->
+        <div class="company-browser-sectors">
+          <button class="company-browser-sec-btn active" data-sector="ALL" onclick="filterCompanySector('ALL', this)">
+            All Sectors <span class="tab-count" style="font-family:'JetBrains Mono'; font-size:0.68rem; margin-left:0.2rem;">{{ watchlist_companies|length }}</span>
+          </button>
+          {% for sec in sector_directory %}
+          <button class="company-browser-sec-btn" data-sector="{{ sec.name }}" onclick="filterCompanySector('{{ sec.name }}', this)">
+            {{ sec.name }} <span class="tab-count" style="font-family:'JetBrains Mono'; font-size:0.68rem; margin-left:0.2rem;">{{ sec.count }}</span>
           </button>
           {% endfor %}
         </div>
-      </div>
+
+        <!-- 30 Holdings Grid (Retains .company-strip & .company-strip-pill for tests and styles) -->
+        <div class="company-strip-wrap" style="overflow:visible;">
+          <div class="company-browser-grid company-strip" id="companyStripContainer">
+            {% for co in watchlist_companies %}
+            <button class="company-browser-card company-strip-pill {% if loop.first %}active{% endif %}" 
+                    data-ticker="{{ co.symbol }}" 
+                    data-name="{{ co.name|lower }}"
+                    data-sector="{{ co.macro_sector|lower }}"
+                    onclick="switchCompany('{{ co.symbol }}')"
+                    title="{{ co.name }} ({{ co.symbol }}) — {{ co.macro_sector }}">
+              <div style="display:flex; align-items:center; gap:0.5rem; min-width:0;">
+                <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
+                <div class="company-browser-card-info">
+                  <div class="company-browser-card-name">{{ co.name }}</div>
+                  <div class="company-browser-card-sec">{{ co.sector | replace('_', ' ') | title }}</div>
+                </div>
+              </div>
+              <div style="text-align:right; flex-shrink:0;">
+                <div style="font-family:'JetBrains Mono'; font-size:0.7rem; font-weight:700; color:{% if co.alpha_vs_spy > 0 %}#15803d{% elif co.alpha_vs_spy < 0 %}#b91c1c{% else %}var(--text-muted){% endif %};">
+                  {% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%
+                </div>
+                <div style="font-size:0.65rem; color:var(--text-muted);">{{ co.story_count }} stories</div>
+              </div>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
 
       <!-- Container for each company (one shown at a time) -->
       {% for co in watchlist_companies %}
@@ -6048,7 +7252,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               {% endfor %}
             {% else %}
               <div class="company-feed-item" style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
-                <div style="font-size:1.5rem; margin-bottom:0.5rem;">📰</div>
+                <div style="margin-bottom:0.5rem; color:var(--text-muted);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg></div>
                 <div style="font-weight:700; color:var(--text-primary);">No Recent Disclosures Found</div>
                 <div style="font-size:0.82rem; margin-top:0.25rem;">No filings, IR releases, or news media recorded in this period for {{ co.symbol }}.</div>
               </div>
@@ -6423,15 +7627,34 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
+    let currentCompanySector = 'ALL';
+
+    function filterCompanySector(secName, btn) {
+      currentCompanySector = secName;
+      document.querySelectorAll('.company-browser-sec-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const q = (document.getElementById('companyStripFilter')?.value || '').toLowerCase().trim();
+      applyCompanyCardFilters(q);
+    }
+
     function filterCompanyStrip(rawVal) {
       const q = (rawVal || '').toLowerCase().trim();
+      applyCompanyCardFilters(q);
+    }
+
+    function applyCompanyCardFilters(q) {
       const pills = document.querySelectorAll('.company-strip-pill');
       pills.forEach(pill => {
         const sym = (pill.getAttribute('data-ticker') || '').toLowerCase();
         const name = (pill.getAttribute('data-name') || '').toLowerCase();
         const sec = (pill.getAttribute('data-sector') || '').toLowerCase();
-        if (!q || sym.includes(q) || name.includes(q) || sec.includes(q)) {
-          pill.style.display = 'inline-flex';
+
+        const sectorMatch = (currentCompanySector === 'ALL' || sec === currentCompanySector.toLowerCase());
+        const textMatch = (!q || sym.includes(q) || name.includes(q) || sec.includes(q));
+
+        if (sectorMatch && textMatch) {
+          pill.style.display = 'flex';
         } else {
           pill.style.display = 'none';
         }
@@ -6570,26 +7793,28 @@ def render_dashboard(
     latest_run = recent_runs[0] if recent_runs else None
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 
-    # 2. Enrich items with human-readable headlines
+    # 2. Enrich items with human-readable headlines & macro sectors
     items = []
     for it in raw_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         items.append(it_copy)
 
     enriched_priority = []
     for it in priority_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         enriched_priority.append(it_copy)
 
-    # 3. Load watchlist for sensitivity matrix
+    # 3. Load watchlist and build sector directory
     watchlist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml")
-    watchlist_companies: List[Dict[str, Any]] = []
+    raw_watchlist_companies: List[Dict[str, Any]] = []
     if os.path.exists(watchlist_path):
         with open(watchlist_path, "r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
-            watchlist_companies = cfg.get("tickers", [])
+            raw_watchlist_companies = cfg.get("tickers", [])
 
     # 4. Comparative stock performance data
     if performance_data is None:
@@ -6599,6 +7824,45 @@ def render_dashboard(
         except Exception as e:
             logger.warning("Could not collect comparative performance data: %s", e)
             performance_data = {}
+
+    perf_companies = (performance_data or {}).get("companies", {})
+    ticker_counts = stats.get("by_ticker", {})
+
+    enriched_watchlist: List[Dict[str, Any]] = []
+    sector_directory_map: Dict[str, List[Dict[str, Any]]] = {sec: [] for sec in SECTOR_METADATA}
+
+    for co in raw_watchlist_companies:
+        co_copy = dict(co)
+        sym = co_copy.get("symbol", "")
+        macro_sec = get_company_macro_sector(sym, co_copy.get("sector", ""))
+        co_copy["macro_sector"] = macro_sec
+        co_copy["sector_icon"] = SECTOR_METADATA.get(macro_sec, {}).get("icon", "")
+        co_copy["story_count"] = ticker_counts.get(sym, 0)
+
+        # Performance snippet
+        co_perf = perf_companies.get(sym, {})
+        co_copy["perf_total_pct"] = co_perf.get("target", {}).get("total_pct_change", 0.0)
+        co_copy["alpha_vs_spy"] = co_perf.get("alpha_vs_spy", 0.0)
+        co_copy["alpha_vs_peers"] = co_perf.get("alpha_vs_peers", 0.0)
+        co_copy["assessment"] = co_perf.get("assessment", "In-Line")
+        co_copy["assessment_type"] = co_perf.get("assessment_type", "neutral")
+
+        enriched_watchlist.append(co_copy)
+        if macro_sec not in sector_directory_map:
+            sector_directory_map[macro_sec] = []
+        sector_directory_map[macro_sec].append(co_copy)
+
+    sector_directory = []
+    for sec_name, meta in SECTOR_METADATA.items():
+        cos = sector_directory_map.get(sec_name, [])
+        if cos:
+            sector_directory.append({
+                "name": sec_name,
+                "icon": meta["icon"],
+                "description": meta["description"],
+                "count": len(cos),
+                "companies": cos,
+            })
 
     common_context = {
         "items": items,
@@ -6610,7 +7874,26 @@ def render_dashboard(
         "recent_runs": recent_runs,
         "latest_run": latest_run,
         "generated_at": now_str,
-        "watchlist_companies": watchlist_companies,
+        "watchlist_companies": enriched_watchlist,
+        "sector_directory": sector_directory,
+        "sector_directory_json": json.dumps([
+            {
+                "name": s["name"],
+                "icon": s["icon"],
+                "count": s["count"],
+                "companies": [
+                    {
+                        "symbol": c["symbol"],
+                        "name": c["name"],
+                        "sector": c["sector"],
+                        "macro_sector": c["macro_sector"],
+                        "story_count": c["story_count"],
+                        "alpha_vs_spy": c["alpha_vs_spy"],
+                        "perf_total_pct": c["perf_total_pct"],
+                    } for c in s["companies"]
+                ]
+            } for s in sector_directory
+        ]),
         "performance_data": performance_data,
         "performance_data_json": json.dumps(performance_data or {}),
     }

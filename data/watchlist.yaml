@@ -222,3 +222,200 @@ tickers:
     macro_sensitivities: [datacenter_capex, pc_market_demand, export_controls_china]
     economic_sensitivities: [interest_rates]
     notes: "Track MI300/MI325 AI GPU accelerator ramp, datacenter EPYC CPU market share gains against Intel, and client AI PC adoption."
+
+  - symbol: INTC
+    name: Intel Corporation
+    cik: "0000050863"
+    ir_feed_url: "https://www.intc.com/news-events/press-releases/rss"
+    newsroom_url: "https://newsroom.intel.com"
+    sector: semiconductors
+    regulators: [BIS, SEC, FTC, EU_EC]
+    key_customers: [Dell, DELL, HP, HPE, Lenovo, Microsoft, MSFT, Amazon, AMZN, Alphabet, GOOGL]
+    key_suppliers: [ASML, Applied Materials, AMAT, Lam Research, LRCX, KLA, TSMC, TSM]
+    competitors: [AMD, NVDA, QCOM, TSM, AVGO]
+    macro_sensitivities: [pc_market_demand, datacenter_capex, chips_act_subsidies, foundry_transition]
+    economic_sensitivities: [interest_rates]
+    notes: "Track Intel Foundry Services (IFS) customer commitments, 18A process node ramp, and x86 market share defense against AMD."
+
+  - symbol: BAC
+    name: Bank of America Corporation
+    cik: "0000070858"
+    ir_feed_url: "https://newsroom.bankofamerica.com"
+    newsroom_url: "https://newsroom.bankofamerica.com"
+    sector: financial_banking
+    regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
+    key_customers: [Retail Depositors, Middle Market Enterprises, Global Institutional Borrowers]
+    key_suppliers: [Microsoft, MSFT, Amazon AWS, AMZN, Cisco, CSCO, S&P Global, SPGI]
+    competitors: [JPM, WFC, C, GS, MS]
+    macro_sensitivities: [fed_interest_rates, net_interest_income, consumer_credit_charge_offs, commercial_real_estate]
+    economic_sensitivities: [interest_rates, unemployment]
+    notes: "Monitor consumer deposit repricing beta, net interest income (NII) trajectory, and asset management inflows."
+
+  - symbol: GS
+    name: The Goldman Sachs Group, Inc.
+    cik: "0000886982"
+    ir_feed_url: "https://www.goldmansachs.com/press-releases"
+    newsroom_url: "https://www.goldmansachs.com/news-and-insights"
+    sector: financial_investment_banking
+    regulators: [Federal_Reserve, SEC, FINRA, CFTC, FCA]
+    key_customers: [Institutional Asset Managers, Private Equity Sponsors, Corporate Issuers, Sovereign Wealth Funds]
+    key_suppliers: [Bloomberg, London Stock Exchange, Amazon AWS, AMZN, Snowflake, SNOW]
+    competitors: [MS, JPM, BAC, C, LAZ]
+    macro_sensitivities: [investment_banking_m_and_a_volume, ipo_equity_underwriting, fixed_income_currency_commodities_ficc, private_credit_expansion]
+    economic_sensitivities: [interest_rates, unemployment]
+    notes: "Key bellwether for global dealmaking, M&A advisory pipelines, and Alternative Asset Management fee growth."
+
+  - symbol: UNH
+    name: UnitedHealth Group Incorporated
+    cik: "0000731766"
+    ir_feed_url: "https://www.unitedhealthgroup.com/newsroom"
+    newsroom_url: "https://www.unitedhealthgroup.com/newsroom"
+    sector: healthcare_managed_care
+    regulators: [CMS, HHS, FTC, DOJ, SEC]
+    key_customers: [Employer Health Plans, Medicare Advantage Beneficiaries, Medicaid State Programs]
+    key_suppliers: [Hospital Networks, Quest Diagnostics, DGX, Labcorp, LH, Pfizer, PFE, Johnson & Johnson, JNJ]
+    competitors: [CVS, ELV, CI, HUM]
+    macro_sensitivities: [medical_care_ratio_mcr, medicare_advantage_rate_notices, optum_value_based_care_growth, pbm_reform_legislation]
+    economic_sensitivities: [inflation, unemployment]
+    notes: "Benchmark for healthcare utilization trends, Optum Health segment expansion, and medical loss ratio (MLR) discipline."
+
+  - symbol: ABBV
+    name: AbbVie Inc.
+    cik: "0001551152"
+    ir_feed_url: "https://abbvie.gcs-web.com/rss/news-releases.xml"
+    newsroom_url: "https://news.abbvie.com"
+    sector: healthcare_pharmaceuticals
+    regulators: [FDA, EMA, SEC, FTC]
+    key_customers: [McKesson, MCK, Cencora, COR, Cardinal Health, CAH, Global Health Systems]
+    key_suppliers: [Lonza, Catalent, Thermo Fisher Scientific, TMO, Samsung Biologics]
+    competitors: [JNJ, PFE, MRK, BMY, LLY]
+    macro_sensitivities: [humira_biosimilar_erosion, skyrizi_rinvoq_revenue_ramp, oncology_neuroscience_pipeline, medicare_drug_price_negotiations]
+    economic_sensitivities: [inflation]
+    notes: "Focus on immunology post-Humira growth trajectory driven by Skyrizi and Rinvoq, plus Immuno-oncology and neuroscience assets."
+
+  - symbol: PG
+    name: The Procter & Gamble Company
+    cik: "0000080424"
+    ir_feed_url: "https://news.pg.com"
+    newsroom_url: "https://news.pg.com"
+    sector: consumer_staples_household
+    regulators: [FDA, FTC, SEC, EPA]
+    key_customers: [Walmart, WMT, Target, TGT, Costco, COST, Amazon, AMZN, Kroger, KR]
+    key_suppliers: [Dow, DOW, International Paper, IP, Berry Global, BERY]
+    competitors: [UL, CL, KMB, JNJ]
+    macro_sensitivities: [commodity_pulp_resin_input_costs, organic_volume_growth, consumer_elasticity, dollar_fx_headwinds]
+    economic_sensitivities: [inflation]
+    notes: "Defensive consumer staple bellwether tracking price/mix realizations, volume elasticity, and productivity cost savings."
+
+  - symbol: MCD
+    name: McDonald's Corporation
+    cik: "0000063908"
+    ir_feed_url: "https://corporate.mcdonalds.com/corpmcd/en-us/news-center"
+    newsroom_url: "https://corporate.mcdonalds.com/corpmcd/en-us/news-center"
+    sector: consumer_discretionary_restaurants
+    regulators: [FDA, FTC, SEC, NLRB]
+    key_customers: [Global Fast-Food Consumers, Franchisee Operators]
+    key_suppliers: [Tyson Foods, TSN, Coca-Cola, KO, Lamb Weston, LW, Kerry Group, Bunge, BG]
+    competitors: [QSR, YUM, WEN, SBUX, CMG]
+    macro_sensitivities: [low_income_consumer_traffic, value_meal_competition, beef_chicken_input_inflation, franchisee_operating_margins]
+    economic_sensitivities: [inflation, unemployment]
+    notes: "Barometer for middle- and lower-income discretionary dining demand, global comparable store sales, and digital loyalty growth."
+
+  - symbol: CAT
+    name: Caterpillar Inc.
+    cik: "0000018230"
+    ir_feed_url: "https://www.caterpillar.com/en/news"
+    newsroom_url: "https://www.caterpillar.com/en/news"
+    sector: industrials_heavy_machinery
+    regulators: [EPA, OSHA, SEC, DOJ]
+    key_customers: [Global Construction Contractors, Mining Operators, Energy Exploration Drillers, Dealer Network]
+    key_suppliers: [Nucor, NUE, Steel Dynamics, STLD, Parker-Hannifin, PH, Eaton, ETN, Donaldson, DCI]
+    competitors: [DE, CNH, Komatsu]
+    macro_sensitivities: [us_infrastructure_act_capex, mining_commodity_prices, dealer_machine_inventory_backlog, global_manufacturing_pmi]
+    economic_sensitivities: [interest_rates, inflation]
+    notes: "Primary cyclical bellwether for non-residential construction, energy infrastructure investments, and dealer order backlogs."
+
+  - symbol: GE
+    name: GE Aerospace
+    cik: "0000040545"
+    ir_feed_url: "https://www.geaerospace.com/news"
+    newsroom_url: "https://www.geaerospace.com/news"
+    sector: aerospace_defense
+    regulators: [FAA, DOD, SEC, EASA]
+    key_customers: [Boeing, BA, Airbus, AIR, Delta Air Lines, DAL, United Airlines, UAL, American Airlines, AAL, US Military]
+    key_suppliers: [Precision Castparts, Howmet Aerospace, HWM, ATI, Spirit AeroSystems, SPR, Woodward, WWD]
+    competitors: [RTX, Safran, Honeywell, HON, MTU]
+    macro_sensitivities: [commercial_aftermarket_shop_visits, leap_engine_production_ramp, commercial_aviation_flight_hours, defense_appropriations]
+    economic_sensitivities: [interest_rates, inflation]
+    notes: "Pure-play commercial and defense propulsion leader. Track commercial engine shop visits, LEAP delivery rates, and services margins."
+
+  - symbol: CVX
+    name: Chevron Corporation
+    cik: "0000093410"
+    ir_feed_url: "https://chevroncorp.gcs-web.com/rss/news-releases.xml"
+    newsroom_url: "https://www.chevron.com/newsroom"
+    sector: energy_oil_gas
+    regulators: [EPA, DOE, SEC, FTC, DOI]
+    key_customers: [Commercial Refineries, Wholesale Fuel Distributors, Petrochemical Manufacturers]
+    key_suppliers: [SLB, Schlumberger, Baker Hughes, BKR, Halliburton, HAL, TechnipFMC, FTI]
+    competitors: [XOM, COP, BP, SHEL, TTE]
+    macro_sensitivities: [brent_wti_crude_prices, permian_basin_production_growth, hess_acquisition_arbitration, refining_crack_margins]
+    economic_sensitivities: [inflation]
+    notes: "Focus on Permian basin capital efficiency, Tengizchevroil (TCO) expansion ramp, and shareholder capital return yield."
+
+  - symbol: HD
+    name: The Home Depot, Inc.
+    cik: "0000354950"
+    ir_feed_url: "https://ir.homedepot.com/rss/news-releases.xml"
+    newsroom_url: "https://corporate.homedepot.com/newsroom"
+    sector: retail_home_improvement
+    regulators: [FTC, SEC, OSHA, EPA, CPSC]
+    key_customers: [Pro Contractors, DIY Homeowners, Property Maintenance Managers]
+    key_suppliers: [Stanley Black & Decker, SWK, Masco, MAS, Owens Corning, OC, Fortune Brands, FBIN, Trex, TREX]
+    competitors: [LOW, BLDR, SHW]
+    macro_sensitivities: [existing_home_sales_turnover, 30_year_mortgage_rates, home_equity_renovation_spend, pro_contractor_backlogs]
+    economic_sensitivities: [interest_rates, inflation]
+    notes: "Direct barometer of housing turnover and consumer renovation spend. Monitor Pro vs. DIY ticket sizes and comp transactions."
+
+  - symbol: COST
+    name: Costco Wholesale Corporation
+    cik: "0000909832"
+    ir_feed_url: "https://investor.costco.com"
+    newsroom_url: "https://investor.costco.com"
+    sector: retail_consumer_staples
+    regulators: [FTC, SEC, FDA, USDA, OSHA]
+    key_customers: [Costco Gold Star & Executive Members, Small Business Commercial Accounts]
+    key_suppliers: [Procter & Gamble, PG, Tyson Foods, TSN, PepsiCo, PEP, Kraft Heinz, KHC, Apple, AAPL]
+    competitors: [WMT, TGT, BJ, AMZN]
+    macro_sensitivities: [membership_renewal_rates, monthly_traffic_comp_sales, kirkland_signature_penetration, supply_chain_freight_logistics]
+    economic_sensitivities: [inflation, unemployment]
+    notes: "Top-tier retail compounder with industry-leading membership retention (>90%), volume-driven traffic, and high-margin membership revenue."
+
+  - symbol: VZ
+    name: Verizon Communications Inc.
+    cik: "0000732712"
+    ir_feed_url: "https://www.verizon.com/about/newsroom"
+    newsroom_url: "https://www.verizon.com/about/newsroom"
+    sector: telecommunications
+    regulators: [FCC, FTC, SEC, DOJ]
+    key_customers: [Consumer Wireless Subscribers, Enterprise Broadband Clients, US Federal & State Agencies]
+    key_suppliers: [Apple, AAPL, Samsung, Qualcomm, QCOM, Ericsson, ERIC, Nokia, NOK, Corning, GLW]
+    competitors: [T, TMUS, CMCSA, CHTR]
+    macro_sensitivities: [postpaid_phone_net_adds, fixed_wireless_access_fwa_adoption, wireless_service_revenue_growth, high_dividend_coverage]
+    economic_sensitivities: [interest_rates, unemployment]
+    notes: "Defensive cash generator tracking broadband / Fixed Wireless Access (FWA) additions, postpaid phone churn, and deleveraging."
+
+  - symbol: NEE
+    name: NextEra Energy, Inc.
+    cik: "0000753308"
+    ir_feed_url: "https://investor.nexteraenergy.com/rss/news-releases.xml"
+    newsroom_url: "https://newsroom.nexteraenergy.com"
+    sector: utilities_clean_energy
+    regulators: [FERC, Florida_PSC, SEC, EPA, DOE, NERC]
+    key_customers: [Florida Power & Light Retail Ratepayers, Hyperscale Datacenter Offtakers, Corporate PPA Buyers]
+    key_suppliers: [GE Vernova, GEV, Siemens Energy, First Solar, FSLR, Vestas, Fluence, FLNC]
+    competitors: [SO, DUK, AEP, EXC]
+    macro_sensitivities: [ai_datacenter_power_demand, interest_rates_project_financing, clean_energy_ira_tax_credits, florida_grid_capex]
+    economic_sensitivities: [interest_rates, inflation]
+    notes: "Premier clean energy utility and renewable project developer. Key beneficiary of skyrocketing AI datacenter electricity demand and Florida population growth."
+

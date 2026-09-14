@@ -178,7 +178,7 @@ def main() -> None:
 
     # 8. Stage 6: 'Why It Matters' Summarization (Gemini API)
     logger.info("--- Stage 6: 'Why It Matters' Summarization ---")
-    summarized_items = summarize_items(scored_items, batch_size=25)
+    summarized_items = summarize_items(scored_items, batch_size=50)
     logger.info("Summarization complete for %d items", len(summarized_items))
 
     # 9. Stage 7: Persist News Records

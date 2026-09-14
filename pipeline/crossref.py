@@ -216,7 +216,7 @@ def apply_supply_chain_cross_references(
             # Create clean human-readable summary badges
             badge_parts = []
             for m in matches:
-                badge_parts.append(f"🔗 {m['relation_type']}: {m['related_ticker']}")
+                badge_parts.append(f"{m['relation_type']}: {m['related_ticker']}")
             it["cross_ref_summary"] = " · ".join(badge_parts)
 
             # If item is general company announcement or press release, tag category relevance
