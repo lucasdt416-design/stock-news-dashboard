@@ -41,6 +41,22 @@ class TestCompanyViewAndRender(unittest.TestCase):
         self.assertIn("https://nvidianews.nvidia.com", content)
         self.assertIn("Newsroom ↗", content)
 
+        # Verify company card layout structure & classes
+        self.assertIn("company-browser-grid", content)
+        self.assertIn("company-browser-card-left", content)
+        self.assertIn("company-browser-card-info", content)
+        self.assertIn("company-browser-card-name", content)
+        self.assertIn("company-browser-card-sec", content)
+        self.assertIn("company-browser-card-stats", content)
+        self.assertIn("company-browser-card-alpha", content)
+        self.assertIn("company-browser-card-stories", content)
+
+        # Verify longest watchlist company names are present
+        self.assertIn("The Goldman Sachs Group, Inc.", content)
+        self.assertIn("UnitedHealth Group Incorporated", content)
+        self.assertIn("Costco Wholesale Corporation", content)
+        self.assertIn("The Procter &amp; Gamble Company", content)
+
     def test_ticker_links_across_pages(self):
         index_path = os.path.join(self.site_dir, "index.html")
         news_path = os.path.join(self.site_dir, "news.html")

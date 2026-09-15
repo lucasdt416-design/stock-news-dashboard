@@ -422,19 +422,34 @@ def get_economic_indicators(
             conn.close()
             return []
 
+        # Check if history_json / ai_synthesis columns exist
+        cols = [col[1] for col in conn.execute("PRAGMA table_info(economic_indicators)").fetchall()]
+        has_history = "history_json" in cols
+        has_synthesis = "ai_synthesis" in cols
+
+        select_cols = (
+            "indicator_id, name, series_id, category, current_value, "
+            "formatted_value, unit, previous_value, change_value, "
+            "change_direction, observation_date, updated_at, "
+            "context_note, relevant_tickers"
+        )
+        if has_history:
+            select_cols += ", history_json"
+        if has_synthesis:
+            select_cols += ", ai_synthesis"
+
         cursor = conn.execute(
-            """
-            SELECT indicator_id, name, series_id, category, current_value,
-                   formatted_value, unit, previous_value, change_value,
-                   change_direction, observation_date, updated_at,
-                   context_note, relevant_tickers
+            f"""
+            SELECT {select_cols}
             FROM economic_indicators
             ORDER BY 
                 CASE indicator_id
                     WHEN 'interest_rates' THEN 1
-                    WHEN 'inflation' THEN 2
-                    WHEN 'unemployment' THEN 3
-                    ELSE 4
+                    WHEN 'treasury_10y' THEN 2
+                    WHEN 'inflation' THEN 3
+                    WHEN 'crude_oil' THEN 4
+                    WHEN 'unemployment' THEN 5
+                    ELSE 6
                 END
             """
         )
@@ -443,6 +458,11 @@ def get_economic_indicators(
             d = dict(r)
             raw_tickers = d.get("relevant_tickers") or ""
             d["tickers_list"] = [t.strip() for t in raw_tickers.split(",") if t.strip()]
+            raw_hist = d.get("history_json") or ""
+            try:
+                d["history"] = json.loads(raw_hist) if raw_hist.startswith("[") else []
+            except Exception:
+                d["history"] = []
             rows.append(d)
         conn.close()
         return rows

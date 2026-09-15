@@ -1225,11 +1225,15 @@ SHARED_CSS = """
       font-size: 0.78rem;
       font-weight: 700;
       color: var(--text-primary);
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 1.25;
+      min-height: 2.5em;
       margin-bottom: 0.3rem;
+      word-break: break-word;
     }
 
     .orbit-card-meta {
@@ -1896,10 +1900,14 @@ SHARED_CSS = """
       font-size: 0.92rem;
       font-weight: 700;
       color: var(--text-primary);
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 1.3;
+      min-height: 2.6em;
+      word-break: break-word;
     }
 
     .recent-card-sector {
@@ -3244,6 +3252,193 @@ SHARED_CSS = """
       gap: 0.35rem;
     }
 
+    /* Macro Economic Calendar Strip */
+    .macro-events-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .macro-event-card {
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 1.15rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.85rem;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .macro-event-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, #3b82f6, #6366f1);
+      border-radius: 4px 0 0 4px;
+    }
+
+    .macro-event-card:hover {
+      transform: translateY(-2px);
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow-card);
+    }
+
+    .macro-event-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .macro-event-authority {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .macro-event-countdown {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .macro-event-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.35;
+      margin: 0.35rem 0 0 0;
+    }
+
+    .macro-event-date-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .macro-event-consensus {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.55rem;
+      line-height: 1.35;
+    }
+
+    .macro-event-consensus strong {
+      color: var(--text-primary);
+    }
+
+    /* Sparkline Chart Component */
+    .sparkline-wrapper {
+      position: relative;
+      margin: 0.85rem 0 0.65rem 0;
+      padding: 0.35rem 0 0.15rem 0;
+      background: rgba(248, 250, 252, 0.6);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: var(--radius-md);
+      padding: 0.5rem 0.65rem 0.35rem 0.65rem;
+    }
+
+    .sparkline-svg {
+      width: 100%;
+      height: 60px;
+      overflow: visible;
+      display: block;
+    }
+
+    .sparkline-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.68rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .sparkline-tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(15, 23, 42, 0.92);
+      color: #ffffff;
+      padding: 0.3rem 0.55rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      pointer-events: none;
+      z-index: 20;
+      white-space: nowrap;
+      transform: translate(-50%, -120%);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* AI Macro Synthesis Box */
+    .ai-synthesis-card {
+      background: linear-gradient(135deg, rgba(240, 249, 255, 0.85), rgba(245, 243, 255, 0.85));
+      border: 1px solid rgba(199, 210, 254, 0.9);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.9rem;
+      margin: 0.85rem 0 1.15rem 0;
+      position: relative;
+    }
+
+    .ai-synthesis-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+      gap: 0.5rem;
+    }
+
+    .ai-synthesis-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4338ca;
+    }
+
+    .ai-synthesis-badge svg {
+      color: #6366f1;
+    }
+
+    .ai-synthesis-meta {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .ai-synthesis-content {
+      font-size: 0.825rem;
+      color: #1e1b4b;
+      line-height: 1.45;
+      font-weight: 500;
+      font-style: normal;
+    }
+
     /* Health Section */
     .health-section {
       background: var(--bg-surface-glass);
@@ -3423,397 +3618,6 @@ SHARED_CSS = """
       color: var(--text-primary);
     }
 
-    /* =========================================================================
-       HOLDINGS DIRECTORY MODAL & SECTOR NAVIGATION SYSTEM
-       ========================================================================= */
-    .holdings-directory-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(15, 23, 42, 0.72);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      z-index: 10000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .holdings-directory-backdrop.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .holdings-directory-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.96);
-      width: 92%;
-      max-width: 1060px;
-      max-height: 88vh;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-modal);
-      z-index: 10001;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .holdings-directory-modal.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    .holdings-modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.25rem 1.75rem;
-      border-bottom: 1px solid var(--border-card);
-      background: var(--bg-surface);
-    }
-    .holdings-modal-close-btn {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      width: 34px;
-      height: 34px;
-      border-radius: var(--radius-full);
-      font-size: 1.3rem;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      line-height: 1;
-      transition: all var(--transition-fast);
-    }
-    .holdings-modal-close-btn:hover {
-      background: #fee2e2;
-      color: #b91c1c;
-      border-color: #fca5a5;
-    }
-    .holdings-modal-filter-bar {
-      padding: 1rem 1.75rem;
-      background: var(--bg-base);
-      border-bottom: 1px solid var(--border-card);
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .holdings-search-input-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      width: 100%;
-    }
-    .holdings-search-input-wrap svg {
-      position: absolute;
-      left: 1rem;
-      color: var(--text-muted);
-      pointer-events: none;
-    }
-    .holdings-search-input-wrap input {
-      width: 100%;
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      border-radius: var(--radius-full);
-      padding: 0.6rem 1rem 0.6rem 2.6rem;
-      font-size: 0.92rem;
-      color: var(--text-primary);
-      font-weight: 500;
-      outline: none;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-    }
-    .holdings-search-input-wrap input:focus {
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-    }
-    .holdings-sector-tabs-row {
-      display: flex;
-      gap: 0.4rem;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 0.2rem;
-    }
-    .holdings-sector-tabs-row::-webkit-scrollbar {
-      display: none;
-    }
-    .holdings-sector-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.8rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all var(--transition-fast);
-      flex-shrink: 0;
-    }
-    .holdings-sector-tab .tab-count {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      background: var(--bg-surface-elevated);
-      color: var(--text-muted);
-      padding: 0.05rem 0.4rem;
-      border-radius: var(--radius-full);
-    }
-    .holdings-sector-tab:hover {
-      border-color: var(--accent-blue);
-      color: var(--text-primary);
-      transform: translateY(-1px);
-    }
-    .holdings-sector-tab.active {
-      background: var(--accent-blue);
-      color: #ffffff;
-      border-color: var(--accent-blue);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-    }
-    .holdings-sector-tab.active .tab-count {
-      background: rgba(255, 255, 255, 0.25);
-      color: #ffffff;
-    }
-    .holdings-modal-body {
-      padding: 1.5rem 1.75rem;
-      overflow-y: auto;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 1.75rem;
-    }
-    .directory-sector-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
-    }
-    .directory-sector-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 0.45rem;
-      border-bottom: 1.5px solid var(--border-card);
-    }
-    .directory-sector-name {
-      font-size: 0.95rem;
-      font-weight: 800;
-      color: var(--text-primary);
-    }
-    .directory-sector-desc {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      margin-left: 0.35rem;
-    }
-    @media (max-width: 640px) {
-      .directory-sector-desc { display: none; }
-    }
-    .directory-sector-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--accent-blue);
-      background: var(--accent-blue-soft);
-      border: 1px solid #bfdbfe;
-      padding: 0.15rem 0.55rem;
-      border-radius: var(--radius-full);
-    }
-    .directory-sector-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 0.75rem;
-    }
-    .directory-holding-card {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1rem;
-      text-decoration: none;
-      transition: all var(--transition-fast);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-      min-height: 96px;
-    }
-    .directory-holding-card:hover {
-      border-color: var(--accent-blue);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.12);
-      background: #fafcff;
-    }
-    .holding-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.35rem;
-    }
-    .holding-card-perf {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.1rem 0.4rem;
-      border-radius: var(--radius-full);
-    }
-    .perf-pos { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-    .perf-neg { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-    .perf-neutral { background: var(--bg-surface-elevated); color: var(--text-muted); border: 1px solid var(--border-card); }
-    .holding-card-name {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 0.35rem;
-    }
-    .holding-card-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-    .holding-card-count {
-      font-weight: 600;
-      color: var(--accent-blue);
-    }
-
-    /* Sidebar Holdings Directory Button & Tree */
-    .sidebar-directory-btn {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(124, 58, 237, 0.08));
-      border: 1.5px solid rgba(37, 99, 235, 0.25);
-      border-radius: var(--radius-md);
-      padding: 0.65rem 0.85rem;
-      color: var(--accent-blue);
-      font-size: 0.82rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-bottom: 1.25rem;
-      transition: all var(--transition-fast);
-    }
-    .sidebar-directory-btn:hover {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(124, 58, 237, 0.14));
-      border-color: var(--accent-blue);
-      transform: translateY(-1px);
-    }
-    .sidebar-dir-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      background: var(--accent-blue);
-      color: #ffffff;
-      padding: 0.1rem 0.45rem;
-      border-radius: var(--radius-full);
-    }
-
-    .sidebar-holdings-tree {
-      margin-top: 1rem;
-      border-top: 1px solid var(--border-card);
-      padding-top: 1rem;
-    }
-    .sidebar-sectors-scroll {
-      max-height: 240px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      padding-right: 0.2rem;
-    }
-    .sidebar-sector-details {
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface);
-      overflow: hidden;
-    }
-    .sidebar-sector-summary {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.45rem 0.65rem;
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      cursor: pointer;
-      user-select: none;
-      background: var(--bg-surface);
-      list-style: none;
-    }
-    .sidebar-sector-summary::-webkit-details-marker {
-      display: none;
-    }
-    .sidebar-sector-summary:hover {
-      background: var(--bg-surface-elevated);
-    }
-    .sidebar-sec-title {
-      font-weight: 700;
-    }
-    .sidebar-sec-count {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-    .sidebar-sector-details[open] .sec-caret {
-      transform: rotate(180deg);
-    }
-    .sec-caret {
-      transition: transform 0.2s ease;
-      font-size: 0.65rem;
-    }
-    .sidebar-sector-tickers {
-      padding: 0.35rem 0.5rem 0.5rem 0.5rem;
-      background: var(--bg-base);
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      border-top: 1px solid var(--border-subtle);
-    }
-    .sidebar-ticker-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.25rem 0.4rem;
-      border-radius: var(--radius-xs);
-      text-decoration: none;
-      color: var(--text-secondary);
-      font-size: 0.74rem;
-      transition: all var(--transition-fast);
-    }
-    .sidebar-ticker-row:hover {
-      background: var(--bg-surface);
-      color: var(--text-primary);
-    }
-    .sidebar-ticker-name {
-      flex: 1;
-      margin-left: 0.4rem;
-      margin-right: 0.4rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-weight: 500;
-    }
-    .sidebar-ticker-stories {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      color: var(--text-muted);
-    }
-
     /* Company Page Categorized Directory Browser */
     .company-directory-browser {
       background: var(--bg-surface);
@@ -3868,9 +3672,9 @@ SHARED_CSS = """
     }
     .company-browser-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
       gap: 0.65rem;
-      max-height: 280px;
+      max-height: 320px;
       overflow-y: auto;
       padding-right: 0.25rem;
     }
@@ -3878,8 +3682,9 @@ SHARED_CSS = """
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.55rem 0.75rem;
+      gap: 0.6rem;
+      padding: 0.6rem 0.75rem;
+      min-height: 60px;
       border-radius: var(--radius-md);
       background: var(--bg-surface);
       border: 1.5px solid var(--border-card);
@@ -3887,6 +3692,7 @@ SHARED_CSS = """
       text-align: left;
       transition: all var(--transition-fast);
       width: 100%;
+      box-sizing: border-box;
     }
     .company-browser-card:hover {
       border-color: var(--accent-blue);
@@ -3902,21 +3708,65 @@ SHARED_CSS = """
       color: var(--accent-blue);
       font-weight: 800;
     }
-    .company-browser-card-info {
-      flex: 1;
+    .company-browser-card-left {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
       min-width: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+    .company-browser-card-info {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .company-browser-card-name {
-      font-size: 0.82rem;
+      font-size: 0.81rem;
       font-weight: 700;
       color: var(--text-primary);
+      line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
+    }
+    .company-browser-card-sec {
+      font-size: 0.68rem;
+      color: var(--text-muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-top: 0.15rem;
+      line-height: 1.2;
     }
-    .company-browser-card-sec {
-      font-size: 0.7rem;
+    .company-browser-card-stats {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      flex-shrink: 0;
+      text-align: right;
+      margin-left: auto;
+      padding-left: 0.35rem;
+    }
+    .company-browser-card-alpha {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .company-browser-card-stories {
+      font-size: 0.65rem;
       color: var(--text-muted);
+      white-space: nowrap;
+      margin-top: 0.15rem;
+      line-height: 1.2;
     }
 
     /* Feed Sector Filter Bar & Ticker Popover */
@@ -4054,9 +3904,6 @@ NAVIGATION_LAYOUT_HTML = """
     </div>
   </a>
   <div class="mobile-header-right">
-    <button class="mobile-action-btn" onclick="openHoldingsDirectory()" aria-label="Open Holdings Directory" title="Browse 30 Holdings by Sector">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-    </button>
     <button class="mobile-action-btn" onclick="focusMobileSearch()" aria-label="Search">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
     </button>
@@ -4068,87 +3915,6 @@ NAVIGATION_LAYOUT_HTML = """
 
 <!-- Backdrop Overlay for Mobile Drawer -->
 <div class="mobile-drawer-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
-
-<!-- Global Holdings Directory Modal & Backdrop -->
-<div class="holdings-directory-backdrop" id="holdingsDirectoryBackdrop" onclick="closeHoldingsDirectory()"></div>
-<div class="holdings-directory-modal" id="holdingsDirectoryModal" role="dialog" aria-modal="true" aria-labelledby="holdingsModalTitle">
-  <div class="holdings-modal-header">
-    <div style="display:flex; align-items:center; gap:0.75rem;">
-      <div class="logo-badge" style="width:36px; height:36px; background:linear-gradient(135deg, #2563eb, #7c3aed);">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/>
-          <rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
-        </svg>
-      </div>
-      <div>
-        <h2 id="holdingsModalTitle" style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">
-          Company Holdings Directory
-        </h2>
-        <p style="font-size:0.78rem; color:var(--text-muted); margin:0;">
-          {{ watchlist_companies|length }} Monitored Holdings across {{ sector_directory|length }} Sectors
-        </p>
-      </div>
-    </div>
-    <button class="holdings-modal-close-btn" onclick="closeHoldingsDirectory()" aria-label="Close directory">&times;</button>
-  </div>
-
-  <div class="holdings-modal-filter-bar">
-    <div class="holdings-search-input-wrap">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-      </svg>
-      <input type="text" id="globalDirectorySearch" placeholder="Search by ticker (e.g. NVDA, GS), company name, or sector..." oninput="filterGlobalDirectoryModal(this.value)">
-    </div>
-    
-    <div class="holdings-sector-tabs-row" id="globalDirectorySectorTabs">
-      <button class="holdings-sector-tab active" data-sector="ALL" onclick="selectGlobalDirectorySector('ALL', this)">
-        All Sectors <span class="tab-count">{{ watchlist_companies|length }}</span>
-      </button>
-      {% for sec in sector_directory %}
-      <button class="holdings-sector-tab" data-sector="{{ sec.name }}" onclick="selectGlobalDirectorySector('{{ sec.name }}', this)">
-        {{ sec.name }} <span class="tab-count">{{ sec.count }}</span>
-      </button>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="holdings-modal-body" id="globalDirectoryBody">
-    {% for sec in sector_directory %}
-    <div class="directory-sector-group" data-sector="{{ sec.name }}">
-      <div class="directory-sector-header">
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="directory-sector-name">{{ sec.name }}</span>
-          <span class="directory-sector-desc">{{ sec.description }}</span>
-        </div>
-        <span class="directory-sector-badge">{{ sec.count }} Holdings</span>
-      </div>
-
-      <div class="directory-sector-grid">
-        {% for co in sec.companies %}
-        <a href="company.html?ticker={{ co.symbol }}" class="directory-holding-card" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name|lower }}">
-          <div class="holding-card-top">
-            <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.82rem; padding:0.2rem 0.55rem;">{{ co.symbol }}</span>
-            <span class="holding-card-perf {% if co.alpha_vs_spy > 0 %}perf-pos{% elif co.alpha_vs_spy < 0 %}perf-neg{% else %}perf-neutral{% endif %}">
-              {% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}% vs SPY
-            </span>
-          </div>
-          <div class="holding-card-name" title="{{ co.name }}">{{ co.name }}</div>
-          <div class="holding-card-bottom">
-            <span class="holding-card-subsector">{{ co.sector | replace('_', ' ') | title }}</span>
-            <span class="holding-card-count">{{ co.story_count }} stories ↗</span>
-          </div>
-        </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-    <div id="globalDirectoryNoResults" style="display:none; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
-      <div style="margin-bottom:0.5rem; color:var(--text-muted);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
-      <div style="font-size:1.05rem; font-weight:700; color:var(--text-primary);">No companies found</div>
-      <div style="font-size:0.85rem; margin-top:0.25rem;">Try searching for a different ticker, name, or clear your sector filter.</div>
-    </div>
-  </div>
-</div>
 
 <!-- Slide-over Drawer / Desktop Sidebar -->
 <aside class="app-sidebar" id="appSidebar">
@@ -4164,18 +3930,6 @@ NAVIGATION_LAYOUT_HTML = """
     <button class="sidebar-close-btn" onclick="closeMobileNav()" aria-label="Close navigation">&times;</button>
   </div>
 
-  <!-- Holdings Directory Quick Trigger Button -->
-  <button class="sidebar-directory-btn" onclick="openHoldingsDirectory()" aria-label="Open Holdings Directory">
-    <div style="display:flex; align-items:center; gap:0.6rem;">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/>
-        <rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
-      </svg>
-      <span>Holdings Directory</span>
-    </div>
-    <span class="sidebar-dir-badge">{{ watchlist_companies|length }}</span>
-  </button>
-
   <div class="nav-section-title">Navigation</div>
   <nav class="sidebar-nav">
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" onclick="closeMobileNav()">
@@ -4186,8 +3940,8 @@ NAVIGATION_LAYOUT_HTML = """
     </a>
     <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()">
       <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-        <span class="nav-text">Company Deep Dive</span>
+        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span class="nav-text">Company Directory</span>
       </div>
       <span class="nav-count">{{ watchlist_companies|length }}</span>
     </a>
@@ -4220,36 +3974,7 @@ NAVIGATION_LAYOUT_HTML = """
     </a>
   </nav>
 
-  <!-- Sidebar Holdings by Sector Explorer Tree -->
-  <div class="sidebar-holdings-tree">
-    <div class="nav-section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-      <span>Holdings by Sector</span>
-      <span style="font-size:0.7rem; font-weight:700; color:var(--accent-blue); cursor:pointer;" onclick="openHoldingsDirectory()">View All ↗</span>
-    </div>
-    <div class="sidebar-sectors-scroll">
-      {% for sec in sector_directory %}
-      <details class="sidebar-sector-details">
-        <summary class="sidebar-sector-summary">
-          <span style="display:flex; align-items:center; gap:0.45rem;">
-            <span class="sidebar-sec-title">{{ sec.name }}</span>
-          </span>
-          <span class="sidebar-sec-count">{{ sec.count }} <span class="sec-caret">▾</span></span>
-        </summary>
-        <div class="sidebar-sector-tickers">
-          {% for co in sec.companies %}
-          <a href="company.html?ticker={{ co.symbol }}" class="sidebar-ticker-row" title="{{ co.name }}">
-            <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.1rem 0.35rem;">{{ co.symbol }}</span>
-            <span class="sidebar-ticker-name">{{ co.name }}</span>
-            <span class="sidebar-ticker-stories">{{ co.story_count }}</span>
-          </a>
-          {% endfor %}
-        </div>
-      </details>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="sidebar-footer">
+  <div class="sidebar-footer" style="margin-top:auto; padding-top:1.5rem;">
     <div class="sidebar-health-box">
       <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
         <span class="pulse-dot" style="background:#10b981;"></span>
@@ -4263,11 +3988,15 @@ NAVIGATION_LAYOUT_HTML = """
   </div>
 </aside>
 
-<!-- Dedicated Mobile Phone Bottom Navigation Bar (5 Tabs: Home / Feed / Calendar / Economic / Analytics) -->
+<!-- Dedicated Mobile Phone Bottom Navigation Bar (5 Tabs: Home / Directory / Feed / Calendar / Economic) -->
 <div class="mobile-bottom-nav">
   <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Home</span>
+  </a>
+  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+    <span>Directory</span>
   </a>
   <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
@@ -4281,14 +4010,10 @@ NAVIGATION_LAYOUT_HTML = """
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
     <span>Economic</span>
   </a>
-  <a href="analytics.html" class="mobile-tab-link {% if active_page == 'analytics' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    <span>Analytics</span>
-  </a>
 </div>
 """
 
-# JavaScript for Mobile Drawer, Directory Modal & Header Actions
+# JavaScript for Mobile Drawer, Unified Search & Header Actions
 SHARED_MOBILE_JS = """
 function toggleMobileNav() {
   const sidebar = document.getElementById('appSidebar');
@@ -4313,82 +4038,8 @@ function closeMobileNav() {
   document.body.style.overflow = '';
 }
 
-function openHoldingsDirectory() {
-  closeMobileNav();
-  const modal = document.getElementById('holdingsDirectoryModal');
-  const backdrop = document.getElementById('holdingsDirectoryBackdrop');
-  if (modal && backdrop) {
-    modal.classList.add('active');
-    backdrop.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    const input = document.getElementById('globalDirectorySearch');
-    if (input) {
-      setTimeout(() => input.focus(), 150);
-    }
-  }
-}
-
-function closeHoldingsDirectory() {
-  const modal = document.getElementById('holdingsDirectoryModal');
-  const backdrop = document.getElementById('holdingsDirectoryBackdrop');
-  if (modal) modal.classList.remove('active');
-  if (backdrop) backdrop.classList.remove('active');
-  document.body.style.overflow = '';
-}
-
-let currentDirectorySector = 'ALL';
-
-function selectGlobalDirectorySector(secName, btn) {
-  currentDirectorySector = secName;
-  document.querySelectorAll('.holdings-sector-tab').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  
-  const searchInput = document.getElementById('globalDirectorySearch');
-  const q = searchInput ? searchInput.value : '';
-  filterGlobalDirectoryModal(q);
-}
-
-function filterGlobalDirectoryModal(query) {
-  const q = (query || '').toLowerCase().trim();
-  const groups = document.querySelectorAll('#globalDirectoryBody .directory-sector-group');
-  let visibleCardsCount = 0;
-
-  groups.forEach(group => {
-    const groupSector = group.getAttribute('data-sector');
-    const sectorMatch = (currentDirectorySector === 'ALL' || groupSector === currentDirectorySector);
-    
-    let groupVisibleCards = 0;
-    const cards = group.querySelectorAll('.directory-holding-card');
-    cards.forEach(card => {
-      const ticker = (card.getAttribute('data-ticker') || '').toLowerCase();
-      const name = (card.getAttribute('data-name') || '').toLowerCase();
-      const subsector = (card.getAttribute('data-sector') || '').toLowerCase();
-      const textMatch = (!q || ticker.includes(q) || name.includes(q) || subsector.includes(q));
-
-      if (sectorMatch && textMatch) {
-        card.style.display = 'flex';
-        groupVisibleCards++;
-        visibleCardsCount++;
-      } else {
-        card.style.display = 'none';
-      }
-    });
-
-    if (sectorMatch && groupVisibleCards > 0) {
-      group.style.display = 'flex';
-    } else {
-      group.style.display = 'none';
-    }
-  });
-
-  const noRes = document.getElementById('globalDirectoryNoResults');
-  if (noRes) {
-    noRes.style.display = (visibleCardsCount === 0) ? 'block' : 'none';
-  }
-}
-
 function focusMobileSearch() {
-  const input = document.getElementById('globalSearchInput');
+  const input = document.getElementById('globalSearchInput') || document.getElementById('companyStripFilter') || document.getElementById('feedSearchInput');
   if (input) {
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => {
@@ -4400,19 +4051,26 @@ function focusMobileSearch() {
   }
 }
 
-// Global Keyboard Shortcut: Press Cmd+K or Ctrl+K to open Holdings Directory
+// Single Universal ⌘K / Ctrl+K Search Keybinding
 document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault();
-    const modal = document.getElementById('holdingsDirectoryModal');
-    if (modal && modal.classList.contains('active')) {
-      closeHoldingsDirectory();
+    const globalSearch = document.getElementById('globalSearchInput');
+    const companySearch = document.getElementById('companyStripFilter');
+    const feedSearch = document.getElementById('feedSearchInput');
+    if (globalSearch) {
+      globalSearch.focus();
+      if (typeof openSearchDropdown === 'function') openSearchDropdown();
+    } else if (companySearch) {
+      companySearch.focus();
+    } else if (feedSearch) {
+      feedSearch.focus();
     } else {
-      openHoldingsDirectory();
+      window.location.href = 'index.html#globalSearchBox';
     }
   } else if (e.key === 'Escape') {
-    closeHoldingsDirectory();
     closeMobileNav();
+    if (typeof closeSearchDropdown === 'function') closeSearchDropdown();
   }
 });
 """
@@ -4531,25 +4189,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                       </a>
                     </div>
 
-                    <div class="dropdown-tickers-wrap">
-                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
-                        <div class="dropdown-section-title" style="margin-bottom:0;">Browse Holdings by Sector ({{ watchlist_companies|length }})</div>
-                        <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.7rem; font-weight:700;">Full Directory ↗</button>
-                      </div>
-                      <div class="dropdown-sectors-grid" style="display:flex; flex-direction:column; gap:0.45rem; margin-top:0.5rem; max-height:200px; overflow-y:auto; padding-right:0.25rem;">
-                        {% for sec in sector_directory %}
-                        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.35rem 0.55rem; background:var(--bg-surface-elevated); border-radius:var(--radius-sm);">
-                          <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:flex; align-items:center; gap:0.35rem;">
-                            {{ sec.name }}
-                          </span>
-                          <div style="display:flex; gap:0.25rem; flex-wrap:wrap; justify-content:flex-end;">
-                            {% for co in sec.companies %}
-                            <a href="company.html?ticker={{ co.symbol }}" class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.1rem 0.35rem; text-decoration:none;" title="{{ co.name }}">{{ co.symbol }}</a>
-                            {% endfor %}
-                          </div>
-                        </div>
-                        {% endfor %}
-                      </div>
+                    <div style="padding-top:0.75rem; border-top:1px solid var(--border-card); text-align:center;">
+                      <a href="company.html" class="action-link" style="font-size:0.8rem; font-weight:700; color:var(--accent-blue); text-decoration:none;">Browse All {{ watchlist_companies|length }} Companies in Directory ↗</a>
                     </div>
                   </div>
 
@@ -4619,15 +4260,15 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- Watchlist Sector Holdings Ribbon & Directory Quick Trigger -->
+          <!-- Watchlist Holdings Ribbon -->
           <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-top:0.85rem; margin-bottom:0.35rem; width:100%; max-width:920px;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.4rem;">
               <span>Watchlist Holdings ({{ watchlist_companies|length }})</span>
             </div>
-            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#f8fafc; border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
+            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#f8fafc; border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-              Sector Directory (⌘K) ↗
-            </button>
+              Company Directory ↗
+            </a>
           </div>
 
           <div class="watchlist-ticker-strip">
@@ -4725,7 +4366,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <button id="clearRecentlyViewedBtn" onclick="clearRecentlyViewed()" title="Clear your recently viewed history" style="background:none; border:none; font-size:0.75rem; color:var(--text-muted); cursor:pointer; padding:0.25rem 0.5rem; border-radius:4px; transition:color 0.15s;">
               Clear History
             </button>
-            <a href="company.html" class="bento-arrow" style="font-size:0.8rem; text-decoration:none;">All 15 Companies ›</a>
+            <a href="company.html" class="bento-arrow" style="font-size:0.8rem; text-decoration:none;">All {{ watchlist_companies|length }} Companies ›</a>
           </div>
         </div>
 
@@ -5007,16 +4648,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
     });
 
-    // Keyboard shortcut ⌘K / Ctrl+K
+    // Close search dropdown on Escape key
     document.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        const input = document.getElementById('globalSearchInput');
-        if (input) {
-          input.focus();
-          openSearchDropdown();
-        }
-      }
       if (e.key === 'Escape') {
         closeSearchDropdown();
       }
@@ -6102,7 +5735,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <div style="margin-bottom:0.75rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
             <span class="filter-label" style="margin-bottom:0;">Browse by Sector:</span>
-            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Holdings Directory (⌘K) ↗</button>
+            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
           </div>
           <div class="feed-sector-bar">
             <button class="feed-sector-btn active" data-sector="ALL" onclick="setFeedSectorFilter('ALL', this)">
@@ -6702,7 +6335,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, CPI inflation, and unemployment to company sensitivities.">
+  <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, 10Y Treasuries, CPI inflation, WTI Crude, and unemployment to company sensitivities.">
   <title>StockPulse — Macroeconomic Snapshot &amp; Sensitivities</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -6716,10 +6349,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
+      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
         <div>
           <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Macroeconomic Intelligence</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live indicators mapped to individual watchlist company sensitivities</p>
+          <p style="font-size:0.92rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live benchmark indicators mapped to portfolio sensitivities with AI impact analysis</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill" style="color:var(--accent-blue); font-weight:700;">
@@ -6729,12 +6362,46 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         </div>
       </header>
 
+      <!-- Upcoming High-Impact Macroeconomic Events Strip -->
+      <section style="margin-bottom: 2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--accent-blue);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <h2 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Upcoming Macroeconomic Releases &amp; Decisions</h2>
+          </div>
+          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Federal Reserve &amp; Agency Schedule</span>
+        </div>
+
+        <div class="macro-events-strip">
+          {% for ev in upcoming_economic_events %}
+          <div class="macro-event-card">
+            <div>
+              <div class="macro-event-top">
+                <span class="macro-event-authority">{{ ev.authority }}</span>
+                <span class="macro-event-countdown">{{ ev.relative_badge }}</span>
+              </div>
+              <h3 class="macro-event-title">{{ ev.title }}</h3>
+            </div>
+            <div>
+              <div class="macro-event-date-row" style="margin-bottom:0.45rem;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>{{ ev.display_date }}</span>
+              </div>
+              <div class="macro-event-consensus">
+                <strong>Expectation:</strong> {{ ev.consensus }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
       <!-- Sector & Ticker Filter for Sensitivities -->
       <div class="controls-panel">
         <div style="margin-bottom:0.75rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
             <span class="filter-label" style="margin-bottom:0;">Filter by Sector:</span>
-            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Holdings Directory (⌘K) ↗</button>
+            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
           </div>
           <div class="feed-sector-bar">
             <button class="feed-sector-btn active econ-sec-btn" data-sector="ALL" onclick="filterEconomicBySector('ALL', this)">
@@ -6778,6 +6445,34 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
             <div class="economic-val {% if loop.index <= 2 %}economic-val-anchor{% endif %}">{{ ind.formatted_value }}</div>
             <h4 class="economic-series-name">{{ ind.name }}</h4>
+
+            <!-- Sparkline Mini-Chart (12-24 Month Historical Trend) -->
+            <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
+              <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" preserveAspectRatio="none">
+                <!-- Dynamically rendered by renderEconSparklines() -->
+              </svg>
+              <div class="sparkline-labels">
+                <span class="spark-start">12M Trend</span>
+                <span class="spark-end">{{ ind.observation_date }}</span>
+              </div>
+            </div>
+
+            <!-- AI-Generated Synthesis Box -->
+            {% if ind.ai_synthesis %}
+            <div class="ai-synthesis-card">
+              <div class="ai-synthesis-head">
+                <span class="ai-synthesis-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  AI Macro Takeaway
+                </span>
+                <span class="ai-synthesis-meta">Observed {{ ind.observation_date }}</span>
+              </div>
+              <div class="ai-synthesis-content">
+                {{ ind.ai_synthesis }}
+              </div>
+            </div>
+            {% endif %}
+
             <p class="economic-context">{{ ind.context_note }}</p>
           </div>
 
@@ -6842,6 +6537,102 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     let currentEconSector = 'ALL';
     let currentEconTicker = 'ALL';
 
+    function renderEconSparklines() {
+      const wrappers = document.querySelectorAll('.sparkline-wrapper');
+      wrappers.forEach(wrap => {
+        const svg = wrap.querySelector('.sparkline-svg');
+        const rawHist = wrap.getAttribute('data-history');
+        const unit = wrap.getAttribute('data-unit') || '';
+        let history = [];
+        try {
+          history = JSON.parse(rawHist || '[]');
+        } catch (e) {
+          history = [];
+        }
+        if (!history || history.length < 2) return;
+
+        const width = 280;
+        const height = 60;
+        const padX = 8;
+        const padY = 8;
+
+        const values = history.map(d => d.value);
+        let minVal = Math.min(...values);
+        let maxVal = Math.max(...values);
+        if (minVal === maxVal) {
+          minVal -= 1;
+          maxVal += 1;
+        }
+        const range = maxVal - minVal;
+
+        const points = history.map((pt, i) => {
+          const x = padX + (i / (history.length - 1)) * (width - 2 * padX);
+          const y = height - padY - ((pt.value - minVal) / range) * (height - 2 * padY);
+          return { x, y, date: pt.date, value: pt.value };
+        });
+
+        const pathD = points.map((p, i) => (i === 0 ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)).join(' ');
+        const areaD = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
+
+        const gradId = 'grad-' + Math.random().toString(36).substr(2, 9);
+        const lastPt = points[points.length - 1];
+
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.innerHTML = `
+          <defs>
+            <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.32" />
+              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+            </linearGradient>
+          </defs>
+          <path d="${areaD}" fill="url(#${gradId})" />
+          <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4.5" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" />
+          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="#0f172a" stroke="#ffffff" stroke-width="2" style="display:none;" />
+        `;
+
+        // Update labels
+        const startLabel = wrap.querySelector('.spark-start');
+        const endLabel = wrap.querySelector('.spark-end');
+        if (startLabel) startLabel.textContent = `${history[0].date.substring(0, 7)}: ${history[0].value}${unit.includes('%') ? '%' : ''}`;
+        if (endLabel) endLabel.textContent = `Latest: ${history[history.length - 1].value}${unit.includes('%') ? '%' : ''}`;
+
+        // Create tooltip
+        let tooltip = wrap.querySelector('.sparkline-tooltip');
+        if (!tooltip) {
+          tooltip = document.createElement('div');
+          tooltip.className = 'sparkline-tooltip';
+          wrap.appendChild(tooltip);
+        }
+
+        const hoverDot = svg.querySelector('.hover-dot');
+
+        wrap.addEventListener('mousemove', (e) => {
+          const rect = svg.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const pct = Math.max(0, Math.min(1, mouseX / rect.width));
+          const idx = Math.min(history.length - 1, Math.max(0, Math.round(pct * (history.length - 1))));
+          const activePt = points[idx];
+
+          if (hoverDot) {
+            hoverDot.setAttribute('cx', activePt.x.toFixed(1));
+            hoverDot.setAttribute('cy', activePt.y.toFixed(1));
+            hoverDot.style.display = 'block';
+          }
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = `${(activePt.x / width) * 100}%`;
+          tooltip.style.top = `${(activePt.y / height) * 100}%`;
+          tooltip.textContent = `${activePt.date}: ${activePt.value}${unit.includes('%') ? '%' : (unit.includes('$') ? ' ' + unit : '')}`;
+        });
+
+        wrap.addEventListener('mouseleave', () => {
+          if (hoverDot) hoverDot.style.display = 'none';
+          if (tooltip) tooltip.style.display = 'none';
+        });
+      });
+    }
+
     function filterEconomicBySector(sector, btn) {
       currentEconSector = sector;
       document.querySelectorAll('.econ-sec-btn').forEach(b => b.classList.remove('active'));
@@ -6904,6 +6695,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         }
       });
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderEconSparklines();
+    });
   </script>
 </body>
 </html>
@@ -6918,7 +6713,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company IR, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
-  <title>StockPulse — Company Deep-Dive</title>
+  <title>StockPulse — Company Directory</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -6934,34 +6729,30 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.5rem;">
         <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Company Deep-Dive</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Comprehensive 360° research hub per stock: multi-source intelligence, corporate calendar, FRED macro sensitivities, and supply chain ecosystem</p>
+          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Company Directory</h1>
+          <p style="font-size:0.92rem; color:var(--text-muted);">Browse all {{ watchlist_companies|length }} monitored holdings, search by ticker or sector, and inspect 360° deep-dive intelligence profiles</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill">
-            <span class="pulse-dot" style="background:#10b981;"></span> {{ watchlist_companies|length }} Watchlist Stocks
+            <span class="pulse-dot" style="background:#10b981;"></span> {{ watchlist_companies|length }} Monitored Holdings
           </span>
         </div>
       </header>
 
-      <!-- Institutional Holdings Directory & Sector Browser Component -->
+      <!-- Unified Company Directory & Sector Browser Component -->
       <section class="company-directory-browser">
         <div class="company-browser-top">
           <div>
             <div style="display:flex; align-items:center; gap:0.45rem;">
-              <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">Holdings Directory</span>
-              <span class="category-badge" style="font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Monitored</span>
+              <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">Browse Holdings</span>
+              <span class="category-badge" style="font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Holdings</span>
             </div>
-            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem;">Browse by economic sector or search directly to load deep-dive profile</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem;">Select any company to load its interactive deep-dive research profile below</div>
           </div>
           <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <div style="position:relative; width:100%; max-width:260px;">
+            <div style="position:relative; width:100%; max-width:280px;">
               <input type="text" id="companyStripFilter" placeholder="Search ticker, company, or sector..." oninput="filterCompanyStrip(this.value)" style="width:100%; background:var(--bg-base); border:1.5px solid var(--border-card); border-radius:var(--radius-full); padding:0.42rem 0.95rem; font-size:0.82rem; color:var(--text-primary); outline:none;">
             </div>
-            <button onclick="openHoldingsDirectory()" class="form-type-pill" style="cursor:pointer; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:0.35rem;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-              Full Modal (⌘K)
-            </button>
           </div>
         </div>
 
@@ -6987,18 +6778,18 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                     data-sector="{{ co.macro_sector|lower }}"
                     onclick="switchCompany('{{ co.symbol }}')"
                     title="{{ co.name }} ({{ co.symbol }}) — {{ co.macro_sector }}">
-              <div style="display:flex; align-items:center; gap:0.5rem; min-width:0;">
-                <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
+              <div class="company-browser-card-left">
+                <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem; flex-shrink:0;">{{ co.symbol }}</span>
                 <div class="company-browser-card-info">
                   <div class="company-browser-card-name">{{ co.name }}</div>
                   <div class="company-browser-card-sec">{{ co.sector | replace('_', ' ') | title }}</div>
                 </div>
               </div>
-              <div style="text-align:right; flex-shrink:0;">
-                <div style="font-family:'JetBrains Mono'; font-size:0.7rem; font-weight:700; color:{% if co.alpha_vs_spy > 0 %}#15803d{% elif co.alpha_vs_spy < 0 %}#b91c1c{% else %}var(--text-muted){% endif %};">
+              <div class="company-browser-card-stats">
+                <div class="company-browser-card-alpha" style="color:{% if co.alpha_vs_spy > 0 %}#15803d{% elif co.alpha_vs_spy < 0 %}#b91c1c{% else %}var(--text-muted){% endif %};">
                   {% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%
                 </div>
-                <div style="font-size:0.65rem; color:var(--text-muted);">{{ co.story_count }} stories</div>
+                <div class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</div>
               </div>
             </button>
             {% endfor %}
@@ -7788,6 +7579,20 @@ def render_dashboard(
     stats = get_news_stats(db_path=db_path)
     chart_data = get_chart_data(db_path=db_path)
     economic_indicators = get_economic_indicators(db_path=db_path)
+    if not economic_indicators:
+        try:
+            from pipeline.economic import collect_economic_indicators
+            economic_indicators = collect_economic_indicators(db_path=db_path)
+        except Exception as e:
+            logger.warning("Could not auto-seed economic indicators: %s", e)
+
+    try:
+        from pipeline.economic import get_upcoming_economic_events
+        upcoming_economic_events = get_upcoming_economic_events()
+    except Exception as e:
+        logger.warning("Could not get upcoming economic events: %s", e)
+        upcoming_economic_events = []
+
     calendar_events = get_forthcoming_calendar(limit=30, db_path=db_path)
     recent_runs = get_recent_pipeline_runs(limit=5, db_path=db_path)
     latest_run = recent_runs[0] if recent_runs else None
@@ -7870,6 +7675,7 @@ def render_dashboard(
         "stats": stats,
         "chart_data_json": json.dumps(chart_data),
         "economic_indicators": economic_indicators,
+        "upcoming_economic_events": upcoming_economic_events,
         "calendar_events": calendar_events,
         "recent_runs": recent_runs,
         "latest_run": latest_run,

@@ -108,7 +108,7 @@ tickers:
     key_suppliers: [Bloomberg, S&P Global, Amazon AWS, Microsoft Azure]
     competitors: [BAC, MS, GS]
     macro_sensitivities: [fed_interest_rates, yield_curve_inversion, credit_default_rates, investment_banking_m_and_a_volume]
-    economic_sensitivities: [interest_rates, unemployment]
+    economic_sensitivities: [interest_rates, treasury_10y, unemployment]
     notes: "Key bellwether for net interest income (NII), credit reserves, and macroeconomic lending health."
 
   - symbol: JNJ
@@ -136,7 +136,7 @@ tickers:
     key_suppliers: [SLB, Schlumberger, Halliburton, HAL, Baker Hughes, BKR, Enterprise Products]
     competitors: [CVX, COP, BP]
     macro_sensitivities: [brent_wti_crude_prices, opec_production_quotas, refining_crack_spreads]
-    economic_sensitivities: [inflation]
+    economic_sensitivities: [inflation, crude_oil]
     notes: "Monitor Permian basin production volumes, Pioneer integration synergies, and capital returns."
 
   - symbol: WMT
@@ -206,7 +206,7 @@ tickers:
     key_suppliers: [Spirit AeroSystems, SPR, GE Aerospace, GE, Raytheon, Safran, Honeywell, HON]
     competitors: [LMT, NOC, GD]
     macro_sensitivities: [commercial_aviation_passenger_traffic, defense_budget_allocations, supply_chain_manufacturing_quality]
-    economic_sensitivities: [interest_rates, inflation]
+    economic_sensitivities: [interest_rates, inflation, crude_oil]
     notes: "Crucial scrutiny on 737 MAX production rate recovery, FAA quality audits, and free cash flow generation."
 
   - symbol: AMD
@@ -248,7 +248,7 @@ tickers:
     key_suppliers: [Microsoft, MSFT, Amazon AWS, AMZN, Cisco, CSCO, S&P Global, SPGI]
     competitors: [JPM, WFC, C, GS, MS]
     macro_sensitivities: [fed_interest_rates, net_interest_income, consumer_credit_charge_offs, commercial_real_estate]
-    economic_sensitivities: [interest_rates, unemployment]
+    economic_sensitivities: [interest_rates, treasury_10y, unemployment]
     notes: "Monitor consumer deposit repricing beta, net interest income (NII) trajectory, and asset management inflows."
 
   - symbol: GS
@@ -262,7 +262,7 @@ tickers:
     key_suppliers: [Bloomberg, London Stock Exchange, Amazon AWS, AMZN, Snowflake, SNOW]
     competitors: [MS, JPM, BAC, C, LAZ]
     macro_sensitivities: [investment_banking_m_and_a_volume, ipo_equity_underwriting, fixed_income_currency_commodities_ficc, private_credit_expansion]
-    economic_sensitivities: [interest_rates, unemployment]
+    economic_sensitivities: [interest_rates, treasury_10y, unemployment]
     notes: "Key bellwether for global dealmaking, M&A advisory pipelines, and Alternative Asset Management fee growth."
 
   - symbol: UNH
@@ -332,7 +332,7 @@ tickers:
     key_suppliers: [Nucor, NUE, Steel Dynamics, STLD, Parker-Hannifin, PH, Eaton, ETN, Donaldson, DCI]
     competitors: [DE, CNH, Komatsu]
     macro_sensitivities: [us_infrastructure_act_capex, mining_commodity_prices, dealer_machine_inventory_backlog, global_manufacturing_pmi]
-    economic_sensitivities: [interest_rates, inflation]
+    economic_sensitivities: [interest_rates, inflation, crude_oil]
     notes: "Primary cyclical bellwether for non-residential construction, energy infrastructure investments, and dealer order backlogs."
 
   - symbol: GE
@@ -346,7 +346,7 @@ tickers:
     key_suppliers: [Precision Castparts, Howmet Aerospace, HWM, ATI, Spirit AeroSystems, SPR, Woodward, WWD]
     competitors: [RTX, Safran, Honeywell, HON, MTU]
     macro_sensitivities: [commercial_aftermarket_shop_visits, leap_engine_production_ramp, commercial_aviation_flight_hours, defense_appropriations]
-    economic_sensitivities: [interest_rates, inflation]
+    economic_sensitivities: [interest_rates, inflation, crude_oil]
     notes: "Pure-play commercial and defense propulsion leader. Track commercial engine shop visits, LEAP delivery rates, and services margins."
 
   - symbol: CVX
@@ -360,7 +360,7 @@ tickers:
     key_suppliers: [SLB, Schlumberger, Baker Hughes, BKR, Halliburton, HAL, TechnipFMC, FTI]
     competitors: [XOM, COP, BP, SHEL, TTE]
     macro_sensitivities: [brent_wti_crude_prices, permian_basin_production_growth, hess_acquisition_arbitration, refining_crack_margins]
-    economic_sensitivities: [inflation]
+    economic_sensitivities: [inflation, crude_oil]
     notes: "Focus on Permian basin capital efficiency, Tengizchevroil (TCO) expansion ramp, and shareholder capital return yield."
 
   - symbol: HD
@@ -374,7 +374,7 @@ tickers:
     key_suppliers: [Stanley Black & Decker, SWK, Masco, MAS, Owens Corning, OC, Fortune Brands, FBIN, Trex, TREX]
     competitors: [LOW, BLDR, SHW]
     macro_sensitivities: [existing_home_sales_turnover, 30_year_mortgage_rates, home_equity_renovation_spend, pro_contractor_backlogs]
-    economic_sensitivities: [interest_rates, inflation]
+    economic_sensitivities: [interest_rates, treasury_10y, inflation]
     notes: "Direct barometer of housing turnover and consumer renovation spend. Monitor Pro vs. DIY ticket sizes and comp transactions."
 
   - symbol: COST
@@ -416,6 +416,6 @@ tickers:
     key_suppliers: [GE Vernova, GEV, Siemens Energy, First Solar, FSLR, Vestas, Fluence, FLNC]
     competitors: [SO, DUK, AEP, EXC]
     macro_sensitivities: [ai_datacenter_power_demand, interest_rates_project_financing, clean_energy_ira_tax_credits, florida_grid_capex]
-    economic_sensitivities: [interest_rates, inflation]
+    economic_sensitivities: [interest_rates, treasury_10y, inflation]
     notes: "Premier clean energy utility and renewable project developer. Key beneficiary of skyrocketing AI datacenter electricity demand and Florida population growth."
 
