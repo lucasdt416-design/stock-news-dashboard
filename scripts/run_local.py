@@ -95,6 +95,17 @@ def main() -> None:
         default=1000,
         help="Hard safety cap for total news items retained (default: 1000)",
     )
+    parser.add_argument(
+        "--serve",
+        action="store_true",
+        help="Start local development server on specified port after pipeline completes",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to use for local development server (default: 8000)",
+    )
     args = parser.parse_args()
 
     print("\n" + "=" * 70)
@@ -108,95 +119,93 @@ def main() -> None:
     # 1. Load Watchlist
     logger.info("Loading watchlist from %s", watchlist_path)
     with open(watchlist_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-    tickers = config.get("tickers", [])
-    logger.info("Loaded %d watchlist tickers: %s", len(tickers), ", ".join(t["symbol"] for t in tickers))
+        cfg = yaml.safe_load(f) or {}
+    tickers = cfg.get("tickers", [])
+    logger.info("Loaded %d companies from watchlist", len(tickers))
 
-    # 2. Initialize Database Schema
-    logger.info("Initializing database schema at %s", db_file)
-    init_db(str(db_file))
+    # Initialize DB schema
+    init_db(db_path=str(db_file))
 
-    # If --prune-only flag is set, perform database pruning and exit
+    # If --prune-only, perform maintenance and exit early
     if args.prune_only:
-        logger.info("--- Standalone Database Pruning & Retention ---")
+        logger.info("Running database pruning & retention policy maintenance...")
         prune_stats = prune_news_items(
             max_age_days=args.retention_days,
-            max_total_items=args.max_items,
+            max_items=args.max_items,
             db_path=str(db_file),
         )
         print("\n" + "-" * 70)
-        print("🧹 Database Pruning & Retention Summary")
+        print("🧹 Pruning & Retention Maintenance Complete")
         print("-" * 70)
-        print(f"• Initial Item Count:       {prune_stats['initial_count']}")
-        print(f"• Cutoff Date (~{args.retention_days} days):      {prune_stats['cutoff_date']}")
-        print(f"• Removed by Age (> {args.retention_days}d):   {prune_stats['deleted_by_age']}")
-        print(f"• Removed by Safety Cap:    {prune_stats['deleted_by_cap']} (cap: {args.max_items})")
-        if prune_stats.get("deleted_filings", 0) > 0:
-            print(f"• Removed Legacy Filings:   {prune_stats['deleted_filings']}")
-        print(f"• Total Items Removed:      {prune_stats['total_deleted']}")
-        print(f"• Remaining Active Items:   {prune_stats['remaining_count']}")
+        print(f"• Total Stale Items Removed: {prune_stats['total_deleted']}")
+        print(f"• Deleted by Age (>{args.retention_days}d): {prune_stats['deleted_by_age']}")
+        print(f"• Cutoff Date:               {prune_stats['cutoff_date']}")
+        print(f"• Deleted by Max Cap (>{args.max_items}): {prune_stats['deleted_by_cap']}")
+        print(f"• Remaining Unique Items:    {prune_stats['remaining_count']}")
         print("-" * 70 + "\n")
         return
 
-    # 3. Stage 1: Collectors (3 Distinct Sources)
-    logger.info("--- Stage 1: Collectors (3 Distinct Sources) ---")
-    logger.info("Collecting SEC EDGAR filings (Regulatory)...")
-    edgar_raw = collect_sec_edgar(tickers, max_items_per_ticker=30)
-    logger.info("SEC EDGAR raw items: %d", len(edgar_raw))
+    # 2. Stage 1: SEC EDGAR Collector
+    logger.info("--- Stage 1: SEC EDGAR Filings Collector ---")
+    user_agent = os.environ.get(
+        "SEC_EDGAR_USER_AGENT",
+        "StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)",
+    )
+    edgar_raw = collect_sec_edgar(watchlist=tickers, user_agent=user_agent)
+    logger.info("Collected %d raw SEC filings", len(edgar_raw))
 
-    logger.info("Collecting Company IR announcements (Company Self-Announcements)...")
-    ir_raw = collect_company_ir(tickers, max_items_per_ticker=30)
-    logger.info("Company IR raw items: %d", len(ir_raw))
+    # 3. Stage 2: Company IR Newsroom RSS Collector
+    logger.info("--- Stage 2: Company IR RSS Collector ---")
+    ir_raw = collect_company_ir(watchlist=tickers)
+    logger.info("Collected %d raw company IR press releases", len(ir_raw))
 
-    logger.info("Collecting 3rd-Party News Media (Finnhub Journalism)...")
-    finnhub_raw = collect_finnhub_news(tickers, max_items_per_ticker=20)
-    logger.info("News Media (Finnhub) raw items: %d", len(finnhub_raw))
+    # 4. Stage 3: Finnhub News Media Collector
+    logger.info("--- Stage 3: Finnhub Company News Media Collector ---")
+    finnhub_raw = collect_finnhub_news(watchlist=tickers)
+    logger.info("Collected %d raw financial news media articles", len(finnhub_raw))
 
+    # Combine all raw collector items
     raw_items = edgar_raw + ir_raw + finnhub_raw
-    logger.info("Total raw items collected across all 3 sources: %d", len(raw_items))
+    logger.info("Total raw items across all 3 collectors: %d", len(raw_items))
 
-    # 4. Stage 2: Normalize
-    logger.info("--- Stage 2: Normalize ---")
+    # 5. Stage 4: Normalize Records
+    logger.info("--- Stage 4: Normalizing Records ---")
     normalized_items = normalize_items(raw_items)
-    logger.info("Normalized %d items into common schema", len(normalized_items))
+    logger.info("Normalized %d items into canonical schema", len(normalized_items))
 
-    # 5. Stage 3: Deduplicate
-    logger.info("--- Stage 3: Deduplicate ---")
-    unique_items, dup_count = deduplicate_items(normalized_items, similarity_threshold=0.75)
-    logger.info("Deduplication complete: %d unique items (%d duplicates filtered)", len(unique_items), dup_count)
+    # 6. Stage 5: Deduplicate Across Sources
+    logger.info("--- Stage 5: Cross-Source Deduplication ---")
+    unique_items = deduplicate_items(normalized_items, db_path=str(db_file))
+    logger.info("Identified %d unique items after deduplication", len(unique_items))
 
-    # 6. Stage 4: Supply Chain & Customer Cross-Referencing (Category #12)
-    logger.info("--- Stage 4: Supplier & Customer Cross-Referencing Engine ---")
-    crossref_items = apply_supply_chain_cross_references(unique_items, tickers)
-    logger.info("Cross-referencing complete for %d items", len(crossref_items))
+    # 7. Stage 6: Supply Chain Cross-Referencing
+    logger.info("--- Stage 6: Supplier & Customer Cross-Referencing ---")
+    crossref_items = apply_supply_chain_cross_references(unique_items, watchlist_path=str(watchlist_path))
 
-    # 7. Stage 5: Scoring Engine
-    logger.info("--- Stage 5: Scoring Engine ---")
-    scored_items = score_items(crossref_items)
-    high_impact = [it for it in scored_items if it.get("score", 0) >= 7.0]
-    logger.info("Scored %d items (%d identified as High Impact ≥ 7.0)", len(scored_items), len(high_impact))
+    # 8. Stage 7: Transparent Scoring Engine
+    logger.info("--- Stage 7: Scoring Engine ---")
+    scored_items = score_items(crossref_items, watchlist_path=str(watchlist_path))
+    high_impact = [it for it in scored_items if it.get("score", 0.0) >= 7.0]
+    logger.info("Scored %d items (%d high-impact with score >= 7.0)", len(scored_items), len(high_impact))
 
-    # 8. Stage 6: 'Why It Matters' Summarization (Gemini API)
-    logger.info("--- Stage 6: 'Why It Matters' Summarization ---")
-    summarized_items = summarize_items(scored_items, batch_size=50)
-    logger.info("Summarization complete for %d items", len(summarized_items))
+    # 9. AI 'Why It Matters' Summarization (High-Impact items)
+    logger.info("--- Stage 7b: AI / Heuristic Summarization ---")
+    summarized_items = summarize_items(scored_items, watchlist_path=str(watchlist_path))
 
-    # 9. Stage 7: Persist News Records
-    logger.info("--- Stage 7: Persist News Records ---")
-    new_count, total_processed = save_news_items(summarized_items, db_path=str(db_file))
-    rescored_total = rescore_database_items(db_path=str(db_file))
-    logger.info("Persistence complete: %d records updated/inserted (%d processed, %d total records rescored)", new_count, total_processed, rescored_total)
+    # 10. Persist to Database & Rescore Historical
+    logger.info("--- Saving to SQLite Database ---")
+    save_news_items(summarized_items, db_path=str(db_file))
+    rescore_database_items(db_path=str(db_file), watchlist_path=str(watchlist_path))
 
-    # 10. Stage 7b: Database Retention & Pruning (90-Day Policy + 1,000 Item Cap)
-    logger.info("--- Stage 7b: Database Retention & Pruning ---")
+    # Automated Database Pruning
     prune_stats = prune_news_items(
         max_age_days=args.retention_days,
-        max_total_items=args.max_items,
+        max_items=args.max_items,
         db_path=str(db_file),
     )
     if prune_stats["total_deleted"] > 0:
         logger.info(
-            "Pruned %d stale/excess items from database (%d older than %s, %d beyond %d-item cap). %d items remain.",
+            "Pruned %d stale database items (%d by age > %s, %d by max cap > %d). %d items remain.",
             prune_stats["total_deleted"],
             prune_stats["deleted_by_age"],
             prune_stats["cutoff_date"],
@@ -277,6 +286,55 @@ def main() -> None:
         print(f"⚠️ PIPELINE HEALTH WARNING: {health_report['health_message']}\n")
     else:
         print(f"✅ Finished successfully! Open {output_html} in your browser.\n")
+
+    if args.serve:
+        start_local_dev_server(port=args.port)
+
+
+def start_local_dev_server(port: int = 8000) -> None:
+    """Start local HTTP server serving site/ directory with /api/lookup endpoint support."""
+    import http.server
+    import socketserver
+    import urllib.parse
+    from pipeline.lookup import fetch_ticker_quick_lookup
+
+    site_dir = str(PROJECT_ROOT / "site")
+
+    class DevServerHandler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=site_dir, **kwargs)
+
+        def do_GET(self):
+            parsed_url = urllib.parse.urlparse(self.path)
+            if parsed_url.path == "/api/lookup":
+                query_params = urllib.parse.parse_qs(parsed_url.query)
+                ticker = query_params.get("ticker", query_params.get("symbol", [""]))[0].strip().upper()
+                if not ticker:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(b'{"error":"Missing ticker parameter","found":false}')
+                    return
+
+                res_data = fetch_ticker_quick_lookup(ticker)
+                status_code = 200 if res_data.get("found") else (404 if "not found" in res_data.get("message", "").lower() else 500)
+                self.send_response(status_code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps(res_data).encode("utf-8"))
+                return
+
+            super().do_GET()
+
+    print(f"🌐 Starting Local Dev Server on http://localhost:{port} (serving {site_dir})...")
+    print("Press Ctrl+C to stop.")
+    with socketserver.TCPServer(("", port), DevServerHandler) as httpd:
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nServer stopped.")
 
 
 if __name__ == "__main__":

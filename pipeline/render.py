@@ -1665,6 +1665,174 @@ SHARED_CSS = """
       overflow-wrap: break-word;
     }
 
+    /* Quick Lookup Card (Lightweight Live Quote & Headlines for Outside Watchlist) */
+    .quick-lookup-card {
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 0.95rem 1.15rem;
+      margin-bottom: 0.85rem;
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all var(--transition-fast);
+    }
+
+    .quick-lookup-card.loading {
+      border-color: #93c5fd;
+      background: #f8fbff;
+    }
+
+    .quick-lookup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.65rem;
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid var(--border-card);
+    }
+
+    .quick-lookup-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .quick-lookup-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #1d4ed8;
+      background: #dbeafe;
+      border: 1px solid #bfdbfe;
+      padding: 0.12rem 0.45rem;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+    }
+
+    .quick-lookup-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .quick-lookup-price-strip {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .quick-lookup-price-val {
+      font-family: var(--font-mono);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .quick-lookup-change {
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .quick-lookup-change.pos {
+      color: #15803d;
+      background: rgba(22, 163, 74, 0.1);
+    }
+
+    .quick-lookup-change.neg {
+      color: #b91c1c;
+      background: rgba(220, 38, 38, 0.1);
+    }
+
+    .quick-lookup-change.neu {
+      color: var(--text-muted);
+      background: var(--bg-surface-elevated);
+    }
+
+    .quick-lookup-range {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-left: auto;
+    }
+
+    .quick-lookup-headlines-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.45rem;
+    }
+
+    .quick-lookup-headlines-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .quick-lookup-news-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      padding: 0.45rem 0.65rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all var(--transition-fast);
+    }
+
+    .quick-lookup-news-item:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      transform: translateX(2px);
+    }
+
+    .quick-lookup-news-headline {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .quick-lookup-news-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .quick-lookup-action-bar {
+      margin-top: 0.75rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid var(--border-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+    }
+
     /* Asymmetric Hero Bento Deck (Replacing rigid 3-column cards) */
     .hero-bento-deck {
       display: grid;
@@ -4494,9 +4662,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       if (dropdown) dropdown.classList.remove('active');
     }
 
+    let lookupAbortController = null;
+    let lookupDebounceTimer = null;
+
     function handleSearchType(rawVal) {
       openSearchDropdown();
       const val = (rawVal || '').toLowerCase().trim();
+      const rawUpper = (rawVal || '').toUpperCase().trim();
       const defaultContent = document.getElementById('defaultDropdownContent');
       const liveResults = document.getElementById('liveSearchResults');
 
@@ -4506,11 +4678,18 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           liveResults.style.display = 'none';
           liveResults.innerHTML = '';
         }
+        if (lookupDebounceTimer) clearTimeout(lookupDebounceTimer);
+        if (lookupAbortController) lookupAbortController.abort();
         return;
       }
 
       if (defaultContent) defaultContent.style.display = 'none';
       if (liveResults) liveResults.style.display = 'block';
+
+      // Check if input matches standard stock ticker format (1-10 alphanumeric chars)
+      const isTickerFormat = /^[A-Z0-9.-]{1,10}$/.test(rawUpper);
+      const isWatchlistTicker = watchlistCompanies.some(c => (c.symbol || '').toUpperCase() === rawUpper);
+      const isOutsideWatchlist = isTickerFormat && !isWatchlistTicker;
 
       // 1. Match Companies & Tickers
       const matchedCompanies = watchlistCompanies.filter(c => 
@@ -4547,22 +4726,43 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       if (!liveResults) return;
 
-      if (totalMatches === 0) {
+      let html = '';
+
+      // If user typed a ticker outside the 30-company watchlist, insert a live Quick Lookup container at top
+      if (isOutsideWatchlist) {
+        html += `
+          <div id="quickLookupCard" class="quick-lookup-card loading">
+            <div class="quick-lookup-header">
+              <div class="quick-lookup-title-group">
+                <span class="ticker-badge ticker-${rawUpper}">${rawUpper}</span>
+                <span class="quick-lookup-badge">⚡ Live Quick Lookup &bull; Outside Watchlist</span>
+              </div>
+              <span class="quick-lookup-meta" id="quickLookupStatus"><span class="pulse-dot" style="background:#3b82f6;"></span> Querying Finnhub...</span>
+            </div>
+            <div id="quickLookupBody" style="font-size:0.8rem; color:var(--text-muted); padding:0.25rem 0;">
+              Fetching live real-time price &amp; recent headlines for <strong>${rawUpper}</strong>...
+            </div>
+          </div>
+        `;
+        triggerLiveQuickLookup(rawUpper);
+      }
+
+      if (totalMatches === 0 && !isOutsideWatchlist) {
         liveResults.innerHTML = `
           <div class="search-no-results">
             <div class="no-results-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
             <div class="no-results-title">Sorry, what you are searching for cannot be found, try being less specific.</div>
-            <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>), form type (<em>8-K</em>), category, or indicator.</div>
+            <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>, <em>TSM</em>, <em>PLTR</em>), form type (<em>8-K</em>), or indicator.</div>
           </div>
         `;
         return;
       }
 
-      let html = '<div class="search-results-list">';
+      html += '<div class="search-results-list">';
 
       // Render Company matches
       if (matchedCompanies.length > 0) {
-        html += '<div class="dropdown-section-title">Matching Companies</div>';
+        html += '<div class="dropdown-section-title">Matching Watchlist Companies</div>';
         matchedCompanies.slice(0, 3).forEach(c => {
           html += `
             <a href="company.html?ticker=${c.symbol}" class="search-result-item">
@@ -4638,6 +4838,118 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       html += '</div>';
       liveResults.innerHTML = html;
+    }
+
+    function triggerLiveQuickLookup(ticker) {
+      if (lookupDebounceTimer) clearTimeout(lookupDebounceTimer);
+      if (lookupAbortController) lookupAbortController.abort();
+      lookupAbortController = new AbortController();
+
+      lookupDebounceTimer = setTimeout(async () => {
+        const card = document.getElementById('quickLookupCard');
+        const status = document.getElementById('quickLookupStatus');
+        const body = document.getElementById('quickLookupBody');
+        if (!card || !body) return;
+
+        try {
+          const res = await fetch(`/api/lookup?ticker=${encodeURIComponent(ticker)}`, {
+            signal: lookupAbortController.signal,
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            card.classList.remove('loading');
+            if (status) status.innerHTML = '<span style="color:var(--text-muted);">Unlisted Ticker</span>';
+            body.innerHTML = `
+              <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
+                ${errData.message || `No live quote or news found on Finnhub for symbol "<strong>${ticker}</strong>".`}
+                <div style="margin-top:0.35rem; font-size:0.72rem;">Try checking the ticker spelling or searching for general keywords.</div>
+              </div>
+            `;
+            return;
+          }
+
+          const data = await res.json();
+          if (!data || !data.found) {
+            card.classList.remove('loading');
+            if (status) status.innerHTML = '<span style="color:var(--text-muted);">No Data</span>';
+            body.innerHTML = `
+              <div style="font-size:0.8rem; color:var(--text-muted);">
+                ${data.message || `No quote or news records found for <strong>${ticker}</strong>.`}
+              </div>
+            `;
+            return;
+          }
+
+          card.classList.remove('loading');
+          if (status) {
+            const timeStr = data.queried_at ? new Date(data.queried_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Live';
+            status.innerHTML = `<span class="pulse-dot" style="background:#10b981;"></span> Live &bull; ${timeStr}`;
+          }
+
+          let bodyHtml = '';
+
+          if (data.price) {
+            const chg = Number(data.price.change) || 0;
+            const chgPct = Number(data.price.change_pct) || 0;
+            const cls = chg > 0 ? 'pos' : (chg < 0 ? 'neg' : 'neu');
+            const sign = chg > 0 ? '▲ +' : (chg < 0 ? '▼ ' : '');
+            const signPct = chgPct > 0 ? '+' : '';
+
+            bodyHtml += `
+              <div class="quick-lookup-price-strip">
+                <div class="quick-lookup-price-val">$${Number(data.price.current).toFixed(2)}</div>
+                <div class="quick-lookup-change ${cls}">
+                  ${sign}$${Math.abs(chg).toFixed(2)} (${signPct}${chgPct.toFixed(2)}%)
+                </div>
+                <div class="quick-lookup-range">
+                  Range: $${Number(data.price.low).toFixed(2)} - $${Number(data.price.high).toFixed(2)} &bull; Prev: $${Number(data.price.prev_close).toFixed(2)}
+                </div>
+              </div>
+            `;
+          }
+
+          if (data.headlines && data.headlines.length > 0) {
+            bodyHtml += `
+              <div class="quick-lookup-headlines-title">Recent Headlines (Live Media)</div>
+              <div class="quick-lookup-headlines-list">
+                ${data.headlines.map(h => `
+                  <a href="${h.url}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
+                    <div class="quick-lookup-news-headline">${h.headline}</div>
+                    <div class="quick-lookup-news-meta">
+                      <span style="font-weight:600; color:var(--text-secondary);">${h.source}</span>
+                      ${h.time_ago ? `<span>&bull;</span><span>${h.time_ago}</span>` : ''}
+                      <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read ↗</span>
+                    </div>
+                  </a>
+                `).join('')}
+              </div>
+            `;
+          } else {
+            bodyHtml += `
+              <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.25rem;">No news headlines published in the past 7 days.</div>
+            `;
+          }
+
+          bodyHtml += `
+            <div class="quick-lookup-action-bar">
+              <span style="color:var(--text-muted);">Non-watchlist symbol &bull; Lightweight Finnhub quote</span>
+              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search In Feed ↗</a>
+            </div>
+          `;
+
+          body.innerHTML = bodyHtml;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+          card.classList.remove('loading');
+          if (status) status.innerHTML = '<span style="color:var(--text-muted);">Lookup Error</span>';
+          body.innerHTML = `
+            <div style="font-size:0.8rem; color:var(--text-muted);">
+              Unable to query live quick-lookup. <span style="font-size:0.72rem;">(Endpoint active on Cloudflare Pages deployment)</span>
+            </div>
+          `;
+        }
+      }, 350);
     }
 
     // Close search dropdown on click outside
