@@ -155,6 +155,7 @@ def collect_edgar_filings(
     watchlist: List[Dict[str, Any]],
     max_items_per_ticker: int = 40,
     delay_seconds: float = 0.25,
+    user_agent: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Collect filings for all tickers in the watchlist."""
     all_filings: List[Dict[str, Any]] = []
@@ -168,7 +169,7 @@ def collect_edgar_filings(
             continue
 
         logger.info("Fetching SEC EDGAR filings for %s (CIK: %s)...", symbol, cik)
-        data = fetch_company_submissions(cik)
+        data = fetch_company_submissions(cik, user_agent=user_agent)
         if data:
             filings = parse_submissions(data, ticker=symbol, max_items=max_items_per_ticker)
             logger.info("Retrieved %d filings for %s", len(filings), symbol)
