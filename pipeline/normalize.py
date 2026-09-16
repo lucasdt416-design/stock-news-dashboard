@@ -167,10 +167,10 @@ def normalize_edgar_item(item: Dict[str, Any]) -> Dict[str, Any]:
 def normalize_company_ir_item(item: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize a raw Company IR / Press Release item."""
     ticker = item.get("ticker", "").upper()
-    url = item.get("link", "")
+    url = item.get("link") or item.get("url", "")
     guid = item.get("guid", url)
-    title = clean_text(item.get("title", "Company Announcement"))
-    summary = clean_text(item.get("summary", ""))
+    title = clean_text(item.get("title") or item.get("headline", "Company Announcement"))
+    summary = clean_text(item.get("summary") or item.get("content", ""))
 
     return {
         "item_uid": generate_item_uid("company_ir", guid, url),
