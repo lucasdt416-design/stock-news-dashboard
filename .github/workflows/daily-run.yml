@@ -53,11 +53,11 @@ jobs:
       - name: 📦 Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pytest
+          python -m pip install -r requirements.txt pytest
 
       - name: 🧪 Run Automated Regression & Signature Tests
         run: |
-          pytest tests/test_pipeline_e2e.py tests/test_lookup.py tests/test_calendar.py tests/test_company_ir.py tests/test_prune.py tests/test_company_view.py tests/test_finnhub_news.py tests/test_watchdog.py
+          python -m pytest tests/test_pipeline_e2e.py tests/test_lookup.py tests/test_calendar.py tests/test_company_ir.py tests/test_prune.py tests/test_company_view.py tests/test_finnhub_news.py tests/test_watchdog.py
 
       - name: 🗄️ Restore Database Cache (Historical Filings & Dedup History)
         uses: actions/cache/restore@v4
