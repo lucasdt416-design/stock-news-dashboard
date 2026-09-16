@@ -351,8 +351,8 @@ def build_forthcoming_calendar(
             )
             if os.path.exists(wl_path):
                 with open(wl_path, "r", encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
-                    wl = data.get("companies", [])
+                    data = yaml.safe_load(f) or {}
+                    wl = data.get("tickers") or data.get("companies", [])
         except Exception as e:
             logger.warning("Could not auto-load watchlist in calendar: %s", e)
 

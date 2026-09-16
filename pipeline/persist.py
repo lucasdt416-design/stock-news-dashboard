@@ -1,5 +1,4 @@
-"""Persistence layer for saving and querying scored news items and filings in SQLite."""
-
+import hashlib
 import json
 import logging
 import sqlite3
@@ -27,6 +26,11 @@ def save_news_items(
 
     with conn:
         for it in items:
+            item_uid = it.get("item_uid")
+            if not item_uid:
+                raw_key = f"{it.get('ticker')}:{it.get('url') or it.get('headline')}"
+                item_uid = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()[:16]
+
             rel_tickers = it.get("related_tickers", [])
             rel_tickers_str = ",".join(rel_tickers) if isinstance(rel_tickers, list) else str(rel_tickers or "")
             cross_refs = it.get("cross_references", [])
@@ -69,7 +73,7 @@ def save_news_items(
                     cross_ref_summary = excluded.cross_ref_summary
                 """,
                 (
-                    it.get("item_uid"),
+                    item_uid,
                     it.get("ticker"),
                     it.get("company_name"),
                     it.get("source"),
