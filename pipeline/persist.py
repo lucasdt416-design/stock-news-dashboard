@@ -98,7 +98,7 @@ def save_news_items(
     return (new_count, len(items))
 
 
-def rescore_database_items(db_path: Optional[str] = None) -> int:
+def rescore_database_items(db_path: Optional[str] = None, **kwargs) -> int:
     """Re-compute scores and breakdowns for all existing records in SQLite database."""
     from pipeline.score import score_item
 
@@ -475,8 +475,10 @@ def get_economic_indicators(
 def prune_news_items(
     max_age_days: int = 90,
     max_total_items: int = 1000,
+    max_items: Optional[int] = None,
     db_path: Optional[str] = None,
     reference_date: Optional[datetime] = None,
+    **kwargs,
 ) -> Dict[str, Any]:
     """Archive / prune news items older than ~90 days and enforce a hard safety cap of 1,000 items.
 
@@ -493,6 +495,9 @@ def prune_news_items(
     Returns:
         Dictionary with initial_count, cutoff_date, deleted_by_age, deleted_by_cap, total_deleted, remaining_count.
     """
+    if max_items is not None:
+        max_total_items = max_items
+
     init_db(db_path)
     conn = get_db_connection(db_path)
 

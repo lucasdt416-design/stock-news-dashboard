@@ -175,8 +175,13 @@ def main() -> None:
 
     # 6. Stage 5: Deduplicate Across Sources
     logger.info("--- Stage 5: Cross-Source Deduplication ---")
-    unique_items = deduplicate_items(normalized_items, db_path=str(db_file))
-    logger.info("Identified %d unique items after deduplication", len(unique_items))
+    dedup_res = deduplicate_items(normalized_items, db_path=str(db_file))
+    if isinstance(dedup_res, tuple):
+        unique_items, dupes_removed = dedup_res
+    else:
+        unique_items = dedup_res
+        dupes_removed = len(normalized_items) - len(unique_items)
+    logger.info("Identified %d unique items after deduplication (%d duplicates removed)", len(unique_items), dupes_removed)
 
     # 7. Stage 6: Supply Chain Cross-Referencing
     logger.info("--- Stage 6: Supplier & Customer Cross-Referencing ---")

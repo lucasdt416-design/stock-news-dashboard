@@ -11,7 +11,7 @@ Cross-references disclosures and news items across watchlist supply chains:
 
 import logging
 import re
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -196,10 +196,24 @@ def find_supply_chain_matches_for_item(
 
 def apply_supply_chain_cross_references(
     items: List[Dict[str, Any]],
-    watchlist: List[Dict[str, Any]],
+    watchlist: Optional[List[Dict[str, Any]]] = None,
+    watchlist_path: Optional[str] = None,
+    **kwargs,
 ) -> List[Dict[str, Any]]:
     """Process news items, tagging each with properly labeled supply-chain cross-references."""
-    if not items or not watchlist:
+    if not items:
+        return items
+
+    if watchlist is None and watchlist_path:
+        import yaml
+        try:
+            with open(watchlist_path, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+                watchlist = cfg.get("tickers", [])
+        except Exception as e:
+            logger.warning("Could not load watchlist from %s: %s", watchlist_path, e)
+
+    if not watchlist:
         return items
 
     sc_index = build_supply_chain_index(watchlist)

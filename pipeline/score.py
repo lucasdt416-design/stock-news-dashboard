@@ -195,6 +195,6 @@ def score_item(item: Dict[str, Any]) -> Dict[str, Any]:
     return item
 
 
-def score_items(items: list) -> list:
+def score_items(items: list, **kwargs) -> list:
     """Score a collection of normalized items."""
     return [score_item(it) for it in items]

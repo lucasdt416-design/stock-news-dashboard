@@ -158,6 +158,7 @@ def summarize_items(
     api_key: Optional[str] = None,
     batch_size: int = 50,
     inter_batch_delay: float = 4.0,
+    **kwargs,
 ) -> List[Dict[str, Any]]:
     """Generate and attach a one-sentence 'why it matters' summary for each item.
 

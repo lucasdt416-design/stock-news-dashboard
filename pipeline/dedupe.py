@@ -2,7 +2,7 @@
 
 import difflib
 import re
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from pipeline.normalize import canonicalize_url
 
 # Stopwords & boilerplate phrases to strip for clean headline comparison
@@ -80,6 +80,7 @@ def are_dates_close(d1: str, d2: str) -> bool:
 def deduplicate_items(
     items: List[Dict[str, Any]],
     similarity_threshold: float = 0.75,
+    db_path: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], int]:
     """Deduplicate a list of normalized items.
 
