@@ -4856,13 +4856,26 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             signal: lookupAbortController.signal,
           });
 
+          const contentType = res.headers.get('content-type') || '';
+          if (!contentType.includes('application/json')) {
+            card.classList.remove('loading');
+            if (status) status.innerHTML = '<span style="color:var(--text-muted);">Endpoint Pending</span>';
+            body.innerHTML = `
+              <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
+                Live quick-lookup endpoint for "<strong>${ticker}</strong>" is currently offline or pending Cloudflare deployment.
+                <div style="margin-top:0.35rem; font-size:0.72rem;">Run local dev server or configure FINNHUB_API_KEY on Cloudflare Pages.</div>
+              </div>
+            `;
+            return;
+          }
+
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
             card.classList.remove('loading');
             if (status) status.innerHTML = '<span style="color:var(--text-muted);">Unlisted Ticker</span>';
             body.innerHTML = `
               <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
-                ${errData.message || `No live quote or news found on Finnhub for symbol "<strong>${ticker}</strong>".`}
+                ${errData.message || errData.error || `No live quote or news found on Finnhub for symbol "<strong>${ticker}</strong>".`}
                 <div style="margin-top:0.35rem; font-size:0.72rem;">Try checking the ticker spelling or searching for general keywords.</div>
               </div>
             `;

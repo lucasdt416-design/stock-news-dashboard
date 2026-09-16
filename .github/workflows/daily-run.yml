@@ -13,6 +13,7 @@ on:
       - 'data/watchlist.yaml'
       - 'collectors/**'
       - 'pipeline/**'
+      - 'functions/**'
       - 'scripts/**'
       - '.github/workflows/daily-run.yml'
 
@@ -89,10 +90,15 @@ jobs:
           echo "Target Project: $CLOUDFLARE_PROJECT_NAME"
           echo "============================================================"
 
-          # Step 1: Ensure the Cloudflare Pages project exists
+          # Step 1: Ensure the Cloudflare Pages project exists & sync secrets
           echo "Checking / creating project on Cloudflare Pages..."
           npx wrangler pages project create "$CLOUDFLARE_PROJECT_NAME" --production-branch=main || true
 
-          # Step 2: Deploy the static site directory
-          echo "Deploying site/ directory to Cloudflare Pages..."
+          if [ -n "$FINNHUB_API_KEY" ]; then
+            echo "Syncing FINNHUB_API_KEY secret to Cloudflare Pages..."
+            echo "$FINNHUB_API_KEY" | npx wrangler pages secret put FINNHUB_API_KEY --project-name="$CLOUDFLARE_PROJECT_NAME" || true
+          fi
+
+          # Step 2: Deploy the static site directory (functions/ is bundled automatically by wrangler from repo root)
+          echo "Deploying site/ directory and serverless functions to Cloudflare Pages..."
           npx wrangler pages deploy site --project-name="$CLOUDFLARE_PROJECT_NAME" --branch=main --commit-dirty=true

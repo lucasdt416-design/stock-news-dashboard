@@ -47,7 +47,20 @@ def fetch_ticker_quick_lookup(
             "error": "Missing ticker parameter",
         }
 
-    token = api_key or os.environ.get("FINNHUB_API_KEY", "").strip()
+    if api_key is not None:
+        token = api_key.strip()
+    else:
+        token = os.environ.get("FINNHUB_API_KEY", "").strip()
+        if not token:
+            env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+            if os.path.exists(env_path):
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "FINNHUB_API_KEY=" in line:
+                            token = line.split("=", 1)[1].strip().strip("'\"")
+                            break
+
     if not token:
         logger.warning("FINNHUB_API_KEY not configured for quick-lookup.")
         return {
