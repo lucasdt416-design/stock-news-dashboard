@@ -136,7 +136,11 @@ def test_render_economic_page(tmp_path):
     # Auto-seed db
     collect_economic_indicators(api_key=None, db_path=db_file)
 
-    render_dashboard(output_path=os.path.join(site_dir, "index.html"), db_path=db_file)
+    render_dashboard(
+        output_path=os.path.join(site_dir, "index.html"),
+        db_path=db_file,
+        performance_data={},
+    )
 
     econ_html_path = os.path.join(site_dir, "economic.html")
     assert os.path.exists(econ_html_path)
