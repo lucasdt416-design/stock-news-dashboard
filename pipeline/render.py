@@ -4647,13 +4647,14 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const dropdown = document.getElementById('searchDropdown');
       if (dropdown) dropdown.classList.add('active');
       const val = (document.getElementById('globalSearchInput')?.value || '').trim();
+      const def = document.getElementById('defaultDropdownContent');
+      const res = document.getElementById('liveSearchResults');
       if (!val) {
-        const def = document.getElementById('defaultDropdownContent');
-        const res = document.getElementById('liveSearchResults');
         if (def) def.style.display = 'block';
         if (res) res.style.display = 'none';
       } else {
-        handleSearchType(val);
+        if (def) def.style.display = 'none';
+        if (res) res.style.display = 'block';
       }
     }
 
@@ -4666,7 +4667,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     let lookupDebounceTimer = null;
 
     function handleSearchType(rawVal) {
-      openSearchDropdown();
+      console.log('[StockPulse Search] Keystroke input event received:', rawVal);
+      const dropdown = document.getElementById('searchDropdown');
+      if (dropdown) dropdown.classList.add('active');
       const val = (rawVal || '').toLowerCase().trim();
       const rawUpper = (rawVal || '').toUpperCase().trim();
       const defaultContent = document.getElementById('defaultDropdownContent');
@@ -5084,6 +5087,12 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     function initHomePage() {
       initOrbitCards();
       renderRecentlyViewed();
+      const searchInput = document.getElementById('globalSearchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          handleSearchType(e.target.value);
+        });
+      }
     }
 
     window.addEventListener('focus', renderRecentlyViewed);
