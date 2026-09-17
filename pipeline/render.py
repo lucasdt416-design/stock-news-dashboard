@@ -4687,13 +4687,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (defaultContent) defaultContent.style.display = 'none';
-      if (liveResults) liveResults.style.display = 'block';
-
-      // Check if input matches standard stock ticker format (1-10 alphanumeric chars)
-      const isTickerFormat = /^[A-Z0-9.-]{1,10}$/.test(rawUpper);
-      const isWatchlistTicker = watchlistCompanies.some(c => (c.symbol || '').toUpperCase() === rawUpper);
-      const isOutsideWatchlist = isTickerFormat && !isWatchlistTicker;
-
       // 1. Match Companies & Tickers
       const matchedCompanies = watchlistCompanies.filter(c => 
         (c.symbol || '').toLowerCase().includes(val) ||
@@ -4725,29 +4718,37 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         (ind.category || '').toLowerCase().includes(val)
       );
 
+      // Check if input directly matches a curated watchlist holding
+      const isExactWatchlist = watchlistCompanies.some(c => 
+        (c.symbol || '').toUpperCase() === rawUpper || 
+        (c.name || '').toLowerCase() === val
+      );
+      const isSearchTermEligible = val.length >= 2 && /^[a-zA-Z0-9\s.\-]{2,40}$/.test(rawVal.trim());
+      const isOutsideWatchlist = isSearchTermEligible && !isExactWatchlist && (matchedCompanies.length === 0);
+
       const totalMatches = matchedCompanies.length + matchedNews.length + matchedCal.length + matchedEcon.length;
 
       if (!liveResults) return;
 
       let html = '';
 
-      // If user typed a ticker outside the 30-company watchlist, insert a live Quick Lookup container at top
+      // If user typed a ticker or company name outside the 30-company watchlist, insert a live Quick Lookup container at top
       if (isOutsideWatchlist) {
         html += `
           <div id="quickLookupCard" class="quick-lookup-card loading">
             <div class="quick-lookup-header">
-              <div class="quick-lookup-title-group">
-                <span class="ticker-badge ticker-${rawUpper}">${rawUpper}</span>
+              <div class="quick-lookup-title-group" id="quickLookupTitleGroup">
+                <span class="ticker-badge" id="quickLookupBadge">${rawUpper}</span>
                 <span class="quick-lookup-badge">⚡ Live Quick Lookup &bull; Outside Watchlist</span>
               </div>
               <span class="quick-lookup-meta" id="quickLookupStatus"><span class="pulse-dot" style="background:#3b82f6;"></span> Querying Finnhub...</span>
             </div>
             <div id="quickLookupBody" style="font-size:0.8rem; color:var(--text-muted); padding:0.25rem 0;">
-              Fetching live real-time price &amp; recent headlines for <strong>${rawUpper}</strong>...
+              Fetching live real-time price &amp; recent headlines for <strong>${rawVal.trim()}</strong>...
             </div>
           </div>
         `;
-        triggerLiveQuickLookup(rawUpper);
+        triggerLiveQuickLookup(rawVal.trim(), totalMatches);
       }
 
       if (totalMatches === 0 && !isOutsideWatchlist) {
@@ -4755,7 +4756,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div class="search-no-results">
             <div class="no-results-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
             <div class="no-results-title">Sorry, what you are searching for cannot be found, try being less specific.</div>
-            <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>, <em>TSM</em>, <em>PLTR</em>), form type (<em>8-K</em>), or indicator.</div>
+            <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>, <em>NFLX</em>, <em>PLTR</em>), company name (<em>Netflix</em>, <em>Spotify</em>), or form type (<em>8-K</em>).</div>
           </div>
         `;
         return;
@@ -4843,19 +4844,20 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       liveResults.innerHTML = html;
     }
 
-    function triggerLiveQuickLookup(ticker) {
+    function triggerLiveQuickLookup(query, totalMatches) {
       if (lookupDebounceTimer) clearTimeout(lookupDebounceTimer);
       if (lookupAbortController) lookupAbortController.abort();
       lookupAbortController = new AbortController();
 
       lookupDebounceTimer = setTimeout(async () => {
         const card = document.getElementById('quickLookupCard');
+        const headerGroup = document.getElementById('quickLookupTitleGroup');
         const status = document.getElementById('quickLookupStatus');
         const body = document.getElementById('quickLookupBody');
         if (!card || !body) return;
 
         try {
-          const res = await fetch(`/api/lookup?ticker=${encodeURIComponent(ticker)}`, {
+          const res = await fetch(`/api/lookup?ticker=${encodeURIComponent(query)}`, {
             signal: lookupAbortController.signal,
           });
 
@@ -4865,7 +4867,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             if (status) status.innerHTML = '<span style="color:var(--text-muted);">Endpoint Pending</span>';
             body.innerHTML = `
               <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
-                Live quick-lookup endpoint for "<strong>${ticker}</strong>" is currently offline or pending Cloudflare deployment.
+                Live quick-lookup endpoint for "<strong>${query}</strong>" is currently offline or pending Cloudflare deployment.
                 <div style="margin-top:0.35rem; font-size:0.72rem;">Run local dev server or configure FINNHUB_API_KEY on Cloudflare Pages.</div>
               </div>
             `;
@@ -4874,12 +4876,16 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
+            if (totalMatches > 0) {
+              card.style.display = 'none';
+              return;
+            }
             card.classList.remove('loading');
             if (status) status.innerHTML = '<span style="color:var(--text-muted);">Unlisted Ticker</span>';
             body.innerHTML = `
               <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
-                ${errData.message || errData.error || `No live quote or news found on Finnhub for symbol "<strong>${ticker}</strong>".`}
-                <div style="margin-top:0.35rem; font-size:0.72rem;">Try checking the ticker spelling or searching for general keywords.</div>
+                ${errData.message || errData.error || `No live quote or news found on Finnhub for "<strong>${query}</strong>".`}
+                <div style="margin-top:0.35rem; font-size:0.72rem;">Try checking the company or ticker spelling or searching for general keywords.</div>
               </div>
             `;
             return;
@@ -4887,17 +4893,32 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           const data = await res.json();
           if (!data || !data.found) {
+            if (totalMatches > 0) {
+              card.style.display = 'none';
+              return;
+            }
             card.classList.remove('loading');
             if (status) status.innerHTML = '<span style="color:var(--text-muted);">No Data</span>';
             body.innerHTML = `
               <div style="font-size:0.8rem; color:var(--text-muted);">
-                ${data.message || `No quote or news records found for <strong>${ticker}</strong>.`}
+                ${data.message || `No quote or news records found for <strong>${query}</strong>.`}
               </div>
             `;
             return;
           }
 
           card.classList.remove('loading');
+          if (headerGroup && data.symbol) {
+            const coName = data.company_name ? `<span style="font-weight:700; color:var(--text-primary); font-size:0.88rem; margin-left:0.4rem;">${data.company_name}</span>` : '';
+            const resFrom = data.resolved_from ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.3rem;">(resolved from "${data.resolved_from}")</span>` : '';
+            headerGroup.innerHTML = `
+              <span class="ticker-badge ticker-${data.symbol}">${data.symbol}</span>
+              ${coName}
+              ${resFrom}
+              <span class="quick-lookup-badge" style="margin-left:0.35rem;">⚡ Live Quick Lookup</span>
+            `;
+          }
+
           if (status) {
             const timeStr = data.queried_at ? new Date(data.queried_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Live';
             status.innerHTML = `<span class="pulse-dot" style="background:#10b981;"></span> Live &bull; ${timeStr}`;
@@ -4949,7 +4970,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           bodyHtml += `
             <div class="quick-lookup-action-bar">
-              <span style="color:var(--text-muted);">Non-watchlist symbol &bull; Lightweight Finnhub quote</span>
+              <span style="color:var(--text-muted);">Non-watchlist holding &bull; Live Finnhub quote</span>
               <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search In Feed ↗</a>
             </div>
           `;
@@ -4957,6 +4978,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           body.innerHTML = bodyHtml;
         } catch (err) {
           if (err.name === 'AbortError') return;
+          if (totalMatches > 0) {
+            card.style.display = 'none';
+            return;
+          }
           card.classList.remove('loading');
           if (status) status.innerHTML = '<span style="color:var(--text-muted);">Lookup Error</span>';
           body.innerHTML = `

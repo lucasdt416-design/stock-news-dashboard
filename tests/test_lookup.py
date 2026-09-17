@@ -140,6 +140,69 @@ class TestQuickLookupFeature(unittest.TestCase):
         self.assertFalse(res["found"])
         self.assertIn("No quote or news found", res.get("message", ""))
 
+    def test_fetch_ticker_quick_lookup_company_name_resolution(self):
+        """Verify company name (e.g. 'Netflix') resolves to ticker 'NFLX' via Finnhub symbol search."""
+        mock_search = {
+            "count": 2,
+            "result": [
+                {
+                    "description": "NETFLIX INC",
+                    "displaySymbol": "NFLX",
+                    "symbol": "NFLX",
+                    "type": "Common Stock",
+                },
+                {
+                    "description": "NETFLIX INC - CDR",
+                    "displaySymbol": "NFLX.BA",
+                    "symbol": "NFLX.BA",
+                    "type": "Common Stock",
+                },
+            ],
+        }
+        mock_quote = {
+            "c": 690.50,
+            "d": 8.20,
+            "dp": 1.20,
+            "h": 695.10,
+            "l": 685.80,
+            "o": 688.00,
+            "pc": 682.30,
+            "t": 1726430400,
+        }
+        mock_news = [
+            {
+                "headline": "Netflix subscriber growth accelerates following ad-tier expansion",
+                "url": "https://reuters.com/netflix-subscribers",
+                "source": "Reuters",
+                "datetime": 1726425600,
+                "summary": "Netflix reports strong subscriber additions across global markets.",
+            }
+        ]
+
+        def fake_urlopen(req, timeout=8):
+            url = req.full_url if hasattr(req, "full_url") else str(req)
+            mock_resp = MagicMock()
+            if "search" in url:
+                mock_resp.read.return_value = json.dumps(mock_search).encode("utf-8")
+            elif "quote" in url:
+                mock_resp.read.return_value = json.dumps(mock_quote).encode("utf-8")
+            elif "company-news" in url:
+                mock_resp.read.return_value = json.dumps(mock_news).encode("utf-8")
+            mock_resp.__enter__.return_value = mock_resp
+            return mock_resp
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            res = fetch_ticker_quick_lookup("Netflix", api_key="fake_token")
+
+        self.assertTrue(res["found"])
+        self.assertEqual(res["symbol"], "NFLX")
+        self.assertEqual(res["company_name"], "NETFLIX INC")
+        self.assertEqual(res["resolved_from"], "Netflix")
+        self.assertEqual(res["price"]["current"], 690.50)
+        self.assertEqual(len(res["headlines"]), 1)
+        self.assertIn("Netflix subscriber growth", res["headlines"][0]["headline"])
+
+
     def test_rendered_index_contains_quick_lookup_markup(self):
         """Verify site/index.html includes Quick Lookup CSS styles and JS trigger functions."""
         out_index = self.project_root / "site" / "index.html"
@@ -162,3 +225,4 @@ class TestQuickLookupFeature(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
