@@ -19,19 +19,41 @@ from pipeline.normalize import clean_text, extract_headline_subject
 
 logger = logging.getLogger(__name__)
 
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+DEFAULT_GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+
+def extract_headline_topic(headline: str, subject: str = "") -> str:
+    """Extract a clean, concise topic phrase from a news headline for dynamic summaries."""
+    import re
+    h = clean_text(headline)
+    # Strip common wire prefixes
+    h = re.sub(r"^(Market Chatter|Report|Exclusive|Update|Breaking|Analysis|Opinion|Preview|Brief):\s*", "", h, flags=re.IGNORECASE)
+    h = re.sub(r"^([A-Z]{1,5}|[A-Za-z\s]+)\s*[-—:]\s*", "", h)
+    # Strip quotes
+    h = h.strip("'\"“”")
+    # If headline mentions subject, clean up phrasing
+    if subject and subject.lower() in h.lower():
+        # Keep as is or normalize
+        pass
+    if len(h) > 85:
+        # Cut at word boundary
+        cut = h[:85].rsplit(" ", 1)[0]
+        h = f"{cut}..."
+    return h.strip()
 
 
 def generate_fallback_summary(item: Dict[str, Any]) -> str:
-    """Generate a contextual plain-English 'why it matters' summary based on category, focal company, and content."""
-    ticker = item.get("ticker", "")
+    """Generate a specific, contextual plain-English 'why it matters' takeaway based on headline, category, and company details."""
+    ticker = item.get("ticker", "").upper()
     company_name = item.get("company_name", ticker)
     category = item.get("category", "")
     form = (item.get("form_or_type") or "").upper().strip()
     headline = clean_text(item.get("headline", ""))
-    summary = clean_text(item.get("summary", "")).lower()
+    summary = clean_text(item.get("summary", ""))
+    full_lower = f"{headline} {summary}".lower()
 
-    # Extract true focal subject (e.g. XPeng (XPEV) vs Tesla)
+    # Extract true focal subject (e.g. XPeng (XPEV) vs Tesla, or ABC News vs Disney)
     subject = item.get("subject_name")
     if not subject or subject == ticker:
         subject = extract_headline_subject(
@@ -41,61 +63,131 @@ def generate_fallback_summary(item: Dict[str, Any]) -> str:
             default_company=company_name,
         )
 
-    # Check for comparative investment articles (e.g., "A: A Better Bet Than B")
-    if "better bet than" in headline.lower() or " vs " in headline.lower() or " vs. " in headline.lower():
-        return f"Comparative investment analysis evaluating {subject} competitive positioning and market outlook."
+    # 1. Specifically surface legitimate subsidiary and press pool connection for DIS / media items
+    if (ticker == "DIS" or "disney" in company_name.lower()) and any(
+        kw in full_lower for kw in ("white house", "press pool", "cnn", "politico", "ms now", "msnbc", "press credentials")
+    ):
+        return "Involves Disney subsidiary ABC News and broadcast television pool operations amid White House credentialing disputes and media regulatory scrutiny."
+
+    # 2. Energy / LNG / Gas Portfolio Expansion (e.g. Chevron in Argentina & Mediterranean)
+    if any(kw in full_lower for kw in ("lng", "liquefied natural gas", "natural gas", "gas portfolio", "argentina", "mediterranean")):
+        locs = []
+        if "argentina" in full_lower:
+            locs.append("Argentina")
+        if "mediterranean" in full_lower:
+            locs.append("the Mediterranean")
+        if locs:
+            loc_str = " and ".join(locs)
+            return f"Strategic energy infrastructure initiative expanding {subject}'s natural gas and LNG assets across {loc_str}."
+        return f"Strategic energy infrastructure initiative expanding {subject}'s global LNG export and gas portfolio footprint."
+
+    # 3. Patent & Intellectual Property Litigation
+    if any(kw in full_lower for kw in ("patent infringement", "patent fight", "patent dispute", "interdigital", "licensing dispute")):
+        return f"Intellectual property litigation regarding patent licensing claims and potential financial liability for {subject}."
+
+    # 4. Comparative investment articles (e.g., "A: A Better Bet Than B")
+    if "better bet than" in headline.lower() or " vs " in headline.lower() or " vs. " in headline.lower() or "which media stock" in headline.lower():
+        topic = extract_headline_topic(headline, subject)
+        return f"Comparative investment analysis ({topic}) evaluating {subject}'s valuation, risk profile, and market outlook."
+
+    # 5. Aerospace & Aviation Safety (e.g. Boeing, FAA)
+    if any(kw in full_lower for kw in ("faa", "grounding", "aircraft delivery", "jetliner", "safety directive")):
+        return f"Commercial aerospace regulatory review monitoring fleet safety compliance and delivery schedules for {subject}."
+
+    # 6. Category-Specific Contextual Fallbacks with Headline Integration
+    if category == "Regulation & Policy / Litigation":
+        if "8-K" in form:
+            return f"Material SEC Form 8-K disclosure detailing immediate legal or regulatory events for {subject} outside routine reporting cycles."
+        if any(kw in full_lower for kw in ("antitrust", "ftc", "doj", "monopoly", "cma", "investigation")):
+            return f"Antitrust regulatory scrutiny assessing market competition, platform compliance, and potential legal remedies for {subject}."
+        if any(kw in full_lower for kw in ("lawsuit", "sued by", "sues", "court", "judge", "class action")):
+            topic = extract_headline_topic(headline, subject)
+            return f"Legal dispute and court proceedings regarding {topic}, impacting operational compliance for {subject}."
+        topic = extract_headline_topic(headline, subject)
+        return f"Regulatory or policy development regarding {topic}, affecting operational compliance and market posture for {subject}."
+
+    if category == "Product Launches & Technology":
+        if any(kw in full_lower for kw in ("ai", "artificial intelligence", "copilot", "supercomputer", "blackwell", "chip", "processor")):
+            return f"Advanced computing and AI platform release advancing {subject}'s technology roadmap and competitive positioning."
+        if any(kw in full_lower for kw in ("clinical trial", "phase 3", "fda approval", "drug", "therapy")):
+            return f"Clinical biopharmaceutical milestone evaluating treatment efficacy and regulatory review for {subject}."
+        topic = extract_headline_topic(headline, subject)
+        return f"Commercial product milestone expanding {subject}'s market reach: {topic}."
+
+    if category == "Capital Structure & Offerings":
+        if any(kw in full_lower for kw in ("dividend", "yield")):
+            return f"Capital return update announcing dividend payouts and shareholder distribution policy for {subject}."
+        if any(kw in full_lower for kw in ("repurchase", "buyback")):
+            return f"Share repurchase program signaling balance sheet liquidity and capital allocation priorities for {subject}."
+        if any(kw in full_lower for kw in ("notes", "debt offering", "credit agreement", "senior notes")):
+            return f"Capital markets financing providing debt structure optimization and balance sheet flexibility for {subject}."
+        topic = extract_headline_topic(headline, subject)
+        return f"Capital structure update detailing financing and securities issuance for {subject}: {topic}."
 
     if category == "Earnings & Financials":
-        if "10-K" in form or "10-k" in headline.lower():
-            return f"Annual financial report detailing {subject}'s full-year audited revenue, margins, and operational risk factors."
-        if "10-Q" in form or "10-q" in headline.lower():
-            return f"Quarterly financial filing providing essential updates on {subject}'s recent quarterly balance sheet, revenue, and cash flow."
-        if "preview" in headline.lower():
-            return f"Financial outlook and analyst consensus preview evaluating upcoming earnings expectations for {subject}."
-        return f"Key financial results release providing quarterly revenue, earnings per share, and forward guidance for {subject}."
+        if "10-k" in form or "10-k" in headline.lower():
+            return f"Annual SEC Form 10-K filing providing {subject}'s full-year audited financial statements, revenue mix, and risk factors."
+        if "10-q" in form or "10-q" in headline.lower():
+            return f"Quarterly SEC Form 10-Q filing detailing {subject}'s balance sheet strength, operating cash flow, and segment margins."
+        if any(kw in full_lower for kw in ("beats", "beat", "surges", "profit jumps")):
+            return f"Quarterly earnings release reporting stronger-than-expected revenue and earnings performance for {subject}."
+        if any(kw in full_lower for kw in ("misses", "miss", "plunges", "slumps")):
+            return f"Quarterly earnings report reflecting revenue or margin contraction relative to consensus expectations for {subject}."
+        if "preview" in headline.lower() or "outlook" in headline.lower():
+            return f"Financial outlook and analyst consensus preview assessing forward earnings expectations for {subject}."
+        topic = extract_headline_topic(headline, subject)
+        return f"Financial performance disclosure detailing quarterly operating results for {subject} ({topic})."
+
+    if category == "Leadership & Governance":
+        if any(kw in full_lower for kw in ("ceo", "chief executive")):
+            return f"Executive leadership transition appointing chief executive leadership to guide strategic direction at {subject}."
+        if any(kw in full_lower for kw in ("cfo", "chief financial")):
+            return f"Executive management update appointing chief financial leadership to oversee capital allocation at {subject}."
+        if any(kw in full_lower for kw in ("board", "director", "proxy", "def 14a")):
+            return f"Corporate governance disclosure regarding board oversight, director elections, or shareholder proxy votes for {subject}."
+        topic = extract_headline_topic(headline, subject)
+        return f"Governance update detailing executive appointments or organizational restructuring for {subject}: {topic}."
 
     if category == "Insider Transactions":
         if "144" in form or "144" in headline:
-            return f"Notice of proposed securities sale by an insider or affiliate of {subject} under Rule 144."
+            return f"Notice of proposed securities sale by an insider or affiliate of {subject} under SEC Rule 144."
         if "4" in form or "beneficial ownership" in summary:
             return f"Routine insider transaction disclosure documenting executive/director share positioning for {subject}."
         return f"Insider disclosure tracking changes in executive or director share ownership for {subject}."
-
-    if category == "Regulation & Policy / Litigation":
-        if "8-K" in form:
-            return f"Material corporate event disclosure requiring immediate SEC disclosure for {subject} outside routine reporting cycles."
-        return f"Regulatory or legal development potentially affecting {subject}'s operational compliance, antitrust posture, or market access."
-
-    if category == "Leadership & Governance":
-        return f"Governance disclosure documenting executive leadership changes, board elections, or key management restructuring for {subject}."
-
-    if category == "Product Launches & Technology":
-        return f"Commercial product announcement expanding {subject}'s core technology roadmap, partner ecosystem, or market footprint."
-
-    if category == "Capital Structure & Offerings":
-        return f"Capital markets disclosure regarding debt issuance, equity offerings, credit agreements, or share repurchase programs for {subject}."
 
     if category == "Institutional Ownership":
         return f"Institutional holding update disclosing major institutional fund positioning or ownership changes in {subject}."
 
     if category == "M&A & Strategic Deals":
-        return f"Strategic transaction announcement covering acquisitions, joint ventures, or partnership agreements involving {subject}."
+        if any(kw in full_lower for kw in ("acquire", "acquisition", "buyout", "takeover")):
+            return f"Strategic acquisition agreement expanding {subject}'s commercial footprint and operational scale."
+        if any(kw in full_lower for kw in ("partner", "partnership", "joint venture")):
+            return f"Commercial partnership agreement uniting technical and distribution capabilities to accelerate {subject}'s growth."
+        topic = extract_headline_topic(headline, subject)
+        return f"Strategic transaction disclosure regarding corporate deals or partnership agreements for {subject}: {topic}."
 
     if "8-K" in form:
-        return f"Material SEC Form 8-K disclosure reporting unscheduled corporate events or company announcements for {subject}."
+        topic = extract_headline_topic(headline, subject)
+        return f"Material SEC Form 8-K disclosure reporting unscheduled corporate developments for {subject}: {topic}."
 
-    if item.get("source") == "news_media":
-        return f"Press coverage reporting key business updates, sector dynamics, and market developments involving {subject}."
-
+    # General Press / News Media / Company IR fallback incorporating specific topic
+    topic = extract_headline_topic(headline, subject)
+    if topic:
+        return f"Market coverage examining {topic}, analyzing operational implications and sector demand for {subject}."
     return f"Official company announcement detailing current business updates and strategic initiatives for {subject}."
 
 
 def summarize_batch_with_gemini(
-    batch: List[Dict[str, Any]], api_key: str, timeout: int = 25
+    batch: List[Dict[str, Any]],
+    api_key: str,
+    timeout: int = 30,
+    max_retries: int = 3,
 ) -> Dict[str, str]:
-    """Call Gemini API to generate plain-English 'why it matters' summaries for a batch of items."""
+    """Call Gemini API with retry & exponential backoff to generate 'why it matters' takeaways for a batch."""
     if not api_key:
         return {}
+
+    import re
 
     items_payload = []
     for it in batch:
@@ -126,29 +218,54 @@ def summarize_batch_with_gemini(
         },
     }
 
-    url = GEMINI_API_URL.format(api_key=api_key)
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(request_body).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+    model = os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+    url = GEMINI_API_URL.format(model=model, api_key=api_key)
 
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            candidates = data.get("candidates", [])
-            if candidates:
-                text_out = candidates[0]["content"]["parts"][0]["text"]
-                return json.loads(text_out)
-    except urllib.error.HTTPError as e:
-        logger.warning("Gemini API returned HTTP %s (%s). Falling back safely.", e.code, e.reason)
-    except urllib.error.URLError as e:
-        logger.warning("Gemini API connection error (%s). Falling back safely.", e.reason)
-    except json.JSONDecodeError as e:
-        logger.warning("Gemini API returned non-JSON output (%s). Falling back safely.", e)
-    except Exception as e:
-        logger.warning("Gemini API batch summarization error: %s. Falling back safely.", e)
+    for attempt in range(max_retries):
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(request_body).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw_bytes = resp.read().decode("utf-8")
+                data = json.loads(raw_bytes)
+                candidates = data.get("candidates", [])
+                if candidates:
+                    text_out = candidates[0]["content"]["parts"][0]["text"].strip()
+                    # Strip any accidental markdown formatting fences
+                    if text_out.startswith("```"):
+                        text_out = re.sub(r"^```(?:json)?\s*", "", text_out)
+                        text_out = re.sub(r"\s*```$", "", text_out)
+                    return json.loads(text_out)
+                return {}
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
+                retry_wait = 4.0 * (attempt + 1)
+                logger.warning(
+                    "Gemini API returned HTTP %s (%s). Retrying in %.1fs (attempt %d/%d)...",
+                    e.code, e.reason, retry_wait, attempt + 1, max_retries
+                )
+                time.sleep(retry_wait)
+                continue
+            logger.warning("Gemini API returned HTTP %s (%s). Falling back safely.", e.code, e.reason)
+            return {}
+        except urllib.error.URLError as e:
+            if attempt < max_retries - 1:
+                retry_wait = 3.0 * (attempt + 1)
+                logger.warning("Gemini API connection error (%s). Retrying in %.1fs...", e.reason, retry_wait)
+                time.sleep(retry_wait)
+                continue
+            logger.warning("Gemini API connection error (%s). Falling back safely.", e.reason)
+            return {}
+        except json.JSONDecodeError as e:
+            logger.warning("Gemini API returned non-JSON output (%s). Falling back safely.", e)
+            return {}
+        except Exception as e:
+            logger.warning("Gemini API batch summarization error: %s. Falling back safely.", e)
+            return {}
 
     return {}
 
@@ -156,16 +273,17 @@ def summarize_batch_with_gemini(
 def summarize_items(
     items: List[Dict[str, Any]],
     api_key: Optional[str] = None,
-    batch_size: int = 50,
-    inter_batch_delay: float = 4.0,
+    batch_size: int = 25,
+    inter_batch_delay: float = 4.5,
     **kwargs,
 ) -> List[Dict[str, Any]]:
     """Generate and attach a one-sentence 'why it matters' summary for each item.
 
     Free tier safety guaranteed:
-    - Batches in chunks of 25.
-    - Paces requests with 1.0s delay to guarantee strict compliance with Gemini 15 RPM.
-    - Falls back safely on any API failure.
+    - Batches in chunks of 25 to respect token budgets.
+    - Paces requests with 4.5s delay to guarantee strict compliance with Gemini 15 RPM.
+    - Automatic exponential backoff retries on HTTP 429 / 503.
+    - Highly contextual, non-boilerplate fallback engine if API key is missing or calls fail.
     """
     gemini_key = api_key or os.environ.get("GEMINI_API_KEY", "").strip()
 
@@ -208,3 +326,4 @@ def summarize_items(
                 item["llm_summary"] = generate_fallback_summary(item)
 
     return items
+

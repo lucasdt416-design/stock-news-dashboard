@@ -284,6 +284,75 @@ class TestPipelineEndToEnd(unittest.TestCase):
             except SystemExit as e:
                 self.assertEqual(e.code, 0)
 
+    def test_takeaway_boilerplate_diversity_and_specific_cases(self):
+        """Verify fallback summaries are dynamic and non-boilerplate, specifically testing CVX LNG and DIS White House pool cases."""
+        from pipeline.summarize import generate_fallback_summary
+
+        cvx_lng_story = {
+            "item_uid": "test-cvx-1",
+            "ticker": "CVX",
+            "company_name": "Chevron Corporation",
+            "form_or_type": "PRESS_RELEASE",
+            "category": "M&A & Strategic Deals",
+            "headline": "Chevron Considers Argentina and Mediterranean Expansion as LNG Demand Climbs",
+            "summary": "Chevron eyes gas portfolio expansion across Argentina and the Mediterranean.",
+        }
+        cvx_summary = generate_fallback_summary(cvx_lng_story)
+        self.assertIn("Argentina", cvx_summary)
+        self.assertIn("Mediterranean", cvx_summary)
+        self.assertIn("LNG", cvx_summary)
+
+        dis_pool_story = {
+            "item_uid": "test-dis-1",
+            "ticker": "DIS",
+            "company_name": "The Walt Disney Company",
+            "form_or_type": "NEWS_ARTICLE",
+            "category": "Regulation & Policy / Litigation",
+            "headline": "CNN, MS NOW, Politico blocked from White House press pool",
+            "summary": "Major television pool networks protest White House access restrictions.",
+        }
+        dis_summary = generate_fallback_summary(dis_pool_story)
+        self.assertIn("ABC News", dis_summary)
+        self.assertIn("White House", dis_summary)
+
+        # Confirm CVX and DIS stories do not have identical takeaways
+        self.assertNotEqual(cvx_summary, dis_summary)
+
+        # Batch diversity test: across 5 distinct headlines, all generated takeaways must be unique
+        sample_items = [
+            cvx_lng_story,
+            dis_pool_story,
+            {
+                "item_uid": "test-aapl-1",
+                "ticker": "AAPL",
+                "company_name": "Apple Inc.",
+                "form_or_type": "10-Q",
+                "category": "Earnings & Financials",
+                "headline": "Apple Reports Record Quarterly Revenue and Operating Cash Flow",
+                "summary": "Services revenue surges as iPhone gross margins expand.",
+            },
+            {
+                "item_uid": "test-nvda-1",
+                "ticker": "NVDA",
+                "company_name": "NVIDIA Corporation",
+                "form_or_type": "PRESS_RELEASE",
+                "category": "Product Launches & Technology",
+                "headline": "NVIDIA Introduces Next-Generation Blackwell Ultra Architecture",
+                "summary": "New architecture delivers accelerated computing for AI inference.",
+            },
+            {
+                "item_uid": "test-msft-1",
+                "ticker": "MSFT",
+                "company_name": "Microsoft Corporation",
+                "form_or_type": "FORM 4",
+                "category": "Insider Transactions",
+                "headline": "Satya Nadella Files Form 4 Following Scheduled 10b5-1 Sale",
+                "summary": "Routine insider disposition pursuant to pre-established plan.",
+            },
+        ]
+        summaries = [generate_fallback_summary(it) for it in sample_items]
+        self.assertEqual(len(summaries), len(set(summaries)), "Fallback takeaways must be distinct and non-boilerplate")
+
 
 if __name__ == "__main__":
     unittest.main()

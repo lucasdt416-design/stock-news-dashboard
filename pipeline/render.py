@@ -4285,7 +4285,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <a href="calendar.html" class="hero-badge intro-fade-1">
               <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
               {% if calendar_events %}
-              <span>Next Catalyst: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
+              <span>Next Event: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
               {% else %}
               <span><strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; {{ watchlist_companies|length }} Companies Monitored ↗</span>
               {% endif %}
@@ -4443,7 +4443,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             {% for co in watchlist_companies %}
             <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} &bull; {{ co.macro_sector }}">
               <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
-              <span>{{ co.symbol }}</span>
             </a>
             {% endfor %}
           </div>
@@ -4474,7 +4473,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             {% endif %}
           </div>
           <div class="bento-footer-pill">
-            <span>Score Baseline ≥ 7.0 &bull; Transparent AI Scoring</span>
+            <span>High-Impact Score ≥ 7.0 &bull; Transparent Scoring</span>
             <span>→</span>
           </div>
         </a>
@@ -4484,7 +4483,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div class="bento-badge-top">
             <span class="bento-pill-cal">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              NEXT CORPORATE CATALYST
+              NEXT EVENT
             </span>
             <span class="bento-arrow">Calendar ›</span>
           </div>
@@ -5328,7 +5327,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             <div class="health-metric-sub">{{ watchlist_companies|length }} companies queried</div>
           </div>
           <div class="health-metric-card">
-            <div class="health-metric-title">Company IR Releases</div>
+            <div class="health-metric-title">Company Releases</div>
             <div class="health-metric-val" style="color:var(--accent-blue);">{{ latest_run.company_ir_count if latest_run else 100 }}</div>
             <div class="health-metric-sub">Official press room feeds</div>
           </div>
@@ -5900,7 +5899,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
         <div>
           <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Full Intelligence Feed</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Deduplicated, scored disclosures with transparent arithmetic and supply-chain cross-references</p>
+          <p style="font-size:0.92rem; color:var(--text-muted);">Curated news, regulatory filings, and corporate disclosures with transparent scoring and supply-chain cross-references</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill">
@@ -5914,9 +5913,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       <section class="priority-section">
         <div class="priority-header">
           <div class="priority-title-wrap">
-            <span class="priority-badge-icon">
+            <span class="priority-badge-icon" title="High Priority">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              PRIORITY
             </span>
             <div>
               <h2 style="font-size:1.25rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
@@ -5935,7 +5933,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             <div>
               <div class="priority-card-top">
                 <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                  <span class="priority-lead-badge">TOP IMPACT #1</span>
+                  <span class="priority-rank-pill">#1</span>
                   <a href="company.html?ticker={{ lead.ticker }}" class="ticker-badge ticker-{{ lead.ticker }}" style="font-size:0.88rem; padding:0.25rem 0.65rem;">{{ lead.ticker }}</a>
                   {% if lead.form_or_type %}
                   <span class="form-type-pill">{{ lead.form_or_type }}</span>
@@ -6077,7 +6075,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               <div class="priority-card-footer">
                 <span class="date-cell">{{ item.published_date }}</span>
                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  {% if item.source == 'sec_edgar' %}View Filing ↗{% elif item.source == 'company_ir' %}View PR ↗{% else %}Read Article ↗{% endif %}
+                  {% if item.source == 'sec_edgar' %}View Filing ↗{% elif item.source == 'company_ir' %}View Press Release ↗{% else %}Read Article ↗{% endif %}
                 </a>
               </div>
             </div>
@@ -6182,7 +6180,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             SEC EDGAR
           </button>
           <button class="filter-btn" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">
-            Company IR
+            Company Releases
           </button>
         </div>
 
@@ -6209,7 +6207,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               <th>Category &amp; Source</th>
               <th>Date</th>
               <th>Headline, Cross-References &amp; Takeaways</th>
-              <th>Source</th>
+              <th>Link</th>
             </tr>
           </thead>
           <tbody id="newsBody">
@@ -6298,7 +6296,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               </td>
               <td>
                 <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  {% if item.source == 'sec_edgar' %}Filing{% elif item.source == 'company_ir' %}IR Release{% else %}Article{% endif %}
+                  {% if item.source == 'sec_edgar' %}Filing{% elif item.source == 'company_ir' %}Press Release{% else %}Article{% endif %}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
                 </a>
               </td>
@@ -6529,8 +6527,8 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
           <p style="font-size:0.92rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span class="calendar-origin-badge origin-sourced">SOURCED</span>
-          <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
+          <span class="calendar-origin-badge origin-sourced">Confirmed</span>
+          <span class="calendar-origin-badge origin-estimated">Estimated</span>
         </div>
       </header>
 
@@ -6556,13 +6554,13 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
               <span class="calendar-type-pill {% if 'Earnings' in spot.event_type %}cal-type-earnings{% elif 'Dividend' in spot.event_type %}cal-type-dividend{% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
                 {% if 'Earnings' in spot.event_type %}Earnings Call
                 {% elif 'Dividend' in spot.event_type %}Dividend
-                {% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}SEC Deadline (Estimated)
+                {% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}SEC Deadline
                 {% else %}Conference{% endif %}
               </span>
               {% if spot.source_type == 'ESTIMATED_RULE' %}
-              <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
+              <span class="calendar-origin-badge origin-estimated">Estimated</span>
               {% else %}
-              <span class="calendar-origin-badge origin-sourced">SOURCED</span>
+              <span class="calendar-origin-badge origin-sourced">Confirmed</span>
               {% endif %}
             </div>
             <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">{{ spot.headline }}</h3>
@@ -6614,9 +6612,9 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
               <div class="calendar-card-identity">
                 <a href="company.html?ticker={{ ev.ticker }}" class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</a>
                 {% if ev.source_type == 'ESTIMATED_RULE' %}
-                <span class="calendar-origin-badge origin-estimated">40D RULE (EST)</span>
+                <span class="calendar-origin-badge origin-estimated">Estimated</span>
                 {% else %}
-                <span class="calendar-origin-badge origin-sourced">SOURCED</span>
+                <span class="calendar-origin-badge origin-sourced">Confirmed</span>
                 {% endif %}
               </div>
               <div class="calendar-date-box">
@@ -6629,7 +6627,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
               <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
                 {% if 'Earnings' in ev.event_type %}Earnings Call
                 {% elif 'Dividend' in ev.event_type %}Dividend
-                {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}SEC Deadline (Estimated)
+                {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}SEC Deadline
                 {% else %}Conference{% endif %}
               </span>
             </div>
@@ -6780,7 +6778,6 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
           {% for co in watchlist_companies %}
           <button class="filter-btn econ-filter-btn" data-val="{{ co.symbol }}" data-sector="{{ co.macro_sector }}" onclick="filterEconomicByTicker('{{ co.symbol }}', this)" title="{{ co.name }}">
             <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.05rem 0.3rem;">{{ co.symbol }}</span>
-            <span>{{ co.symbol }}</span>
           </button>
           {% endfor %}
         </div>
@@ -7071,7 +7068,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company IR, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
+  <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company Releases, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
   <title>StockPulse — Company Directory</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -7104,7 +7101,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           <div>
             <div style="display:flex; align-items:center; gap:0.45rem;">
               <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">Browse Holdings</span>
-              <span class="category-badge" style="font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Holdings</span>
+              <span class="category-badge" style="font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Companies</span>
             </div>
             <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem;">Select any company to load its interactive deep-dive research profile below</div>
           </div>
@@ -7244,7 +7241,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </div>
 
             <div class="company-kpi-card">
-              <div class="company-kpi-title">Next Catalyst</div>
+              <div class="company-kpi-title">Next Event</div>
               <div class="company-kpi-val" style="font-size:1.02rem;">
                 {% if co_events %}
                   {{ co_events[0].display_date }}
@@ -7263,7 +7260,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 {{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}
               </div>
               <div class="company-kpi-sub">
-                {{ co.key_customers|length if co.key_customers else 0 }} Cust &bull; {{ co.key_suppliers|length if co.key_suppliers else 0 }} Supp &bull; {{ co.competitors|length if co.competitors else 0 }} Comp
+                {{ co.key_customers|length if co.key_customers else 0 }} Customers &bull; {{ co.key_suppliers|length if co.key_suppliers else 0 }} Suppliers &bull; {{ co.competitors|length if co.competitors else 0 }} Competitors
               </div>
             </div>
           </div>
@@ -7309,7 +7306,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; background:var(--bg-surface); padding:1rem 1.25rem; border:1px solid var(--border-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">
               <div>
                 <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Intelligence Feed</h3>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">News Media &bull; SEC EDGAR &bull; Company IR ({{ co_news|length }} Total)</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">News Media &bull; SEC EDGAR &bull; Company Releases ({{ co_news|length }} Total)</div>
               </div>
 
               <!-- In-Page Source Filters -->
@@ -7317,7 +7314,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 <button class="filter-btn active company-source-filter-btn" data-source="ALL" onclick="filterCompanyNews('{{ co.symbol }}', 'ALL', this)">All ({{ co_news|length }})</button>
                 <button class="filter-btn company-source-filter-btn" data-source="news_media" onclick="filterCompanyNews('{{ co.symbol }}', 'news_media', this)">News Media ({{ ns.news_count }})</button>
                 <button class="filter-btn company-source-filter-btn" data-source="sec_edgar" onclick="filterCompanyNews('{{ co.symbol }}', 'sec_edgar', this)">SEC EDGAR ({{ ns.edgar_count }})</button>
-                <button class="filter-btn company-source-filter-btn" data-source="company_ir" onclick="filterCompanyNews('{{ co.symbol }}', 'company_ir', this)">Company IR ({{ ns.ir_count }})</button>
+                <button class="filter-btn company-source-filter-btn" data-source="company_ir" onclick="filterCompanyNews('{{ co.symbol }}', 'company_ir', this)">Company Releases ({{ ns.ir_count }})</button>
               </div>
             </div>
 
@@ -7395,7 +7392,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
                 <div style="display:flex; justify-content:flex-end;">
                   <a href="{{ it.url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.78rem;">
-                    {% if it.source == 'sec_edgar' %}View SEC Filing ↗{% elif it.source == 'company_ir' %}View PR Release ↗{% else %}Read Full Article ↗{% endif %}
+                    {% if it.source == 'sec_edgar' %}View SEC Filing ↗{% elif it.source == 'company_ir' %}View Press Release ↗{% else %}Read Full Article ↗{% endif %}
                   </a>
                 </div>
               </div>
@@ -7404,7 +7401,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <div class="company-feed-item" style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
                 <div style="margin-bottom:0.5rem; color:var(--text-muted);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg></div>
                 <div style="font-weight:700; color:var(--text-primary);">No Recent Disclosures Found</div>
-                <div style="font-size:0.82rem; margin-top:0.25rem;">No filings, IR releases, or news media recorded in this period for {{ co.symbol }}.</div>
+                <div style="font-size:0.82rem; margin-top:0.25rem;">No filings, company releases, or news media recorded in this period for {{ co.symbol }}.</div>
               </div>
             {% endif %}
           </div>

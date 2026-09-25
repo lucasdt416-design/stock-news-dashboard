@@ -41,6 +41,23 @@ KNOWN_THIRD_PARTY_ENTITIES = [
 ]
 
 
+KNOWN_SUBSIDIARY_ENTITIES = [
+    ("abc news", "DIS", "ABC News (The Walt Disney Company)"),
+    ("disney+", "DIS", "Disney+ (The Walt Disney Company)"),
+    ("hulu", "DIS", "Hulu (The Walt Disney Company)"),
+    ("espn", "DIS", "ESPN (The Walt Disney Company)"),
+    ("pixar", "DIS", "Pixar (The Walt Disney Company)"),
+    ("marvel", "DIS", "Marvel (The Walt Disney Company)"),
+    ("lucasfilm", "DIS", "Lucasfilm (The Walt Disney Company)"),
+    ("aws", "AMZN", "Amazon Web Services (AWS)"),
+    ("youtube", "GOOGL", "YouTube (Alphabet Inc.)"),
+    ("waymo", "GOOGL", "Waymo (Alphabet Inc.)"),
+    ("deepmind", "GOOGL", "Google DeepMind (Alphabet Inc.)"),
+    ("instagram", "META", "Instagram (Meta Platforms)"),
+    ("whatsapp", "META", "WhatsApp (Meta Platforms)"),
+]
+
+
 def clean_text(text: str) -> str:
     """Unescape HTML entities (&#39;, &amp;, &quot;, etc.), strip stray tags, and normalize whitespace."""
     if not text:
@@ -59,19 +76,33 @@ def extract_headline_subject(
     
     If the article headline is primarily about a distinct third party (e.g. XPeng, Rivian, Alibaba),
     returns that specific entity designation rather than the watchlist query ticker.
+    Also recognizes key corporate subsidiaries (e.g. ABC News -> Disney).
     """
     clean_h = clean_text(headline)
     h_lower = clean_h.lower()
+    s_lower = clean_text(summary).lower()
+    full_lower = f"{h_lower} {s_lower}"
+
+    # Check for known corporate subsidiaries first
+    for sub_key, parent_sym, display_name in KNOWN_SUBSIDIARY_ENTITIES:
+        if (default_ticker == parent_sym or not default_ticker) and re.search(rf"\b{re.escape(sub_key)}\b", full_lower):
+            return display_name
 
     for key, display_name in KNOWN_THIRD_PARTY_ENTITIES:
         if re.search(rf"\b{re.escape(key)}\b", h_lower):
             if h_lower.startswith(key) or f"{key}:" in h_lower or f"{key}'s" in h_lower or f"{key} " in h_lower:
                 return display_name
 
-    m = re.match(r"^([A-Z][a-zA-Z0-9\s\.\-]{2,25}):", clean_h)
+    JOURNALISTIC_PREFIXES = {
+        "exclusive", "breaking", "update", "analysis", "opinion", "preview",
+        "the market", "why", "market chatter", "prediction", "report", "brief",
+        "alert", "watch", "column", "investor alert", "news", "top news",
+        "factbox", "timeline", "explainer", "insight", "roundup", "look ahead",
+    }
+    m = re.match(r"^([A-Z][a-zA-Z0-9\s\.\-]{2,30}):", clean_h)
     if m:
         candidate = m.group(1).strip()
-        if candidate.lower() not in {"exclusive", "breaking", "update", "analysis", "opinion", "preview", "the market", "why"}:
+        if candidate.lower() not in JOURNALISTIC_PREFIXES:
             return candidate
 
     return default_company or default_ticker
@@ -177,7 +208,7 @@ def normalize_company_ir_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "ticker": ticker,
         "company_name": item.get("company_name", ticker),
         "source": "company_ir",
-        "source_label": "Company IR",
+        "source_label": "Company Release",
         "source_type": "company_announcement",
         "headline": title,
         "summary": summary[:300] + ("..." if len(summary) > 300 else ""),
