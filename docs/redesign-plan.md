@@ -1,5 +1,7 @@
 # StockPulse redesign plan
 
+> **Superseded in part.** The cream, serif and muted-blue look described here was replaced by an ink stage with one amber accent, and the "front page" Home by a search bar orbited by the watchlist. Details are in PRs #2 and #4.
+
 **Status: written by the implementing agent, not the owner.** The task named `docs/redesign-brief.md` as the source
 of truth, but that file is not in this repo, its history, or anywhere else that could be searched. If the original
 brief turns up, it overrides this document. It is deliberately named differently so it cannot overwrite the original.
