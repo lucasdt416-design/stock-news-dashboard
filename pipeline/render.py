@@ -4796,7 +4796,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <span class="date-cell">{{ short_date(item.published_date) }}</span>
         </article>
         {% endfor %}
-        <p class="fp-empty" id="feedEmpty" hidden>No stories match these filters.</p>
+        <p class="home-empty" id="feedEmpty" hidden>No stories match these filters.</p>
       </div>
     </main>
   </div>
