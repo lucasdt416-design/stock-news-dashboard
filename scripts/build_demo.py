@@ -57,10 +57,10 @@ STORIES = [
 ]
 
 EVENTS = [
-    ("Earnings Call", "SOURCED", "{name} quarterly earnings call", "Results and guidance update."),
-    ("Dividend Date", "SOURCED", "{name} ex-dividend date", "Shareholders of record receive the declared dividend."),
-    ("10-Q Deadline", "ESTIMATED_RULE", "{name} 10-Q filing deadline", "Estimated from the SEC filing calendar."),
-    ("Shareholder Meeting", "SOURCED", "{name} annual shareholder meeting", "Director elections and shareholder proposals."),
+    ("Earnings Call / Results", "SOURCED", "{name} quarterly earnings call", "Results and guidance update."),
+    ("Dividend (Payment/Record)", "SOURCED", "{name} ex-dividend date", "Shareholders of record receive the declared dividend."),
+    ("Statutory SEC Deadline (Estimated)", "ESTIMATED_RULE", "{name} 10-Q filing deadline", "Based on the SEC filing calendar."),
+    ("Investor Conference", "SOURCED", "{name} presents at an investor conference", "Management presentation and audience questions."),
 ]
 
 CROSS_REF = [
@@ -132,12 +132,16 @@ def seed_calendar(conn, companies, today, rng):
     init_calendar_schema(conn)
     now = dt.datetime.now().isoformat()
     picks = rng.sample(companies, k=min(24, len(companies)))
+    # A separate generator, so changing event dates leaves the demo's prices and run counts alone.
+    date_rng = random.Random(SEED + 1)
     rows = []
     for i, co in enumerate(picks):
         etype, stype, head, details = EVENTS[i % len(EVENTS)]
-        rows.append((co, etype, stype, head.format(name=co["name"]), details, today + dt.timedelta(days=1 + i * 3)))
+        # Real calendars cluster around earnings season, so the demo should not be evenly spaced.
+        offset = 1 if i == 0 else int(date_rng.triangular(2, 62, 18))
+        rows.append((co, etype, stype, head.format(name=co["name"]), details, today + dt.timedelta(days=offset)))
     # An inert payload in event text, so the search dropdown's escaping is exercised.
-    rows.append((picks[0], "Escaping Check", "SOURCED", 'Demo event <img src=x onerror="window.__xss=1">',
+    rows.append((picks[0], "Investor Conference", "SOURCED", 'Demo event <img src=x onerror="window.__xss=1">',
                  "Must render as text.", today + dt.timedelta(days=80)))
     for co, etype, stype, head, details, date in rows:
         conn.execute(

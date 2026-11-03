@@ -21,7 +21,7 @@ Generates:
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import yaml
 from jinja2 import Template
@@ -582,11 +582,6 @@ SHARED_CSS = """
         border-radius: var(--radius-lg) !important;
       }
 
-      .calendar-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.85rem !important;
-      }
-
       .comparative-perf-card {
         padding: 1rem !important;
         border-radius: var(--radius-lg) !important;
@@ -936,6 +931,44 @@ SHARED_CSS = """
       .filter-btn, .feed-ticker-picker-btn { min-height: 40px; }
       .feed-ticker-dropdown-menu { max-width: calc(100vw - 2rem); }
       .feed-details summary { min-height: 32px; }
+    }
+
+    /* Calendar */
+    .cal-timeline { margin: 0 0 2rem; }
+    .cal-track { position: relative; height: 72px; margin: 0 0.5rem; border-bottom: 1px solid var(--text-primary); }
+    .cal-month { position: absolute; top: 0; bottom: 0; padding-left: 0.35rem; border-left: 1px solid var(--border-card); font-size: 0.74rem; color: var(--text-muted); }
+    .cal-mark { position: absolute; width: 7px; height: 10px; margin-left: -3px; background: var(--text-primary); }
+    .cal-mark::before { content: ''; position: absolute; inset: -6px -3px; }
+    .cal-mark:hover { background: var(--accent); }
+    .cal-mark.is-estimated { background: var(--bg-base); box-shadow: inset 0 0 0 1px var(--text-primary); }
+    .cal-mark.is-estimated:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+    .cal-mark.is-dimmed { opacity: 0.15; }
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; margin-top: 0.6rem; font-size: 0.76rem; color: var(--text-muted); }
+    .cal-key { display: inline-block; width: 7px; height: 10px; margin-right: 0.45rem; background: var(--text-primary); }
+    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 1px var(--text-primary); }
+    .cal-today { color: var(--text-primary); border-left-color: var(--text-primary); }
+    .cal-filters { margin-bottom: 0.75rem; }
+
+    .cal-week { padding-top: 1.5rem; }
+    .cal-week-title { font-size: 1.3rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--text-primary); }
+    .calendar-card { display: grid; grid-template-columns: 6rem 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); scroll-margin-top: 5rem; }
+    .calendar-card:target { background: var(--accent-soft); }
+    .cal-when { display: flex; flex-direction: column; }
+    .cal-date { font-family: var(--font-mono); font-size: 0.82rem; }
+    .cal-relative { font-size: 0.74rem; color: var(--text-muted); }
+    .cal-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
+    .cal-details { font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+    .cal-estimated { color: var(--warn); }
+    .cal-source { font-size: 0.8rem; color: var(--accent); text-decoration: none; white-space: nowrap; }
+    .cal-source:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    @media (max-width: 620px) {
+      .cal-mark { width: 4px; margin-left: -2px; }
+      .calendar-card { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.75rem; }
+      .cal-when { flex-direction: row; gap: 0.5rem; align-items: baseline; grid-column: 1; }
+      .calendar-card > .ticker-badge { grid-column: 2; grid-row: 1; justify-self: end; }
+      .cal-body { grid-column: 1 / -1; }
+      .cal-source { grid-column: 1 / -1; padding: 0.35rem 0 0.1rem; }
     }
 
     /* Home: front page */
@@ -1672,32 +1705,6 @@ SHARED_CSS = """
       transform: translateX(2px);
     }
 
-    /* Primary Button */
-    .btn-primary {
-      background: var(--accent-blue);
-      color: var(--on-accent);
-      padding: 0.6rem 1.25rem;
-      border-radius: var(--radius-full);
-      font-weight: 600;
-      font-size: 0.85rem;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      border: none;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-      white-space: nowrap;
-    }
-
-    .btn-primary:hover {
-      background: var(--accent);
-      box-shadow: var(--shadow-card);
-      transform: translateY(-1px);
-    }
-
-    /* Filter Controls Panel */
     /* Table Styles */
     table {
       width: 100%;
@@ -1736,141 +1743,6 @@ SHARED_CSS = """
       margin-top: 0.35rem;
     }
 
-    /* Corporate Calendar Spotlight & Organic Grid */
-    .calendar-spotlight-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      border-radius: var(--radius-xl);
-      padding: 1.85rem;
-      box-shadow: var(--shadow-card);
-      margin-bottom: 2.5rem;
-    }
-
-    .spotlight-badge-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .spotlight-beacon-pill {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.25rem 0.75rem;
-      border-radius: var(--radius-full);
-    }
-
-    .spotlight-content-row {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .spotlight-date-box {
-      width: 72px !important;
-      min-width: 72px !important;
-      padding: 0.6rem 0.85rem !important;
-      border-radius: var(--radius-md) !important;
-      background: var(--bg-surface) !important;
-      border: 1px solid var(--accent-soft) !important;
-      box-shadow: 0 4px 12px var(--accent-soft) !important;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-      gap: 1.35rem;
-      width: 100%;
-    }
-
-    .calendar-card {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.35rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-      min-width: 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .calendar-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-card);
-      box-shadow: var(--shadow-card);
-    }
-
-    .calendar-card-estimated {
-      border: 1px dashed var(--border-card);
-      background: var(--bg-surface);
-    }
-
-    .calendar-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .calendar-card-identity {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .calendar-origin-badge {
-      font-size: 0.62rem;
-      font-weight: 600;
-      padding: 0.18rem 0.5rem;
-      border-radius: var(--radius-full);
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-    }
-
-    .origin-sourced {
-      background: var(--pos-soft);
-      color: var(--pos);
-      border: 1px solid var(--pos-soft);
-    }
-
-    .origin-estimated {
-      background: var(--bg-surface-elevated);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-card);
-    }
-
-    .calendar-type-pill {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      width: fit-content;
-      margin-top: 0.35rem;
-    }
-
-    .cal-type-earnings   { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-soft); }
-    .cal-type-dividend   { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
-    .cal-type-sec        { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-soft); }
-    .cal-type-conference { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-soft); }
-
     .calendar-date-box {
       background: var(--bg-surface);
       border: 1px solid var(--border-card);
@@ -1898,40 +1770,6 @@ SHARED_CSS = """
       font-weight: 600;
       color: var(--text-primary);
       line-height: 1.1;
-    }
-
-    .calendar-card-headline {
-      font-size: 0.96rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0.5rem 0 0.35rem 0;
-      line-height: 1.35;
-    }
-
-    .calendar-card-details {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin: 0 0 0.95rem 0;
-      line-height: 1.45;
-    }
-
-    .calendar-card-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border-card);
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .relative-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
     }
 
     /* Macroeconomic Intelligence Grid & Anchor Cards */
@@ -2815,7 +2653,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               {% for ev in calendar_events[:4] %}
               <li class="fp-event">
                 <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
-                <span class="fp-event-text"><a class="ticker-badge" href="company.html?ticker={{ ev.ticker|urlencode }}">{{ ev.ticker }}</a> {{ ev.event_type }}</span>
+                <span class="fp-event-text"><a class="ticker-badge" href="company.html?ticker={{ ev.ticker|urlencode }}">{{ ev.ticker }}</a> {{ event_kind(ev.event_type or '') }}</span>
               </li>
               {% endfor %}
             </ul>
@@ -4486,8 +4324,8 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Forthcoming corporate calendar showing upcoming earnings dates, dividend ex-dates, and statutory SEC filing deadlines.">
-  <title>StockPulse — Forthcoming Corporate Calendar</title>
+  <meta name="description" content="Upcoming earnings calls, dividends, conferences, and SEC deadlines for your watchlist.">
+  <title>StockPulse — Calendar</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4502,134 +4340,65 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Corporate Calendar</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span class="calendar-origin-badge origin-sourced">Confirmed</span>
-          <span class="calendar-origin-badge origin-estimated">Estimated</span>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">Calendar</h1>
+        <p class="page-standfirst">
+          {% if calendar_events %}{{ calendar_events|length }} events ahead. Next: {{ calendar_events[0].headline }}, {{ calendar_events[0].relative_badge|lower }}.
+          {% else %}Nothing scheduled yet.{% endif %}
+        </p>
       </header>
 
-      <!-- Spotlight Banner for Earliest Upcoming Event -->
-      {% if calendar_events %}
-      {% set spot = calendar_events[0] %}
-      <div class="calendar-spotlight-card {% if spot.source_type == 'ESTIMATED_RULE' %}calendar-card-estimated{% endif %}">
-        <div class="spotlight-badge-row">
-          <span class="spotlight-beacon-pill">NEXT UPCOMING EVENT</span>
-          <span class="relative-badge" style="font-weight:700; color:var(--accent-blue);">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {{ spot.relative_badge }} ({{ spot.display_date }})
-          </span>
+      {% if calendar_view.marks %}
+      <figure class="cal-timeline" aria-label="Events on a timeline">
+        <div class="cal-track">
+          <span class="cal-month cal-today" style="left:{{ calendar_view.today_pos }}%;">Today</span>
+          {% for m in calendar_view.months %}
+          <span class="cal-month" style="left:{{ m.pos }}%;">{{ m.label }}</span>
+          {% endfor %}
+          {% for mark in calendar_view.marks %}
+          <a class="cal-mark{% if mark.estimated %} is-estimated{% endif %}" href="#{{ mark.anchor }}" data-event-type="{{ mark.event_type }}" style="left:{{ mark.pos }}%; bottom:{{ mark.lane * 12 }}px;" title="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}{% if mark.estimated %} (estimated){% endif %}" aria-label="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}"></a>
+          {% endfor %}
         </div>
-        <div class="spotlight-content-row">
-          <div class="calendar-date-box spotlight-date-box">
-            <div class="calendar-date-month">{{ spot.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-            <div class="calendar-date-day" style="font-size:1.6rem;">{{ spot.event_date[8:10] }}</div>
-          </div>
-          <div style="flex:1; min-width:0;">
-            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.35rem;">
-              <a href="company.html?ticker={{ spot.ticker }}" class="ticker-badge ticker-{{ spot.ticker }}" style="font-size:0.88rem; padding:0.22rem 0.65rem;">{{ spot.ticker }}</a>
-              <span class="calendar-type-pill {% if 'Earnings' in spot.event_type %}cal-type-earnings{% elif 'Dividend' in spot.event_type %}cal-type-dividend{% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
-                {% if 'Earnings' in spot.event_type %}Earnings Call
-                {% elif 'Dividend' in spot.event_type %}Dividend
-                {% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}SEC Deadline
-                {% else %}Conference{% endif %}
-              </span>
-              {% if spot.source_type == 'ESTIMATED_RULE' %}
-              <span class="calendar-origin-badge origin-estimated">Estimated</span>
-              {% else %}
-              <span class="calendar-origin-badge origin-sourced">Confirmed</span>
-              {% endif %}
-            </div>
-            <h3 style="font-size:1.15rem; font-weight: 600; color:var(--text-primary); margin-bottom:0.35rem;">{{ spot.headline }}</h3>
-            <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.45;">{{ spot.details }}</p>
-          </div>
-          {% if spot.source_url %}
-          <div>
-            <a href="{{ spot.source_url }}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="font-size:0.82rem; padding:0.5rem 1.1rem;">
-              {% if spot.source_type == 'ESTIMATED_RULE' %}SEC Filings ↗{% else %}Event Source ↗{% endif %}
-            </a>
-          </div>
-          {% endif %}
-        </div>
-      </div>
+        <figcaption class="cal-legend">
+          <span><i class="cal-key"></i>Confirmed</span>
+          <span><i class="cal-key is-estimated"></i>Estimated from filing rules</span>
+        </figcaption>
+      </figure>
       {% endif %}
 
-      <!-- Calendar Controls -->
-      <div class="controls-panel">
-        <div class="filter-row">
-          <span class="filter-label">Filter:</span>
-          <button class="filter-btn active cal-filter-btn" data-val="ALL" onclick="filterCalendar('ALL', this)">All Events ({{ calendar_events|length }})</button>
-          <button class="filter-btn cal-filter-btn" data-val="Earnings" onclick="filterCalendar('Earnings', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-            Earnings Calls
-          </button>
-          <button class="filter-btn cal-filter-btn" data-val="Dividend" onclick="filterCalendar('Dividend', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
-            Dividend Dates
-          </button>
-          <button class="filter-btn cal-filter-btn" data-val="SEC" onclick="filterCalendar('SEC', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
-            SEC Filing Deadlines
-          </button>
-          <button class="filter-btn cal-filter-btn" data-val="Conference" onclick="filterCalendar('Conference', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-            Conferences
-          </button>
+      <div class="controls-panel cal-filters">
+        <div class="filter-options" role="group" aria-label="Filter events">
+          <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" onclick="filterCalendar('ALL', this)">All <span class="pill-count">{{ calendar_events|length }}</span></button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" onclick="filterCalendar('Earnings', this)">Earnings Calls</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" onclick="filterCalendar('Dividend', this)">Dividend Dates</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" onclick="filterCalendar('SEC', this)">SEC Filing Deadlines</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" onclick="filterCalendar('Conference', this)">Conferences</button>
         </div>
       </div>
 
-      <!-- Calendar Grid -->
-      <div class="calendar-grid" id="calendarGrid">
-        {% for ev in calendar_events %}
-        <div class="calendar-card {% if ev.source_type == 'ESTIMATED_RULE' %}calendar-card-estimated{% endif %}"
-             data-event-type="{{ ev.event_type }}"
-             data-source-type="{{ ev.source_type }}">
-          <div>
-            <div class="calendar-card-header">
-              <div class="calendar-card-identity">
-                <a href="company.html?ticker={{ ev.ticker }}" class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</a>
-                {% if ev.source_type == 'ESTIMATED_RULE' %}
-                <span class="calendar-origin-badge origin-estimated">Estimated</span>
-                {% else %}
-                <span class="calendar-origin-badge origin-sourced">Confirmed</span>
-                {% endif %}
-              </div>
-              <div class="calendar-date-box">
-                <div class="calendar-date-month">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                <div class="calendar-date-day">{{ ev.event_date[8:10] }}</div>
-              </div>
+      <div id="calendarGrid">
+        {% for week in calendar_view.weeks %}
+        <section class="cal-week">
+          <h2 class="cal-week-title">{{ week.label }}</h2>
+          {% for ev in week.events %}
+          <article class="calendar-card" id="{{ ev.anchor }}" data-event-type="{{ ev.event_type }}" data-source-type="{{ ev.source_type }}">
+            <div class="cal-when">
+              <span class="cal-date">{{ short_date(ev.event_date) }}</span>
+              <span class="cal-relative">{{ ev.relative_badge }}</span>
             </div>
-
-            <div style="margin: 0.25rem 0 0.5rem 0;">
-              <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
-                {% if 'Earnings' in ev.event_type %}Earnings Call
-                {% elif 'Dividend' in ev.event_type %}Dividend
-                {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}SEC Deadline
-                {% else %}Conference{% endif %}
-              </span>
+            <a href="company.html?ticker={{ ev.ticker|urlencode }}" class="ticker-badge" title="{{ ev.company_name }}">{{ ev.ticker }}</a>
+            <div class="cal-body">
+              <h3 class="cal-headline">{{ ev.headline }}</h3>
+              <p class="cal-details">{{ ev.kind }}{% if ev.source_type == 'ESTIMATED_RULE' %} · <span class="cal-estimated">Estimated</span>{% endif %}{% if ev.details %} · {{ ev.details }}{% endif %}</p>
             </div>
-
-            <h4 class="calendar-card-headline">{{ ev.headline }}</h4>
-            <p class="calendar-card-details">{{ ev.details }}</p>
-          </div>
-
-          <div class="calendar-card-bottom">
-            <span class="relative-badge">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <strong>{{ ev.relative_badge }}</strong> ({{ ev.display_date }})
-            </span>
-            {% if ev.source_url %}
-            <a href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.75rem;">
-              {% if ev.source_type == 'ESTIMATED_RULE' %}SEC Filings{% else %}Source{% endif %}
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-            </a>
+            {% if ev.source_url and ev.source_url.startswith('http') %}
+            <a href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer" class="cal-source">{% if ev.source_type == 'ESTIMATED_RULE' %}SEC filings{% else %}Source{% endif %}</a>
             {% endif %}
-          </div>
-        </div>
+          </article>
+          {% endfor %}
+        </section>
+        {% else %}
+        <p class="fp-empty">No upcoming events. They appear here after the next pipeline run.</p>
         {% endfor %}
       </div>
     </main>
@@ -4638,26 +4407,24 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
+    function matchesCalendarFilter(evType, type) {
+      if (type === 'ALL') return true;
+      if (type === 'SEC') return evType.includes('SEC') || evType.includes('Statutory');
+      return evType.includes(type);
+    }
+
     function filterCalendar(type, btn) {
       document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      const cards = document.querySelectorAll('.calendar-card');
-      cards.forEach(card => {
-        const evType = card.getAttribute('data-event-type') || '';
-        if (type === 'ALL') {
-          card.style.display = 'flex';
-        } else if (type === 'Earnings' && evType.includes('Earnings')) {
-          card.style.display = 'flex';
-        } else if (type === 'Dividend' && evType.includes('Dividend')) {
-          card.style.display = 'flex';
-        } else if (type === 'SEC' && (evType.includes('SEC') || evType.includes('Statutory'))) {
-          card.style.display = 'flex';
-        } else if (type === 'Conference' && evType.includes('Conference')) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
+      document.querySelectorAll('.calendar-card').forEach(card => {
+        card.hidden = !matchesCalendarFilter(card.getAttribute('data-event-type') || '', type);
+      });
+      document.querySelectorAll('.cal-mark').forEach(mark => {
+        mark.classList.toggle('is-dimmed', !matchesCalendarFilter(mark.getAttribute('data-event-type') || '', type));
+      });
+      document.querySelectorAll('.cal-week').forEach(week => {
+        week.hidden = !week.querySelector('.calendar-card:not([hidden])');
       });
     }
   </script>
@@ -5908,6 +5675,76 @@ def _short_date(value: Optional[str]) -> str:
     return f"{parsed.strftime('%b')} {parsed.day}"
 
 
+def _event_kind(event_type: str) -> str:
+    """Short label for a calendar event type, matching the page's filter groups."""
+    if "Earnings" in event_type:
+        return "Earnings call"
+    if "Dividend" in event_type:
+        return "Dividend"
+    if "SEC" in event_type or "Statutory" in event_type:
+        return "SEC deadline"
+    return "Conference"
+
+
+def _calendar_view(events: List[Dict[str, Any]], today: Optional[date] = None) -> Dict[str, Any]:
+    """Lay calendar events out for the timeline strip and the week-by-week agenda."""
+    today = today or date.today()
+    dated = []
+    for index, event in enumerate(events):
+        try:
+            when = date.fromisoformat(str(event.get("event_date")))
+        except ValueError:
+            continue
+        dated.append((when, dict(event, kind=_event_kind(event.get("event_type") or ""), anchor=f"event-{index}")))
+    if not dated:
+        return {"marks": [], "months": [], "weeks": [], "today_pos": 0}
+
+    start = min(today, dated[0][0])
+    end = max(start + timedelta(days=28), max(when for when, _ in dated))
+    span = max((end - start).days, 1)
+
+    def position(when: date) -> float:
+        return round((when - start).days / span * 100, 2)
+
+    months = []
+    cursor = date(start.year, start.month, 1)
+    while cursor <= end:
+        # Skip a month label that would collide with the "Today" label.
+        if cursor >= start and position(cursor) - position(today) > 7:
+            months.append({"label": cursor.strftime("%b"), "pos": position(cursor)})
+        cursor = date(cursor.year + cursor.month // 12, cursor.month % 12 + 1, 1)
+
+    marks = []
+    lanes: Dict[date, int] = {}
+    weeks: Dict[date, Dict[str, Any]] = {}
+    this_monday = today - timedelta(days=today.weekday())
+    for when, event in dated:
+        lane = lanes.get(when, 0)
+        lanes[when] = lane + 1
+        marks.append({
+            "pos": position(when),
+            "lane": min(lane, 3),
+            "anchor": event["anchor"],
+            "ticker": event.get("ticker"),
+            "kind": event["kind"],
+            "event_type": event.get("event_type"),
+            "estimated": event.get("source_type") == "ESTIMATED_RULE",
+            "date": _short_date(event.get("event_date")),
+        })
+        monday = when - timedelta(days=when.weekday())
+        if monday == this_monday:
+            label = "This week"
+        elif monday == this_monday + timedelta(days=7):
+            label = "Next week"
+        elif monday < this_monday:
+            label = "Past"
+        else:
+            label = f"Week of {_short_date(monday.isoformat())}"
+        weeks.setdefault(monday, {"label": label, "events": []})["events"].append(event)
+
+    return {"marks": marks, "months": months, "weeks": [weeks[k] for k in sorted(weeks)], "today_pos": position(today)}
+
+
 def _script_json(value: Any) -> str:
     """Serialize for a <script> block, so text containing '</script>' cannot end the block."""
     return json.dumps(value).replace("</", "<\\/")
@@ -6026,6 +5863,8 @@ def render_dashboard(
 
     common_context = {
         "short_date": _short_date,
+        "event_kind": _event_kind,
+        "calendar_view": _calendar_view(calendar_events),
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,
