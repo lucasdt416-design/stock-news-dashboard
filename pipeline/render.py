@@ -179,32 +179,43 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
 # SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
+    /* Ink stage with one amber accent. Dark is the default; light is opt-in via data-theme.
+       Green and red only ever mean up and down. */
     :root {
-      color-scheme: light;
-      --bg-base: #f6f4ee;
-      --bg-surface: #fbfaf6;
-      --bg-surface-elevated: #edeae2;
+      color-scheme: dark;
+      --bg-base: #0b0d12;
+      --bg-surface: #12151c;
+      --bg-surface-elevated: #1a1e27;
       --bg-surface-glass: var(--bg-surface);
-      --bg-surface-highlight: #e3dfd5;
-      --bg-hover: #efece4;
-      --border-subtle: #e8e5dc;
-      --border-card: #d9d5ca;
-      --border-glass: var(--border-card);
-      --text-primary: #1b1a17;
-      --text-secondary: #4a4740;
-      --text-muted: #6d6961;
-      --accent: #1f4e6b;
-      --accent-soft: #e3e9ea;
-      --on-accent: #fbfaf6;
-      --pos: #2a6b4a;
-      --pos-soft: #e3ebe2;
-      --neg: #a63d2f;
-      --neg-soft: #f1e2dc;
-      --warn: #85641b;
-      --warn-soft: #eee6d0;
-      --scrim: rgba(27, 26, 23, 0.45);
+      --bg-surface-highlight: #232834;
+      --bg-hover: #171b23;
+      --border-subtle: #1e222c;
+      --border-card: #2b303c;
+      --text-primary: #f4efe6;
+      --text-secondary: #c6c1b6;
+      --text-muted: #98948b;
+      --accent: #ffb020;
+      --accent-soft: #2b2211;
+      --on-accent: #0b0d12;
+      --pos: #3dd68c;
+      --pos-soft: #10271c;
+      --neg: #ff6b5e;
+      --neg-soft: #2e1614;
+      --warn: #f2c661;
+      --warn-soft: #2a2412;
+      --scrim: rgba(0, 0, 0, 0.6);
+      /* Chart series, validated for colour-blind separation on this surface. No greens or reds. */
+      --series-1: #3f92d0;
+      --series-2: #d05f94;
+      --series-3: #b28b28;
+      --series-4: #16a2ae;
+      --series-5: #d9642b;
+      --series-6: #9b78d0;
+      --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
+      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
 
       /* Older names kept so existing components inherit the new palette. */
+      --border-glass: var(--border-card);
       --border-accent: var(--accent);
       --accent-blue: var(--accent);
       --accent-blue-soft: var(--accent-soft);
@@ -217,81 +228,59 @@ SHARED_CSS = """
       --accent-orange-dark: var(--warn);
       --accent-orange-main: var(--warn);
 
-      --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
-      --font-sans: 'IBM Plex Sans', -apple-system, 'Helvetica Neue', Arial, sans-serif;
-      --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+      /* Fredoka is for the wordmark and the Home headline only. Everything else is one sans. */
+      --font-display: 'Fredoka', 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      --font-sans: 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      --font-serif: var(--font-sans);
+      --font-mono: var(--font-sans);
 
-      --radius-xs: 2px;
-      --radius-sm: 3px;
-      --radius-md: 4px;
-      --radius-lg: 4px;
-      --radius-xl: 4px;
-      --radius-2xl: 4px;
-      --radius-full: 3px;
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
+      --radius-2xl: 14px;
+      --radius-full: 999px;
 
       --shadow-sm: none;
       --shadow-card: none;
       --shadow-hover: none;
       --shadow-float: none;
-      --shadow-dropdown: 0 8px 24px rgba(27, 26, 23, 0.12);
-      --shadow-modal: 0 8px 24px rgba(27, 26, 23, 0.18);
 
       --transition-fast: 0.12s ease-out;
       --transition-normal: 0.18s ease-out;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        color-scheme: dark;
-        --bg-base: #151412;
-        --bg-surface: #1b1a17;
-        --bg-surface-elevated: #272520;
-        --bg-surface-highlight: #322f29;
-        --bg-hover: #23211d;
-        --border-subtle: #272520;
-        --border-card: #37342e;
-        --text-primary: #ece8df;
-        --text-secondary: #bdb8ac;
-        --text-muted: #98938a;
-        --accent: #93bad0;
-        --accent-soft: #232c30;
-        --on-accent: #151412;
-        --pos: #84c3a0;
-        --pos-soft: #1f2b24;
-        --neg: #e39484;
-        --neg-soft: #33211d;
-        --warn: #d3b56f;
-        --warn-soft: #2e2818;
-        --scrim: rgba(0, 0, 0, 0.6);
-        --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.5);
-        --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.6);
-      }
-    }
-
-    :root[data-theme="dark"] {
-      color-scheme: dark;
-      --bg-base: #151412;
-      --bg-surface: #1b1a17;
-      --bg-surface-elevated: #272520;
-      --bg-surface-highlight: #322f29;
-      --bg-hover: #23211d;
-      --border-subtle: #272520;
-      --border-card: #37342e;
-      --text-primary: #ece8df;
-      --text-secondary: #bdb8ac;
-      --text-muted: #98938a;
-      --accent: #93bad0;
-      --accent-soft: #232c30;
-      --on-accent: #151412;
-      --pos: #84c3a0;
-      --pos-soft: #1f2b24;
-      --neg: #e39484;
-      --neg-soft: #33211d;
-      --warn: #d3b56f;
-      --warn-soft: #2e2818;
-      --scrim: rgba(0, 0, 0, 0.6);
-      --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.5);
-      --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.6);
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg-base: #fbf8f1;
+      --bg-surface: #fffdf8;
+      --bg-surface-elevated: #f3efe5;
+      --bg-surface-highlight: #eae5d8;
+      --bg-hover: #f5f1e7;
+      --border-subtle: #ece7db;
+      --border-card: #dad4c5;
+      --text-primary: #12141a;
+      --text-secondary: #3e4049;
+      --text-muted: #62645f;
+      --accent: #955800;
+      --accent-soft: #f8ebd2;
+      --on-accent: #fffdf8;
+      --pos: #0f7a4a;
+      --pos-soft: #dff1e6;
+      --neg: #b3321f;
+      --neg-soft: #f8e2dd;
+      --warn: #7a5c00;
+      --warn-soft: #f4ecd2;
+      --scrim: rgba(18, 20, 26, 0.45);
+      --series-1: #1f6fb2;
+      --series-2: #be4a86;
+      --series-3: #8f7312;
+      --series-4: #00899f;
+      --series-5: #bc5a1e;
+      --series-6: #7a4fbf;
+      --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
+      --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
     }
 
     button, input, select, textarea {
@@ -299,10 +288,9 @@ SHARED_CSS = """
     }
 
     h1, h2, h3 {
-      font-family: var(--font-serif);
-      font-weight: 500;
-      letter-spacing: -0.01em;
-      font-optical-sizing: auto;
+      font-family: var(--font-sans);
+      font-weight: 650;
+      letter-spacing: -0.015em;
     }
 
     * {
@@ -636,10 +624,10 @@ SHARED_CSS = """
     }
 
     .brand-title {
-      font-family: var(--font-serif);
-      font-size: 1.4rem;
-      font-weight: 500;
-      letter-spacing: -0.015em;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       color: var(--text-primary);
       line-height: 1;
     }
@@ -733,19 +721,28 @@ SHARED_CSS = """
       position: relative;
       width: 100%;
       margin: 0 0 3rem;
-      z-index: 20;
+      z-index: 50;
     }
+
+    .search-wrapper:has(.search-dropdown.active) { z-index: 300; }
 
     .search-box {
       display: flex;
       align-items: center;
-      gap: 0.7rem;
-      border-bottom: 1px solid var(--text-primary);
-      padding: 0.7rem 0;
+      gap: 0.85rem;
+      height: 66px;
+      padding: 0 1.35rem;
+      background: var(--bg-surface);
+      border: 2px solid var(--border-card);
+      border-radius: 18px;
       cursor: text;
     }
 
+    .search-box:hover { border-color: var(--text-muted); }
+    .search-box:focus-within { border-color: var(--accent); }
+
     .search-icon-wrap { display: flex; color: var(--text-muted); flex-shrink: 0; }
+    .search-box:focus-within .search-icon-wrap { color: var(--accent); }
 
     .search-input {
       flex: 1;
@@ -753,16 +750,20 @@ SHARED_CSS = """
       border: none;
       outline: none;
       background: transparent;
-      font-size: 1rem;
+      font-size: 1.15rem;
+      font-weight: 500;
       color: var(--text-primary);
     }
 
-    .search-input::placeholder { color: var(--text-muted); }
+    .search-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
     .search-shortcut {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
+      font-size: 0.74rem;
+      font-weight: 600;
       color: var(--text-muted);
+      border: 1px solid var(--border-card);
+      border-radius: 6px;
+      padding: 0.15rem 0.4rem;
       flex-shrink: 0;
     }
 
@@ -971,64 +972,269 @@ SHARED_CSS = """
       .cal-source { grid-column: 1 / -1; padding: 0.35rem 0 0.1rem; }
     }
 
-    /* Home: front page */
-    .fp-masthead { margin-bottom: 2rem; max-width: 46rem; }
-    .fp-dateline { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.9rem; }
-    .fp-title { font-size: clamp(2.3rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.022em; margin-bottom: 0.9rem; }
-    .fp-standfirst { font-family: var(--font-serif); font-size: 1.2rem; line-height: 1.45; color: var(--text-secondary); }
+    /* Home: search bar orbited by the watchlist. The sidebar becomes a top bar here only. */
+    .page-home .app-layout { display: block; }
+    .page-home .app-main { max-width: none; padding: 0 !important; }
 
-    .fp-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 4rem; margin-bottom: 4rem; }
-    .fp-kicker { font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 0.5rem; }
-    .fp-lead-title { font-size: clamp(1.6rem, 3vw, 2.15rem); line-height: 1.15; margin-bottom: 0.7rem; }
-    .fp-lead-title a { color: inherit; text-decoration: none; }
-    .fp-lead-title a:hover, .fp-row-title:hover { color: var(--accent); }
-    .fp-lead-summary { font-size: 1.02rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 0.8rem; max-width: 38rem; }
-    .fp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1rem; font-size: 0.78rem; color: var(--text-muted); padding-bottom: 1.5rem; }
+    @media (min-width: 1025px) {
+      .page-home .app-sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        height: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+        padding: 1.1rem 2rem;
+        background: transparent;
+        border: 0;
+        overflow: visible;
+      }
+      .page-home .app-sidebar .sidebar-brand { display: none; }
+      .page-home .app-sidebar > div:first-child:has(.sidebar-brand) { display: none; }
+      .page-home .sidebar-nav { flex-direction: row; gap: 1.5rem; flex: 1; }
+      .page-home .nav-link { gap: 0.4rem; }
+      .page-home .sidebar-footer { display: flex; align-items: center; gap: 1.25rem; margin: 0; padding: 0; }
+      .page-home .theme-toggle { margin: 0; }
+    }
 
-    .fp-list { list-style: none; border-top: 1px solid var(--text-primary); }
-    .fp-row { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
-    .fp-row-title { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.3; color: inherit; text-decoration: none; }
-    .fp-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
-    .fp-more { display: inline-block; margin-top: 0.9rem; font-size: 0.84rem; color: var(--accent); text-decoration: none; }
-    .fp-more:hover { text-decoration: underline; text-underline-offset: 3px; }
-    .fp-empty { color: var(--text-muted); font-size: 0.92rem; padding: 0.5rem 0; }
+    @media (max-width: 1024px) {
+      .page-home .mobile-top-header .sidebar-brand { visibility: hidden; }
+      .page-home .mobile-top-header { background: transparent; border: 0; position: absolute; width: 100%; }
+    }
 
-    .fp-side { display: flex; flex-direction: column; gap: 2.75rem; }
-    .fp-heading { font-size: 1.15rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--text-primary); }
-    .fp-side-list { list-style: none; }
-    .fp-event, .fp-indicator { padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.86rem; }
-    .fp-event { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; }
-    .fp-event-date { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-muted); }
-    .fp-indicator { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; color: var(--text-secondary); }
-    .fp-indicator-value { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-primary); white-space: nowrap; }
+    .orbit-hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100svh;
+      overflow-x: clip;
+    }
 
-    .fp-index { margin-bottom: 3.5rem; }
-    .fp-index-row { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--border-subtle); align-items: baseline; }
-    .fp-index-row dt { font-size: 0.86rem; color: var(--text-secondary); }
-    .fp-index-row dd { display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem; }
-    .fp-index-item { font-family: var(--font-mono); font-size: 0.86rem; color: var(--text-primary); text-decoration: none; padding: 0.15rem 0; }
-    .fp-index-item:hover { color: var(--accent); }
-    .fp-index-item sup { font-size: 0.64rem; color: var(--text-muted); margin-left: 0.15rem; line-height: 0; }
+    .orbit-dust {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-    .fp-heading-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--text-primary); }
-    .fp-heading-row .fp-heading { border-bottom: none; }
-    .fp-clear { background: none; border: none; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; min-height: 32px; }
-    .fp-clear:hover { color: var(--text-primary); }
-    .fp-recent-list { list-style: none; }
-    .fp-recent a { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); color: inherit; text-decoration: none; font-size: 0.9rem; }
-    .fp-recent a:hover .fp-recent-name { color: var(--accent); }
-    .fp-recent-when { font-size: 0.76rem; color: var(--text-muted); }
-    [hidden] { display: none !important; }
+    .hero-copy {
+      position: relative;
+      z-index: 60;
+      text-align: center;
+      padding: clamp(4.25rem, 10vh, 6.5rem) 1rem 0;
+      pointer-events: none;
+    }
 
-    @media (max-width: 860px) {
-      .fp-grid { grid-template-columns: minmax(0, 1fr); gap: 2.75rem; }
-      .fp-index-row { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
-      .fp-index-item { padding: 0.45rem 0; }
-      .fp-index-row dd { gap: 0 1.25rem; }
-      .fp-more { padding: 0.35rem 0; }
-      .fp-clear { min-height: 44px; }
+    .hero-wordmark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(3.4rem, 8.5vw, 7rem);
+      line-height: 0.95;
+      letter-spacing: -0.015em;
+    }
+
+    .hero-wordmark span { color: var(--accent); }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.25rem, 2.5vw, 2.1rem);
+      line-height: 1.15;
+      letter-spacing: 0;
+      margin-top: 0.55rem;
+    }
+
+    .hero-orbit-stage {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 480px;
+      cursor: grab;
+      touch-action: pan-y;
+    }
+
+    .hero-orbit-stage.is-dragging { cursor: grabbing; }
+
+    .hero-orbit-stage .search-wrapper {
+      position: absolute;
+      top: 36%;
+      left: 50%;
+      width: min(620px, calc(100% - 2rem));
+      margin: 0;
+      transform: translate(-50%, calc(-50% - var(--bar-lift, 0px)));
+      transition: transform 0.28s ease-out;
+      cursor: auto;
+    }
+
+    .hero-orbit-stage .search-dropdown { max-height: min(40vh, 340px); }
+
+    .orbit-ring {
+      list-style: none;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .orbit-slot {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
+      will-change: transform, opacity;
+    }
+
+    .orbit-slot[hidden] { display: none; }
+
+    .orbit-chip {
+      display: block;
+      width: 156px;
+      padding: 0.6rem 0.8rem 0.65rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .orbit-chip:hover { border-color: var(--accent); }
+    .orbit-chip:focus-visible { outline-offset: 3px; border-color: var(--accent); }
+
+    .orbit-ticker { display: block; font-size: 1.45rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+    .orbit-name { display: block; font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .orbit-fact { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.3rem; font-size: 0.74rem; color: var(--text-muted); white-space: nowrap; }
+    .orbit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+    .orbit-dot.is-high { background: var(--accent); }
+
+    .orbit-browse {
+      position: absolute;
+      left: 50%;
+      bottom: 1.1rem;
+      transform: translateX(-50%);
+      z-index: 70;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      text-underline-offset: 3px;
+      padding: 0.4rem 0.6rem;
+    }
+
+    /* The default until the script proves motion is welcome: a plain grid of the same links. */
+    .orbit-static.hero-orbit-stage { flex: none; min-height: 0; cursor: auto; touch-action: auto; padding: 1.75rem 1rem 0; }
+    .orbit-static .search-wrapper { position: relative; top: auto; left: auto; transform: none; width: 100%; max-width: 620px; margin: 0 auto 1.75rem; }
+    .orbit-static .orbit-ring {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.75rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      pointer-events: auto;
+    }
+    .orbit-static .orbit-slot { position: static; will-change: auto; }
+    .orbit-static .orbit-slot.is-dim { opacity: 0.3; }
+    .orbit-static .orbit-chip { width: auto; }
+    .orbit-hero:has(.orbit-static) { min-height: 0; }
+    .orbit-hero:has(.orbit-static) .orbit-browse { position: static; transform: none; display: block; text-align: center; margin: 1.25rem 0 0; }
+    .orbit-hero:has(.orbit-static) .orbit-dust { display: none; }
+
+    @media (max-width: 640px) {
+      .hero-copy { padding-top: 3.75rem; }
+      .search-box { height: 58px; padding: 0 1rem; }
       .search-shortcut { display: none; }
       .dropdown-tabs-grid { grid-template-columns: minmax(0, 1fr); }
+      .orbit-chip { width: 110px; padding: 0.4rem 0.55rem 0.45rem; border-radius: 12px; }
+      .orbit-ticker { font-size: 1.1rem; }
+      .orbit-name, .orbit-fact { font-size: 0.66rem; }
+      .orbit-browse { bottom: calc(3.6rem + env(safe-area-inset-bottom)); }
+    }
+
+    .home-below {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+    }
+
+    .home-doors {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .door {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.5rem;
+      min-height: 164px;
+      padding: 1.35rem 1.4rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .door:hover { border-color: var(--accent); }
+    .door:hover .door-title { color: var(--accent); }
+    .door-title { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; }
+    .door-line { font-size: 0.95rem; line-height: 1.4; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+    .home-heading { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .home-heading-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+
+    .home-stories { margin-bottom: 3.5rem; }
+    .top-list { list-style: none; border-top: 1px solid var(--border-card); }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 3rem 4.5rem minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: baseline;
+      padding: 0.95rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .top-score { font-size: 1.3rem; font-weight: 700; color: var(--text-muted); }
+    .top-score.is-high { color: var(--accent); }
+    .top-ticker { font-weight: 700; color: var(--text-primary); text-decoration: none; }
+    .top-ticker:hover, .top-title:hover { color: var(--accent); }
+    .top-title { font-size: 1.05rem; font-weight: 500; color: var(--text-primary); text-decoration: none; overflow-wrap: anywhere; }
+    .top-date { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; }
+    .home-more { display: inline-block; margin-top: 0.9rem; color: var(--accent); font-weight: 600; text-underline-offset: 3px; }
+    .home-empty { color: var(--text-muted); padding: 1rem 0; }
+
+    .recent-list { list-style: none; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .recent-list a { display: flex; align-items: baseline; gap: 0.55rem; padding: 0.55rem 0.8rem; background: var(--bg-surface); border: 1px solid var(--border-card); border-radius: 12px; color: inherit; text-decoration: none; }
+    .recent-list a:hover { border-color: var(--accent); }
+    .recent-ticker { font-weight: 700; }
+    .recent-name, .recent-when { font-size: 0.8rem; color: var(--text-muted); }
+    .home-clear { background: none; border: 0; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-size: 0.85rem; min-height: 24px; }
+
+    @media (max-width: 1024px) {
+      .home-doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .home-below { padding: 2rem 1rem calc(5rem + env(safe-area-inset-bottom)); }
+      .home-doors { gap: 0.65rem; }
+      .door { min-height: 128px; padding: 1rem; gap: 0.9rem; }
+      .door-title { font-size: 1.2rem; }
+      .door-line { font-size: 0.85rem; }
+      .top-row { grid-template-columns: 2.4rem 3.6rem minmax(0, 1fr); }
+      .top-date { display: none; }
     }
 
     .bento-card {
@@ -2445,7 +2651,7 @@ NAVIGATION_LAYOUT_HTML = """
     <div>No pipeline runs recorded</div>
     {% endif %}
     <div>Updated: {{ generated_at }}</div>
-    <button class="theme-toggle" id="themeToggle" type="button" onclick="cycleTheme()">Theme: auto</button>
+    <button class="theme-toggle" id="themeToggle" type="button" onclick="cycleTheme()">Switch to light</button>
   </div>
 </aside>
 
@@ -2474,24 +2680,24 @@ function safeHref(value) {
   return /^https?:\\/\\//i.test(url) ? escapeHtml(url) : '#';
 }
 
-function currentThemeChoice() {
-  return document.documentElement.dataset.theme || 'auto';
+function currentTheme() {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
 }
 
 function labelThemeToggle() {
   const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = 'Theme: ' + currentThemeChoice();
+  if (btn) btn.textContent = currentTheme() === 'light' ? 'Switch to dark' : 'Switch to light';
 }
 
 function cycleTheme() {
-  const next = { auto: 'light', light: 'dark', dark: 'auto' }[currentThemeChoice()];
-  if (next === 'auto') delete document.documentElement.dataset.theme;
+  const next = currentTheme() === 'light' ? 'dark' : 'light';
+  if (next === 'dark') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = next;
   try {
-    if (next === 'auto') localStorage.removeItem('stockpulse_theme');
-    else localStorage.setItem('stockpulse_theme', next);
+    localStorage.setItem('stockpulse_theme', next);
   } catch (e) { /* storage may be blocked; the choice just won't persist */ }
   labelThemeToggle();
+  document.dispatchEvent(new Event('themechange'));
 }
 
 document.addEventListener('DOMContentLoaded', labelThemeToggle);
@@ -2565,146 +2771,116 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="A morning briefing on your watchlist: top stories, upcoming events, and the economy.">
-  <title>StockPulse — What's on the agenda?</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <meta name="description" content="Search your watchlist and see the top stories, upcoming events and the economy.">
+  <title>StockPulse: what happened to your stocks?</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
 </head>
-<body>
+<body class="page-home">
   <div class="app-layout">
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="fp-masthead">
-        <p class="fp-dateline">{{ generated_at[:12] }}</p>
-        <h1 class="fp-title">What's on the agenda?</h1>
-        <p class="fp-standfirst">
-          {{ stats.high_priority_count }} of {{ stats.total }} stories scored 7 or higher.
-          {% if calendar_events %}Next on the calendar: {{ calendar_events[0].headline }}, {{ calendar_events[0].relative_badge|lower }}.{% endif %}
-        </p>
-      </header>
+      <section class="orbit-hero" id="orbitHero" aria-label="Search your watchlist">
+        <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
 
-      <div class="search-wrapper" id="heroSearchWrapper">
-        <div class="search-box" id="globalSearchBox">
-          <span class="search-icon-wrap">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </span>
-          <input type="text" id="globalSearchInput" class="search-input" aria-label="Search" placeholder="Search companies, filings, events" onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
-          <span class="search-shortcut">⌘K</span>
+        <div class="hero-copy">
+          <p class="hero-wordmark">Stock<span>Pulse</span></p>
+          <h1 class="hero-headline">What happened to your stocks?</h1>
         </div>
 
-        <div class="search-dropdown" id="searchDropdown">
-          <div id="defaultDropdownContent">
-            <div class="dropdown-tabs-grid">
-              <a href="news.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Feed</span><span class="dropdown-tab-sub">{{ stats.total }} stories</span></a>
-              <a href="calendar.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Calendar</span><span class="dropdown-tab-sub">{{ calendar_events|length }} events</span></a>
-              <a href="economic.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Economy</span><span class="dropdown-tab-sub">{{ economic_indicators|length }} indicators</span></a>
-              <a href="company.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Companies</span><span class="dropdown-tab-sub">{{ watchlist_companies|length }} on the watchlist</span></a>
+        <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
+          <div class="search-wrapper" id="heroSearchWrapper">
+            <div class="search-box" id="globalSearchBox">
+              <span class="search-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </span>
+              <input type="text" id="globalSearchInput" class="search-input" aria-label="Search companies, stories and tickers" placeholder="Search a company or ticker" autocomplete="off" spellcheck="false">
+              <span class="search-shortcut">⌘K</span>
+            </div>
+
+            <div class="search-dropdown" id="searchDropdown">
+              <div id="defaultDropdownContent">
+                <div class="dropdown-tabs-grid">
+                  <a href="news.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Feed</span><span class="dropdown-tab-sub">{{ stats.total }} stories</span></a>
+                  <a href="calendar.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Calendar</span><span class="dropdown-tab-sub">{{ calendar_events|length }} events</span></a>
+                  <a href="economic.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Economy</span><span class="dropdown-tab-sub">{{ economic_indicators|length }} indicators</span></a>
+                  <a href="company.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Companies</span><span class="dropdown-tab-sub">{{ watchlist_companies|length }} on the watchlist</span></a>
+                </div>
+              </div>
+              <div id="liveSearchResults" style="display:none;"></div>
             </div>
           </div>
-          <div id="liveSearchResults" style="display:none;"></div>
+
+          <ul class="orbit-ring" id="orbitRing" aria-label="Companies with the biggest stories">
+            {% for co in orbit_companies %}
+            <li class="orbit-slot" data-symbol="{{ co.symbol }}" data-name="{{ co.name }}"{% if loop.index > 12 %} hidden{% endif %}>
+              <a class="orbit-chip" href="company.html?ticker={{ co.symbol|urlencode }}" draggable="false">
+                <span class="orbit-ticker">{{ co.symbol }}</span>
+                <span class="orbit-name">{{ co.name }}</span>
+                <span class="orbit-fact">{% if co.top_score is not none %}<span class="orbit-dot{% if co.top_score >= 7 %} is-high{% endif %}" title="Top story score {{ co.top_score }}"></span>{% if co.new_count %}{{ co.new_count }} new {{ 'story' if co.new_count == 1 else 'stories' }}{% else %}Top story {{ co.top_score }}{% endif %}{% else %}No stories yet{% endif %}</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
         </div>
-      </div>
 
-      <div class="fp-grid">
-        <section class="fp-main" aria-label="Top stories">
+        <a class="orbit-browse" href="company.html">Browse all {{ watchlist_companies|length }} companies</a>
+      </section>
+
+      <div class="home-below">
+        <nav class="home-doors" aria-label="Sections">
+          <a class="door" href="news.html">
+            <span class="door-title">Today's news</span>
+            <span class="door-line">{{ stats.high_priority_count }} to read first, out of {{ stats.total }} stories</span>
+          </a>
+          <a class="door" href="calendar.html">
+            <span class="door-title">Calendar</span>
+            <span class="door-line">{% if next_earnings %}Next earnings: {{ next_earnings.ticker }}, {{ short_date(next_earnings.event_date) }}{% elif calendar_events %}Next: {{ calendar_events[0].ticker }}, {{ short_date(calendar_events[0].event_date) }}{% else %}Nothing scheduled{% endif %}</span>
+          </a>
+          <a class="door" href="economic.html">
+            <span class="door-title">Economy</span>
+            <span class="door-line">{% if economic_indicators %}{{ economic_indicators[0].name }}: {{ economic_indicators[0].formatted_value.split(' (')[0] }}{% else %}No indicators available{% endif %}</span>
+          </a>
+          <a class="door" href="company.html">
+            <span class="door-title">All companies</span>
+            <span class="door-line">{{ watchlist_companies|length }} on the watchlist, {{ orbit_companies|selectattr('top_score', 'ne', none)|list|length }} with stories</span>
+          </a>
+        </nav>
+
+        <section class="home-stories" aria-labelledby="homeStoriesHeading">
+          <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
           {% if priority_items %}
-          {% set lead = priority_items[0] %}
-          <article class="fp-lead">
-            <p class="fp-kicker">Read first</p>
-            <h2 class="fp-lead-title"><a href="{{ lead.url if lead.url.startswith('http') else 'news.html' }}" target="_blank" rel="noopener noreferrer">{{ lead.clean_headline }}</a></h2>
-            {% if lead.llm_summary %}<p class="fp-lead-summary">{{ lead.llm_summary }}</p>{% endif %}
-            <p class="fp-meta">
-              <a class="ticker-badge" href="company.html?ticker={{ lead.ticker|urlencode }}">{{ lead.ticker }}</a>
-              <span>{{ short_date(lead.published_date) }}</span>
-              <span>{{ lead.source_label }}</span>
-              <span title="{{ lead.score_breakdown }}">Score {{ lead.score }}</span>
-            </p>
-          </article>
-
-          {% if priority_items|length > 1 %}
-          <ol class="fp-list">
-            {% for it in priority_items[1:] %}
-            <li class="fp-row">
-              <a class="ticker-badge" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
-              <a class="fp-row-title" href="{{ it.url if it.url.startswith('http') else 'news.html' }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
-              <span class="fp-score" title="{{ it.score_breakdown }}">{{ it.score }}</span>
+          <ol class="top-list">
+            {% for it in priority_items[:5] %}
+            <li class="top-row">
+              <span class="top-score{% if it.score >= 7 %} is-high{% endif %}" title="{{ it.score_breakdown }}">{{ it.score }}</span>
+              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
+              <a class="top-title" href="{{ it.url if it.url.startswith('http') else 'news.html' }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+              <span class="top-date">{{ short_date(it.published_date) }}</span>
             </li>
             {% endfor %}
           </ol>
-          {% endif %}
           {% else %}
-          <p class="fp-empty">No stories yet. They appear here after the next pipeline run.</p>
+          <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
           {% endif %}
-          <a class="fp-more" href="news.html">All {{ stats.total }} stories</a>
+          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
         </section>
 
-        <aside class="fp-side">
-          <section aria-labelledby="fpNextHeading">
-            <h2 class="fp-heading" id="fpNextHeading">Coming up</h2>
-            {% if calendar_events %}
-            <ul class="fp-side-list">
-              {% for ev in calendar_events[:4] %}
-              <li class="fp-event">
-                <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
-                <span class="fp-event-text"><a class="ticker-badge" href="company.html?ticker={{ ev.ticker|urlencode }}">{{ ev.ticker }}</a> {{ event_kind(ev.event_type or '') }}</span>
-              </li>
-              {% endfor %}
-            </ul>
-            {% else %}
-            <p class="fp-empty">No upcoming events.</p>
-            {% endif %}
-            <a class="fp-more" href="calendar.html">Full calendar</a>
-          </section>
-
-          <section aria-labelledby="fpEconHeading">
-            <h2 class="fp-heading" id="fpEconHeading">Economy</h2>
-            {% if economic_indicators %}
-            <ul class="fp-side-list">
-              {% for ind in economic_indicators %}
-              <li class="fp-indicator">
-                <span>{{ ind.name }}</span>
-                <span class="fp-indicator-value">{{ ind.formatted_value.split(' (')[0] }}</span>
-              </li>
-              {% endfor %}
-            </ul>
-            {% else %}
-            <p class="fp-empty">No indicators available.</p>
-            {% endif %}
-            <a class="fp-more" href="economic.html">All indicators</a>
-          </section>
-        </aside>
-      </div>
-
-      <section class="fp-index" aria-labelledby="fpIndexHeading">
-        <h2 class="fp-heading" id="fpIndexHeading">The watchlist, by sector</h2>
-        <dl class="fp-index-list">
-          {% for sec in sector_directory %}
-          <div class="fp-index-row">
-            <dt>{{ sec.name }}</dt>
-            <dd>
-              {% for co in sec.companies %}
-              <a class="fp-index-item" href="company.html?ticker={{ co.symbol|urlencode }}" title="{{ co.name }}: {{ co.story_count }} stories">{{ co.symbol }}<sup>{{ co.story_count }}</sup></a>
-              {% endfor %}
-            </dd>
+        <section id="recentlyViewedSection" aria-labelledby="homeRecentHeading" hidden>
+          <div class="home-heading-row">
+            <h2 class="home-heading" id="homeRecentHeading">Recently viewed</h2>
+            <button class="home-clear" id="clearRecentlyViewedBtn" type="button" onclick="clearRecentlyViewed()">Clear</button>
           </div>
-          {% endfor %}
-        </dl>
-      </section>
-
-      <section class="recently-viewed-section" id="recentlyViewedSection" aria-labelledby="fpRecentHeading" hidden>
-        <div class="fp-heading-row">
-          <h2 class="fp-heading" id="fpRecentHeading">Recently Viewed Companies</h2>
-          <button class="fp-clear" id="clearRecentlyViewedBtn" type="button" onclick="clearRecentlyViewed()">Clear</button>
-        </div>
-        <ul class="fp-recent-list" id="recentlyViewedGrid"></ul>
-      </section>
+          <ul class="recent-list" id="recentlyViewedGrid"></ul>
+        </section>
+      </div>
     </main>
   </div>
 
@@ -2716,20 +2892,35 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     const econIndicators = {{ economic_indicators|tojson|safe }};
     const watchlistCompanies = {{ watchlist_companies|tojson|safe }};
 
+    // Recently viewed comes from localStorage, so anything not on the watchlist is thrown away.
+    function readRecentlyViewed() {
+      let stored = [];
+      try {
+        stored = JSON.parse(localStorage.getItem('stockpulse_recently_viewed') || '[]');
+      } catch (e) {
+        return [];
+      }
+      if (!Array.isArray(stored)) return [];
+      const known = new Set((watchlistCompanies || []).map(c => c.symbol));
+      const seen = new Set();
+      const clean = [];
+      stored.forEach(item => {
+        const symbol = String(item && typeof item === 'object' ? item.symbol : item).toUpperCase();
+        if (!known.has(symbol) || seen.has(symbol)) return;
+        seen.add(symbol);
+        const visitedAt = item && Number.isFinite(item.visitedAt) ? item.visitedAt : null;
+        clean.push({ symbol, visitedAt });
+      });
+      return clean;
+    }
+
     function renderRecentlyViewed() {
       const section = document.getElementById('recentlyViewedSection');
       const grid = document.getElementById('recentlyViewedGrid');
       if (!grid || !section) return;
 
-      let stored = [];
-      try {
-        stored = JSON.parse(localStorage.getItem('stockpulse_recently_viewed') || '[]');
-      } catch (e) {
-        stored = [];
-      }
-
-      // Nothing viewed yet means nothing to show, rather than an invented starter list.
-      if (!Array.isArray(stored) || stored.length === 0) {
+      const stored = readRecentlyViewed();
+      if (stored.length === 0) {
         section.hidden = true;
         grid.innerHTML = '';
         return;
@@ -2740,8 +2931,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       section.hidden = false;
       grid.innerHTML = stored.slice(0, 8).map(item => {
-        const sym = String(typeof item === 'string' ? item : item.symbol).toUpperCase();
-        const co = companies[sym] || { name: sym };
         let when = '';
         if (item.visitedAt) {
           const diffSec = Math.floor((Date.now() - item.visitedAt) / 1000);
@@ -2751,19 +2940,417 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           else when = `${Math.floor(diffSec / 86400)}d ago`;
         }
         return `
-          <li class="fp-recent">
-            <a href="company.html?ticker=${encodeURIComponent(sym)}">
-              <span class="ticker-badge">${escapeHtml(sym)}</span>
-              <span class="fp-recent-name">${escapeHtml(co.name)}</span>
-              <span class="fp-recent-when">${escapeHtml(when)}</span>
+          <li>
+            <a href="company.html?ticker=${encodeURIComponent(item.symbol)}">
+              <span class="recent-ticker">${escapeHtml(item.symbol)}</span>
+              <span class="recent-name">${escapeHtml(companies[item.symbol].name)}</span>
+              <span class="recent-when">${escapeHtml(when)}</span>
             </a>
           </li>`;
       }).join('');
     }
 
     function clearRecentlyViewed() {
-      localStorage.removeItem('stockpulse_recently_viewed');
+      try {
+        localStorage.removeItem('stockpulse_recently_viewed');
+      } catch (e) { /* storage may be blocked */ }
       renderRecentlyViewed();
+      orbit.refresh();
+    }
+
+    // A ring of real company links orbiting the search bar. The chips are ordinary links in an
+    // ordinary list: this script only positions them, and without it they stay a static grid.
+    const orbit = (function createOrbit() {
+      const stage = document.getElementById('heroOrbitStage');
+      const hero = document.getElementById('orbitHero');
+      const ring = document.getElementById('orbitRing');
+      const canvas = document.getElementById('orbitDust');
+      const dropdown = document.getElementById('searchDropdown');
+      const bar = document.getElementById('globalSearchBox');
+      const input = document.getElementById('globalSearchInput');
+      const TWO_PI = Math.PI * 2;
+      const AUTO_SPEED = 0.11;
+      const all = [...ring.querySelectorAll('.orbit-slot')].map(el => ({
+        el,
+        symbol: el.dataset.symbol,
+        name: (el.dataset.name || '').toLowerCase(),
+        angle: 0,
+        target: 0,
+        dim: 0,
+        blur: -1,
+      }));
+      const bySymbol = new Map(all.map(c => [c.symbol, c]));
+
+      let visible = [];
+      let matches = [];
+      let query = '';
+      let live = false;
+      let running = false;
+      let rotation = 0;
+      let rotationTarget = null;
+      let velocity = 0;
+      let lastFrame = 0;
+      let hovered = false;
+      let ringFocused = false;
+      let searchFocused = false;
+      let onScreen = true;
+      let ringShift = 0;
+      let drag = null;
+      let suppressClick = false;
+      let barLifted = false;
+      const geo = { width: 0, cx: 0, cy: 0, radius: 0, sinTilt: 0, cosTilt: 1, focal: 1, barW: 0, barH: 0, chipW: 0, chipH: 0 };
+      const dust = { ctx: null, list: [], w: 0, h: 0, px: 0, py: 0, tx: 0, ty: 0, color: '', strength: 1 };
+
+      function slotCount() {
+        return stage.clientWidth < 640 ? 6 : (stage.clientWidth < 1025 ? 10 : 12);
+      }
+
+      // Recently viewed companies join the ring first, then the biggest stories fill it up.
+      function chooseVisible() {
+        const count = slotCount();
+        const chosen = [];
+        const add = c => { if (c && !chosen.includes(c) && chosen.length < count) chosen.push(c); };
+        matches.forEach(add);
+        readRecentlyViewed().slice(0, 4).forEach(item => add(bySymbol.get(item.symbol)));
+        all.forEach(add);
+        all.forEach(c => { c.el.hidden = !chosen.includes(c); });
+        return chosen;
+      }
+
+      // Matches take the front slots, spreading out left and right from the centre.
+      function assignSlots() {
+        const previous = visible;
+        visible = chooseVisible();
+        const n = visible.length;
+        if (!n) return;
+        const ordered = [...visible];
+        const order = [];
+        for (let i = 0; i < n; i += 1) order.push(i % 2 ? (i + 1) / 2 : (n - i / 2) % n);
+        const slots = new Array(n);
+        ordered.forEach((chip, i) => { slots[i] = order[i]; });
+        ordered.forEach((chip, i) => {
+          chip.target = (slots[i] * TWO_PI) / n;
+          if (!previous.includes(chip)) chip.angle = chip.target + Math.PI;
+          chip.dim = query && !matches.includes(chip) ? 1 : 0;
+          chip.el.classList.toggle('is-dim', chip.dim === 1);
+        });
+      }
+
+      function measure() {
+        const stageBox = stage.getBoundingClientRect();
+        const barBox = bar.getBoundingClientRect();
+        const narrow = stageBox.width < 640;
+        geo.width = stageBox.width;
+        geo.cx = stageBox.width / 2;
+        geo.cy = barBox.top - stageBox.top + barBox.height / 2 + ringShift;
+        geo.barW = barBox.width;
+        geo.barH = barBox.height;
+        geo.radius = narrow ? Math.max(100, stageBox.width / 2 - 62) : Math.min(stageBox.width * 0.4, 600);
+        // A phone-width bar spans the whole ring, so a shallow tilt would flatten the chips into
+        // one row under it. Tipping it further keeps a visible front and back.
+        const tilt = (narrow ? 58 : 17) * Math.PI / 180;
+        geo.sinTilt = Math.sin(tilt);
+        geo.cosTilt = Math.cos(tilt);
+        geo.focal = geo.radius * 3.4;
+        const sample = visible[0] && visible[0].el.firstElementChild;
+        geo.chipW = sample ? sample.offsetWidth : 150;
+        geo.chipH = sample ? sample.offsetHeight : 72;
+      }
+
+      function smoothstep(a, b, v) {
+        const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      }
+
+      function place(chip) {
+        const theta = chip.angle + rotation;
+        const sin = Math.sin(theta);
+        const cos = Math.cos(theta);
+        const near = (cos + 1) / 2;
+        const depth = geo.radius * cos * geo.cosTilt;
+        const perspective = geo.focal / (geo.focal - depth);
+        const scale = 0.55 + 0.7 * near;
+        const x = geo.radius * sin * perspective;
+        let y = geo.radius * cos * geo.sinTilt * perspective;
+
+        // Front chips never cross the bar: anything overlapping it sideways slides out from
+        // behind and below it before it comes forward in z-order.
+        const halfW = geo.chipW * scale / 2;
+        const halfH = geo.chipH * scale / 2;
+        const clearY = geo.barH / 2 + halfH + 12;
+        let front = cos > 0;
+        if (Math.abs(x) < geo.barW / 2 + halfW + 8) {
+          const blend = smoothstep(-0.45, -0.02, cos);
+          y = y + Math.max(0, clearY - y) * blend;
+          front = y >= clearY - 0.5;
+        }
+
+        const ease = chip.dim ? 0.2 : 1;
+        const opacity = (0.42 + 0.58 * Math.min(1, near * 1.5)) * ease;
+        const blur = near < 0.45 ? Math.round((0.45 - near) * 8) / 2 : 0;
+        const el = chip.el;
+        el.style.transform = `translate3d(${(geo.cx + x - geo.chipW / 2).toFixed(1)}px, ${(geo.cy + y - geo.chipH / 2).toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
+        el.style.opacity = opacity.toFixed(3);
+        el.style.zIndex = front ? String(100 + Math.round(near * 100)) : String(1 + Math.round(near * 40));
+        if (blur !== chip.blur) {
+          el.style.filter = blur ? `blur(${blur}px)` : 'none';
+          chip.blur = blur;
+        }
+      }
+
+      function shortest(from, to) {
+        let d = (to - from) % TWO_PI;
+        if (d > Math.PI) d -= TWO_PI;
+        if (d < -Math.PI) d += TWO_PI;
+        return d;
+      }
+
+      function frontOf(chip) {
+        rotationTarget = rotation + shortest(rotation, -chip.target);
+      }
+
+      function step(now) {
+        if (!running) return;
+        const dt = Math.min(0.05, (now - lastFrame) / 1000 || 0.016);
+        lastFrame = now;
+
+        const paused = hovered || ringFocused || searchFocused;
+        if (drag) {
+          velocity *= Math.exp(-dt * 12);
+        } else if (rotationTarget !== null) {
+          const gap = rotationTarget - rotation;
+          rotation += gap * (1 - Math.exp(-dt * 5));
+          velocity = 0;
+        } else {
+          rotation += velocity * dt;
+          velocity *= Math.exp(-dt * 1.8);
+          if (!paused) rotation += AUTO_SPEED * dt;
+        }
+
+        const settle = 1 - Math.exp(-dt * 6);
+        visible.forEach(chip => { chip.angle += shortest(chip.angle, chip.target) * settle; });
+
+        // An open results panel pushes the ring down, so what swung to the front stays in view.
+        let wantShift = 0;
+        if (dropdown.classList.contains('active')) {
+          const frontY = geo.radius * geo.sinTilt * (geo.focal / (geo.focal - geo.radius * geo.cosTilt));
+          wantShift = Math.max(0, geo.barH / 2 + dropdown.offsetHeight + 6 + geo.chipH * 0.625 + 12 - frontY);
+        }
+        ringShift += (wantShift - ringShift) * (1 - Math.exp(-dt * 7));
+        geo.cy = bar.getBoundingClientRect().top - stage.getBoundingClientRect().top + geo.barH / 2 + ringShift;
+        updateLift();
+
+        visible.forEach(place);
+        drawDust(dt, paused && !drag && rotationTarget === null ? velocity : velocity + AUTO_SPEED);
+        requestAnimationFrame(step);
+      }
+
+      // An open results panel needs the room, so the bar rises to just under the headline.
+      function updateLift() {
+        const open = dropdown.classList.contains('active');
+        if (open === barLifted) return;
+        barLifted = open;
+        if (!open) {
+          stage.style.removeProperty('--bar-lift');
+          return;
+        }
+        const rest = stage.getBoundingClientRect().top + stage.clientHeight * 0.36;
+        const roof = hero.querySelector('.hero-copy').getBoundingClientRect().bottom + geo.barH / 2 + 18;
+        stage.style.setProperty('--bar-lift', `${Math.max(0, rest - roof)}px`);
+      }
+
+      function setUpDust() {
+        dust.ctx = canvas.getContext('2d');
+        if (!dust.ctx) return false;
+        const count = hero.clientWidth < 640 ? 40 : 120;
+        dust.list = Array.from({ length: count }, () => {
+          const depth = 0.25 + Math.random() * 0.75;
+          return {
+            x: Math.random(),
+            y: Math.random(),
+            depth,
+            size: 0.5 + depth * 1.1,
+            alpha: 0.1 + depth * 0.32,
+          };
+        });
+        sizeDust();
+        return true;
+      }
+
+      function sizeDust() {
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        dust.w = hero.clientWidth;
+        dust.h = hero.clientHeight;
+        canvas.width = Math.round(dust.w * ratio);
+        canvas.height = Math.round(dust.h * ratio);
+        dust.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        dust.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+        dust.strength = document.documentElement.dataset.theme === 'light' ? 0.45 : 1;
+      }
+
+      function drawDust(dt, spin) {
+        const ctx = dust.ctx;
+        ctx.clearRect(0, 0, dust.w, dust.h);
+        dust.px += (dust.tx - dust.px) * (1 - Math.exp(-dt * 3));
+        dust.py += (dust.ty - dust.py) * (1 - Math.exp(-dt * 3));
+        ctx.fillStyle = dust.color;
+        dust.list.forEach(p => {
+          p.x = (p.x + spin * dt * 0.05 * p.depth + 1) % 1;
+          p.y = (p.y + dt * 0.002 * p.depth) % 1;
+          const x = ((p.x * dust.w + dust.px * 26 * p.depth) % dust.w + dust.w) % dust.w;
+          const y = ((p.y * dust.h + dust.py * 18 * p.depth) % dust.h + dust.h) % dust.h;
+          ctx.globalAlpha = p.alpha * dust.strength;
+          ctx.beginPath();
+          ctx.arc(x, y, p.size, 0, TWO_PI);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      function start() {
+        if (running || !live || !onScreen || document.hidden) return;
+        running = true;
+        lastFrame = performance.now();
+        requestAnimationFrame(step);
+      }
+
+      function stop() {
+        running = false;
+      }
+
+      function bindPointer() {
+        stage.addEventListener('pointerdown', e => {
+          if (e.button !== 0 || e.target.closest('.search-wrapper')) return;
+          drag = { id: e.pointerId, x: e.clientX, moved: 0, time: e.timeStamp };
+          rotationTarget = null;
+        });
+        stage.addEventListener('pointermove', e => {
+          if (!drag || e.pointerId !== drag.id) return;
+          const dx = e.clientX - drag.x;
+          drag.x = e.clientX;
+          drag.moved += Math.abs(dx);
+          if (drag.moved > 6) {
+            stage.classList.add('is-dragging');
+            if (!stage.hasPointerCapture(e.pointerId)) stage.setPointerCapture(e.pointerId);
+          }
+          const delta = dx / geo.radius;
+          rotation += delta;
+          const elapsed = Math.max(1, e.timeStamp - drag.time) / 1000;
+          velocity = velocity * 0.7 + (delta / elapsed) * 0.3;
+          drag.time = e.timeStamp;
+        });
+        const release = e => {
+          if (!drag || e.pointerId !== drag.id) return;
+          suppressClick = drag.moved > 6;
+          drag = null;
+          stage.classList.remove('is-dragging');
+          velocity = Math.max(-5, Math.min(5, velocity));
+        };
+        stage.addEventListener('pointerup', release);
+        // pointercancel means the browser took over for a vertical scroll, which is what we want.
+        stage.addEventListener('pointercancel', release);
+        // A drag that ends on a chip is a spin, not a click.
+        ring.addEventListener('click', e => {
+          if (suppressClick) e.preventDefault();
+          suppressClick = false;
+        });
+        ring.addEventListener('dragstart', e => e.preventDefault());
+        ring.addEventListener('pointerover', e => { if (e.pointerType === 'mouse' && e.target.closest('.orbit-slot')) hovered = true; });
+        ring.addEventListener('pointerout', e => { if (e.target.closest('.orbit-slot')) hovered = false; });
+        hero.addEventListener('pointermove', e => {
+          dust.tx = (e.clientX / window.innerWidth) * 2 - 1;
+          dust.ty = (e.clientY / window.innerHeight) * 2 - 1;
+        }, { passive: true });
+      }
+
+      function bindKeyboard() {
+        ring.addEventListener('focusin', e => {
+          ringFocused = true;
+          const chip = all.find(c => c.el.contains(e.target));
+          if (chip) frontOf(chip);
+        });
+        ring.addEventListener('focusout', e => {
+          if (ring.contains(e.relatedTarget)) return;
+          ringFocused = false;
+          if (!query) rotationTarget = null;
+        });
+        ring.addEventListener('keydown', e => {
+          if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+          const index = visible.findIndex(c => c.el.contains(document.activeElement));
+          if (index < 0) return;
+          e.preventDefault();
+          const bySlot = [...visible].sort((a, b) => a.target - b.target);
+          const at = bySlot.indexOf(visible[index]);
+          const next = bySlot[(at + (e.key === 'ArrowRight' ? -1 : 1) + bySlot.length) % bySlot.length];
+          next.el.querySelector('a').focus({ preventScroll: true });
+        });
+        input.addEventListener('focus', () => { searchFocused = true; });
+        input.addEventListener('blur', () => { searchFocused = false; });
+      }
+
+      function search(raw) {
+        query = (raw || '').trim().toLowerCase();
+        matches = query
+          ? all.filter(c => c.symbol.toLowerCase().includes(query) || c.name.includes(query))
+              .sort((a, b) => Number(b.symbol.toLowerCase().startsWith(query)) - Number(a.symbol.toLowerCase().startsWith(query)))
+          : [];
+        assignSlots();
+        if (live) {
+          measure();
+          if (query) rotationTarget = rotation + shortest(rotation, 0);
+          else if (!ringFocused) rotationTarget = null;
+        }
+      }
+
+      function refresh() {
+        assignSlots();
+        if (live) measure();
+      }
+
+      function init() {
+        visible = chooseVisible();
+        assignSlots();
+        const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (calm || !window.CSS || !CSS.supports('transform', 'translate3d(0, 0, 0)')) return;
+
+        try {
+          stage.classList.remove('orbit-static');
+          if (!setUpDust()) throw new Error('canvas unavailable');
+          measure();
+          visible.forEach(chip => { chip.angle = chip.target; place(chip); });
+          live = true;
+          bindPointer();
+          bindKeyboard();
+          window.addEventListener('resize', () => {
+            sizeDust();
+            assignSlots();
+            measure();
+          });
+          document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
+          document.addEventListener('themechange', sizeDust);
+          if (window.IntersectionObserver) {
+            new IntersectionObserver(entries => {
+              onScreen = entries[0].isIntersecting;
+              if (onScreen) start(); else stop();
+            }).observe(hero);
+          }
+          start();
+        } catch (err) {
+          // Anything unsupported falls back to the plain grid, which works without any of this.
+          live = false;
+          stop();
+          stage.classList.add('orbit-static');
+          all.forEach(c => { c.el.removeAttribute('style'); });
+        }
+      }
+
+      return { init, search, refresh };
+    })();
+
+    // Enter opens the first thing the dropdown is offering.
+    function openFirstSearchResult() {
+      const first = document.querySelector('#liveSearchResults a.search-result-item');
+      if (first) window.location.href = first.getAttribute('href');
     }
 
     function openSearchDropdown() {
@@ -2897,7 +3484,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <span class="ticker-badge ticker-${escapeHtml(c.symbol)}">${escapeHtml(c.symbol)}</span>
                 <div class="search-result-info">
                   <div class="search-result-title">${escapeHtml(c.name)}</div>
-                  <div class="search-result-sub">${escapeHtml(c.sector)}</div>
+                  <div class="search-result-sub">${escapeHtml(c.macro_sector || '')}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Open</span>
@@ -2935,7 +3522,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <div class="search-result-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
                 <div class="search-result-info">
                   <div class="search-result-title">${escapeHtml(ind.name)}: ${escapeHtml(ind.formatted_value)}</div>
-                  <div class="search-result-sub">${escapeHtml(ind.category)} &bull; Relevant: ${escapeHtml(ind.relevant_tickers)}</div>
+                  <div class="search-result-sub">${escapeHtml(ind.category)}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Open</span>
@@ -3133,10 +3720,19 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
     function initHomePage() {
       renderRecentlyViewed();
+      orbit.init();
       const searchInput = document.getElementById('globalSearchInput');
       if (searchInput) {
+        searchInput.addEventListener('focus', openSearchDropdown);
         searchInput.addEventListener('input', (e) => {
           handleSearchType(e.target.value);
+          orbit.search(e.target.value);
+        });
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            openFirstSearchResult();
+          }
         });
       }
     }
@@ -3163,10 +3759,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Dedicated Analytics Hub for StockPulse: filing velocity trends, disclosure category breakdowns, peer comparative performance, and automated pipeline telemetry.">
   <title>StockPulse — Analytics &amp; Performance Trends</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
@@ -3908,10 +4504,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and takeaways.">
   <title>StockPulse — The feed</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -4031,14 +4627,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 </ul>
                 {% endif %}
                 {% if item.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
-                <a href="{{ item.url if item.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer" class="fp-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
+                <a href="{{ item.url if item.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
               </div>
             </details>
           </div>
           <span class="date-cell">{{ short_date(item.published_date) }}</span>
         </article>
         {% endfor %}
-        <p class="fp-empty" id="feedEmpty" hidden>No stories match these filters.</p>
+        <p class="home-empty" id="feedEmpty" hidden>No stories match these filters.</p>
       </div>
     </main>
   </div>
@@ -4326,10 +4922,10 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Upcoming earnings calls, dividends, conferences, and SEC deadlines for your watchlist.">
   <title>StockPulse — Calendar</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -4398,7 +4994,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
           {% endfor %}
         </section>
         {% else %}
-        <p class="fp-empty">No upcoming events. They appear here after the next pipeline run.</p>
+        <p class="home-empty">No upcoming events. They appear here after the next pipeline run.</p>
         {% endfor %}
       </div>
     </main>
@@ -4442,10 +5038,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, 10Y Treasuries, CPI inflation, WTI Crude, and unemployment to company sensitivities.">
   <title>StockPulse — Macroeconomic Snapshot &amp; Sensitivities</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -4820,10 +5416,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company Releases, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
   <title>StockPulse — Company Directory</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
@@ -5745,6 +6341,48 @@ def _calendar_view(events: List[Dict[str, Any]], today: Optional[date] = None) -
     return {"marks": marks, "months": months, "weeks": [weeks[k] for k in sorted(weeks)], "today_pos": position(today)}
 
 
+def _orbit_companies(
+    items: List[Dict[str, Any]], companies: List[Dict[str, Any]], today: Optional[date] = None
+) -> List[Dict[str, Any]]:
+    """Watchlist companies for the Home ring, biggest recent story first; no stories go last.
+
+    "New" means published in the last 7 days, the same window the live lookup uses for news.
+    """
+    today = today or date.today()
+    top_scores: Dict[str, float] = {}
+    new_counts: Dict[str, int] = {}
+    for item in items:
+        ticker, score = item.get("ticker"), item.get("score")
+        if not ticker or score is None:
+            continue
+        top_scores[ticker] = max(score, top_scores.get(ticker, score))
+        try:
+            age = (today - date.fromisoformat(str(item.get("published_date"))[:10])).days
+        except ValueError:
+            continue
+        if 0 <= age <= 7:
+            new_counts[ticker] = new_counts.get(ticker, 0) + 1
+    ranked = [
+        {
+            "symbol": co.get("symbol", ""),
+            "name": co.get("name", ""),
+            "top_score": top_scores.get(co.get("symbol")),
+            "new_count": new_counts.get(co.get("symbol"), 0),
+        }
+        for co in companies
+    ]
+    ranked.sort(key=lambda co: (co["top_score"] is None, -(co["top_score"] or 0), -co["new_count"], co["symbol"]))
+    return ranked
+
+
+def _next_earnings(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """The first earnings event in an already date-sorted calendar, if any."""
+    for event in events:
+        if "earning" in f"{event.get('event_type', '')} {event.get('headline', '')}".lower():
+            return event
+    return None
+
+
 def _script_json(value: Any) -> str:
     """Serialize for a <script> block, so text containing '</script>' cannot end the block."""
     return json.dumps(value).replace("</", "<\\/")
@@ -5865,6 +6503,8 @@ def render_dashboard(
         "short_date": _short_date,
         "event_kind": _event_kind,
         "calendar_view": _calendar_view(calendar_events),
+        "orbit_companies": _orbit_companies(items, enriched_watchlist),
+        "next_earnings": _next_earnings(calendar_events),
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,
