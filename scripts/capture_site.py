@@ -89,12 +89,41 @@ UNDRAWN_LEGEND_JS = """() => {
 }"""
 
 
+def parse_headers_file(site):
+    """Read Cloudflare's _headers format, so local pages run under the same policy as production."""
+    rules, path = {}, None
+    try:
+        with open(os.path.join(site, "_headers"), encoding="utf-8") as f:
+            for raw in f:
+                line = raw.rstrip()
+                if not line or line.startswith("#"):
+                    continue
+                if not line.startswith(" "):
+                    path = line
+                    rules.setdefault(path, [])
+                else:
+                    name, value = line.strip().split(":", 1)
+                    rules[path].append((name, value.strip()))
+    except FileNotFoundError:
+        pass
+    return rules
+
+
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    header_rules = {}
+
     def log_message(self, *args):
         pass
 
+    def end_headers(self):
+        path = self.path.split("?")[0]
+        for name, value in self.header_rules.get("/*", []) + self.header_rules.get(path, []):
+            self.send_header(name, value)
+        super().end_headers()
+
 
 def serve(site):
+    QuietHandler.header_rules = parse_headers_file(site)
     socketserver.TCPServer.allow_reuse_address = True
     httpd = socketserver.ThreadingTCPServer(("127.0.0.1", 0), partial(QuietHandler, directory=site))
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
@@ -144,6 +173,8 @@ def capture(site, out, widths, schemes, pages):
                         f"{tag} request failed: {r.url}"))
                     page.on("response", lambda r, tag=label: report["problems"].append(
                         f"{tag} HTTP {r.status}: {r.url.replace(base, '')}") if r.status >= 400 else None)
+                    page.add_init_script("""document.addEventListener('securitypolicyviolation', e => {
+                        console.error('CSP violation: ' + e.violatedDirective + ' ' + e.blockedURI); });""")
                     load(page, f"{base}/{path}")
                     page.evaluate("document.fonts.ready")
                     page.wait_for_timeout(500)
@@ -157,7 +188,9 @@ def capture(site, out, widths, schemes, pages):
                     if width < 1100:
                         page.screenshot(path=os.path.join(out, f"{label}-fold.jpg"), type="jpeg", quality=82)
                     # Fixed and sticky chrome lands mid-image in a stitched full-page shot, so lay it out flat.
-                    page.add_style_tag(content=FULL_PAGE_CSS)
+                    # Through the stylesheet API, because the page's CSP correctly blocks an injected <style>.
+                    page.evaluate("""css => { const sheet = new CSSStyleSheet(); sheet.replaceSync(css);
+                        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]; }""", FULL_PAGE_CSS)
                     page.screenshot(path=os.path.join(out, f"{label}.jpg"), full_page=True, type="jpeg", quality=82)
                     if label not in report["pages"] and width == widths[0] and scheme == schemes[0]:
                         report["pages"][name] = snap

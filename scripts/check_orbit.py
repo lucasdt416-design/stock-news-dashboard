@@ -57,6 +57,8 @@ def check_viewport(browser, base, out, width, height, scheme, touch, problems):
     page = ctx.new_page()
     page.on("console", lambda m: problems.append(f"{tag} console.{m.type}: {m.text}") if m.type == "error" else None)
     page.on("pageerror", lambda e: problems.append(f"{tag} pageerror: {e}"))
+    page.add_init_script("""document.addEventListener('securitypolicyviolation', e => {
+        console.error('CSP violation: ' + e.violatedDirective + ' ' + e.blockedURI); });""")
     page.goto(f"{base}/index.html", wait_until="networkidle")
     page.evaluate("document.fonts.ready")
 

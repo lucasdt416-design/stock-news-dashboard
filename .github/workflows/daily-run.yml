@@ -96,10 +96,11 @@ jobs:
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; fi
 
-      - name: 🛡️ Add Security Headers
+      - name: 🛡️ Check Security Headers Were Generated
         run: |
-          # Render may already have written a stricter file; never replace it.
+          # Render writes this with hashes for this exact build. Fall back only if it is missing.
           [ -f site/_headers ] || cp deploy/_headers site/_headers
+          grep -q "Content-Security-Policy" site/_headers
 
       # This is the only step that can see the Cloudflare token.
       - name: 🌐 Deploy to Cloudflare Pages

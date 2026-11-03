@@ -7,8 +7,8 @@ of the lookup endpoint, injected content and unsafe deployment settings.
 **Branches.** `security/01-hardening` is cut from `main` and merges on its own. `security/02-csp` sits
 on top of the redesign stack, because it depends on the new render code.
 
-**What was and wasn't tested.** Everything here ran locally with mocks, plus the Actions YAML parsed
-by tests. Nothing has run on real Cloudflare or against the real Finnhub API. See "Not verified".
+**What was and wasn't tested.** Everything here ran locally, with mocks for the lookup function and a
+real Chrome for the pages, and the Actions YAML was parsed by tests. Nothing has run on real Cloudflare or against the real Finnhub API. See "Not verified".
 
 No secret values appear in this document, in the code, or in the pull requests.
 
@@ -32,6 +32,13 @@ No secret values appear in this document, in the code, or in the pull requests.
 | 14 | None | SQL is parameterized | Confirmed, now tested |
 | 15 | None | Deployed files are as intended, no debug routes | Confirmed, now tested |
 | 16 | None | No known vulnerable dependencies | Confirmed on 2026-11-03 |
+| 17 | Medium | Calendar links accepted `javascript:` URLs from data | Fixed in `security/02-csp` |
+| 18 | Medium | Stored XSS through `innerHTML` and inline handlers on `main` | Fixed in redesign PR #2, now blocked twice |
+| 19 | Low | Weak `startswith('http')` link check | Fixed in `security/02-csp` |
+| 20 | Low | Page data could break out of a script block with `<!--<script>` | Fixed in `security/02-csp` |
+| 21 | Low | URL parameters and stored data trusted too readily | Fixed in the stack and `security/02-csp` |
+| 22 | Low | No script or style restrictions, no integrity check on Chart.js | Fixed in `security/02-csp` |
+| 23 | Low | Search crashed on first-run data | Fixed in `security/02-csp` |
 
 ## Findings
 
@@ -145,7 +152,61 @@ covers `*.log`, `*.bak`, `*.map` and `.env.*`.
 already pinned, and `pytest` is now pinned in workflows. `requirements.txt` also lists `flake8` and its
 helpers, which the pipeline does not need at run time; harmless, but they could move out.
 
+### 17. `javascript:` links on the calendar (Medium)
+- **What:** `{{ ev.source_url }}` went into an `href` unchecked, so a `javascript:` value in the data
+  would run when clicked. Present on `main` and in the redesign stack.
+- **Where:** the calendar template in `pipeline/render.py`.
+- **Fix:** every template link now goes through `_safe_url`, which allows only absolute `http(s)` URLs.
+  A test fails if any template adds an unchecked `href`.
+
+### 18. Stored XSS on `main` (Medium)
+- **What:** headlines and other scraped text reached `innerHTML` and inline `onclick` handlers.
+- **Fix:** escaped in redesign PR #2. The CSP now blocks injected scripts as a second layer.
+- **Until the stack merges, `main` is still exposed to this.**
+
+### 19. Weak link check (Low)
+`startswith('http')` also accepted `httpx://` and `http-evil:`. Replaced by `_safe_url` (finding 17).
+
+### 20. Script block breakout (Low)
+`_script_json` escaped `</` but not `<!--<script>`, which can stop a script block from closing and break
+the page. Now escaped, along with U+2028 and U+2029.
+
+### 21. URL parameters and localStorage (Low)
+- `company.html?ticker=` must match a strict pattern and an existing watchlist profile. Anything else is
+  treated as a ticker we don't cover.
+- `news.html?ticker=` only filters by a company in the picker. `?q=` only fills an input's value.
+- Recently viewed entries are checked against the watchlist before use (redesign PR #4).
+- Every external link has `rel="noopener noreferrer"`, tested in the rendered pages and the browser.
+- Nothing sensitive is in URLs or storage: `localStorage` holds only the theme and recently viewed tickers.
+
+### 22. Content-Security-Policy and integrity (Low)
+- **Handlers:** all 47 inline handlers replaced by one delegated listener and a fixed allow-list of actions.
+- **Styles:** all 56 `style=` attributes replaced by classes, or by data attributes applied through the
+  stylesheet API. No `'unsafe-inline'` is used anywhere.
+- **Hashes:** `pipeline/render.py` hashes each page's inline script and style blocks at render time and
+  writes `site/_headers`, one policy per page. `default-src 'none'`, and only the two chart pages may load
+  from the CDN.
+- **Chart.js:** has Subresource Integrity and `crossorigin="anonymous"`.
+- **Fonts:** now self-hosted from `pipeline/assets/fonts/`. A Google Fonts stylesheet varies by browser, so
+  it cannot carry an integrity hash. This also stops sending visitor IPs to Google.
+- **Dependency pins:** `requirements-dev.txt` now pins `pytest` and `playwright`.
+
+### 23. Search crash on first-run data (Low)
+`relevant_tickers` can be a list when indicators are freshly seeded, which threw an error on every search.
+Not a security issue, found by the hostile-data run.
+
+### How the frontend was tested
+`scripts/check_security.py` builds a database of hostile text and URLs (`<img onerror>`, `"><script>`,
+`</script>`, `<!--<script>`, `javascript:` in mixed case, `data:`, 20,000-character strings, control
+characters), loads every page in Chrome under the generated headers, attacks search, a mocked hostile
+lookup answer, URL parameters and `localStorage`, and fails on any executed script, CSP violation, unsafe
+link or inline handler. Result: 0 problems. To confirm the check can fail, I disabled `_safe_url` once and
+it reported 97 problems. `scripts/capture_site.py` also serves `_headers` locally, so every capture ran
+under the real policy: 7 pages at 3 widths in both themes, 0 problems.
+
 ## Not verified
+- **The CSP on real Cloudflare.** Tested with a local server that applies `_headers`. Anything that rewrites
+  HTML at the edge would break the hashes. See owner action 10.
 - **Deploy with `wrangler@4.151.2` on Node 22.** Not run. Watch the first deploy after merging. If it
   fails, the workflow's `WRANGLER` setting is the one line to change.
 - **The edge cache on real Cloudflare.** Tested against a stand-in. Cloudflare's Cache API may not work on
@@ -176,5 +237,10 @@ Only you can do these, in GitHub or Cloudflare settings.
 9. **If the site uses more than one hostname** and lookups are called across them, set `ALLOWED_ORIGINS`
    as a comma-separated list. Same-origin use needs nothing.
 
+10. **Keep Cloudflare from rewriting pages.** Leave Rocket Loader, Email Address Obfuscation, and automatic
+    Web Analytics injection off for this site. They inject or change scripts, which the strict CSP will
+    block. After the first deploy with `security/02-csp`, open the browser console on Home and check for
+    "Content-Security-Policy" errors.
+
 **Keys**
-10. **Nothing needs rotating** based on this review. Rotate if you ever pasted a key somewhere else.
+11. **Nothing needs rotating** based on this review. Rotate if you ever pasted a key somewhere else.

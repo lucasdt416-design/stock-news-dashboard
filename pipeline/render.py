@@ -5,9 +5,13 @@ economic, company, and analytics. Pages share SHARED_CSS, NAVIGATION_LAYOUT_HTML
 SHARED_MOBILE_JS. Design rules are in docs/redesign-plan.md.
 """
 
+import base64
+import hashlib
 import json
 import logging
 import os
+import re
+import shutil
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import yaml
@@ -25,6 +29,12 @@ from pipeline.persist import (
 )
 
 logger = logging.getLogger(__name__)
+
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+CHART_JS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+SAFE_URL_PATTERN = re.compile(r"https?://[^\s\x00-\x1f\x7f\"'<>`]+", re.IGNORECASE)
+INLINE_SCRIPT_PATTERN = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.DOTALL)
+INLINE_STYLE_PATTERN = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL)
 
 
 def format_human_headline(item: Dict[str, Any]) -> str:
@@ -167,6 +177,20 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
 # SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
+    @font-face {
+      font-family: 'Fredoka';
+      src: url('assets/fonts/fredoka.woff2') format('woff2');
+      font-weight: 700;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Hanken Grotesk';
+      src: url('assets/fonts/hanken-grotesk.woff2') format('woff2');
+      font-weight: 400 700;
+      font-display: swap;
+    }
+
     /* Ink stage with one amber accent. Dark is the default; light is opt-in via data-theme.
        Green and red only ever mean up and down. */
     :root {
@@ -1003,6 +1027,25 @@ SHARED_CSS = """
     .fp-row { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
     .fp-row-title { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.3; color: inherit; text-decoration: none; }
     .fp-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
+    /* Replaces inline styles, which the Content-Security-Policy forbids. */
+    .sidebar-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.25rem; }
+    .action-small { font-size: 0.75rem; }
+    .dropdown-section-title.is-spaced { margin-top: 0.6rem; }
+    .tone-up { color: var(--pos); }
+    .tone-down { color: var(--neg); }
+    .tone-flat { color: var(--text-muted); }
+    .tone-strong { font-weight: 700; }
+    .lookup-note { font-size: 0.8rem; line-height: 1.4; color: var(--text-muted); }
+    .lookup-body { padding: 0.25rem 0; }
+    .lookup-gap { margin-top: 0.25rem; }
+    .lookup-hint { margin-top: 0.35rem; font-size: 0.72rem; }
+    .lookup-small { font-size: 0.72rem; }
+    .lookup-name { margin-left: 0.4rem; font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+    .lookup-from { margin-left: 0.3rem; font-size: 0.72rem; color: var(--text-muted); }
+    .lookup-badge-gap { margin-left: 0.35rem; }
+    .lookup-source { font-weight: 600; color: var(--text-secondary); }
+    .lookup-read { margin-left: auto; font-weight: 700; color: var(--accent); }
+
     /* Small list styles shared by the economy and company pages. */
     .fp-more { display: inline-block; margin-top: 0.9rem; font-size: 0.88rem; font-weight: 600; color: var(--accent); text-decoration: none; }
     .fp-more:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -1335,30 +1378,30 @@ NAVIGATION_LAYOUT_HTML = """
 <div class="mobile-top-header">
   <a href="index.html" class="sidebar-brand"><span class="brand-title">StockPulse</span></a>
   <div class="mobile-header-right">
-    <button class="mobile-action-btn" onclick="focusMobileSearch()" aria-label="Search">
+    <button class="mobile-action-btn" data-click="focusMobileSearch" aria-label="Search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
     </button>
-    <button class="mobile-hamburger-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation drawer">
+    <button class="mobile-hamburger-btn" data-click="toggleMobileNav" aria-label="Toggle navigation drawer">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
     </button>
   </div>
 </div>
 
-<div class="mobile-drawer-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
+<div class="mobile-drawer-backdrop" id="mobileBackdrop" data-click="closeMobileNav"></div>
 
 <aside class="app-sidebar" id="appSidebar">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2.25rem;">
+  <div class="sidebar-head">
     <a href="index.html" class="sidebar-brand"><span class="brand-title">StockPulse</span></a>
-    <button class="sidebar-close-btn" onclick="closeMobileNav()" aria-label="Close navigation">&times;</button>
+    <button class="sidebar-close-btn" data-click="closeMobileNav" aria-label="Close navigation">&times;</button>
   </div>
 
   <nav class="sidebar-nav" aria-label="Pages">
-    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Home</span></a>
-    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Companies</span><span class="nav-count">{{ watchlist_companies|length }}</span></a>
-    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Feed</span><span class="nav-count">{{ stats.total }}</span></a>
-    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Calendar</span><span class="nav-count">{{ calendar_events|length }}</span></a>
-    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Economy</span><span class="nav-count">{{ economic_indicators|length }}</span></a>
-    <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Analytics</span></a>
+    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Home</span></a>
+    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span><span class="nav-count">{{ watchlist_companies|length }}</span></a>
+    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span><span class="nav-count">{{ stats.total }}</span></a>
+    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span><span class="nav-count">{{ calendar_events|length }}</span></a>
+    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Economy</span><span class="nav-count">{{ economic_indicators|length }}</span></a>
+    <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Analytics</span></a>
   </nav>
 
   <div class="sidebar-footer">
@@ -1368,7 +1411,7 @@ NAVIGATION_LAYOUT_HTML = """
     <div>No pipeline runs recorded</div>
     {% endif %}
     <div>Updated: {{ generated_at }}</div>
-    <button class="theme-toggle" id="themeToggle" type="button" onclick="cycleTheme()">Switch to light</button>
+    <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Switch to light</button>
   </div>
 </aside>
 
@@ -1385,6 +1428,49 @@ THEME_BOOT_JS = "try{var t=localStorage.getItem('stockpulse_theme');if(t==='ligh
 
 # JavaScript for Mobile Drawer, Unified Search & Header Actions
 SHARED_MOBILE_JS = """
+// The Content-Security-Policy bans inline handlers, so elements name an action and this table
+// runs it. Only what's listed here can be triggered from markup.
+const PAGE_ACTIONS = {
+  click: {
+    clearFeedFilters: () => clearFeedFilters(),
+    clearRecentlyViewed: () => clearRecentlyViewed(),
+    closeMobileNav: () => closeMobileNav(),
+    cycleTheme: () => cycleTheme(),
+    filterCalendar: el => filterCalendar(el.dataset.val, el),
+    filterCompanyNews: el => filterCompanyNews(el.dataset.ticker, el.dataset.source, el),
+    filterEconomicBySector: el => filterEconomicBySector(el.dataset.sector, el),
+    focusMobileSearch: () => focusMobileSearch(),
+    openCompany: (el, event) => { event.preventDefault(); switchCompany(el.dataset.ticker); },
+    selectFeedTicker: el => selectFeedTicker(el.dataset.ticker),
+    setCategoryFilter: el => setCategoryFilter(el.dataset.val, el),
+    setFeedSectorFilter: el => setFeedSectorFilter(el.dataset.sector, el),
+    setSourceFilter: el => setSourceFilter(el.dataset.val, el),
+    sortRows: el => sortRows(el.dataset.sort),
+    switchCompany: el => switchCompany(el.dataset.ticker),
+    toggleFeedTickerDropdown: () => toggleFeedTickerDropdown(),
+    toggleMobileNav: () => toggleMobileNav(),
+  },
+  input: {
+    filterCompanyStrip: el => filterCompanyStrip(el.value),
+    filterFeedTickerDropdown: el => filterFeedTickerDropdown(el.value),
+    filterItems: () => filterItems(),
+    searchCompanyFeed: el => searchCompanyFeed(el.dataset.ticker, el.value),
+  },
+  change: {
+    filterEconomicByTicker: el => filterEconomicByTicker(el.value),
+    renderComparativePerformanceChart: el => renderComparativePerformanceChart(el.value),
+  },
+};
+
+Object.keys(PAGE_ACTIONS).forEach(type => {
+  document.addEventListener(type, event => {
+    const el = event.target.closest && event.target.closest(`[data-${type}]`);
+    if (!el) return;
+    const action = PAGE_ACTIONS[type][el.dataset[type]];
+    if (typeof action === 'function') action(el, event);
+  });
+});
+
 // Everything inserted through innerHTML goes through these two.
 function escapeHtml(value) {
   return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, (c) => ({
@@ -1507,9 +1593,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <meta name="description" content="Search your watchlist and see the top stories, upcoming events and the economy.">
   <title>StockPulse: what happened to your stocks?</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -1547,7 +1630,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <a href="company.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Companies</span><span class="dropdown-tab-sub">{{ watchlist_companies|length }} on the watchlist</span></a>
                 </div>
               </div>
-              <div id="liveSearchResults" style="display:none;"></div>
+              <div id="liveSearchResults" hidden></div>
             </div>
           </div>
 
@@ -1595,7 +1678,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <li class="top-row">
               <span class="top-score{% if it.score >= 7 %} is-high{% endif %}" title="{{ it.score_breakdown }}">{{ it.score }}</span>
               <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
-              <a class="top-title" href="{{ it.url if it.url.startswith('http') else 'news.html' }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+              <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
               <span class="top-date">{{ short_date(it.published_date) }}</span>
             </li>
             {% endfor %}
@@ -1609,7 +1692,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <section id="recentlyViewedSection" aria-labelledby="homeRecentHeading" hidden>
           <div class="home-heading-row">
             <h2 class="home-heading" id="homeRecentHeading">Recently viewed</h2>
-            <button class="home-clear" id="clearRecentlyViewedBtn" type="button" onclick="clearRecentlyViewed()">Clear</button>
+            <button class="home-clear" id="clearRecentlyViewedBtn" type="button" data-click="clearRecentlyViewed">Clear</button>
           </div>
           <ul class="recent-list" id="recentlyViewedGrid"></ul>
         </section>
@@ -2157,7 +2240,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const matchedEcon = econIndicators.filter(ind =>
         (ind.name || '').toLowerCase().includes(val) ||
         (ind.series_id || '').toLowerCase().includes(val) ||
-        (ind.relevant_tickers || '').toLowerCase().includes(val) ||
+        String(ind.relevant_tickers || '').toLowerCase().includes(val) ||
         (ind.category || '').toLowerCase().includes(val)
       );
 
@@ -2186,7 +2269,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               </div>
               <span class="quick-lookup-meta" id="quickLookupStatus">Checking Finnhub</span>
             </div>
-            <div id="quickLookupBody" style="font-size:0.8rem; color:var(--text-muted); padding:0.25rem 0;">
+            <div id="quickLookupBody" class="lookup-note lookup-body">
               Fetching the latest price and headlines for <strong>${escapeHtml(rawVal.trim())}</strong>...
             </div>
           </div>
@@ -2220,7 +2303,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(c.macro_sector || '')}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Open</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -2228,7 +2311,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Calendar matches
       if (matchedCal.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Calendar</div>';
+        html += '<div class="dropdown-section-title is-spaced">Calendar</div>';
         matchedCal.slice(0, 2).forEach(ev => {
           html += `
             <a href="calendar.html" class="search-result-item">
@@ -2239,7 +2322,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(ev.display_date)} &bull; ${escapeHtml(ev.event_type)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Open</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -2247,7 +2330,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Macroeconomic matches
       if (matchedEcon.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Economy</div>';
+        html += '<div class="dropdown-section-title is-spaced">Economy</div>';
         matchedEcon.slice(0, 2).forEach(ind => {
           html += `
             <a href="economic.html" class="search-result-item">
@@ -2258,7 +2341,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(ind.category)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Open</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -2266,7 +2349,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render News matches
       if (matchedNews.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Stories (' + matchedNews.length + ')</div>';
+        html += '<div class="dropdown-section-title is-spaced">Stories (' + matchedNews.length + ')</div>';
         matchedNews.slice(0, 4).forEach(it => {
           html += `
             <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
@@ -2277,7 +2360,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(it.category)} &bull; ${escapeHtml(it.published_date)} &bull; Score: ${escapeHtml(it.score)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Open</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -2307,11 +2390,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           const contentType = res.headers.get('content-type') || '';
           if (!contentType.includes('application/json')) {
             card.classList.remove('loading');
-            if (status) status.innerHTML = '<span style="color:var(--text-muted);">Endpoint Pending</span>';
+            if (status) status.innerHTML = '<span class="tone-flat">Endpoint Pending</span>';
             body.innerHTML = `
-              <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
+              <div class="lookup-note">
                 Live quick-lookup endpoint for "<strong>${escapeHtml(query)}</strong>" is currently offline or pending Cloudflare deployment.
-                <div style="margin-top:0.35rem; font-size:0.72rem;">Run local dev server or configure FINNHUB_API_KEY on Cloudflare Pages.</div>
+                <div class="lookup-hint">Run local dev server or configure FINNHUB_API_KEY on Cloudflare Pages.</div>
               </div>
             `;
             return;
@@ -2324,11 +2407,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               return;
             }
             card.classList.remove('loading');
-            if (status) status.innerHTML = '<span style="color:var(--text-muted);">Unlisted Ticker</span>';
+            if (status) status.innerHTML = '<span class="tone-flat">Unlisted Ticker</span>';
             body.innerHTML = `
-              <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
+              <div class="lookup-note">
                 ${errData.message || errData.error ? escapeHtml(errData.message || errData.error) : `No live quote or news found on Finnhub for "<strong>${escapeHtml(query)}</strong>".`}
-                <div style="margin-top:0.35rem; font-size:0.72rem;">Try checking the company or ticker spelling or searching for general keywords.</div>
+                <div class="lookup-hint">Try checking the company or ticker spelling or searching for general keywords.</div>
               </div>
             `;
             return;
@@ -2341,9 +2424,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               return;
             }
             card.classList.remove('loading');
-            if (status) status.innerHTML = '<span style="color:var(--text-muted);">No Data</span>';
+            if (status) status.innerHTML = '<span class="tone-flat">No Data</span>';
             body.innerHTML = `
-              <div style="font-size:0.8rem; color:var(--text-muted);">
+              <div class="lookup-note">
                 ${data.message ? escapeHtml(data.message) : `No quote or news records found for <strong>${escapeHtml(query)}</strong>.`}
               </div>
             `;
@@ -2352,13 +2435,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           card.classList.remove('loading');
           if (headerGroup && data.symbol) {
-            const coName = data.company_name ? `<span style="font-weight:700; color:var(--text-primary); font-size:0.88rem; margin-left:0.4rem;">${escapeHtml(data.company_name)}</span>` : '';
-            const resFrom = data.resolved_from ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.3rem;">(resolved from "${escapeHtml(data.resolved_from)}")</span>` : '';
+            const coName = data.company_name ? `<span class="lookup-name">${escapeHtml(data.company_name)}</span>` : '';
+            const resFrom = data.resolved_from ? `<span class="lookup-from">(resolved from "${escapeHtml(data.resolved_from)}")</span>` : '';
             headerGroup.innerHTML = `
               <span class="ticker-badge ticker-${escapeHtml(data.symbol)}">${escapeHtml(data.symbol)}</span>
               ${coName}
               ${resFrom}
-              <span class="quick-lookup-badge" style="margin-left:0.35rem;">Outside your watchlist</span>
+              <span class="quick-lookup-badge lookup-badge-gap">Outside your watchlist</span>
             `;
           }
 
@@ -2397,9 +2480,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <a href="${safeHref(h.url)}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
                     <div class="quick-lookup-news-headline">${escapeHtml(h.headline)}</div>
                     <div class="quick-lookup-news-meta">
-                      <span style="font-weight:600; color:var(--text-secondary);">${escapeHtml(h.source)}</span>
+                      <span class="lookup-source">${escapeHtml(h.source)}</span>
                       ${h.time_ago ? `<span>&bull;</span><span>${escapeHtml(h.time_ago)}</span>` : ''}
-                      <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read</span>
+                      <span class="lookup-read">Read</span>
                     </div>
                   </a>
                 `).join('')}
@@ -2407,14 +2490,14 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             `;
           } else {
             bodyHtml += `
-              <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.25rem;">No news headlines published in the past 7 days.</div>
+              <div class="lookup-note lookup-gap">No news headlines published in the past 7 days.</div>
             `;
           }
 
           bodyHtml += `
             <div class="quick-lookup-action-bar">
-              <span style="color:var(--text-muted);">Quote from Finnhub</span>
-              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search the feed</a>
+              <span class="tone-flat">Quote from Finnhub</span>
+              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link action-small">Search the feed</a>
             </div>
           `;
 
@@ -2426,10 +2509,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             return;
           }
           card.classList.remove('loading');
-          if (status) status.innerHTML = '<span style="color:var(--text-muted);">Lookup Error</span>';
+          if (status) status.innerHTML = '<span class="tone-flat">Lookup Error</span>';
           body.innerHTML = `
-            <div style="font-size:0.8rem; color:var(--text-muted);">
-              Unable to query live quick-lookup. <span style="font-size:0.72rem;">(Endpoint active on Cloudflare Pages deployment)</span>
+            <div class="lookup-note">
+              Unable to query live quick-lookup. <span class="lookup-small">(Endpoint active on Cloudflare Pages deployment)</span>
             </div>
           `;
         }
@@ -2493,10 +2576,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
   <meta name="description" content="Coverage by company and category, peer performance, and pipeline health.">
   <title>StockPulse — Analytics</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -2561,7 +2641,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         <div class="analytics-perf-tools">
           <p class="econ-note">Percent change since the start of the period, against up to three competitors and the S&amp;P 500.</p>
           <label class="analytics-perf-picker"><span class="filter-label">Company</span>
-            <select id="perfCompanySelect" class="econ-select comparative-select" onchange="renderComparativePerformanceChart(this.value)">
+            <select id="perfCompanySelect" class="econ-select comparative-select" data-change="renderComparativePerformanceChart">
               {% for sec in sector_directory %}
               <optgroup label="{{ sec.name }}">
                 {% for co in sec.companies %}
@@ -2854,7 +2934,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             legHtml += `
               <div class="category-stat-row" title="${escapeHtml(label)}: ${count} (${pct}%)">
                 <div class="cat-stat-left">
-                  <span class="category-legend-dot" style="background:${color};"></span>
+                  <span class="category-legend-dot" data-color="${escapeHtml(color)}"></span>
                   <span class="cat-stat-name">${escapeHtml(label)}</span>
                 </div>
                 <div class="cat-stat-right">
@@ -2865,6 +2945,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             `;
           });
           legList.innerHTML = legHtml;
+          legList.querySelectorAll('[data-color]').forEach(dot => { dot.style.background = dot.dataset.color; });
         }
       }
     }
@@ -2899,10 +2980,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       // 1. Populate KPI Ribbon
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
-        const tgtColor = tgtPct >= 0 ? 'var(--pos)' : 'var(--neg)';
 
         const alphaPeers = coData.alpha_vs_peers;
-        const alphaPeersColor = alphaPeers >= 0 ? 'var(--pos)' : 'var(--neg)';
 
         const spyPct = spy ? spy.total_pct_change : 0;
         const avgPeerPct = coData.avg_competitor_pct;
@@ -2910,23 +2989,23 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
-            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
-            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
-            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Broad Market Benchmark</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Peer Relative Alpha</div>
-            <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? 'var(--pos)' : (coData.assessment_type === 'negative' ? 'var(--neg)' : 'var(--text-secondary)')};">${escapeHtml(coData.assessment)}</div>
+            <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
           </div>
         `;
       }
@@ -2950,7 +3029,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               <td>This company</td>
               <td class="perf-num">$${target.base_price.toFixed(2)}</td>
               <td class="perf-num">$${target.latest_price.toFixed(2)}</td>
-              <td class="perf-num" style="color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${target.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
               <td class="perf-num">&mdash;</td>
             </tr>
         `;
@@ -2959,12 +3038,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" class="ticker-badge" style="font-size:0.75rem;">${escapeHtml(c.symbol)}</a></td>
+              <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" class="ticker-badge action-small">${escapeHtml(c.symbol)}</a></td>
               <td>Peer</td>
               <td class="perf-num">$${c.base_price.toFixed(2)}</td>
               <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
-              <td class="perf-num" style="color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td class="perf-num" style="color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td class="perf-num ${c.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${delta >= 0 ? 'tone-up' : 'tone-down'}\">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -2977,8 +3056,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               <td>Benchmark</td>
               <td class="perf-num">$${spy.base_price.toFixed(2)}</td>
               <td class="perf-num">$${spy.latest_price.toFixed(2)}</td>
-              <td class="perf-num" style="color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td class="perf-num" style="color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+              <td class="perf-num ${spy.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${spyDelta >= 0 ? 'tone-up' : 'tone-down'}\">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -3132,9 +3211,6 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and takeaways.">
   <title>StockPulse — The feed</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3151,14 +3227,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       </header>
 
       <div class="feed-toolbar">
-        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and takeaways" oninput="filterItems()">
+        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and takeaways" data-input="filterItems">
         <div class="feed-toolbar-row">
           <div class="feed-sort" role="group" aria-label="Order">
-            <button class="feed-sort-btn active" id="sortScoreBtn" type="button" onclick="sortRows('score')">By importance</button>
-            <button class="feed-sort-btn" id="sortDateBtn" type="button" onclick="sortRows('date')">By date</button>
+            <button class="feed-sort-btn active" id="sortScoreBtn" type="button" data-click="sortRows" data-sort="score">By importance</button>
+            <button class="feed-sort-btn" id="sortDateBtn" type="button" data-click="sortRows" data-sort="date">By date</button>
           </div>
           <span class="feed-count" id="feedResultCount" aria-live="polite"></span>
-          <button class="feed-clear" id="feedClearFilters" type="button" onclick="clearFeedFilters()" hidden>Clear filters</button>
+          <button class="feed-clear" id="feedClearFilters" type="button" data-click="clearFeedFilters" hidden>Clear filters</button>
         </div>
       </div>
 
@@ -3167,9 +3243,9 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <div class="filter-row">
           <span class="filter-label">Sector</span>
           <div class="feed-sector-bar">
-            <button class="feed-sector-btn filter-btn active" type="button" data-sector="ALL" onclick="setFeedSectorFilter('ALL', this)">All</button>
+            <button class="feed-sector-btn filter-btn active" type="button" data-sector="ALL" data-click="setFeedSectorFilter">All</button>
             {% for sec in sector_directory %}
-            <button class="feed-sector-btn filter-btn" type="button" data-sector="{{ sec.name }}" onclick="setFeedSectorFilter(this.dataset.sector, this)">{{ sec.name }}</button>
+            <button class="feed-sector-btn filter-btn" type="button" data-sector="{{ sec.name }}" data-click="setFeedSectorFilter">{{ sec.name }}</button>
             {% endfor %}
           </div>
         </div>
@@ -3177,22 +3253,22 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <div class="filter-row">
           <span class="filter-label">Company</span>
           <div class="feed-ticker-picker-wrap" id="feedTickerPickerWrap">
-            <button class="feed-ticker-picker-btn" id="feedTickerPickerBtn" onclick="toggleFeedTickerDropdown()" type="button">
+            <button class="feed-ticker-picker-btn" id="feedTickerPickerBtn" data-click="toggleFeedTickerDropdown" type="button">
               <span id="selectedTickerLabel">All companies</span> <span aria-hidden="true">▾</span>
             </button>
             <div class="feed-ticker-dropdown-menu" id="feedTickerDropdownMenu">
               <div class="feed-ticker-dropdown-search">
-                <input type="text" id="feedTickerSearchInput" aria-label="Find a company" placeholder="Find a company" oninput="filterFeedTickerDropdown(this.value)">
+                <input type="text" id="feedTickerSearchInput" aria-label="Find a company" placeholder="Find a company" data-input="filterFeedTickerDropdown">
               </div>
               <div class="feed-ticker-dropdown-list" id="feedTickerDropdownList">
-                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" onclick="selectFeedTicker('ALL')">
+                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" data-click="selectFeedTicker">
                   <span>All companies</span>
                   <span class="pill-count">{{ items|length }}</span>
                 </div>
                 {% for sec in sector_directory %}
                 <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}">{{ sec.name }}</div>
                 {% for co in sec.companies %}
-                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" onclick="selectFeedTicker(this.dataset.ticker)">
+                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" data-click="selectFeedTicker">
                   <span><span class="ticker-badge">{{ co.symbol }}</span> {{ co.name }}</span>
                   <span class="pill-count">{{ co.story_count }}</span>
                 </div>
@@ -3206,9 +3282,9 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <div class="filter-row">
           <span class="filter-label">Category</span>
           <div class="filter-options">
-            <button class="filter-btn active" type="button" data-filter-type="category" data-val="ALL" onclick="setCategoryFilter('ALL', this)">All</button>
+            <button class="filter-btn active" type="button" data-filter-type="category" data-val="ALL" data-click="setCategoryFilter">All</button>
             {% for cat, count in stats.by_category.items() %}
-            <button class="filter-btn" type="button" data-filter-type="category" data-val="{{ cat }}" onclick="setCategoryFilter(this.dataset.val, this)">{{ cat }} <span class="pill-count">{{ count }}</span></button>
+            <button class="filter-btn" type="button" data-filter-type="category" data-val="{{ cat }}" data-click="setCategoryFilter">{{ cat }} <span class="pill-count">{{ count }}</span></button>
             {% endfor %}
           </div>
         </div>
@@ -3216,10 +3292,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <div class="filter-row">
           <span class="filter-label">Source</span>
           <div class="filter-options">
-            <button class="filter-btn active" type="button" data-filter-type="source" data-val="ALL" onclick="setSourceFilter('ALL', this)">All</button>
-            <button class="filter-btn" type="button" data-filter-type="source" data-val="news_media" onclick="setSourceFilter('news_media', this)">News Media</button>
-            <button class="filter-btn" type="button" data-filter-type="source" data-val="sec_edgar" onclick="setSourceFilter('sec_edgar', this)">SEC EDGAR</button>
-            <button class="filter-btn" type="button" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">Company Releases</button>
+            <button class="filter-btn active" type="button" data-filter-type="source" data-val="ALL" data-click="setSourceFilter">All</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="news_media" data-click="setSourceFilter">News Media</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="sec_edgar" data-click="setSourceFilter">SEC EDGAR</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="company_ir" data-click="setSourceFilter">Company Releases</button>
           </div>
         </div>
       </details>
@@ -3238,7 +3314,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <span class="feed-score" title="{{ item.score_breakdown }}">{{ item.score }}</span>
           <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
           <div class="feed-body">
-            <h3 class="feed-headline"><a href="{{ item.url if item.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
+            <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
             {% if item.llm_summary and item.score >= 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
             <details class="feed-details">
               <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
@@ -3254,7 +3330,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 </ul>
                 {% endif %}
                 {% if item.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
-                <a href="{{ item.url if item.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
+                <a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
               </div>
             </details>
           </div>
@@ -3522,8 +3598,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const urlTicker = params.get('ticker');
       const urlQ = params.get('q');
 
-      if (urlTicker) {
-        setTickerFilter(urlTicker);
+      // Only a ticker that appears in the picker can filter; anything else from the URL is ignored.
+      const pickable = urlTicker && [...document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item')]
+        .some(it => it.dataset.ticker === urlTicker.toUpperCase());
+      if (pickable) {
+        setTickerFilter(urlTicker.toUpperCase());
       }
       if (urlQ) {
         const searchBox = document.getElementById('searchInput');
@@ -3550,9 +3629,6 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <meta name="description" content="Upcoming earnings calls, dividends, conferences, and SEC deadlines for your watchlist.">
   <title>StockPulse — Calendar</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3574,12 +3650,12 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       {% if calendar_view.marks %}
       <figure class="cal-timeline" aria-label="Events on a timeline">
         <div class="cal-track">
-          <span class="cal-month cal-today" style="left:{{ calendar_view.today_pos }}%;">Today</span>
+          <span class="cal-month cal-today" data-left="{{ calendar_view.today_pos }}">Today</span>
           {% for m in calendar_view.months %}
-          <span class="cal-month" style="left:{{ m.pos }}%;">{{ m.label }}</span>
+          <span class="cal-month" data-left="{{ m.pos }}">{{ m.label }}</span>
           {% endfor %}
           {% for mark in calendar_view.marks %}
-          <a class="cal-mark{% if mark.estimated %} is-estimated{% endif %}" href="#{{ mark.anchor }}" data-event-type="{{ mark.event_type }}" style="left:{{ mark.pos }}%; bottom:{{ mark.lane * 12 }}px;" title="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}{% if mark.estimated %} (estimated){% endif %}" aria-label="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}"></a>
+          <a class="cal-mark{% if mark.estimated %} is-estimated{% endif %}" href="#{{ mark.anchor }}" data-event-type="{{ mark.event_type }}" data-left="{{ mark.pos }}" data-bottom="{{ mark.lane * 12 }}" title="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}{% if mark.estimated %} (estimated){% endif %}" aria-label="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}"></a>
           {% endfor %}
         </div>
         <figcaption class="cal-legend">
@@ -3591,11 +3667,11 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 
       <div class="controls-panel cal-filters">
         <div class="filter-options" role="group" aria-label="Filter events">
-          <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" onclick="filterCalendar('ALL', this)">All <span class="pill-count">{{ calendar_events|length }}</span></button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" onclick="filterCalendar('Earnings', this)">Earnings Calls</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" onclick="filterCalendar('Dividend', this)">Dividend Dates</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" onclick="filterCalendar('SEC', this)">SEC Filing Deadlines</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" onclick="filterCalendar('Conference', this)">Conferences</button>
+          <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" data-click="filterCalendar">All <span class="pill-count">{{ calendar_events|length }}</span></button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings Calls</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividend Dates</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC Filing Deadlines</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" data-click="filterCalendar">Conferences</button>
         </div>
       </div>
 
@@ -3615,7 +3691,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
               <p class="cal-details">{{ ev.kind }}{% if ev.source_type == 'ESTIMATED_RULE' %} · <span class="cal-estimated">Estimated</span>{% endif %}{% if ev.details %} · {{ ev.details }}{% endif %}</p>
             </div>
             {% if ev.source_url and ev.source_url.startswith('http') %}
-            <a href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer" class="cal-source">{% if ev.source_type == 'ESTIMATED_RULE' %}SEC filings{% else %}Source{% endif %}</a>
+            <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer" class="cal-source">{% if ev.source_type == 'ESTIMATED_RULE' %}SEC filings{% else %}Source{% endif %}</a>
             {% endif %}
           </article>
           {% endfor %}
@@ -3635,6 +3711,12 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       if (type === 'SEC') return evType.includes('SEC') || evType.includes('Statutory');
       return evType.includes(type);
     }
+
+    // Positions come from the data, and the CSP allows them to be set from script but not inline.
+    document.querySelectorAll('.cal-track [data-left]').forEach(el => {
+      el.style.left = `${Number(el.dataset.left)}%`;
+      if (el.dataset.bottom) el.style.bottom = `${Number(el.dataset.bottom)}px`;
+    });
 
     function filterCalendar(type, btn) {
       document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
@@ -3666,9 +3748,6 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <meta name="description" content="Economic indicators and the watchlist holdings each one touches.">
   <title>StockPulse — Economy</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3689,15 +3768,15 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         <div class="filter-row">
           <span class="filter-label">Sector</span>
           <div class="feed-sector-bar">
-            <button class="filter-btn active econ-sec-btn" type="button" data-sector="ALL" onclick="filterEconomicBySector('ALL', this)">All</button>
+            <button class="filter-btn active econ-sec-btn" type="button" data-sector="ALL" data-click="filterEconomicBySector">All</button>
             {% for sec in sector_directory %}
-            <button class="filter-btn econ-sec-btn" type="button" data-sector="{{ sec.name }}" onclick="filterEconomicBySector(this.dataset.sector, this)">{{ sec.name }}</button>
+            <button class="filter-btn econ-sec-btn" type="button" data-sector="{{ sec.name }}" data-click="filterEconomicBySector">{{ sec.name }}</button>
             {% endfor %}
           </div>
         </div>
         <div class="filter-row">
           <label class="filter-label" for="econTickerSelect">Company</label>
-          <select class="econ-select" id="econTickerSelect" onchange="filterEconomicByTicker(this.value)">
+          <select class="econ-select" id="econTickerSelect" data-change="filterEconomicByTicker">
             <option value="ALL">All companies</option>
             {% for sec in sector_directory %}
             <optgroup label="{{ sec.name }}" data-sector="{{ sec.name }}">
@@ -3849,7 +3928,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         svg.innerHTML = `
           <path d="${pathD}" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="var(--text-primary)" />
-          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--accent)" style="display:none;" />
+          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--accent)" display="none" />
         `;
 
         // Update labels
@@ -3959,10 +4038,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta name="description" content="Your watchlist by sector, with a file on each company: performance, stories, events, and relationships.">
   <title>StockPulse — Companies</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3981,7 +4057,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
       <details class="company-directory-browser" id="companyDirectory" open>
         <summary class="feed-filters-toggle">All companies</summary>
-        <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" oninput="filterCompanyStrip(this.value)">
+        <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
         <p class="econ-note">Percentages show 3-month return against the S&amp;P 500.</p>
         <div class="company-browser-grid company-strip" id="companyStripContainer">
           {% for sec in sector_directory %}
@@ -3992,7 +4068,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                     data-ticker="{{ co.symbol }}"
                     data-name="{{ co.name|lower }}"
                     data-sector="{{ co.macro_sector|lower }} {{ co.sector|replace('_', ' ')|lower }}"
-                    onclick="switchCompany(this.dataset.ticker)">
+                    data-click="switchCompany">
               <span class="company-browser-card-left">
                 <span class="ticker-badge">{{ co.symbol }}</span>
                 <span class="company-browser-card-info">
@@ -4002,7 +4078,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               </span>
               <span class="company-browser-card-stats">
                 {% if performance_data and co.symbol in (performance_data.companies or {}) %}
-                <span class="company-browser-card-alpha" style="color:{% if co.alpha_vs_spy > 0 %}var(--pos){% elif co.alpha_vs_spy < 0 %}var(--neg){% else %}var(--text-muted){% endif %};">{% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%</span>
+                <span class="company-browser-card-alpha {% if co.alpha_vs_spy > 0 %}tone-up{% elif co.alpha_vs_spy < 0 %}tone-down{% else %}tone-flat{% endif %}">{% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%</span>
                 {% endif %}
                 <span class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</span>
               </span>
@@ -4043,7 +4119,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
           <p class="company-links">
             {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">CIK {{ co.cik }} ↗</a>{% endif %}
-            {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ co.newsroom_url or co.ir_page_url or co.ir_feed_url }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
+            {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ safe_url(co.newsroom_url or co.ir_page_url or co.ir_feed_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
             <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
           </p>
 
@@ -4085,12 +4161,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             <h3 class="fp-heading">Stories</h3>
             <div class="company-feed-tools">
               <div class="filter-options" role="group" aria-label="Filter by source">
-                <button class="filter-btn active company-source-filter-btn" type="button" data-source="ALL" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'ALL', this)">All <span class="pill-count">{{ co_news|length }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="news_media" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'news_media', this)">News <span class="pill-count">{{ ns.news_count }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="sec_edgar" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'sec_edgar', this)">SEC <span class="pill-count">{{ ns.edgar_count }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="company_ir" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'company_ir', this)">Releases <span class="pill-count">{{ ns.ir_count }}</span></button>
+                <button class="filter-btn active company-source-filter-btn" type="button" data-source="ALL" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">All <span class="pill-count">{{ co_news|length }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="news_media" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">News <span class="pill-count">{{ ns.news_count }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="sec_edgar" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">SEC <span class="pill-count">{{ ns.edgar_count }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="company_ir" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">Releases <span class="pill-count">{{ ns.ir_count }}</span></button>
               </div>
-              <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" oninput="searchCompanyFeed(this.dataset.ticker, this.value)">
+              <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
             </div>
 
             {% if co_news %}
@@ -4098,7 +4174,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}">
                 <span class="feed-score" title="{{ it.score_breakdown }}">{{ it.score }}</span>
                 <div class="feed-body">
-                  <h4 class="feed-headline"><a href="{{ it.url if it.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
+                  <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
                   {% if it.llm_summary and it.score >= 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
                   <details class="feed-details">
                     <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
@@ -4109,12 +4185,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                       <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
                       <ul class="feed-refs">
                         {% for ref in it.cross_references_list %}
-                        <li>{% if ref.related_ticker in watchlist_symbols %}<a href="company.html?ticker={{ ref.related_ticker|urlencode }}" data-ticker="{{ ref.related_ticker }}" onclick="event.preventDefault(); switchCompany(this.dataset.ticker)" class="ticker-badge">{{ ref.related_ticker }}</a>{% else %}<span class="company-outside">{{ ref.related_ticker }}</span>{% endif %} {{ ref.impact_note }}</li>
+                        <li>{% if ref.related_ticker in watchlist_symbols %}<a href="company.html?ticker={{ ref.related_ticker|urlencode }}" data-ticker="{{ ref.related_ticker }}" data-click="openCompany" class="ticker-badge">{{ ref.related_ticker }}</a>{% else %}<span class="company-outside">{{ ref.related_ticker }}</span>{% endif %} {{ ref.impact_note }}</li>
                         {% endfor %}
                       </ul>
                       {% endif %}
                       {% if it.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
-                      <a href="{{ it.url if it.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
+                      <a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
                     </div>
                   </details>
                 </div>
@@ -4164,7 +4240,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
               {% if names %}
               <p class="feed-detail-label">{{ label }}</p>
-              <p class="company-names">{% for name in names %}{% if name in watchlist_symbols %}<a href="company.html?ticker={{ name|urlencode }}" data-ticker="{{ name }}" onclick="event.preventDefault(); switchCompany(this.dataset.ticker)" class="ticker-badge">{{ name }}</a>{% else %}<span class="company-outside">{{ name }}</span>{% endif %}{% if not loop.last %}<span class="company-sep">, </span>{% endif %}{% endfor %}</p>
+              <p class="company-names">{% for name in names %}{% if name in watchlist_symbols %}<a href="company.html?ticker={{ name|urlencode }}" data-ticker="{{ name }}" data-click="openCompany" class="ticker-badge">{{ name }}</a>{% else %}<span class="company-outside">{{ name }}</span>{% endif %}{% if not loop.last %}<span class="company-sep">, </span>{% endif %}{% endfor %}</p>
               {% endif %}
               {% endfor %}
             </section>
@@ -4225,10 +4301,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       // 1. KPI Ribbon
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
-        const tgtColor = tgtPct >= 0 ? 'var(--pos)' : 'var(--neg)';
 
         const alphaPeers = coData.alpha_vs_peers;
-        const alphaPeersColor = alphaPeers >= 0 ? 'var(--pos)' : 'var(--neg)';
 
         const spyPct = spy ? spy.total_pct_change : 0;
         const avgPeerPct = coData.avg_competitor_pct;
@@ -4236,23 +4310,23 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
-            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
-            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
-            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Broad Market Benchmark</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Peer Relative Alpha</div>
-            <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? 'var(--pos)' : (coData.assessment_type === 'negative' ? 'var(--neg)' : 'var(--text-secondary)')};">${escapeHtml(coData.assessment)}</div>
+            <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
           </div>
         `;
       }
@@ -4276,7 +4350,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <td>This company</td>
               <td class="perf-num">$${target.base_price.toFixed(2)}</td>
               <td class="perf-num">$${target.latest_price.toFixed(2)}</td>
-              <td class="perf-num" style="color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${target.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
               <td class="perf-num">&mdash;</td>
             </tr>
         `;
@@ -4285,12 +4359,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td>${document.getElementById('profile-' + c.symbol) ? `<a href="company.html?ticker=${encodeURIComponent(c.symbol)}" data-ticker="${escapeHtml(c.symbol)}" onclick="event.preventDefault(); switchCompany(this.dataset.ticker)" class="ticker-badge">${escapeHtml(c.symbol)}</a>` : `<span class="ticker-badge">${escapeHtml(c.symbol)}</span>`}</td>
+              <td>${document.getElementById('profile-' + c.symbol) ? `<a href="company.html?ticker=${encodeURIComponent(c.symbol)}" data-ticker="${escapeHtml(c.symbol)}" data-click="openCompany" class="ticker-badge">${escapeHtml(c.symbol)}</a>` : `<span class="ticker-badge">${escapeHtml(c.symbol)}</span>`}</td>
               <td>Peer</td>
               <td class="perf-num">$${c.base_price.toFixed(2)}</td>
               <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
-              <td class="perf-num" style="color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td class="perf-num" style="color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td class="perf-num ${c.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${delta >= 0 ? 'tone-up' : 'tone-down'}\">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -4303,8 +4377,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <td>Benchmark</td>
               <td class="perf-num">$${spy.base_price.toFixed(2)}</td>
               <td class="perf-num">$${spy.latest_price.toFixed(2)}</td>
-              <td class="perf-num" style="color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td class="perf-num" style="color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+              <td class="perf-num ${spy.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${spyDelta >= 0 ? 'tone-up' : 'tone-down'}\">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -4500,7 +4574,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
     window.addEventListener('popstate', () => {
       const ticker = new URLSearchParams(window.location.search).get('ticker');
-      switchCompany(ticker || 'NVDA', false, !ticker);
+      const safe = ticker && /^[A-Za-z0-9.\\-]{1,10}$/.test(ticker) ? ticker.toUpperCase() : '';
+      switchCompany(safe || 'NVDA', false, !ticker);
     });
 
     document.addEventListener('themechange', () => {
@@ -4509,8 +4584,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
     window.addEventListener('DOMContentLoaded', () => {
       const requested = new URLSearchParams(window.location.search).get('ticker');
-      if (requested) {
+      const known = requested && /^[A-Za-z0-9.\\-]{1,10}$/.test(requested) &&
+        document.getElementById('profile-' + requested.toUpperCase());
+      if (known) {
         switchCompany(requested.toUpperCase(), false);
+      } else if (requested) {
+        // Anything else, hostile or just unknown, is treated as a ticker we don't cover.
+        switchCompany('', false);
       } else {
         switchCompany('NVDA', false, true);
       }
@@ -4666,8 +4746,71 @@ def _next_earnings(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
 
 
 def _script_json(value: Any) -> str:
-    """Serialize for a <script> block, so text containing '</script>' cannot end the block."""
-    return json.dumps(value).replace("</", "<\\/")
+    """Serialize for a <script> block: no scraped text can end the block or open an HTML comment in it."""
+    return (
+        json.dumps(value)
+        .replace("</", "<\\/")
+        .replace("<!--", "\\u003c!--")
+        .replace("<script", "\\u003cscript")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+
+def _safe_url(value: Any, fallback: str = "#") -> str:
+    """Only absolute http(s) links reach an href, so a javascript: link in the data goes nowhere."""
+    text = str(value or "").strip()
+    return text if SAFE_URL_PATTERN.fullmatch(text) else fallback
+
+
+def _inline_hashes(html: str) -> Dict[str, List[str]]:
+    """SHA-256 source expressions for each inline script and style block in a rendered page."""
+    def digest(block: str) -> str:
+        return "'sha256-" + base64.b64encode(hashlib.sha256(block.encode("utf-8")).digest()).decode("ascii") + "'"
+
+    return {
+        "script": sorted({digest(b) for b in INLINE_SCRIPT_PATTERN.findall(html)}),
+        "style": sorted({digest(b) for b in INLINE_STYLE_PATTERN.findall(html)}),
+    }
+
+
+def _content_security_policy(html: str) -> str:
+    """The policy for one rendered page. Inline code runs only if it matches this exact render."""
+    hashes = _inline_hashes(html)
+    script_sources = list(hashes["script"])
+    if CHART_JS_URL in html:
+        script_sources.append(CHART_JS_URL)
+    return "; ".join([
+        "default-src 'none'",
+        "script-src " + " ".join(script_sources),
+        "style-src " + " ".join(hashes["style"]),
+        "font-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "base-uri 'none'",
+        "form-action 'none'",
+        "frame-ancestors 'none'",
+    ])
+
+
+def _headers_file(policies: Dict[str, str]) -> str:
+    """Cloudflare Pages _headers: shared headers for everything, plus each page's own CSP."""
+    lines = [
+        "# Generated by pipeline/render.py. The hashes change on every render, so do not edit by hand.",
+        "/*",
+        "  X-Content-Type-Options: nosniff",
+        "  X-Frame-Options: DENY",
+        "  Referrer-Policy: strict-origin-when-cross-origin",
+        "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+        "",
+    ]
+    for fname, policy in policies.items():
+        stem = fname[: -len(".html")]
+        # Pages serves /news.html at /news, and index.html at /.
+        paths = ["/", "/index", "/index.html"] if stem == "index" else [f"/{stem}", f"/{fname}"]
+        for path in paths:
+            lines += [path, f"  Content-Security-Policy: {policy}", ""]
+    return "\n".join(lines)
 
 
 def render_dashboard(
@@ -4783,6 +4926,7 @@ def render_dashboard(
 
     common_context = {
         "short_date": _short_date,
+        "safe_url": _safe_url,
         "economic_schedule": _economic_schedule(upcoming_economic_events),
         "event_kind": _event_kind,
         "calendar_view": _calendar_view(calendar_events),
@@ -4832,15 +4976,25 @@ def render_dashboard(
         ("analytics.html", ANALYTICS_TEMPLATE, "analytics"),
     ]
 
+    policies: Dict[str, str] = {}
     for fname, tmpl_str, active_page in pages:
         tmpl = Template(tmpl_str, autoescape=True)
         ctx = dict(common_context)
         ctx["active_page"] = active_page
         rendered = tmpl.render(**ctx)
+        policies[fname] = _content_security_policy(rendered)
 
         out_file = os.path.join(site_dir, fname)
         with open(out_file, "w", encoding="utf-8") as f:
             f.write(rendered)
         logger.info("Rendered page: %s", out_file)
+
+    with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
+        f.write(_headers_file(policies))
+
+    fonts_dir = os.path.join(site_dir, "assets", "fonts")
+    os.makedirs(fonts_dir, exist_ok=True)
+    for font in ("fredoka.woff2", "hanken-grotesk.woff2"):
+        shutil.copy(os.path.join(ASSETS_DIR, "fonts", font), fonts_dir)
 
     return primary_output
