@@ -18,6 +18,9 @@ on:
       - 'tests/**'
       - '.github/workflows/daily-run.yml'
 
+# Nothing by default; each job asks for what it needs.
+permissions: {}
+
 jobs:
   build-and-deploy:
     name: "Run Pipeline & Deploy"
@@ -25,42 +28,37 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write
-
-    env:
-      CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
-      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-      CLOUDFLARE_PROJECT_NAME: "${{ secrets.CLOUDFLARE_PROJECT_NAME || 'stock-news-dashboard' }}"
-      SEC_EDGAR_USER_AGENT: "${{ secrets.SEC_EDGAR_USER_AGENT || 'StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)' }}"
-      GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
-      FINNHUB_API_KEY: "${{ secrets.FINNHUB_API_KEY }}"
 
     steps:
       - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: 🐍 Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: 🟢 Set up Node.js 20
-        uses: actions/setup-node@v4
+      - name: 🟢 Set up Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: 📦 Install Python Dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pytest
+          python -m pip install -r requirements.txt pytest==8.4.2
 
       - name: 🧪 Run Automated Regression & Signature Tests
         run: |
           python -m pytest tests/
 
+      - name: 🧪 Test the Lookup Function
+        run: node --test tests/node/lookup.test.mjs
+
       - name: 🗄️ Restore Database Cache (Historical Filings & Dedup History)
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         id: restore-db
         with:
           path: data/dashboard.db
@@ -70,40 +68,62 @@ jobs:
 
       - name: 🚀 Run Pipeline (Collect, Deduplicate, Score, Health Check, Render)
         id: run_pipeline
+        env:
+          SEC_EDGAR_USER_AGENT: "${{ secrets.SEC_EDGAR_USER_AGENT || 'StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)' }}"
+          GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
+          FINNHUB_API_KEY: "${{ secrets.FINNHUB_API_KEY }}"
         run: |
           python scripts/run_local.py --fail-on-critical
 
       - name: 💾 Save Updated Database Cache
         if: always() && steps.run_pipeline.outcome == 'success'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: data/dashboard.db
           key: "dashboard-db-${{ github.run_id }}"
 
       - name: 📦 Upload Static Site Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: stock-news-dashboard-site
           path: site/
           retention-days: 14
 
+      - name: 🔎 Check Deployment Is Configured
+        id: deploy_config
+        env:
+          CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: 🛡️ Add Security Headers
+        run: |
+          # Render may already have written a stricter file; never replace it.
+          [ -f site/_headers ] || cp deploy/_headers site/_headers
+
+      # This is the only step that can see the Cloudflare token.
       - name: 🌐 Deploy to Cloudflare Pages
-        if: env.CLOUDFLARE_API_TOKEN != ''
+        if: steps.deploy_config.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          CLOUDFLARE_PROJECT_NAME: "${{ secrets.CLOUDFLARE_PROJECT_NAME || 'stock-news-dashboard' }}"
+          FINNHUB_API_KEY: "${{ secrets.FINNHUB_API_KEY }}"
+          WRANGLER: "wrangler@4.151.2"
         run: |
           echo "============================================================"
           echo "🌐 Starting Cloudflare Pages Deployment"
-          echo "Target Project: $CLOUDFLARE_PROJECT_NAME"
           echo "============================================================"
 
           # Step 1: Ensure the Cloudflare Pages project exists & sync secrets
           echo "Checking / creating project on Cloudflare Pages..."
-          npx wrangler pages project create "$CLOUDFLARE_PROJECT_NAME" --production-branch=main || true
+          npx --yes "$WRANGLER" pages project create "$CLOUDFLARE_PROJECT_NAME" --production-branch=main || true
 
           if [ -n "$FINNHUB_API_KEY" ]; then
-            echo "Syncing FINNHUB_API_KEY secret to Cloudflare Pages..."
-            echo "$FINNHUB_API_KEY" | npx wrangler pages secret put FINNHUB_API_KEY --project-name="$CLOUDFLARE_PROJECT_NAME" || true
+            echo "Syncing the Finnhub secret to Cloudflare Pages..."
+            printf '%s' "$FINNHUB_API_KEY" | npx --yes "$WRANGLER" pages secret put FINNHUB_API_KEY --project-name="$CLOUDFLARE_PROJECT_NAME" || true
           fi
 
           # Step 2: Deploy the static site directory (functions/ is bundled automatically by wrangler from repo root)
           echo "Deploying site/ directory and serverless functions to Cloudflare Pages..."
-          npx wrangler pages deploy site --project-name="$CLOUDFLARE_PROJECT_NAME" --branch=main --commit-dirty=true
+          npx --yes "$WRANGLER" pages deploy site --project-name="$CLOUDFLARE_PROJECT_NAME" --branch=main --commit-dirty=true

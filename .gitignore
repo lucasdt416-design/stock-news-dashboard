@@ -9,3 +9,7 @@ site/
 
 data/demo.db
 .capture/
+*.log
+*.bak
+*.map
+.env.*
