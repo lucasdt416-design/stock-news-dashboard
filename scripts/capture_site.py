@@ -126,6 +126,8 @@ def capture(site, out, widths, schemes, pages):
                     color_scheme=scheme, reduced_motion="reduce",
                     device_scale_factor=1,
                 )
+                # The site is dark unless a visitor chooses light, so pick the theme the way a visitor does.
+                ctx.add_init_script(f"try{{localStorage.setItem('stockpulse_theme','{scheme}')}}catch(e){{}}")
                 # functions/api/lookup.js only runs on Cloudflare, so answer it the way it answers
                 # an unknown ticker. Otherwise every search logs a 404 that production never shows.
                 ctx.route("**/api/lookup*", lambda route: route.fulfill(
