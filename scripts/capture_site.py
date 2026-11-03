@@ -17,6 +17,7 @@ import socketserver
 import threading
 from functools import partial
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
 PAGES = [
@@ -58,6 +59,9 @@ SNAPSHOT_JS = """() => {
 }"""
 
 
+TIMEOUT_MS = 120000
+LOAD_ATTEMPTS = 3
+
 FULL_PAGE_CSS = """
 @media (min-width: 1025px) { .app-sidebar { height: auto !important; position: relative !important; } }
 .mobile-bottom-nav { display: none !important; }
@@ -75,6 +79,17 @@ def serve(site):
     httpd = socketserver.ThreadingTCPServer(("127.0.0.1", 0), partial(QuietHandler, directory=site))
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd
+
+
+def load(page, url):
+    """Load a page, retrying because fonts and Chart.js come from a CDN and networks drop."""
+    for attempt in range(1, LOAD_ATTEMPTS + 1):
+        try:
+            page.goto(url, wait_until="networkidle")
+            return
+        except PlaywrightError:
+            if attempt == LOAD_ATTEMPTS:
+                raise
 
 
 def capture(site, out, widths, schemes, pages):
@@ -98,6 +113,7 @@ def capture(site, out, widths, schemes, pages):
                     body=json.dumps({"found": False, "message": "No demo data for this ticker."})))
                 for name, path in pages:
                     page = ctx.new_page()
+                    page.set_default_timeout(TIMEOUT_MS)
                     label = f"{name}-{width}-{scheme}"
                     page.on("console", lambda m, tag=label: report["problems"].append(f"{tag} console.{m.type}: {m.text}")
                             if m.type == "error" else None)
@@ -106,7 +122,7 @@ def capture(site, out, widths, schemes, pages):
                         f"{tag} request failed: {r.url}"))
                     page.on("response", lambda r, tag=label: report["problems"].append(
                         f"{tag} HTTP {r.status}: {r.url.replace(base, '')}") if r.status >= 400 else None)
-                    page.goto(f"{base}/{path}", wait_until="networkidle")
+                    load(page, f"{base}/{path}")
                     page.evaluate("document.fonts.ready")
                     page.wait_for_timeout(500)
                     snap = page.evaluate(SNAPSHOT_JS)
