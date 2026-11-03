@@ -25,6 +25,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import yaml
 from jinja2 import Template
+from pipeline.calendar import calculate_relative_badge
 from pipeline.normalize import clean_text
 from pipeline.persist import (
     get_all_news_items,
@@ -971,6 +972,47 @@ SHARED_CSS = """
       .cal-source { grid-column: 1 / -1; padding: 0.35rem 0 0.1rem; }
     }
 
+    /* Economy */
+    .econ-ledger { border-top: 1px solid var(--text-primary); margin-bottom: 3.5rem; }
+    .economic-card { display: grid; grid-template-columns: minmax(0, 1fr) 11rem 9rem; gap: 0.25rem 2rem; align-items: center; padding: 1.1rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .economic-series-name { font-size: 1.2rem; line-height: 1.25; }
+    .econ-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+    .sparkline-wrapper { position: relative; cursor: crosshair; }
+    .sparkline-svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .sparkline-labels { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-muted); }
+    .sparkline-tooltip { display: none; position: absolute; transform: translate(-50%, -130%); padding: 0.15rem 0.4rem; background: var(--text-primary); color: var(--bg-base); font-family: var(--font-mono); font-size: 0.68rem; white-space: nowrap; pointer-events: none; z-index: 5; }
+    .econ-figure { text-align: right; }
+    .economic-val { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 500; letter-spacing: -0.02em; white-space: nowrap; }
+    .econ-change { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem; }
+    .econ-details { grid-column: 1 / -1; }
+    .econ-holdings { display: flex; flex-wrap: wrap; gap: 0.1rem 0.8rem; }
+
+    .econ-select { max-width: 100%; min-height: 32px; background: transparent; color: var(--text-primary); border: none; border-bottom: 1px solid var(--border-card); font-size: 0.84rem; padding: 0.2rem 0; }
+    .econ-section { margin-bottom: 3.5rem; }
+    .econ-note { font-size: 0.82rem; color: var(--text-muted); padding: 0.6rem 0 0.25rem; }
+    .econ-stale { color: var(--warn); }
+
+    table.econ-matrix { width: 100%; min-width: 0; border-collapse: collapse; font-size: 0.84rem; }
+    .econ-matrix th, .econ-matrix td { padding: 0.42rem 0.5rem 0.42rem 0; border-bottom: 1px solid var(--border-subtle); text-align: left; font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; color: inherit; vertical-align: baseline; white-space: normal; background: none; }
+    .econ-matrix thead th { font-size: 0.76rem; color: var(--text-muted); border-bottom: 1px solid var(--border-card); }
+    .econ-matrix .mx-col { width: 3.25rem; padding-right: 0; text-align: center; }
+    .econ-matrix .matrix-sector th { padding-top: 1.1rem; font-size: 0.76rem; color: var(--text-muted); border-bottom: 1px solid var(--border-card); }
+    .mx-name { color: var(--text-secondary); margin-left: 0.5rem; }
+    .econ-matrix .mx-factors { font-size: 0.78rem; color: var(--text-muted); padding-left: 1rem; }
+    .mx-dot { display: inline-block; width: 8px; height: 8px; background: var(--text-primary); vertical-align: baseline; }
+
+    .econ-schedule { list-style: none; }
+    .econ-release { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .econ-release .cal-when { flex-direction: column; gap: 0; }
+    .econ-release.is-passed .cal-headline, .econ-release.is-passed .cal-date { color: var(--text-muted); }
+
+    @media (max-width: 860px) {
+      .economic-card { grid-template-columns: minmax(0, 1fr) auto; }
+      .economic-card .sparkline-wrapper { grid-column: 1 / -1; grid-row: 2; margin: 0.5rem 0 0.25rem; }
+      .econ-matrix .mx-factors, .mx-name { display: none; }
+      .econ-matrix .mx-col { width: 2.6rem; }
+    }
+
     /* Home: front page */
     .fp-masthead { margin-bottom: 2rem; max-width: 46rem; }
     .fp-dateline { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.9rem; }
@@ -1770,309 +1812,6 @@ SHARED_CSS = """
       font-weight: 600;
       color: var(--text-primary);
       line-height: 1.1;
-    }
-
-    /* Macroeconomic Intelligence Grid & Anchor Cards */
-    .economic-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.35rem;
-    }
-
-    .economic-card {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-      min-width: 0;
-    }
-
-    .economic-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-card);
-      box-shadow: var(--shadow-card);
-    }
-
-    .economic-card-anchor {
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .economic-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.95rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .economic-category-badge {
-      font-size: 0.65rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-      padding: 0.22rem 0.55rem;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--border-card);
-    }
-
-    .economic-trend-badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .trend-up   { background: var(--neg-soft); color: var(--neg); border: 1px solid var(--neg-soft); }
-    .trend-down { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
-    .trend-flat { background: var(--bg-surface-elevated); color: var(--text-secondary); border: 1px solid var(--border-card); }
-
-    .economic-val {
-      font-family: var(--font-mono);
-      font-size: 2.1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1;
-      margin-bottom: 0.45rem;
-    }
-
-    .economic-val-anchor {
-      font-size: 2.5rem;
-      color: var(--text-primary);
-    }
-
-    .economic-series-name {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0 0 0.35rem 0;
-    }
-
-    .economic-context {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-      margin-bottom: 1.15rem;
-    }
-
-    .economic-tickers-wrap {
-      border-top: 1px solid var(--border-card);
-      padding-top: 0.95rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-    }
-
-    .economic-tickers-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-
-    .economic-tickers-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-    }
-
-    /* Macro Economic Calendar Strip */
-    .macro-events-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .macro-event-card {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.15rem 1.25rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 0.85rem;
-      box-shadow: var(--shadow-sm);
-      transition: all var(--transition-fast);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .macro-event-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: var(--bg-surface);
-      border-radius: 4px 0 0 4px;
-    }
-
-    .macro-event-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-card);
-      box-shadow: var(--shadow-card);
-    }
-
-    .macro-event-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .macro-event-authority {
-      font-size: 0.68rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-
-    .macro-event-countdown {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-full);
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid var(--accent-soft);
-    }
-
-    .macro-event-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.35;
-      margin: 0.35rem 0 0 0;
-    }
-
-    .macro-event-date-row {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    .macro-event-consensus {
-      font-size: 0.76rem;
-      color: var(--text-secondary);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
-      padding: 0.35rem 0.55rem;
-      line-height: 1.35;
-    }
-
-    .macro-event-consensus strong {
-      color: var(--text-primary);
-    }
-
-    /* Sparkline Chart Component */
-    .sparkline-wrapper {
-      position: relative;
-      margin: 0.85rem 0 0.65rem 0;
-      padding: 0.35rem 0 0.15rem 0;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.5rem 0.65rem 0.35rem 0.65rem;
-    }
-
-    .sparkline-svg {
-      width: 100%;
-      height: 60px;
-      overflow: visible;
-      display: block;
-    }
-
-    .sparkline-labels {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.68rem;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-
-    .sparkline-tooltip {
-      position: absolute;
-      display: none;
-      background: var(--scrim);
-      color: var(--on-accent);
-      padding: 0.3rem 0.55rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.72rem;
-      font-family: var(--font-mono);
-      pointer-events: none;
-      z-index: 20;
-      white-space: nowrap;
-      transform: translate(-50%, -120%);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* AI Macro Synthesis Box */
-    .ai-synthesis-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      border-radius: var(--radius-md);
-      padding: 0.75rem 0.9rem;
-      margin: 0.85rem 0 1.15rem 0;
-      position: relative;
-    }
-
-    .ai-synthesis-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.35rem;
-      gap: 0.5rem;
-    }
-
-    .ai-synthesis-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.68rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--accent);
-    }
-
-    .ai-synthesis-badge svg {
-      color: var(--accent);
-    }
-
-    .ai-synthesis-meta {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-    }
-
-    .ai-synthesis-content {
-      font-size: 0.825rem;
-      color: var(--text-primary);
-      line-height: 1.45;
-      font-weight: 500;
-      font-style: normal;
     }
 
     /* Health Section */
@@ -4440,8 +4179,8 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, 10Y Treasuries, CPI inflation, WTI Crude, and unemployment to company sensitivities.">
-  <title>StockPulse — Macroeconomic Snapshot &amp; Sensitivities</title>
+  <meta name="description" content="Economic indicators and the watchlist holdings each one touches.">
+  <title>StockPulse — Economy</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4456,183 +4195,125 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Macroeconomic Intelligence</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live benchmark indicators mapped to portfolio sensitivities with AI impact analysis</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill" style="color:var(--accent-blue); font-weight:700;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-            St. Louis Fed (FRED) Feed
-          </span>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">Economy</h1>
+        <p class="page-standfirst">{{ economic_indicators|length }} indicators, and the holdings each one touches.</p>
       </header>
 
-      <!-- Upcoming High-Impact Macroeconomic Events Strip -->
-      <section style="margin-bottom: 2rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem;">
-          <div style="display:flex; align-items:center; gap:0.5rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--accent-blue);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <h2 style="font-size:1.05rem; font-weight: 600; color:var(--text-primary); margin:0;">Upcoming Macroeconomic Releases &amp; Decisions</h2>
-          </div>
-          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Federal Reserve &amp; Agency Schedule</span>
-        </div>
-
-        <div class="macro-events-strip">
-          {% for ev in upcoming_economic_events %}
-          <div class="macro-event-card">
-            <div>
-              <div class="macro-event-top">
-                <span class="macro-event-authority">{{ ev.authority }}</span>
-                <span class="macro-event-countdown">{{ ev.relative_badge }}</span>
-              </div>
-              <h3 class="macro-event-title">{{ ev.title }}</h3>
-            </div>
-            <div>
-              <div class="macro-event-date-row" style="margin-bottom:0.45rem;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span>{{ ev.display_date }}</span>
-              </div>
-              <div class="macro-event-consensus">
-                <strong>Expectation:</strong> {{ ev.consensus }}
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </section>
-
-      <!-- Sector & Ticker Filter for Sensitivities -->
-      <div class="controls-panel">
-        <div style="margin-bottom:0.75rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
-            <span class="filter-label" style="margin-bottom:0;">Filter by Sector:</span>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
-          </div>
+      <details class="controls-panel" id="econFilters">
+        <summary class="feed-filters-toggle">Filters</summary>
+        <div class="filter-row">
+          <span class="filter-label">Sector</span>
           <div class="feed-sector-bar">
-            <button class="feed-sector-btn active econ-sec-btn" data-sector="ALL" onclick="filterEconomicBySector('ALL', this)">
-              All Sectors <span class="pill-count">{{ watchlist_companies|length }}</span>
-            </button>
+            <button class="filter-btn active econ-sec-btn" type="button" data-sector="ALL" onclick="filterEconomicBySector('ALL', this)">All</button>
             {% for sec in sector_directory %}
-            <button class="feed-sector-btn econ-sec-btn" data-sector="{{ sec.name }}" onclick="filterEconomicBySector('{{ sec.name }}', this)">
-              {{ sec.name }} <span class="pill-count">{{ sec.count }}</span>
-            </button>
+            <button class="filter-btn econ-sec-btn" type="button" data-sector="{{ sec.name }}" onclick="filterEconomicBySector(this.dataset.sector, this)">{{ sec.name }}</button>
             {% endfor %}
           </div>
         </div>
-
-        <div class="filter-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span class="filter-label">Filter Company:</span>
-          <button class="filter-btn active econ-filter-btn" data-val="ALL" data-sector="ALL" onclick="filterEconomicByTicker('ALL', this)">All Watchlist Tickers</button>
-          {% for co in watchlist_companies %}
-          <button class="filter-btn econ-filter-btn" data-val="{{ co.symbol }}" data-sector="{{ co.macro_sector }}" onclick="filterEconomicByTicker('{{ co.symbol }}', this)" title="{{ co.name }}">
-            <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.05rem 0.3rem;">{{ co.symbol }}</span>
-          </button>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- Economic Indicator Cards (Featuring Anchored Focal Cards) -->
-      <div class="economic-grid" id="economicCardsGrid" style="margin-bottom:3rem;">
-        {% for ind in economic_indicators %}
-        <div class="economic-card {% if loop.index <= 2 %}economic-card-anchor{% endif %}" 
-             data-indicator-id="{{ ind.indicator_id }}"
-             data-relevant-tickers="{{ ind.relevant_tickers }}">
-          <div>
-            <div class="economic-card-top">
-              <span class="economic-category-badge">{{ ind.category }} &bull; {{ ind.series_id }}</span>
-              <span class="economic-trend-badge {% if ind.change_direction == 'up' %}trend-up{% elif ind.change_direction == 'down' %}trend-down{% else %}trend-flat{% endif %}">
-                {% if ind.change_direction == 'up' %}▲ +{{ ind.change_value }}
-                {% elif ind.change_direction == 'down' %}▼ {{ ind.change_value }}
-                {% else %}■ Steady{% endif %}
-              </span>
-            </div>
-
-            <div class="economic-val {% if loop.index <= 2 %}economic-val-anchor{% endif %}">{{ ind.formatted_value }}</div>
-            <h4 class="economic-series-name">{{ ind.name }}</h4>
-
-            <!-- Sparkline Mini-Chart (12-24 Month Historical Trend) -->
-            <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
-              <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" preserveAspectRatio="none">
-                <!-- Dynamically rendered by renderEconSparklines() -->
-              </svg>
-              <div class="sparkline-labels">
-                <span class="spark-start">12M Trend</span>
-                <span class="spark-end">{{ ind.observation_date }}</span>
-              </div>
-            </div>
-
-            <!-- AI-Generated Synthesis Box -->
-            {% if ind.ai_synthesis %}
-            <div class="ai-synthesis-card">
-              <div class="ai-synthesis-head">
-                <span class="ai-synthesis-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  AI Macro Takeaway
-                </span>
-                <span class="ai-synthesis-meta">Observed {{ ind.observation_date }}</span>
-              </div>
-              <div class="ai-synthesis-content">
-                {{ ind.ai_synthesis }}
-              </div>
-            </div>
-            {% endif %}
-
-            <p class="economic-context">{{ ind.context_note }}</p>
-          </div>
-
-          <div class="economic-tickers-wrap">
-            <div class="economic-tickers-label">Direct Watchlist Sensitivities ({{ ind.tickers_list|length }} Companies):</div>
-            <div class="economic-tickers-list">
-              {% for sym in ind.tickers_list %}
-              <a href="company.html?ticker={{ sym }}" class="ticker-badge ticker-{{ sym }}">{{ sym }}</a>
+        <div class="filter-row">
+          <label class="filter-label" for="econTickerSelect">Company</label>
+          <select class="econ-select" id="econTickerSelect" onchange="filterEconomicByTicker(this.value)">
+            <option value="ALL">All companies</option>
+            {% for sec in sector_directory %}
+            <optgroup label="{{ sec.name }}" data-sector="{{ sec.name }}">
+              {% for co in sec.companies %}
+              <option value="{{ co.symbol }}">{{ co.symbol }} · {{ co.name }}</option>
               {% endfor %}
+            </optgroup>
+            {% endfor %}
+          </select>
+        </div>
+      </details>
+
+      <div class="econ-ledger" id="economicCardsGrid">
+        {% for ind in economic_indicators %}
+        <article class="economic-card" data-indicator-id="{{ ind.indicator_id }}" data-relevant-tickers="{{ ind.relevant_tickers }}">
+          <div class="econ-name">
+            <h2 class="economic-series-name">{{ ind.name }}</h2>
+            <p class="econ-sub">{{ ind.category }} · {{ ind.series_id }} · Observed {{ short_date(ind.observation_date) }}</p>
+          </div>
+          <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
+            <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" aria-hidden="true"></svg>
+            <div class="sparkline-labels">
+              <span class="spark-start"></span>
+              <span class="spark-end"></span>
             </div>
           </div>
-        </div>
+          <div class="econ-figure">
+            <div class="economic-val">{{ ind.formatted_value.split(' (')[0] }}</div>
+            {% if ' (' in ind.formatted_value %}<div class="econ-sub">({{ ind.formatted_value.split(' (', 1)[1] }}</div>{% endif %}
+            <div class="econ-change">
+              {% if ind.change_direction == 'up' %}▲ +{{ ind.change_value }}
+              {% elif ind.change_direction == 'down' %}▼ {{ ind.change_value }}
+              {% else %}Steady{% endif %}
+            </div>
+          </div>
+          <details class="feed-details econ-details">
+            <summary><span class="feed-meta">Why it matters, and {{ ind.tickers_list|length }} holdings it touches</span></summary>
+            <div class="feed-details-body">
+              {% if ind.ai_synthesis %}
+              <p class="feed-detail-label">AI Macro Takeaway</p>
+              <p class="feed-takeaway">{{ ind.ai_synthesis }}</p>
+              {% endif %}
+              {% if ind.context_note %}<p class="feed-detail-label">What it measures</p><p>{{ ind.context_note }}</p>{% endif %}
+              <p class="feed-detail-label">Holdings</p>
+              <p class="econ-holdings">{% for sym in ind.tickers_list %}<a href="company.html?ticker={{ sym|urlencode }}" class="ticker-badge">{{ sym }}</a> {% endfor %}</p>
+            </div>
+          </details>
+        </article>
         {% endfor %}
       </div>
 
-      <!-- Watchlist Sensitivity Matrix Table -->
-      <section style="background:var(--bg-surface-glass); backdrop-filter:blur(16px); border:1px solid var(--border-glass); border-radius:var(--radius-xl); padding:2rem; box-shadow:var(--shadow-card);">
-        <h3 style="font-size:1.25rem; font-weight: 600; color:var(--text-primary); margin-bottom:0.35rem;">Watchlist Sensitivity Matrix</h3>
-        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:1.5rem;">Documented sensitivities driving company-specific macroeconomic exposure</p>
-
+      {% set short_names = {'interest_rates': 'Rates', 'treasury_10y': '10Y', 'inflation': 'CPI', 'crude_oil': 'Oil', 'unemployment': 'Jobs'} %}
+      <section class="econ-section" aria-labelledby="econMatrixHeading">
+        <h2 class="fp-heading" id="econMatrixHeading">Who feels what</h2>
+        <p class="econ-note">A mark means the watchlist records that company as sensitive to the indicator.</p>
         <div class="table-container">
-          <table>
+          <table class="econ-matrix">
             <thead>
               <tr>
-                <th style="width: 110px;">Ticker</th>
-                <th>Company Name</th>
-                <th>Sector</th>
-                <th>Key Macro Sensitivities</th>
+                <th scope="col">Company</th>
+                {% for ind in economic_indicators %}
+                <th scope="col" class="mx-col" title="{{ ind.name }}">{{ short_names.get(ind.indicator_id, ind.name) }}</th>
+                {% endfor %}
+                <th scope="col" class="mx-factors">Other factors</th>
               </tr>
             </thead>
             <tbody id="matrixTableBody">
-              {% for co in watchlist_companies %}
+              {% for sec in sector_directory %}
+              <tr class="matrix-sector" data-sector="{{ sec.name }}"><th scope="rowgroup" colspan="{{ economic_indicators|length + 2 }}">{{ sec.name }}</th></tr>
+              {% for co in sec.companies %}
               <tr class="matrix-row" data-ticker="{{ co.symbol }}" data-sector="{{ co.macro_sector }}">
-                <td>
-                  <a href="company.html?ticker={{ co.symbol }}" class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</a>
-                </td>
-                <td style="font-weight:700; color:var(--text-primary);">
-                  {{ co.name }}
-                </td>
-                <td>
-                  <span class="category-badge">{{ co.sector | replace('_', ' ') | title }}</span>
-                </td>
-                <td style="font-size:0.835rem; color:var(--text-secondary); line-height:1.45;">
-                  {% if co.sensitivities %}
-                    {{ co.sensitivities|join(', ') }}
-                  {% else %}
-                    General macroeconomic interest rate, inflation, and consumer spending sensitivity.
-                  {% endif %}
-                </td>
+                <th scope="row"><a href="company.html?ticker={{ co.symbol|urlencode }}" class="ticker-badge" title="{{ co.name }}">{{ co.symbol }}</a> <span class="mx-name">{{ co.name }}</span></th>
+                {% for ind in economic_indicators %}
+                <td class="mx-col">{% if co.symbol in ind.tickers_list %}<span class="mx-dot" role="img" aria-label="{{ co.symbol }} is sensitive to {{ ind.name }}"></span>{% endif %}</td>
+                {% endfor %}
+                <td class="mx-factors">{{ (co.macro_sensitivities or [])|join(', ')|replace('_', ' ') }}</td>
               </tr>
+              {% endfor %}
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section class="econ-section" aria-labelledby="econScheduleHeading">
+        <h2 class="fp-heading" id="econScheduleHeading">Upcoming Macroeconomic Releases</h2>
+        {% if economic_schedule and economic_schedule|selectattr('passed')|list|length == economic_schedule|length %}
+        <p class="econ-note econ-stale">Every date on this schedule has passed. It is a fixed list and needs updating.</p>
+        {% endif %}
+        <ul class="econ-schedule">
+          {% for ev in economic_schedule %}
+          <li class="econ-release{% if ev.passed %} is-passed{% endif %}">
+            <span class="cal-when"><span class="cal-date">{{ short_date(ev.date) }}</span><span class="cal-relative">{{ ev.timing }}</span></span>
+            <div>
+              <h3 class="cal-headline">{{ ev.title }}</h3>
+              <p class="cal-details">{{ ev.authority }} · Expected: {{ ev.consensus }}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
       </section>
     </main>
   </div>
@@ -4678,30 +4359,20 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         });
 
         const pathD = points.map((p, i) => (i === 0 ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)).join(' ');
-        const areaD = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
-
-        const gradId = 'grad-' + Math.random().toString(36).substr(2, 9);
         const lastPt = points[points.length - 1];
 
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         svg.innerHTML = `
-          <defs>
-            <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.32" />
-              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.0" />
-            </linearGradient>
-          </defs>
-          <path d="${areaD}" fill="url(#${gradId})" />
-          <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4.5" fill="var(--accent)" stroke="var(--bg-surface)" stroke-width="2" />
-          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--text-primary)" stroke="var(--bg-surface)" stroke-width="2" style="display:none;" />
+          <path d="${pathD}" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="var(--text-primary)" />
+          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--accent)" style="display:none;" />
         `;
 
         // Update labels
         const startLabel = wrap.querySelector('.spark-start');
         const endLabel = wrap.querySelector('.spark-end');
         if (startLabel) startLabel.textContent = `${history[0].date.substring(0, 7)}: ${history[0].value}${unit.includes('%') ? '%' : ''}`;
-        if (endLabel) endLabel.textContent = `Latest: ${history[history.length - 1].value}${unit.includes('%') ? '%' : ''}`;
+        if (endLabel) endLabel.textContent = `${history[history.length - 1].value}${unit.includes('%') ? '%' : ''}`;
 
         // Create tooltip
         let tooltip = wrap.querySelector('.sparkline-tooltip');
@@ -4744,61 +4415,44 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       document.querySelectorAll('.econ-sec-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      const pills = document.querySelectorAll('.econ-filter-btn');
-      pills.forEach(pill => {
-        const pSec = pill.getAttribute('data-sector');
-        const pVal = pill.getAttribute('data-val');
-        if (pVal === 'ALL') {
-          pill.style.display = 'inline-flex';
-        } else if (sector === 'ALL' || pSec === sector) {
-          pill.style.display = 'inline-flex';
-        } else {
-          pill.style.display = 'none';
-        }
-      });
-
-      // If current ticker is hidden, reset to ALL
-      if (currentEconTicker !== 'ALL') {
-        const activePill = document.querySelector(`.econ-filter-btn[data-val="${currentEconTicker}"]`);
-        if (activePill && activePill.style.display === 'none') {
-          filterEconomicByTicker('ALL', document.querySelector('.econ-filter-btn[data-val="ALL"]'));
+      // The company list only offers companies in the chosen sector.
+      const select = document.getElementById('econTickerSelect');
+      if (select) {
+        select.querySelectorAll('optgroup').forEach(group => {
+          const inSector = sector === 'ALL' || group.dataset.sector === sector;
+          group.hidden = !inSector;
+          group.disabled = !inSector;
+        });
+        const chosen = select.options[select.selectedIndex];
+        if (chosen && chosen.parentElement.disabled) {
+          select.value = 'ALL';
+          currentEconTicker = 'ALL';
         }
       }
 
       applyEconomicFilters();
     }
 
-    function filterEconomicByTicker(ticker, btn) {
+    function filterEconomicByTicker(ticker) {
       currentEconTicker = ticker;
-      document.querySelectorAll('.econ-filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
       applyEconomicFilters();
     }
 
     function applyEconomicFilters() {
-      const cards = document.querySelectorAll('.economic-card');
-      cards.forEach(card => {
-        const relevant = (card.getAttribute('data-relevant-tickers') || '').split(',').map(s => s.trim());
-        if (currentEconTicker === 'ALL') {
-          card.style.display = 'flex';
-        } else if (relevant.includes(currentEconTicker)) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
+      document.querySelectorAll('.economic-card').forEach(card => {
+        const relevant = (card.getAttribute('data-relevant-tickers') || '').split(',').map(v => v.trim());
+        card.hidden = currentEconTicker !== 'ALL' && !relevant.includes(currentEconTicker);
       });
 
-      const matrixRows = document.querySelectorAll('.matrix-row');
-      matrixRows.forEach(row => {
-        const rTicker = row.getAttribute('data-ticker');
-        const rSector = row.getAttribute('data-sector');
-        const secMatch = (currentEconSector === 'ALL' || rSector === currentEconSector);
-        const tickMatch = (currentEconTicker === 'ALL' || rTicker === currentEconTicker);
-        if (secMatch && tickMatch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
+      document.querySelectorAll('.matrix-row').forEach(row => {
+        const secMatch = currentEconSector === 'ALL' || row.getAttribute('data-sector') === currentEconSector;
+        const tickMatch = currentEconTicker === 'ALL' || row.getAttribute('data-ticker') === currentEconTicker;
+        row.hidden = !(secMatch && tickMatch);
+      });
+
+      document.querySelectorAll('.matrix-sector').forEach(head => {
+        const visible = Array.from(document.querySelectorAll('.matrix-row')).some(row => !row.hidden && row.getAttribute('data-sector') === head.dataset.sector);
+        head.hidden = !visible;
       });
     }
 
@@ -5745,6 +5399,23 @@ def _calendar_view(events: List[Dict[str, Any]], today: Optional[date] = None) -
     return {"marks": marks, "months": months, "weeks": [weeks[k] for k in sorted(weeks)], "today_pos": position(today)}
 
 
+def _economic_schedule(events: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
+    """Sort releases by date and work out timing now, since the stored labels can be stale."""
+    today = today or date.today()
+    rows = []
+    for event in events:
+        row = dict(event, passed=False, timing="")
+        try:
+            when = date.fromisoformat(str(event.get("date")))
+        except ValueError:
+            rows.append(row)
+            continue
+        row["passed"] = when < today
+        row["timing"] = "Date passed" if row["passed"] else calculate_relative_badge(when.isoformat(), today)
+        rows.append(row)
+    return sorted(rows, key=lambda r: str(r.get("date")))
+
+
 def _script_json(value: Any) -> str:
     """Serialize for a <script> block, so text containing '</script>' cannot end the block."""
     return json.dumps(value).replace("</", "<\\/")
@@ -5863,6 +5534,7 @@ def render_dashboard(
 
     common_context = {
         "short_date": _short_date,
+        "economic_schedule": _economic_schedule(upcoming_economic_events),
         "event_kind": _event_kind,
         "calendar_view": _calendar_view(calendar_events),
         "items": items,
