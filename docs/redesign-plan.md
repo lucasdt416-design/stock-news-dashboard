@@ -65,6 +65,13 @@ subhead, a coloured badge per ticker, and sentence-long uppercase labels.
 | 07 | `redesign/07-company-dossier` | Directory index and company dossier |
 | 08 | `redesign/08-analytics-and-finish` | Analytics figures, chart styling, final cleanup |
 
+## Additions made along the way
+
+- PR 01 also took on escaping and overflow fixes, so every later PR could pass with zero console errors.
+- Charts read colors through `cssColor()`, because a canvas can't resolve CSS variables. They redraw after web fonts load and when the theme changes.
+- Chart series colors are the `--series-*` tokens, checked for color-blind separation against both page surfaces.
+- `scripts/capture_site.py` fails on any legend entry that drew no pixels, and on search results that aren't visible.
+
 ## Running it
 
 ```bash
