@@ -58,6 +58,13 @@ SNAPSHOT_JS = """() => {
 }"""
 
 
+FULL_PAGE_CSS = """
+@media (min-width: 1025px) { .app-sidebar { height: auto !important; position: relative !important; } }
+.mobile-bottom-nav { display: none !important; }
+.mobile-top-header { position: relative !important; }
+"""
+
+
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -107,6 +114,10 @@ def capture(site, out, widths, schemes, pages):
                         report["problems"].append(f"{label} horizontal overflow: {snap['overflow']}px")
                     if name == "home":
                         check_search(page, label, report)
+                    if width < 1100:
+                        page.screenshot(path=os.path.join(out, f"{label}-fold.jpg"), type="jpeg", quality=82)
+                    # Fixed and sticky chrome lands mid-image in a stitched full-page shot, so lay it out flat.
+                    page.add_style_tag(content=FULL_PAGE_CSS)
                     page.screenshot(path=os.path.join(out, f"{label}.jpg"), full_page=True, type="jpeg", quality=82)
                     if label not in report["pages"] and width == widths[0] and scheme == schemes[0]:
                         report["pages"][name] = snap
