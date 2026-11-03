@@ -7,3 +7,7 @@ site/
 .env
 
 
+*.log
+*.bak
+*.map
+.env.*
