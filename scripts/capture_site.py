@@ -69,6 +69,26 @@ FULL_PAGE_CSS = """
 """
 
 
+# Chart.js can report a legend entry it never painted, so count the pixels it actually drew.
+UNDRAWN_LEGEND_JS = """() => {
+  if (!window.Chart) return [];
+  const missing = [];
+  document.querySelectorAll('canvas').forEach(canvas => {
+    const chart = window.Chart.getChart(canvas);
+    if (!chart || !chart.legend || !chart.legend.options.display || !chart.legend.legendHitBoxes) return;
+    const ratio = chart.currentDevicePixelRatio;
+    const ctx = canvas.getContext('2d');
+    chart.legend.legendHitBoxes.forEach((box, i) => {
+      const pixels = ctx.getImageData(box.left * ratio, box.top * ratio, box.width * ratio, box.height * ratio).data;
+      let ink = 0;
+      for (let k = 3; k < pixels.length; k += 4) if (pixels[k] > 40) ink += 1;
+      if (!ink) missing.push(canvas.id + ': ' + chart.legend.legendItems[i].text);
+    });
+  });
+  return missing;
+}"""
+
+
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -126,6 +146,8 @@ def capture(site, out, widths, schemes, pages):
                     page.evaluate("document.fonts.ready")
                     page.wait_for_timeout(500)
                     snap = page.evaluate(SNAPSHOT_JS)
+                    for entry in page.evaluate(UNDRAWN_LEGEND_JS):
+                        report["problems"].append(f"{label} chart legend not drawn: {entry}")
                     if snap["overflow"] > 0:
                         report["problems"].append(f"{label} horizontal overflow: {snap['overflow']}px")
                     if name == "home":
