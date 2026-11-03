@@ -179,32 +179,43 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
 # SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
+    /* Ink stage with one amber accent. Dark is the default; light is opt-in via data-theme.
+       Green and red only ever mean up and down. */
     :root {
-      color-scheme: light;
-      --bg-base: #f6f4ee;
-      --bg-surface: #fbfaf6;
-      --bg-surface-elevated: #edeae2;
+      color-scheme: dark;
+      --bg-base: #0b0d12;
+      --bg-surface: #12151c;
+      --bg-surface-elevated: #1a1e27;
       --bg-surface-glass: var(--bg-surface);
-      --bg-surface-highlight: #e3dfd5;
-      --bg-hover: #efece4;
-      --border-subtle: #e8e5dc;
-      --border-card: #d9d5ca;
-      --border-glass: var(--border-card);
-      --text-primary: #1b1a17;
-      --text-secondary: #4a4740;
-      --text-muted: #6d6961;
-      --accent: #1f4e6b;
-      --accent-soft: #e3e9ea;
-      --on-accent: #fbfaf6;
-      --pos: #2a6b4a;
-      --pos-soft: #e3ebe2;
-      --neg: #a63d2f;
-      --neg-soft: #f1e2dc;
-      --warn: #85641b;
-      --warn-soft: #eee6d0;
-      --scrim: rgba(27, 26, 23, 0.45);
+      --bg-surface-highlight: #232834;
+      --bg-hover: #171b23;
+      --border-subtle: #1e222c;
+      --border-card: #2b303c;
+      --text-primary: #f4efe6;
+      --text-secondary: #c6c1b6;
+      --text-muted: #98948b;
+      --accent: #ffb020;
+      --accent-soft: #2b2211;
+      --on-accent: #0b0d12;
+      --pos: #3dd68c;
+      --pos-soft: #10271c;
+      --neg: #ff6b5e;
+      --neg-soft: #2e1614;
+      --warn: #f2c661;
+      --warn-soft: #2a2412;
+      --scrim: rgba(0, 0, 0, 0.6);
+      /* Chart series, validated for colour-blind separation on this surface. No greens or reds. */
+      --series-1: #3f92d0;
+      --series-2: #d05f94;
+      --series-3: #b28b28;
+      --series-4: #16a2ae;
+      --series-5: #d9642b;
+      --series-6: #9b78d0;
+      --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
+      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
 
       /* Older names kept so existing components inherit the new palette. */
+      --border-glass: var(--border-card);
       --border-accent: var(--accent);
       --accent-blue: var(--accent);
       --accent-blue-soft: var(--accent-soft);
@@ -217,81 +228,59 @@ SHARED_CSS = """
       --accent-orange-dark: var(--warn);
       --accent-orange-main: var(--warn);
 
-      --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
-      --font-sans: 'IBM Plex Sans', -apple-system, 'Helvetica Neue', Arial, sans-serif;
-      --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+      /* Fredoka is for the wordmark and the Home headline only. Everything else is one sans. */
+      --font-display: 'Fredoka', 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      --font-sans: 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      --font-serif: var(--font-sans);
+      --font-mono: var(--font-sans);
 
-      --radius-xs: 2px;
-      --radius-sm: 3px;
-      --radius-md: 4px;
-      --radius-lg: 4px;
-      --radius-xl: 4px;
-      --radius-2xl: 4px;
-      --radius-full: 3px;
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
+      --radius-2xl: 14px;
+      --radius-full: 999px;
 
       --shadow-sm: none;
       --shadow-card: none;
       --shadow-hover: none;
       --shadow-float: none;
-      --shadow-dropdown: 0 8px 24px rgba(27, 26, 23, 0.12);
-      --shadow-modal: 0 8px 24px rgba(27, 26, 23, 0.18);
 
       --transition-fast: 0.12s ease-out;
       --transition-normal: 0.18s ease-out;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        color-scheme: dark;
-        --bg-base: #151412;
-        --bg-surface: #1b1a17;
-        --bg-surface-elevated: #272520;
-        --bg-surface-highlight: #322f29;
-        --bg-hover: #23211d;
-        --border-subtle: #272520;
-        --border-card: #37342e;
-        --text-primary: #ece8df;
-        --text-secondary: #bdb8ac;
-        --text-muted: #98938a;
-        --accent: #93bad0;
-        --accent-soft: #232c30;
-        --on-accent: #151412;
-        --pos: #84c3a0;
-        --pos-soft: #1f2b24;
-        --neg: #e39484;
-        --neg-soft: #33211d;
-        --warn: #d3b56f;
-        --warn-soft: #2e2818;
-        --scrim: rgba(0, 0, 0, 0.6);
-        --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.5);
-        --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.6);
-      }
-    }
-
-    :root[data-theme="dark"] {
-      color-scheme: dark;
-      --bg-base: #151412;
-      --bg-surface: #1b1a17;
-      --bg-surface-elevated: #272520;
-      --bg-surface-highlight: #322f29;
-      --bg-hover: #23211d;
-      --border-subtle: #272520;
-      --border-card: #37342e;
-      --text-primary: #ece8df;
-      --text-secondary: #bdb8ac;
-      --text-muted: #98938a;
-      --accent: #93bad0;
-      --accent-soft: #232c30;
-      --on-accent: #151412;
-      --pos: #84c3a0;
-      --pos-soft: #1f2b24;
-      --neg: #e39484;
-      --neg-soft: #33211d;
-      --warn: #d3b56f;
-      --warn-soft: #2e2818;
-      --scrim: rgba(0, 0, 0, 0.6);
-      --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.5);
-      --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.6);
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg-base: #fbf8f1;
+      --bg-surface: #fffdf8;
+      --bg-surface-elevated: #f3efe5;
+      --bg-surface-highlight: #eae5d8;
+      --bg-hover: #f5f1e7;
+      --border-subtle: #ece7db;
+      --border-card: #dad4c5;
+      --text-primary: #12141a;
+      --text-secondary: #3e4049;
+      --text-muted: #62645f;
+      --accent: #955800;
+      --accent-soft: #f8ebd2;
+      --on-accent: #fffdf8;
+      --pos: #0f7a4a;
+      --pos-soft: #dff1e6;
+      --neg: #b3321f;
+      --neg-soft: #f8e2dd;
+      --warn: #7a5c00;
+      --warn-soft: #f4ecd2;
+      --scrim: rgba(18, 20, 26, 0.45);
+      --series-1: #1f6fb2;
+      --series-2: #be4a86;
+      --series-3: #8f7312;
+      --series-4: #00899f;
+      --series-5: #bc5a1e;
+      --series-6: #7a4fbf;
+      --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
+      --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
     }
 
     button, input, select, textarea {
@@ -299,10 +288,9 @@ SHARED_CSS = """
     }
 
     h1, h2, h3 {
-      font-family: var(--font-serif);
-      font-weight: 500;
-      letter-spacing: -0.01em;
-      font-optical-sizing: auto;
+      font-family: var(--font-sans);
+      font-weight: 650;
+      letter-spacing: -0.015em;
     }
 
     * {
@@ -672,10 +660,10 @@ SHARED_CSS = """
     }
 
     .brand-title {
-      font-family: var(--font-serif);
-      font-size: 1.4rem;
-      font-weight: 500;
-      letter-spacing: -0.015em;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       color: var(--text-primary);
       line-height: 1;
     }
@@ -2924,7 +2912,7 @@ NAVIGATION_LAYOUT_HTML = """
     <div>No pipeline runs recorded</div>
     {% endif %}
     <div>Updated: {{ generated_at }}</div>
-    <button class="theme-toggle" id="themeToggle" type="button" onclick="cycleTheme()">Theme: auto</button>
+    <button class="theme-toggle" id="themeToggle" type="button" onclick="cycleTheme()">Switch to light</button>
   </div>
 </aside>
 
@@ -2953,24 +2941,24 @@ function safeHref(value) {
   return /^https?:\\/\\//i.test(url) ? escapeHtml(url) : '#';
 }
 
-function currentThemeChoice() {
-  return document.documentElement.dataset.theme || 'auto';
+function currentTheme() {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
 }
 
 function labelThemeToggle() {
   const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = 'Theme: ' + currentThemeChoice();
+  if (btn) btn.textContent = currentTheme() === 'light' ? 'Switch to dark' : 'Switch to light';
 }
 
 function cycleTheme() {
-  const next = { auto: 'light', light: 'dark', dark: 'auto' }[currentThemeChoice()];
-  if (next === 'auto') delete document.documentElement.dataset.theme;
+  const next = currentTheme() === 'light' ? 'dark' : 'light';
+  if (next === 'dark') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = next;
   try {
-    if (next === 'auto') localStorage.removeItem('stockpulse_theme');
-    else localStorage.setItem('stockpulse_theme', next);
+    localStorage.setItem('stockpulse_theme', next);
   } catch (e) { /* storage may be blocked; the choice just won't persist */ }
   labelThemeToggle();
+  document.dispatchEvent(new Event('themechange'));
 }
 
 document.addEventListener('DOMContentLoaded', labelThemeToggle);
@@ -3046,10 +3034,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="A morning briefing on your watchlist: top stories, upcoming events, and the economy.">
   <title>StockPulse — What's on the agenda?</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3642,10 +3630,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Dedicated Analytics Hub for StockPulse: filing velocity trends, disclosure category breakdowns, peer comparative performance, and automated pipeline telemetry.">
   <title>StockPulse — Analytics &amp; Performance Trends</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
@@ -4387,10 +4375,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Full intelligence feed of scored stock news and SEC filings with interactive filtering and AI takeaways.">
   <title>StockPulse — Full Intelligence Feed</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -5014,10 +5002,10 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Forthcoming corporate calendar showing upcoming earnings dates, dividend ex-dates, and statutory SEC filing deadlines.">
   <title>StockPulse — Forthcoming Corporate Calendar</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -5201,10 +5189,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, 10Y Treasuries, CPI inflation, WTI Crude, and unemployment to company sensitivities.">
   <title>StockPulse — Macroeconomic Snapshot &amp; Sensitivities</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -5579,10 +5567,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company Releases, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
   <title>StockPulse — Company Directory</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
