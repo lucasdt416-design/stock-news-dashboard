@@ -1014,6 +1014,18 @@ SHARED_CSS = """
       .econ-matrix .mx-col { width: 2.6rem; }
     }
 
+    /* Small list styles shared by the economy and company pages. */
+    .fp-more { display: inline-block; margin-top: 0.9rem; font-size: 0.88rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+    .fp-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .fp-empty { color: var(--text-muted); font-size: 0.92rem; padding: 0.5rem 0; }
+    .fp-heading { font-size: 1.15rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-card); }
+    .fp-side-list { list-style: none; }
+    .fp-event, .fp-indicator { padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.86rem; }
+    .fp-event { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; }
+    .fp-event-date { font-size: 0.76rem; color: var(--text-muted); }
+    .fp-indicator { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; color: var(--text-secondary); }
+    .fp-indicator-value { font-size: 0.82rem; color: var(--text-primary); white-space: nowrap; }
+
     /* Home: search bar orbited by the watchlist. The sidebar becomes a top bar here only. */
     .page-home .app-layout { display: block; }
     .page-home .app-main { max-width: none; padding: 0 !important; }
