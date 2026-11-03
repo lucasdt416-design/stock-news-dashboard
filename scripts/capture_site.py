@@ -149,10 +149,12 @@ def capture(site, out, widths, schemes, pages):
 def check_search(page, label, report):
     """Search must find watchlist companies, and event/news text must stay inert."""
     box = page.locator("#globalSearchInput")
-    box.fill("NVDA")
-    page.wait_for_timeout(150)
-    if page.locator("#liveSearchResults a").count() == 0:
-        report["problems"].append(f"{label} search: no results for NVDA")
+    box.click()
+    box.press_sequentially("NVDA", delay=30)
+    page.wait_for_timeout(200)
+    first_result = page.locator("#liveSearchResults a").first
+    if page.locator("#liveSearchResults a").count() == 0 or not first_result.is_visible():
+        report["problems"].append(f"{label} search: no visible results for NVDA")
     for query in ("Demo event", "escaping"):
         box.fill(query)
         # The browser fetches a broken <img> and fires onerror asynchronously, so give it time.

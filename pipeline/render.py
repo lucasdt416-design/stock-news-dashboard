@@ -384,14 +384,6 @@ SHARED_CSS = """
       justify-content: space-between;
     }
 
-    .mobile-header-left {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      text-decoration: none;
-      color: inherit;
-    }
-
     .mobile-header-right {
       display: flex;
       align-items: center;
@@ -416,7 +408,6 @@ SHARED_CSS = """
     .mobile-action-btn:hover, .mobile-hamburger-btn:hover {
       color: var(--accent);
     }
-
 
     .mobile-drawer-backdrop {
       display: none;
@@ -467,14 +458,10 @@ SHARED_CSS = """
       margin-top: -1px;
     }
 
-
-
     .mobile-tab-link.active {
       color: var(--text-primary);
       border-top-color: var(--text-primary);
     }
-
-
 
     .sidebar-close-btn {
       display: none;
@@ -486,54 +473,7 @@ SHARED_CSS = """
       padding: 0.25rem 0.5rem;
       line-height: 1;
     }
-
-    /* Watchlist Horizontal Ticker Ribbon (Robinhood / Apple Stocks Style) */
-    .watchlist-ticker-strip {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      max-width: 100%;
-      gap: 0.5rem;
-      padding: 0.35rem 0 0.65rem 0;
-      margin-bottom: 1.25rem;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .hero-section, .hero-container { min-width: 0; max-width: 100%; }
     .comparative-select { max-width: 100%; min-width: 0; }
-
-    .watchlist-ticker-strip::-webkit-scrollbar {
-      display: none;
-    }
-
-    .ticker-strip-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-full);
-      padding: 0.35rem 0.75rem;
-      text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      flex-shrink: 0;
-      transition: all var(--transition-fast);
-      box-shadow: 0 1px 2px var(--accent-soft);
-      min-height: 36px;
-    }
-
-    .ticker-strip-pill:hover {
-      border-color: var(--border-card);
-      background: var(--bg-surface-elevated);
-      transform: translateY(-1px);
-    }
-
-    .ticker-strip-pill:active {
-      transform: scale(0.96);
-    }
 
     /* Mobile Segmented View Toggle (Comparative Performance Module) */
     .perf-mobile-toggle {
@@ -612,60 +552,8 @@ SHARED_CSS = """
         box-sizing: border-box !important;
       }
 
-      .hero-container {
-        margin: 0.5rem auto 1.25rem auto !important;
-      }
-
-      .hero-orbit-stage {
-        flex-direction: column !important;
-        min-height: auto !important;
-        perspective: none !important;
-        transform-style: flat !important;
-        margin: 0.5rem 0 1.5rem 0 !important;
-      }
-
-      .orbit-centerpiece {
-        max-width: 100% !important;
-      }
-
-      .orbit-track {
-        position: static !important;
-        inset: auto !important;
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.65rem !important;
-        width: 100% !important;
-        max-width: 600px !important;
-        margin-top: 0.85rem !important;
-        transform: none !important;
-        z-index: 10 !important;
-      }
-
-      .orbit-card {
-        position: static !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        transform: none !important;
-        animation: none !important;
-        padding: 0.65rem 0.75rem !important;
-      }
-
       .hero-title {
         font-size: 1.85rem !important;
-      }
-
-      .hero-subtext {
-        font-size: 0.88rem !important;
-        margin-bottom: 1rem !important;
-      }
-
-      .search-wrapper {
-        margin-bottom: 0 !important;
-      }
-
-      .hero-bento-deck {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
       }
 
       .analytics-grid {
@@ -689,69 +577,9 @@ SHARED_CSS = """
         line-height: 1.25 !important;
       }
 
-      .hero-subtext {
-        font-size: 0.82rem !important;
-        margin-bottom: 0.85rem !important;
-      }
-
-      .hero-badge {
-        font-size: 0.72rem !important;
-        padding: 0.3rem 0.75rem !important;
-        max-width: 100% !important;
-        white-space: normal !important;
-        text-align: left !important;
-        line-height: 1.3 !important;
-      }
-
-      .orbit-track {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.45rem !important;
-        margin-top: 0.75rem !important;
-      }
-
-      .orbit-card {
-        padding: 0.5rem 0.6rem !important;
-        border-radius: var(--radius-md) !important;
-      }
-
-      .orbit-card-name {
-        font-size: 0.72rem !important;
-      }
-
-      .orbit-card-score {
-        font-size: 0.62rem !important;
-        padding: 0.08rem 0.3rem !important;
-      }
-
-      .orbit-pill-catalyst {
-        font-size: 0.62rem !important;
-        max-width: 90px !important;
-      }
-
-      .search-wrapper {
-        margin-bottom: 0 !important;
-      }
-
-      .search-box {
-        padding: 0.6rem 0.85rem !important;
-        min-height: 44px !important;
-      }
-
-      .search-shortcut {
-        display: none !important;
-      }
-
       .bento-card {
         padding: 1.15rem !important;
         border-radius: var(--radius-lg) !important;
-      }
-
-      .bento-score-hero {
-        margin: 0.5rem 0 0.75rem 0 !important;
-      }
-
-      .bento-count {
-        font-size: 2rem !important;
       }
 
       .priority-section {
@@ -785,33 +613,9 @@ SHARED_CSS = """
         gap: 1rem !important;
       }
 
-      .news-grid {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-      }
-
       .calendar-grid {
         grid-template-columns: 1fr !important;
         gap: 0.85rem !important;
-      }
-
-      .econ-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.85rem !important;
-      }
-
-      .recently-viewed-grid {
-        display: flex !important;
-        overflow-x: auto !important;
-        gap: 0.75rem !important;
-        padding-bottom: 0.5rem !important;
-        scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
-
-      .recent-card {
-        flex: 0 0 240px !important;
-        scroll-snap-align: start !important;
       }
 
       .comparative-perf-card {
@@ -832,10 +636,6 @@ SHARED_CSS = """
       .perf-kpi-grid {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 0.5rem !important;
-      }
-
-      .perf-kpi-card {
-        padding: 0.65rem !important;
       }
 
       .perf-kpi-val {
@@ -862,22 +662,7 @@ SHARED_CSS = """
         align-items: flex-start !important;
         gap: 0.5rem !important;
       }
-
-      .company-profile-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.75rem !important;
-      }
-
-      .company-metric-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.5rem !important;
-      }
     }
-
-    /* Top Navigation Bar */
-
-
 
     /* Sidebar Brand (Logo and Title Only - No Tagline) */
     .sidebar-brand {
@@ -885,7 +670,6 @@ SHARED_CSS = """
       text-decoration: none;
       color: inherit;
     }
-
 
     .brand-title {
       font-family: var(--font-serif);
@@ -895,7 +679,6 @@ SHARED_CSS = """
       color: var(--text-primary);
       line-height: 1;
     }
-
 
     .sidebar-nav {
       display: flex;
@@ -924,14 +707,11 @@ SHARED_CSS = """
       font-weight: 600;
     }
 
-
-
     .nav-count {
       font-family: var(--font-mono);
       font-size: 0.72rem;
       color: var(--text-muted);
     }
-
 
     .sidebar-footer {
       margin-top: auto;
@@ -959,128 +739,11 @@ SHARED_CSS = """
 
     .theme-toggle:hover { color: var(--text-primary); }
 
-
     .pulse-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       display: inline-block;
-    }
-
-    /* =========================================================================
-       HERO INTRO ANIMATION & 3D ORBITAL SEARCH CENTERPIECE
-       ========================================================================= */
-    .hero-section {
-      width: 100%;
-      margin: 0 auto;
-      padding: 0.5rem 0 1.25rem 0;
-      position: relative;
-      z-index: 50;
-    }
-
-    .hero-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      margin: 0 auto;
-      max-width: 980px;
-      width: 100%;
-      position: relative;
-    }
-
-    .hero-intro-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 1.25rem;
-      width: 100%;
-    }
-
-    /* Staggered Word & Line Intro Animations */
-    .intro-fade-1 {
-      opacity: 0;
-      transform: translateY(12px);
-      animation: heroFadeSlide 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: 0.05s;
-    }
-
-    .hero-word-wrap {
-      display: inline-flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.35rem 0.6rem;
-    }
-
-    .intro-word {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(16px) scale(0.95);
-      filter: blur(4px);
-      animation: wordReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: calc(0.12s + var(--w-idx, 0) * 0.08s);
-    }
-
-    .intro-fade-2 {
-      opacity: 0;
-      transform: translateY(10px);
-      animation: heroFadeSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: 0.46s;
-    }
-
-    @keyframes wordReveal {
-      0% {
-        opacity: 0;
-        transform: translateY(16px) scale(0.95);
-        filter: blur(4px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        filter: blur(0);
-      }
-    }
-
-    @keyframes heroFadeSlide {
-      0% {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      padding: 0.42rem 1.25rem;
-      border-radius: var(--radius-full);
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 1.15rem;
-      transition: all var(--transition-fast);
-      text-decoration: none;
-      max-width: 100%;
-      text-align: center;
-      line-height: 1.4;
-      white-space: normal;
-      word-break: normal !important;
-      overflow-wrap: normal !important;
-    }
-
-    .hero-badge:hover {
-      border-color: var(--accent-blue);
-      color: var(--accent-blue);
-      box-shadow: var(--shadow-card);
-      transform: translateY(-1px);
     }
 
     .catalyst-ticker, .ticker-badge {
@@ -1101,243 +764,24 @@ SHARED_CSS = """
       line-height: 1.18;
     }
 
-    .hero-subtext {
-      font-size: 0.96rem;
-      color: var(--text-muted);
-      line-height: 1.55;
-      margin-bottom: 1rem;
-      word-break: normal;
-      max-width: 620px;
-    }
-
-    /* 3D Orbital Stage Container */
-    .hero-orbit-stage {
-      position: relative;
-      width: 100%;
-      max-width: 920px;
-      min-height: 195px;
-      margin: 0.5rem auto 2.25rem auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      perspective: 1200px;
-      perspective-origin: 50% 50%;
-      transform-style: preserve-3d;
-    }
-
-    .orbit-centerpiece {
-      position: relative;
-      z-index: 20;
-      width: 100%;
-      max-width: 580px;
-      margin: 0 auto;
-    }
-
-    /* 3D Orbital Track */
-    .orbit-track {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform-style: preserve-3d;
-      z-index: 30;
-    }
-
-    /* Floating Orbit Suggestion Cards */
-    .orbit-card {
-      position: absolute;
-      pointer-events: auto;
-      width: 172px;
-      padding: 0.72rem 0.85rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 10px 25px -5px var(--accent-soft), 0 4px 6px -2px var(--accent-soft);
-      text-decoration: none;
-      text-align: left;
-      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease, opacity 0.35s ease;
-      transform-style: preserve-3d;
-      cursor: pointer;
-      overflow: hidden;
-      z-index: 30;
-    }
-
-    .orbit-card-glow { display: none; }
-
-    .orbit-card:hover .orbit-card-glow {
-      opacity: 1;
-      background: var(--bg-surface);
-    }
-
-    .orbit-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.4rem;
-      margin-bottom: 0.28rem;
-    }
-
-    .orbit-card-score {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--accent-blue);
-      background: var(--accent-soft);
-      padding: 0.1rem 0.4rem;
-      border-radius: var(--radius-full);
-      font-family: var(--font-mono);
-    }
-
-    .orbit-card-name {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.25;
-      min-height: 2.5em;
-      margin-bottom: 0.3rem;
-      word-break: break-word;
-    }
-
-    .orbit-card-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .orbit-pill-catalyst {
-      font-size: 0.66rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: var(--bg-surface-elevated);
-      padding: 0.08rem 0.35rem;
-      border-radius: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 110px;
-    }
-
-    .orbit-arrow {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      transition: transform 0.2s ease, color 0.2s ease;
-    }
-
-    .orbit-card:hover .orbit-arrow {
-      color: var(--accent-blue);
-      transform: translate(2px, -2px);
-    }
-
-    /* 3D Coordinates for the 4 Orbit Cards (Desktop) */
-    .orbit-card-0 {
-      top: 5px;
-      left: 10px;
-      transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg);
-      animation: orbitFloat0 7s ease-in-out infinite;
-    }
-
-    .orbit-card-1 {
-      top: 5px;
-      right: 10px;
-      transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg);
-      animation: orbitFloat1 7s ease-in-out infinite 1.75s;
-    }
-
-    .orbit-card-2 {
-      bottom: 5px;
-      left: 20px;
-      transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg);
-      animation: orbitFloat2 7s ease-in-out infinite 3.5s;
-    }
-
-    .orbit-card-3 {
-      bottom: 5px;
-      right: 20px;
-      transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg);
-      animation: orbitFloat3 7s ease-in-out infinite 5.25s;
-    }
-
-    /* Subtle 3D Ambient Float Keyframes */
-    @keyframes orbitFloat0 {
-      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg); }
-      50% { transform: translate3d(-5px, -7px, 46px) rotate3d(0.6, 1, 0, 9deg); }
-    }
-    @keyframes orbitFloat1 {
-      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg); }
-      50% { transform: translate3d(5px, -7px, 46px) rotate3d(0.6, -1, 0, 9deg); }
-    }
-    @keyframes orbitFloat2 {
-      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg); }
-      50% { transform: translate3d(-4px, 5px, 32px) rotate3d(-0.6, 1, 0, 8deg); }
-    }
-    @keyframes orbitFloat3 {
-      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg); }
-      50% { transform: translate3d(4px, 5px, 32px) rotate3d(-0.6, -1, 0, 8deg); }
-    }
-
-    .hero-orbit-stage:hover .orbit-card {
-      animation-play-state: paused;
-    }
-
-    .orbit-card:hover {
-      border-color: var(--accent-blue);
-      box-shadow: 0 16px 36px -6px var(--accent-soft), 0 0 0 1px var(--accent-soft);
-      transform: scale(1.06) translate3d(0, -4px, 75px) !important;
-      z-index: 45 !important;
-      background: var(--bg-surface);
-    }
-
-    .orbit-card.card-fading {
-      opacity: 0.1;
-      transform: scale(0.92) translate3d(0, 0, 0) !important;
-    }
-
     /* Global Search & Command Bar (⌘K) with Bulletproof Overflow Containment */
     .search-wrapper {
       position: relative;
       width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-      box-sizing: border-box;
+      margin: 0 0 3rem;
       z-index: 20;
     }
 
     .search-box {
       display: flex;
       align-items: center;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-xl);
-      padding: 0.95rem 1.4rem;
-      box-shadow: 0 12px 32px -4px var(--accent-soft), 0 4px 12px -2px var(--accent-soft);
-      transition: all var(--transition-normal);
+      gap: 0.7rem;
+      border-bottom: 1px solid var(--text-primary);
+      padding: 0.7rem 0;
       cursor: text;
-      width: 100%;
-      box-sizing: border-box;
     }
 
-    .search-box:focus-within, .search-box.focused {
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 0 4px var(--accent-soft), 0 20px 40px -8px var(--accent-soft);
-      background: var(--bg-surface);
-      transform: translateY(-2px);
-    }
-
-    .search-icon-wrap {
-      display: flex;
-      align-items: center;
-      color: var(--text-muted);
-      margin-right: 0.85rem;
-      flex-shrink: 0;
-    }
+    .search-icon-wrap { display: flex; color: var(--text-muted); flex-shrink: 0; }
 
     .search-input {
       flex: 1;
@@ -1345,468 +789,163 @@ SHARED_CSS = """
       border: none;
       outline: none;
       background: transparent;
-      font-size: 0.94rem;
-      font-family: inherit;
+      font-size: 1rem;
       color: var(--text-primary);
     }
 
-    .search-input::placeholder {
-      color: var(--text-muted);
-    }
+    .search-input::placeholder { color: var(--text-muted); }
 
     .search-shortcut {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: 6px;
-      padding: 0.18rem 0.5rem;
       font-family: var(--font-mono);
       font-size: 0.72rem;
-      font-weight: 700;
       color: var(--text-muted);
       flex-shrink: 0;
     }
 
-    /* Tab Suggestions & Live Autocomplete Dropdown - Bulletproof Containment */
     .search-dropdown {
       position: absolute;
-      top: calc(100% + 10px);
+      top: calc(100% + 6px);
       left: 0;
       right: 0;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
       background: var(--bg-surface);
       border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
       box-shadow: var(--shadow-dropdown);
-      padding: 1.15rem;
+      padding: 0.5rem 1rem 1rem;
       z-index: 100;
       display: none;
-      max-height: 420px;
+      max-height: 440px;
       overflow-x: hidden;
       overflow-y: auto;
     }
 
-    .search-dropdown.active {
-      display: block;
-      animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .search-dropdown.active { display: block; }
 
     .dropdown-section-title {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-size: 0.74rem;
       color: var(--text-muted);
-      margin-bottom: 0.6rem;
-      padding-left: 0.25rem;
+      margin: 0.85rem 0 0.15rem;
     }
 
     .dropdown-tabs-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.6rem;
-      margin-bottom: 1rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    @media (max-width: 500px) {
-      .dropdown-tabs-grid {
-        grid-template-columns: 1fr;
-      }
+      column-gap: 2rem;
     }
 
     .dropdown-tab-card {
       display: flex;
-      align-items: center;
+      justify-content: space-between;
+      align-items: baseline;
       gap: 0.75rem;
-      padding: 0.7rem 0.9rem;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+      color: inherit;
       text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-      min-width: 0;
-      width: 100%;
-      box-sizing: border-box;
-      overflow: hidden;
     }
 
-    .dropdown-tab-card:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      transform: translateY(-1px);
-    }
-
-    .dropdown-tab-icon {
-      width: 22px;
-      height: 22px;
-      color: var(--accent-blue);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .dropdown-tab-info {
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
-    .dropdown-tab-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .dropdown-tab-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .dropdown-tickers-wrap {
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border-card);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .dropdown-tickers-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 0.4rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .ticker-jump-pill {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all var(--transition-fast);
-    }
-
-    .ticker-jump-pill:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      color: var(--accent);
-      transform: translateY(-1px);
-    }
-
-    /* Live Search Results List - Contained Layout */
-    .search-results-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
+    .dropdown-tab-card:hover .dropdown-tab-title { color: var(--accent); }
+    .dropdown-tab-title { font-size: 0.92rem; }
+    .dropdown-tab-sub { font-size: 0.76rem; color: var(--text-muted); white-space: nowrap; }
 
     .search-result-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
+      gap: 1rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+      color: inherit;
       text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
     }
 
-    .search-result-item:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      transform: translateX(2px);
-    }
+    .search-result-item:hover .search-result-title { color: var(--accent); }
+    .search-result-left { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; flex: 1; }
+    .search-result-icon { display: none; }
+    .search-result-info { min-width: 0; }
+    .search-result-title { font-size: 0.92rem; overflow-wrap: anywhere; }
+    .search-result-sub { font-size: 0.76rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .search-result-item .action-link { color: var(--text-muted); white-space: nowrap; }
 
-    .search-result-left {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
+    .search-no-results { padding: 1.25rem 0 0.5rem; }
+    .no-results-icon { display: none; }
+    .no-results-title { font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .no-results-sub { font-size: 0.82rem; color: var(--text-muted); }
 
-    .search-result-icon {
-      width: 20px;
-      height: 20px;
-      color: var(--accent-blue);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .quick-lookup-card { padding: 0.75rem 0; border-bottom: 1px solid var(--border-card); }
+    .quick-lookup-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem; }
+    .quick-lookup-title-group { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; min-width: 0; }
+    .quick-lookup-badge, .quick-lookup-meta, .quick-lookup-range { font-size: 0.76rem; color: var(--text-muted); }
+    .quick-lookup-price-strip { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; margin: 0.35rem 0; }
+    .quick-lookup-price-val { font-family: var(--font-mono); font-size: 1.1rem; }
+    .quick-lookup-change { font-family: var(--font-mono); font-size: 0.85rem; }
+    .quick-lookup-change.pos { color: var(--pos); }
+    .quick-lookup-change.neg { color: var(--neg); }
+    .quick-lookup-change.neu { color: var(--text-muted); }
+    .quick-lookup-headlines-title { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.6rem; }
+    .quick-lookup-news-item { display: block; padding: 0.45rem 0; border-bottom: 1px solid var(--border-subtle); color: inherit; text-decoration: none; }
+    .quick-lookup-news-item:hover .quick-lookup-news-headline { color: var(--accent); }
+    .quick-lookup-news-headline { font-size: 0.9rem; overflow-wrap: anywhere; }
+    .quick-lookup-news-meta { display: flex; gap: 0.4rem; font-size: 0.74rem; color: var(--text-muted); }
+    .quick-lookup-action-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-size: 0.76rem; padding-top: 0.6rem; }
 
-    .search-result-info {
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
+    /* Home: front page */
+    .fp-masthead { margin-bottom: 2rem; max-width: 46rem; }
+    .fp-dateline { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.9rem; }
+    .fp-title { font-size: clamp(2.3rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.022em; margin-bottom: 0.9rem; }
+    .fp-standfirst { font-family: var(--font-serif); font-size: 1.2rem; line-height: 1.45; color: var(--text-secondary); }
 
-    .search-result-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
+    .fp-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 4rem; margin-bottom: 4rem; }
+    .fp-kicker { font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 0.5rem; }
+    .fp-lead-title { font-size: clamp(1.6rem, 3vw, 2.15rem); line-height: 1.15; margin-bottom: 0.7rem; }
+    .fp-lead-title a { color: inherit; text-decoration: none; }
+    .fp-lead-title a:hover, .fp-row-title:hover { color: var(--accent); }
+    .fp-lead-summary { font-size: 1.02rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 0.8rem; max-width: 38rem; }
+    .fp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1rem; font-size: 0.78rem; color: var(--text-muted); padding-bottom: 1.5rem; }
 
-    .search-result-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
+    .fp-list { list-style: none; border-top: 1px solid var(--text-primary); }
+    .fp-row { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .fp-row-title { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.3; color: inherit; text-decoration: none; }
+    .fp-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
+    .fp-more { display: inline-block; margin-top: 0.9rem; font-size: 0.84rem; color: var(--accent); text-decoration: none; }
+    .fp-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .fp-empty { color: var(--text-muted); font-size: 0.92rem; padding: 0.5rem 0; }
 
-    .search-no-results {
-      text-align: center;
-      padding: 2rem 1rem;
-      color: var(--text-muted);
-      width: 100%;
-      box-sizing: border-box;
-    }
+    .fp-side { display: flex; flex-direction: column; gap: 2.75rem; }
+    .fp-heading { font-size: 1.15rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--text-primary); }
+    .fp-side-list { list-style: none; }
+    .fp-event, .fp-indicator { padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.86rem; }
+    .fp-event { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; }
+    .fp-event-date { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-muted); }
+    .fp-indicator { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; color: var(--text-secondary); }
+    .fp-indicator-value { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-primary); white-space: nowrap; }
 
-    .no-results-icon {
-      font-size: 1.75rem;
-      margin-bottom: 0.4rem;
-    }
+    .fp-index { margin-bottom: 3.5rem; }
+    .fp-index-row { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--border-subtle); align-items: baseline; }
+    .fp-index-row dt { font-size: 0.86rem; color: var(--text-secondary); }
+    .fp-index-row dd { display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem; }
+    .fp-index-item { font-family: var(--font-mono); font-size: 0.86rem; color: var(--text-primary); text-decoration: none; padding: 0.15rem 0; }
+    .fp-index-item:hover { color: var(--accent); }
+    .fp-index-item sup { font-size: 0.64rem; color: var(--text-muted); margin-left: 0.15rem; line-height: 0; }
 
-    .no-results-title {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-      word-break: break-word;
-      overflow-wrap: break-word;
-    }
+    .fp-heading-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--text-primary); }
+    .fp-heading-row .fp-heading { border-bottom: none; }
+    .fp-clear { background: none; border: none; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; min-height: 32px; }
+    .fp-clear:hover { color: var(--text-primary); }
+    .fp-recent-list { list-style: none; }
+    .fp-recent a { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); color: inherit; text-decoration: none; font-size: 0.9rem; }
+    .fp-recent a:hover .fp-recent-name { color: var(--accent); }
+    .fp-recent-when { font-size: 0.76rem; color: var(--text-muted); }
+    [hidden] { display: none !important; }
 
-    .no-results-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      word-break: break-word;
-      overflow-wrap: break-word;
-    }
-
-    /* Quick Lookup Card (Lightweight Live Quote & Headlines for Outside Watchlist) */
-    .quick-lookup-card {
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.95rem 1.15rem;
-      margin-bottom: 0.85rem;
-      width: 100%;
-      box-sizing: border-box;
-      box-shadow: 0 2px 8px var(--accent-soft);
-      transition: all var(--transition-fast);
-    }
-
-    .quick-lookup-card.loading {
-      border-color: var(--accent-soft);
-      background: var(--accent-soft);
-    }
-
-    .quick-lookup-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 0.65rem;
-      padding-bottom: 0.55rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    .quick-lookup-title-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .quick-lookup-badge {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-soft);
-      padding: 0.12rem 0.45rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      white-space: nowrap;
-    }
-
-    .quick-lookup-meta {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
-
-    .quick-lookup-price-strip {
-      display: flex;
-      align-items: baseline;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .quick-lookup-price-val {
-      font-family: var(--font-mono);
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      letter-spacing: -0.02em;
-    }
-
-    .quick-lookup-change {
-      font-family: var(--font-mono);
-      font-size: 0.84rem;
-      font-weight: 700;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-    }
-
-    .quick-lookup-change.pos {
-      color: var(--pos);
-      background: var(--pos-soft);
-    }
-
-    .quick-lookup-change.neg {
-      color: var(--neg);
-      background: var(--neg-soft);
-    }
-
-    .quick-lookup-change.neu {
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-    }
-
-    .quick-lookup-range {
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      margin-left: auto;
-    }
-
-    .quick-lookup-headlines-title {
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.45rem;
-    }
-
-    .quick-lookup-headlines-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-    }
-
-    .quick-lookup-news-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      padding: 0.45rem 0.65rem;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-    }
-
-    .quick-lookup-news-item:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      transform: translateX(2px);
-    }
-
-    .quick-lookup-news-headline {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1.3;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .quick-lookup-news-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-    }
-
-    .quick-lookup-action-bar {
-      margin-top: 0.75rem;
-      padding-top: 0.55rem;
-      border-top: 1px solid var(--border-card);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.74rem;
-    }
-
-    /* Asymmetric Hero Bento Deck (Replacing rigid 3-column cards) */
-    .hero-bento-deck {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 1.35rem;
-      margin-bottom: 3.5rem;
-      width: 100%;
-      position: relative;
-      z-index: 1;
+    @media (max-width: 860px) {
+      .fp-grid { grid-template-columns: minmax(0, 1fr); gap: 2.75rem; }
+      .fp-index-row { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
+      .fp-index-item { padding: 0.45rem 0; }
+      .fp-index-row dd { gap: 0 1.25rem; }
+      .fp-more { padding: 0.35rem 0; }
+      .fp-clear { min-height: 44px; }
+      .search-shortcut { display: none; }
+      .dropdown-tabs-grid { grid-template-columns: minmax(0, 1fr); }
     }
 
     .bento-card {
@@ -1832,230 +971,12 @@ SHARED_CSS = """
       transform: translateY(-2px);
     }
 
-    .bento-card-primary {
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      position: relative;
-    }
-
-    .bento-card-primary::before { display: none; }
-
-    .bento-side-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 1.15rem;
-    }
-
-    .bento-card-side {
-      padding: 1.35rem 1.5rem;
-    }
-
-    .bento-badge-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
-    }
-
-    .bento-pill-accent {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
-    .bento-pill-cal {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
-    .bento-pill-econ {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--pos);
-      background: var(--pos-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
-    .bento-arrow {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      transition: transform var(--transition-fast);
-    }
-
-    .bento-card:hover .bento-arrow {
-      color: var(--accent-blue);
-      transform: translateX(3px);
-    }
-
-    .bento-score-hero {
-      display: flex;
-      align-items: baseline;
-      gap: 0.6rem;
-      margin-bottom: 0.6rem;
-    }
-
-    .bento-count {
-      font-family: var(--font-mono);
-      font-size: 2.2rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1;
-    }
-
-    .bento-sublabel {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-    }
-
-    .bento-headline-preview {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.4;
-      margin-bottom: 1.25rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .bento-footer-pill {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      border-radius: var(--radius-md);
-      padding: 0.65rem 0.95rem;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .bento-side-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.35rem;
-    }
-
     /* Recently Viewed Companies Quick Access Deck */
     .recently-viewed-section {
       margin-bottom: 2.75rem;
       width: 100%;
       position: relative;
       z-index: 1;
-    }
-
-    .recently-viewed-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1rem;
-    }
-
-    .recent-card {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.1rem 1.25rem;
-      box-shadow: var(--shadow-sm);
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-normal);
-      position: relative;
-      overflow: hidden;
-      min-height: 118px;
-    }
-
-    .recent-card:hover {
-      border-color: var(--text-muted);
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-    }
-
-    .recent-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .recent-card-time {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .recent-card-body {
-      margin-bottom: 0.65rem;
-    }
-
-    .recent-card-name {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.3;
-      min-height: 2.6em;
-      word-break: break-word;
-    }
-
-    .recent-card-sector {
-      font-size: 0.74rem;
-      color: var(--text-secondary);
-      margin-top: 0.15rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .recent-card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border-card);
-      padding-top: 0.5rem;
-      margin-top: auto;
-    }
-
-    .recent-card-pill {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--accent);
     }
 
     /* Section Headers */
@@ -2232,29 +1153,14 @@ SHARED_CSS = """
     /* Ticker & Form Badges */
     .ticker-badge {
       font-family: var(--font-mono);
-      font-weight: 700;
-      font-size: 0.78rem;
-      padding: 0.2rem 0.55rem;
-      border-radius: 6px;
-      display: inline-block;
-      letter-spacing: 0.02em;
-      background: var(--bg-surface-elevated);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-card);
-      flex-shrink: 0;
-      white-space: nowrap !important;
-      word-break: keep-all !important;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--text-primary);
       text-decoration: none;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-      cursor: pointer;
+      letter-spacing: 0.01em;
     }
 
-    .ticker-badge:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px var(--accent-soft);
-      border-color: var(--text-muted);
-      text-decoration: none;
-    }
+    a.ticker-badge:hover { color: var(--accent); }
 
     .form-type-pill {
       font-family: var(--font-mono);
@@ -2281,13 +1187,6 @@ SHARED_CSS = """
       border: 1px solid var(--border-card);
       white-space: nowrap;
       flex-shrink: 0;
-    }
-
-    .source-tag {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      white-space: nowrap;
     }
 
     /* Distinct Source Badges */
@@ -2954,17 +1853,6 @@ SHARED_CSS = """
       box-shadow: var(--shadow-hover);
     }
 
-    .priority-lead-badge {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
     .score-pill-lead {
       font-size: 0.92rem !important;
       padding: 0.25rem 0.75rem !important;
@@ -3600,8 +2488,6 @@ SHARED_CSS = """
     }
 
     .health-badge-healthy  { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
-    .health-badge-warning  { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-soft); }
-    .health-badge-critical { background: var(--neg-soft); color: var(--neg); border: 1px solid var(--neg-soft); }
 
     .health-grid {
       display: grid;
@@ -4158,7 +3044,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Personal stock news dashboard overview with widget preview cards, recently viewed companies, and instant search suggestions.">
+  <meta name="description" content="A morning briefing on your watchlist: top stories, upcoming events, and the economy.">
   <title>StockPulse — What's on the agenda?</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4174,270 +3060,130 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <!-- Redesigned Hero & 3D Orbital Search Centerpiece Section -->
-      <section class="hero-section">
-        <div class="hero-container">
-          <!-- Animated Intro Greeting Header -->
-          <div class="hero-intro-box">
-            <a href="calendar.html" class="hero-badge intro-fade-1">
-              <span class="pulse-dot" style="background:var(--pos); margin-right:0.2rem; flex-shrink:0;"></span>
-              {% if calendar_events %}
-              <span>Next Event: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
-              {% else %}
-              <span><strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; {{ watchlist_companies|length }} Companies Monitored ↗</span>
-              {% endif %}
-            </a>
-            <h1 class="hero-title">
-              <span class="hero-word-wrap">
-                <span class="intro-word" style="--w-idx:0;">What's</span>
-                <span class="intro-word" style="--w-idx:1;">on</span>
-                <span class="intro-word" style="--w-idx:2;">the</span>
-                <span class="intro-word" style="--w-idx:3;">agenda?</span>
-              </span>
-            </h1>
-            <p class="hero-subtext intro-fade-2">Review overnight SEC filings, corporate announcements, forthcoming milestones, and FRED macroeconomic sensitivities.</p>
-          </div>
+      <header class="fp-masthead">
+        <p class="fp-dateline">{{ generated_at[:12] }}</p>
+        <h1 class="fp-title">What's on the agenda?</h1>
+        <p class="fp-standfirst">
+          {{ stats.high_priority_count }} of {{ stats.total }} stories scored 7 or higher.
+          {% if calendar_events %}Next on the calendar: {{ calendar_events[0].headline }}, {{ calendar_events[0].relative_badge|lower }}.{% endif %}
+        </p>
+      </header>
 
-          <!-- 3D Orbital Stage & Centered Search Centerpiece -->
-          <div class="hero-orbit-stage" id="heroOrbitStage">
-            <!-- Centerpiece: Search Command Bar -->
-            <div class="orbit-centerpiece">
-              <div class="search-wrapper" id="heroSearchWrapper">
-                <div class="search-box" id="globalSearchBox">
-                  <span class="search-icon-wrap">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  </span>
-                  <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
-                  <span class="search-shortcut">⌘ K</span>
-                </div>
-
-                <!-- Interactive Live Suggestions / Autocomplete Dropdown -->
-                <div class="search-dropdown" id="searchDropdown">
-                  <div id="defaultDropdownContent">
-                    <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
-                    <div class="dropdown-tabs-grid">
-                      <a href="news.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Intelligence Feed</div>
-                          <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
-                        </div>
-                      </a>
-                      <a href="calendar.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Corporate Calendar</div>
-                          <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
-                        </div>
-                      </a>
-                      <a href="economic.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Economic Snapshot</div>
-                          <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
-                        </div>
-                      </a>
-                      <a href="analytics.html" class="dropdown-tab-card" onclick="closeSearchDropdown()">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Analytics &amp; Trends</div>
-                          <div class="dropdown-tab-sub">Velocity &amp; Benchmarks</div>
-                        </div>
-                      </a>
-                    </div>
-
-                    <div style="padding-top:0.75rem; border-top:1px solid var(--border-card); text-align:center;">
-                      <a href="company.html" class="action-link" style="font-size:0.8rem; font-weight:700; color:var(--accent-blue); text-decoration:none;">Browse All {{ watchlist_companies|length }} Companies in Directory ↗</a>
-                    </div>
-                  </div>
-
-                  <!-- Dynamic Live Search Results Container -->
-                  <div id="liveSearchResults" style="display:none;"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 3D Floating Orbital Suggestion Cards (4 Dynamic Nodes) -->
-            <div class="orbit-track" id="orbitTrack" aria-label="Quick Watchlist Highlights">
-              <!-- Node 0 (Top-Left) -->
-              <a href="company.html?ticker=NVDA" class="orbit-card orbit-card-0" id="orbitCard0" data-orbit-slot="0">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-NVDA">NVDA</span>
-                  <span class="orbit-card-score">Score 9.0</span>
-                </div>
-                <div class="orbit-card-name">NVIDIA Corporation</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Semiconductors</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 1 (Top-Right) -->
-              <a href="company.html?ticker=AAPL" class="orbit-card orbit-card-1" id="orbitCard1" data-orbit-slot="1">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-AAPL">AAPL</span>
-                  <span class="orbit-card-score">Score 8.5</span>
-                </div>
-                <div class="orbit-card-name">Apple Inc.</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Consumer Tech</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 2 (Bottom-Left) -->
-              <a href="company.html?ticker=MSFT" class="orbit-card orbit-card-2" id="orbitCard2" data-orbit-slot="2">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-MSFT">MSFT</span>
-                  <span class="orbit-card-score">Score 8.0</span>
-                </div>
-                <div class="orbit-card-name">Microsoft Corp.</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Cloud &amp; Copilot</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 3 (Bottom-Right) -->
-              <a href="company.html?ticker=AMD" class="orbit-card orbit-card-3" id="orbitCard3" data-orbit-slot="3">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-AMD">AMD</span>
-                  <span class="orbit-card-score">Score 7.8</span>
-                </div>
-                <div class="orbit-card-name">Advanced Micro Devices</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Data Center</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-            </div>
-          </div>
-
-          <!-- Watchlist Holdings Ribbon -->
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-top:0.85rem; margin-bottom:0.35rem; width:100%; max-width:920px;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.4rem;">
-              <span>Watchlist Holdings ({{ watchlist_companies|length }})</span>
-            </div>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:var(--bg-base); border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-              Company Directory ↗
-            </a>
-          </div>
-
-          <div class="watchlist-ticker-strip">
-            {% for co in watchlist_companies %}
-            <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} &bull; {{ co.macro_sector }}">
-              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
-            </a>
-            {% endfor %}
-          </div>
+      <div class="search-wrapper" id="heroSearchWrapper">
+        <div class="search-box" id="globalSearchBox">
+          <span class="search-icon-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input type="text" id="globalSearchInput" class="search-input" aria-label="Search" placeholder="Search companies, filings, events" onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
+          <span class="search-shortcut">⌘K</span>
         </div>
+
+        <div class="search-dropdown" id="searchDropdown">
+          <div id="defaultDropdownContent">
+            <div class="dropdown-tabs-grid">
+              <a href="news.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Feed</span><span class="dropdown-tab-sub">{{ stats.total }} stories</span></a>
+              <a href="calendar.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Calendar</span><span class="dropdown-tab-sub">{{ calendar_events|length }} events</span></a>
+              <a href="economic.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Economy</span><span class="dropdown-tab-sub">{{ economic_indicators|length }} indicators</span></a>
+              <a href="company.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Companies</span><span class="dropdown-tab-sub">{{ watchlist_companies|length }} on the watchlist</span></a>
+            </div>
+          </div>
+          <div id="liveSearchResults" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="fp-grid">
+        <section class="fp-main" aria-label="Top stories">
+          {% if priority_items %}
+          {% set lead = priority_items[0] %}
+          <article class="fp-lead">
+            <p class="fp-kicker">Read first</p>
+            <h2 class="fp-lead-title"><a href="{{ lead.url if lead.url.startswith('http') else 'news.html' }}" target="_blank" rel="noopener noreferrer">{{ lead.clean_headline }}</a></h2>
+            {% if lead.llm_summary %}<p class="fp-lead-summary">{{ lead.llm_summary }}</p>{% endif %}
+            <p class="fp-meta">
+              <a class="ticker-badge" href="company.html?ticker={{ lead.ticker|urlencode }}">{{ lead.ticker }}</a>
+              <span>{{ short_date(lead.published_date) }}</span>
+              <span>{{ lead.source_label }}</span>
+              <span title="{{ lead.score_breakdown }}">Score {{ lead.score }}</span>
+            </p>
+          </article>
+
+          {% if priority_items|length > 1 %}
+          <ol class="fp-list">
+            {% for it in priority_items[1:] %}
+            <li class="fp-row">
+              <a class="ticker-badge" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
+              <a class="fp-row-title" href="{{ it.url if it.url.startswith('http') else 'news.html' }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+              <span class="fp-score" title="{{ it.score_breakdown }}">{{ it.score }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          {% endif %}
+          {% else %}
+          <p class="fp-empty">No stories yet. They appear here after the next pipeline run.</p>
+          {% endif %}
+          <a class="fp-more" href="news.html">All {{ stats.total }} stories</a>
+        </section>
+
+        <aside class="fp-side">
+          <section aria-labelledby="fpNextHeading">
+            <h2 class="fp-heading" id="fpNextHeading">Coming up</h2>
+            {% if calendar_events %}
+            <ul class="fp-side-list">
+              {% for ev in calendar_events[:4] %}
+              <li class="fp-event">
+                <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
+                <span class="fp-event-text"><a class="ticker-badge" href="company.html?ticker={{ ev.ticker|urlencode }}">{{ ev.ticker }}</a> {{ ev.event_type }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="fp-empty">No upcoming events.</p>
+            {% endif %}
+            <a class="fp-more" href="calendar.html">Full calendar</a>
+          </section>
+
+          <section aria-labelledby="fpEconHeading">
+            <h2 class="fp-heading" id="fpEconHeading">Economy</h2>
+            {% if economic_indicators %}
+            <ul class="fp-side-list">
+              {% for ind in economic_indicators %}
+              <li class="fp-indicator">
+                <span>{{ ind.name }}</span>
+                <span class="fp-indicator-value">{{ ind.formatted_value.split(' (')[0] }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="fp-empty">No indicators available.</p>
+            {% endif %}
+            <a class="fp-more" href="economic.html">All indicators</a>
+          </section>
+        </aside>
+      </div>
+
+      <section class="fp-index" aria-labelledby="fpIndexHeading">
+        <h2 class="fp-heading" id="fpIndexHeading">The watchlist, by sector</h2>
+        <dl class="fp-index-list">
+          {% for sec in sector_directory %}
+          <div class="fp-index-row">
+            <dt>{{ sec.name }}</dt>
+            <dd>
+              {% for co in sec.companies %}
+              <a class="fp-index-item" href="company.html?ticker={{ co.symbol|urlencode }}" title="{{ co.name }}: {{ co.story_count }} stories">{{ co.symbol }}<sup>{{ co.story_count }}</sup></a>
+              {% endfor %}
+            </dd>
+          </div>
+          {% endfor %}
+        </dl>
       </section>
 
-      <!-- Top 2 Focus Bento Widgets Below Hero -->
-      <div class="hero-bento-deck">
-        <!-- Widget 1: Featured Priority Intelligence Card -->
-        <a href="news.html" class="bento-card bento-card-primary">
-          <div class="bento-badge-top">
-            <span class="bento-pill-accent">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              FEATURED INTELLIGENCE
-            </span>
-            <span class="bento-arrow">Explore Feed ›</span>
-          </div>
-          <div>
-            <div class="bento-score-hero">
-              <span class="bento-count">{{ priority_items|length }}</span>
-              <span class="bento-sublabel">High-Impact Disclosures Monitored</span>
-            </div>
-            {% if priority_items %}
-            <div class="bento-headline-preview">
-              <span class="ticker-badge ticker-{{ priority_items[0].ticker }}" style="margin-right:0.35rem;">{{ priority_items[0].ticker }}</span>
-              {{ priority_items[0].clean_headline }}
-            </div>
-            {% endif %}
-          </div>
-          <div class="bento-footer-pill">
-            <span>High-Impact Score ≥ 7.0 &bull; Transparent Scoring</span>
-            <span>→</span>
-          </div>
-        </a>
-
-        <!-- Widget 2: Next Corporate Catalyst Milestone Focus -->
-        <a href="calendar.html" class="bento-card" style="background: var(--bg-surface); border: 1px solid var(--pos-soft);">
-          <div class="bento-badge-top">
-            <span class="bento-pill-cal">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              NEXT EVENT
-            </span>
-            <span class="bento-arrow">Calendar ›</span>
-          </div>
-          <div>
-            {% if calendar_events %}
-            <div style="display:flex; align-items:center; gap:0.9rem; margin:0.6rem 0;">
-              <div class="calendar-date-box" style="width:52px; min-width:52px; padding:0.35rem 0.45rem; border-radius:var(--radius-md); box-shadow:0 2px 6px var(--accent-soft);">
-                <div class="calendar-date-month" style="font-size:0.72rem; font-weight: 600;">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                <div class="calendar-date-day" style="font-size:1.25rem; font-weight: 600;">{{ calendar_events[0].event_date[8:10] }}</div>
-              </div>
-              <div style="flex:1; min-width:0;">
-                <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                  <span class="ticker-badge ticker-{{ calendar_events[0].ticker }}">{{ calendar_events[0].ticker }}</span>
-                  <span class="category-badge" style="font-size:0.68rem; padding:0.1rem 0.45rem;">{{ calendar_events[0].event_type }}</span>
-                </div>
-                <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); line-height:1.35; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
-                  {{ calendar_events[0].headline }}
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
-                  {{ calendar_events[0].relative_badge }}
-                </div>
-              </div>
-            </div>
-            {% else %}
-            <div style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0.5rem 0;">Corporate Calendar Active</div>
-            <div style="font-size:0.8rem; color:var(--text-muted);">Tracking upcoming earnings releases, FDA decisions, and shareholder votes.</div>
-            {% endif %}
-          </div>
-          <div class="bento-footer-pill" style="border-top:1px solid var(--pos-soft);">
-            <span>{{ calendar_events|length }} Upcoming Milestones</span>
-            <span>→</span>
-          </div>
-        </a>
-      </div>
-
-      <!-- Recently Viewed Companies Quick Access Deck -->
-      <div class="recently-viewed-section" id="recentlyViewedSection">
-        <div class="section-header-row" style="margin-bottom:0.85rem; padding-top:0.25rem;">
-          <div style="display:flex; align-items:center; gap:0.55rem;">
-            <div style="background:var(--accent-soft); color:var(--accent); width:28px; height:28px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <h2 class="section-heading" style="margin:0; font-size:1.15rem;">Recently Viewed Companies</h2>
-            <span class="badge" id="recentlyViewedCountBadge" style="font-size:0.7rem; background:var(--bg-surface-elevated); color:var(--text-muted); padding:0.15rem 0.5rem; border-radius:var(--radius-full);"></span>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.65rem;">
-            <button id="clearRecentlyViewedBtn" onclick="clearRecentlyViewed()" title="Clear your recently viewed history" style="background:none; border:none; font-size:0.75rem; color:var(--text-muted); cursor:pointer; padding:0.25rem 0.5rem; border-radius:4px; transition:color 0.15s;">
-              Clear History
-            </button>
-            <a href="company.html" class="bento-arrow" style="font-size:0.8rem; text-decoration:none;">All {{ watchlist_companies|length }} Companies ›</a>
-          </div>
+      <section class="recently-viewed-section" id="recentlyViewedSection" aria-labelledby="fpRecentHeading" hidden>
+        <div class="fp-heading-row">
+          <h2 class="fp-heading" id="fpRecentHeading">Recently Viewed Companies</h2>
+          <button class="fp-clear" id="clearRecentlyViewedBtn" type="button" onclick="clearRecentlyViewed()">Clear</button>
         </div>
-
-        <div class="recently-viewed-grid" id="recentlyViewedGrid">
-          <!-- Populated dynamically via localStorage -->
-        </div>
-      </div>
+        <ul class="fp-recent-list" id="recentlyViewedGrid"></ul>
+      </section>
     </main>
   </div>
 
@@ -4450,88 +3196,48 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     const watchlistCompanies = {{ watchlist_companies|tojson|safe }};
 
     function renderRecentlyViewed() {
+      const section = document.getElementById('recentlyViewedSection');
       const grid = document.getElementById('recentlyViewedGrid');
-      const badge = document.getElementById('recentlyViewedCountBadge');
-      const clearBtn = document.getElementById('clearRecentlyViewedBtn');
-      if (!grid) return;
-
-      const companyLookup = {};
-      (watchlistCompanies || []).forEach(c => {
-        companyLookup[c.symbol] = c;
-      });
-
-      const tickerCounts = {};
-      (allItems || []).forEach(it => {
-        if (it.ticker) {
-          tickerCounts[it.ticker] = (tickerCounts[it.ticker] || 0) + 1;
-        }
-      });
+      if (!grid || !section) return;
 
       let stored = [];
-      let isDefault = false;
       try {
-        const raw = localStorage.getItem('stockpulse_recently_viewed');
-        if (raw) {
-          stored = JSON.parse(raw);
-        }
+        stored = JSON.parse(localStorage.getItem('stockpulse_recently_viewed') || '[]');
       } catch (e) {
         stored = [];
       }
 
+      // Nothing viewed yet means nothing to show, rather than an invented starter list.
       if (!Array.isArray(stored) || stored.length === 0) {
-        isDefault = true;
-        // Suggested starter companies for quick launchpad
-        stored = [
-          { symbol: 'NVDA', visitedAt: null },
-          { symbol: 'AAPL', visitedAt: null },
-          { symbol: 'TSLA', visitedAt: null },
-          { symbol: 'MSFT', visitedAt: null },
-          { symbol: 'AMZN', visitedAt: null },
-          { symbol: 'GOOGL', visitedAt: null },
-        ];
-        if (clearBtn) clearBtn.style.display = 'none';
-        if (badge) badge.textContent = 'Suggested';
-      } else {
-        if (clearBtn) clearBtn.style.display = 'inline-block';
-        if (badge) badge.textContent = `${stored.length} viewed`;
+        section.hidden = true;
+        grid.innerHTML = '';
+        return;
       }
 
-      const itemsToRender = stored.slice(0, 8);
-      let html = '';
+      const companies = {};
+      (watchlistCompanies || []).forEach(c => { companies[c.symbol] = c; });
 
-      itemsToRender.forEach(item => {
-        const sym = (typeof item === 'string' ? item : item.symbol).toUpperCase();
-        const co = companyLookup[sym] || { name: sym, sector: 'Watchlist Company' };
-        const count = tickerCounts[sym] || 0;
-
-        let timeLabel = 'Quick Access';
+      section.hidden = false;
+      grid.innerHTML = stored.slice(0, 8).map(item => {
+        const sym = String(typeof item === 'string' ? item : item.symbol).toUpperCase();
+        const co = companies[sym] || { name: sym };
+        let when = '';
         if (item.visitedAt) {
           const diffSec = Math.floor((Date.now() - item.visitedAt) / 1000);
-          if (diffSec < 60) timeLabel = 'Just now';
-          else if (diffSec < 3600) timeLabel = `${Math.floor(diffSec / 60)}m ago`;
-          else if (diffSec < 86400) timeLabel = `${Math.floor(diffSec / 3600)}h ago`;
-          else timeLabel = `${Math.floor(diffSec / 86400)}d ago`;
+          if (diffSec < 60) when = 'Just now';
+          else if (diffSec < 3600) when = `${Math.floor(diffSec / 60)}m ago`;
+          else if (diffSec < 86400) when = `${Math.floor(diffSec / 3600)}h ago`;
+          else when = `${Math.floor(diffSec / 86400)}d ago`;
         }
-
-        html += `
-          <a href="company.html?ticker=${escapeHtml(sym)}" class="recent-card" title="View ${escapeHtml(co.name)} (${escapeHtml(sym)}) deep dive">
-            <div class="recent-card-top">
-              <span class="ticker-badge ticker-${escapeHtml(sym)}">${escapeHtml(sym)}</span>
-              <span class="recent-card-time">${escapeHtml(timeLabel)}</span>
-            </div>
-            <div class="recent-card-body">
-              <div class="recent-card-name">${escapeHtml(co.name)}</div>
-              <div class="recent-card-sector">${escapeHtml(co.sector || 'Equities')}</div>
-            </div>
-            <div class="recent-card-footer">
-              <span class="recent-card-pill">${count} disclosures</span>
-              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-blue);">Explore ›</span>
-            </div>
-          </a>
-        `;
-      });
-
-      grid.innerHTML = html;
+        return `
+          <li class="fp-recent">
+            <a href="company.html?ticker=${encodeURIComponent(sym)}">
+              <span class="ticker-badge">${escapeHtml(sym)}</span>
+              <span class="fp-recent-name">${escapeHtml(co.name)}</span>
+              <span class="fp-recent-when">${escapeHtml(when)}</span>
+            </a>
+          </li>`;
+      }).join('');
     }
 
     function clearRecentlyViewed() {
@@ -4563,7 +3269,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     let lookupDebounceTimer = null;
 
     function handleSearchType(rawVal) {
-      console.log('[StockPulse Search] Keystroke input event received:', rawVal);
       const dropdown = document.getElementById('searchDropdown');
       if (dropdown) dropdown.classList.add('active');
       const val = (rawVal || '').toLowerCase().trim();
@@ -4583,6 +3288,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (defaultContent) defaultContent.style.display = 'none';
+      if (liveResults) liveResults.style.display = 'block';
       // 1. Match Companies & Tickers
       const matchedCompanies = watchlistCompanies.filter(c => 
         (c.symbol || '').toLowerCase().includes(val) ||
@@ -4635,12 +3341,12 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <div class="quick-lookup-header">
               <div class="quick-lookup-title-group" id="quickLookupTitleGroup">
                 <span class="ticker-badge" id="quickLookupBadge">${escapeHtml(rawUpper)}</span>
-                <span class="quick-lookup-badge">⚡ Live Quick Lookup &bull; Outside Watchlist</span>
+                <span class="quick-lookup-badge">Outside your watchlist</span>
               </div>
-              <span class="quick-lookup-meta" id="quickLookupStatus"><span class="pulse-dot" style="background:var(--accent);"></span> Querying Finnhub...</span>
+              <span class="quick-lookup-meta" id="quickLookupStatus">Checking Finnhub</span>
             </div>
             <div id="quickLookupBody" style="font-size:0.8rem; color:var(--text-muted); padding:0.25rem 0;">
-              Fetching live real-time price &amp; recent headlines for <strong>${escapeHtml(rawVal.trim())}</strong>...
+              Fetching the latest price and headlines for <strong>${escapeHtml(rawVal.trim())}</strong>...
             </div>
           </div>
         `;
@@ -4651,7 +3357,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         liveResults.innerHTML = `
           <div class="search-no-results">
             <div class="no-results-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
-            <div class="no-results-title">Sorry, what you are searching for cannot be found, try being less specific.</div>
+            <div class="no-results-title">No matches. Try something less specific.</div>
             <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>, <em>NFLX</em>, <em>PLTR</em>), company name (<em>Netflix</em>, <em>Spotify</em>), or form type (<em>8-K</em>).</div>
           </div>
         `;
@@ -4662,7 +3368,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Company matches
       if (matchedCompanies.length > 0) {
-        html += '<div class="dropdown-section-title">Matching Watchlist Companies</div>';
+        html += '<div class="dropdown-section-title">Companies</div>';
         matchedCompanies.slice(0, 3).forEach(c => {
           html += `
             <a href="company.html?ticker=${escapeHtml(c.symbol)}" class="search-result-item">
@@ -4673,7 +3379,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(c.sector)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Company View ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4681,7 +3387,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Calendar matches
       if (matchedCal.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Upcoming Corporate Events</div>';
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Calendar</div>';
         matchedCal.slice(0, 2).forEach(ev => {
           html += `
             <a href="calendar.html" class="search-result-item">
@@ -4692,7 +3398,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(ev.display_date)} &bull; ${escapeHtml(ev.event_type)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Calendar ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4700,7 +3406,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Macroeconomic matches
       if (matchedEcon.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Macroeconomic Indicators</div>';
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Economy</div>';
         matchedEcon.slice(0, 2).forEach(ind => {
           html += `
             <a href="economic.html" class="search-result-item">
@@ -4711,7 +3417,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(ind.category)} &bull; Relevant: ${escapeHtml(ind.relevant_tickers)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Macro ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4719,7 +3425,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render News matches
       if (matchedNews.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Disclosures &amp; Intelligence (' + matchedNews.length + ')</div>';
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Stories (' + matchedNews.length + ')</div>';
         matchedNews.slice(0, 4).forEach(it => {
           html += `
             <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
@@ -4730,7 +3436,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(it.category)} &bull; ${escapeHtml(it.published_date)} &bull; Score: ${escapeHtml(it.score)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Feed ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4811,13 +3517,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <span class="ticker-badge ticker-${escapeHtml(data.symbol)}">${escapeHtml(data.symbol)}</span>
               ${coName}
               ${resFrom}
-              <span class="quick-lookup-badge" style="margin-left:0.35rem;">⚡ Live Quick Lookup</span>
+              <span class="quick-lookup-badge" style="margin-left:0.35rem;">Outside your watchlist</span>
             `;
           }
 
           if (status) {
             const timeStr = data.queried_at ? new Date(data.queried_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Live';
-            status.innerHTML = `<span class="pulse-dot" style="background:var(--pos);"></span> Live &bull; ${timeStr}`;
+            status.innerHTML = `As of ${escapeHtml(timeStr)}`;
           }
 
           let bodyHtml = '';
@@ -4844,7 +3550,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           if (data.headlines && data.headlines.length > 0) {
             bodyHtml += `
-              <div class="quick-lookup-headlines-title">Recent Headlines (Live Media)</div>
+              <div class="quick-lookup-headlines-title">Recent headlines</div>
               <div class="quick-lookup-headlines-list">
                 ${data.headlines.map(h => `
                   <a href="${safeHref(h.url)}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
@@ -4852,7 +3558,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                     <div class="quick-lookup-news-meta">
                       <span style="font-weight:600; color:var(--text-secondary);">${escapeHtml(h.source)}</span>
                       ${h.time_ago ? `<span>&bull;</span><span>${escapeHtml(h.time_ago)}</span>` : ''}
-                      <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read ↗</span>
+                      <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read</span>
                     </div>
                   </a>
                 `).join('')}
@@ -4866,8 +3572,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           bodyHtml += `
             <div class="quick-lookup-action-bar">
-              <span style="color:var(--text-muted);">Non-watchlist holding &bull; Live Finnhub quote</span>
-              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search In Feed ↗</a>
+              <span style="color:var(--text-muted);">Quote from Finnhub</span>
+              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search the feed</a>
             </div>
           `;
 
@@ -4904,109 +3610,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
     });
 
-    // =========================================================================
-    // 3D ORBITAL COMPANY SUGGESTION CYCLING ENGINE
-    // =========================================================================
-    let currentOrbitOffset = 0;
-    let orbitInterval = null;
-    let isOrbitPaused = false;
-
-    function getWatchlistForOrbit() {
-      if (Array.isArray(watchlistCompanies) && watchlistCompanies.length >= 4) {
-        return watchlistCompanies;
-      }
-      return [
-        { symbol: 'NVDA', name: 'NVIDIA Corporation', sector: 'Semiconductors' },
-        { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Consumer Electronics' },
-        { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Software & Cloud' },
-        { symbol: 'AMD', name: 'Advanced Micro Devices', sector: 'Semiconductors' },
-        { symbol: 'TSLA', name: 'Tesla, Inc.', sector: 'Automotive & Energy' },
-        { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Search & Cloud' },
-        { symbol: 'AMZN', name: 'Amazon.com, Inc.', sector: 'E-Commerce & Cloud' },
-        { symbol: 'BA', name: 'The Boeing Company', sector: 'Aerospace & Defense' },
-      ];
-    }
-
-    function initOrbitCards() {
-      const stage = document.getElementById('heroOrbitStage');
-      if (!stage) return;
-
-      const list = getWatchlistForOrbit();
-      if (list.length < 4) return;
-
-      updateOrbitCards(0);
-
-      stage.addEventListener('mouseenter', () => { isOrbitPaused = true; });
-      stage.addEventListener('mouseleave', () => { isOrbitPaused = false; });
-
-      // Periodically cycle the 4 cards smoothly every 7 seconds
-      if (orbitInterval) clearInterval(orbitInterval);
-      orbitInterval = setInterval(() => {
-        if (isOrbitPaused) return;
-        const searchInput = document.getElementById('globalSearchInput');
-        if (document.activeElement === searchInput) return;
-
-        currentOrbitOffset = (currentOrbitOffset + 4) % list.length;
-        transitionOrbitCards(currentOrbitOffset);
-      }, 7000);
-    }
-
-    function transitionOrbitCards(offset) {
-      const cards = document.querySelectorAll('.orbit-card');
-      cards.forEach(card => card.classList.add('card-fading'));
-
-      setTimeout(() => {
-        updateOrbitCards(offset);
-        cards.forEach(card => card.classList.remove('card-fading'));
-      }, 350);
-    }
-
-    function updateOrbitCards(offset) {
-      const list = getWatchlistForOrbit();
-      for (let i = 0; i < 4; i++) {
-        const card = document.getElementById(`orbitCard${i}`);
-        if (!card) continue;
-        const item = list[(offset + i) % list.length];
-        if (!item) continue;
-
-        const sym = item.symbol;
-        const name = item.name || sym;
-        const sector = item.sector ? item.sector.replace(/_/g, ' ') : 'Equities';
-
-        let catalystLabel = sector;
-        if (item.macro_sensitivities && item.macro_sensitivities.length > 0) {
-          catalystLabel = item.macro_sensitivities[0].replace(/_/g, ' ');
-        }
-
-        card.href = `company.html?ticker=${encodeURIComponent(sym)}`;
-        card.title = `View ${name} (${escapeHtml(sym)}) Research Hub`;
-
-        const tickerBadge = card.querySelector('.ticker-badge');
-        if (tickerBadge) {
-          tickerBadge.className = `ticker-badge ticker-${escapeHtml(sym)}`;
-          tickerBadge.textContent = sym;
-        }
-
-        const scoreEl = card.querySelector('.orbit-card-score');
-        if (scoreEl) {
-          const sampleScores = ['Score 9.0', 'Score 8.6', 'Score 8.2', 'Score 7.8', 'Score 8.4', 'Score 8.9'];
-          scoreEl.textContent = sampleScores[(offset + i) % sampleScores.length];
-        }
-
-        const nameEl = card.querySelector('.orbit-card-name');
-        if (nameEl) {
-          nameEl.textContent = name;
-        }
-
-        const catalystEl = card.querySelector('.orbit-pill-catalyst');
-        if (catalystEl) {
-          catalystEl.textContent = catalystLabel;
-        }
-      }
-    }
-
     function initHomePage() {
-      initOrbitCards();
       renderRecentlyViewed();
       const searchInput = document.getElementById('globalSearchInput');
       if (searchInput) {
@@ -7821,6 +6425,15 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 # ==============================================================================
 # MASTER RENDER ENGINE
 # ==============================================================================
+def _short_date(value: Optional[str]) -> str:
+    """Turn '2026-11-04' into 'Nov 4'. Anything unparseable is returned unchanged."""
+    try:
+        parsed = datetime.strptime(str(value), "%Y-%m-%d")
+    except ValueError:
+        return str(value or "")
+    return f"{parsed.strftime('%b')} {parsed.day}"
+
+
 def _script_json(value: Any) -> str:
     """Serialize for a <script> block, so text containing '</script>' cannot end the block."""
     return json.dumps(value).replace("</", "<\\/")
@@ -7938,6 +6551,7 @@ def render_dashboard(
             })
 
     common_context = {
+        "short_date": _short_date,
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,
