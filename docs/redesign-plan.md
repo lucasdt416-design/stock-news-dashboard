@@ -56,9 +56,9 @@ subhead, a coloured badge per ticker, and sentence-long uppercase labels.
 | PR | Branch | Scope |
 |---|---|---|
 | 00 | `redesign/00-demo-and-capture-tooling` | Demo database, capture and comparison scripts, this plan. No visual change |
-| 01 | `redesign/01-design-foundations` | Palette, type, spacing, dark mode, removal of global gradients and shadows |
+| 01 | `redesign/01-design-foundations` | Palette, type, dark mode, removal of global gradients and shadows, escaping of dynamic text, overflow fixes |
 | 02 | `redesign/02-app-shell` | Sidebar, mobile navigation, truthful status |
-| 03 | `redesign/03-home-front-page` | Home as a front page, fake scores removed, search results escaped |
+| 03 | `redesign/03-home-front-page` | Home as a front page, fake scores removed |
 | 04 | `redesign/04-feed-reading-bands` | Feed organized by reading bands |
 | 05 | `redesign/05-calendar-timeline` | Timeline and agenda |
 | 06 | `redesign/06-economic-ledger` | Indicator ledger |

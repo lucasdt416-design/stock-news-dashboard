@@ -180,49 +180,125 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
 # ==============================================================================
 SHARED_CSS = """
     :root {
-      --bg-base: #f8fafc;
-      --bg-surface: #ffffff;
-      --bg-surface-elevated: #f1f5f9;
-      --bg-surface-glass: rgba(255, 255, 255, 0.92);
-      --bg-surface-highlight: #e2e8f0;
-      --bg-hover: #f1f5f9;
-      --border-subtle: #f1f5f9;
-      --border-card: #e2e8f0;
-      --border-glass: rgba(226, 232, 240, 0.85);
-      --border-accent: #2563eb;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #64748b;
-      --accent-blue: #2563eb;
-      --accent-blue-soft: #eff6ff;
-      --accent-orange-dark: #c2410c;
-      --accent-orange-main: #ea580c;
-      --accent-indigo: #4f46e5;
-      --accent-emerald: #10b981;
-      --accent-amber: #d97706;
-      --accent-purple: #7c3aed;
-      --accent-rose: #e11d48;
-      --accent-cyan: #0284c7;
-      
-      /* Organic Softer Border Radii */
-      --radius-xs: 6px;
-      --radius-sm: 10px;
-      --radius-md: 16px;
-      --radius-lg: 24px;
-      --radius-xl: 32px;
-      --radius-2xl: 40px;
-      --radius-full: 9999px;
-      
-      /* Organic Atmospheric Shadows */
-      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
-      --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-      --shadow-hover: 0 16px 36px -6px rgba(37, 99, 235, 0.09), 0 4px 14px -2px rgba(15, 23, 42, 0.03);
-      --shadow-float: 0 20px 40px -10px rgba(15, 23, 42, 0.08);
-      --shadow-dropdown: 0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.04);
-      --shadow-modal: 0 30px 60px -15px rgba(15, 23, 42, 0.25);
-      
-      --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-      --transition-normal: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      color-scheme: light;
+      --bg-base: #f6f4ee;
+      --bg-surface: #fbfaf6;
+      --bg-surface-elevated: #edeae2;
+      --bg-surface-glass: var(--bg-surface);
+      --bg-surface-highlight: #e3dfd5;
+      --bg-hover: #efece4;
+      --border-subtle: #e8e5dc;
+      --border-card: #d9d5ca;
+      --border-glass: var(--border-card);
+      --text-primary: #1b1a17;
+      --text-secondary: #4a4740;
+      --text-muted: #6d6961;
+      --accent: #1f4e6b;
+      --accent-soft: #e3e9ea;
+      --on-accent: #fbfaf6;
+      --pos: #2a6b4a;
+      --pos-soft: #e3ebe2;
+      --neg: #a63d2f;
+      --neg-soft: #f1e2dc;
+      --warn: #85641b;
+      --warn-soft: #eee6d0;
+      --scrim: rgba(27, 26, 23, 0.45);
+
+      /* Older names kept so existing components inherit the new palette. */
+      --border-accent: var(--accent);
+      --accent-blue: var(--accent);
+      --accent-blue-soft: var(--accent-soft);
+      --accent-indigo: var(--accent);
+      --accent-purple: var(--accent);
+      --accent-cyan: var(--accent);
+      --accent-emerald: var(--pos);
+      --accent-rose: var(--neg);
+      --accent-amber: var(--warn);
+      --accent-orange-dark: var(--warn);
+      --accent-orange-main: var(--warn);
+
+      --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+      --font-sans: 'IBM Plex Sans', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+      --radius-xs: 2px;
+      --radius-sm: 3px;
+      --radius-md: 4px;
+      --radius-lg: 4px;
+      --radius-xl: 4px;
+      --radius-2xl: 4px;
+      --radius-full: 3px;
+
+      --shadow-sm: none;
+      --shadow-card: none;
+      --shadow-hover: none;
+      --shadow-float: none;
+      --shadow-dropdown: 0 8px 24px rgba(27, 26, 23, 0.12);
+      --shadow-modal: 0 8px 24px rgba(27, 26, 23, 0.18);
+
+      --transition-fast: 0.12s ease-out;
+      --transition-normal: 0.18s ease-out;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg-base: #151412;
+        --bg-surface: #1b1a17;
+        --bg-surface-elevated: #272520;
+        --bg-surface-highlight: #322f29;
+        --bg-hover: #23211d;
+        --border-subtle: #272520;
+        --border-card: #37342e;
+        --text-primary: #ece8df;
+        --text-secondary: #bdb8ac;
+        --text-muted: #98938a;
+        --accent: #93bad0;
+        --accent-soft: #232c30;
+        --on-accent: #151412;
+        --pos: #84c3a0;
+        --pos-soft: #1f2b24;
+        --neg: #e39484;
+        --neg-soft: #33211d;
+        --warn: #d3b56f;
+        --warn-soft: #2e2818;
+        --scrim: rgba(0, 0, 0, 0.6);
+        --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.5);
+        --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.6);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-base: #151412;
+      --bg-surface: #1b1a17;
+      --bg-surface-elevated: #272520;
+      --bg-surface-highlight: #322f29;
+      --bg-hover: #23211d;
+      --border-subtle: #272520;
+      --border-card: #37342e;
+      --text-primary: #ece8df;
+      --text-secondary: #bdb8ac;
+      --text-muted: #98938a;
+      --accent: #93bad0;
+      --accent-soft: #232c30;
+      --on-accent: #151412;
+      --pos: #84c3a0;
+      --pos-soft: #1f2b24;
+      --neg: #e39484;
+      --neg-soft: #33211d;
+      --warn: #d3b56f;
+      --warn-soft: #2e2818;
+      --scrim: rgba(0, 0, 0, 0.6);
+      --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.5);
+      --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      font-optical-sizing: auto;
     }
 
     * {
@@ -237,14 +313,12 @@ SHARED_CSS = """
     }
 
     body {
-      background-color: #f8fafc;
-      background-image: 
-        radial-gradient(at 15% 10%, rgba(219, 234, 254, 0.45) 0px, transparent 45%),
-        radial-gradient(at 85% 15%, rgba(254, 243, 199, 0.35) 0px, transparent 40%),
-        radial-gradient(at 50% 85%, rgba(241, 245, 249, 0.6) 0px, transparent 50%);
+      background-color: var(--bg-base);
+      background: var(--bg-surface);
       background-attachment: fixed;
       color: var(--text-primary);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: var(--font-sans);
+      font-feature-settings: 'tnum' 1;
       min-height: 100vh;
       line-height: 1.55;
       overflow-x: hidden;
@@ -264,8 +338,7 @@ SHARED_CSS = """
       min-width: 240px;
       max-width: 240px;
       flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(16px);
+      background: var(--bg-surface);
       border-right: 1px solid var(--border-card);
       display: flex;
       flex-direction: column;
@@ -295,9 +368,7 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       z-index: 950;
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: var(--bg-surface);
       border-bottom: 1px solid var(--border-card);
       padding: 0.65rem 1rem;
       align-items: center;
@@ -336,8 +407,8 @@ SHARED_CSS = """
     }
 
     .mobile-action-btn:hover, .mobile-hamburger-btn:hover {
-      background: #ffffff;
-      border-color: #cbd5e1;
+      background: var(--bg-surface);
+      border-color: var(--border-card);
       color: var(--accent-blue);
     }
 
@@ -352,9 +423,7 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: var(--scrim);
       z-index: 1050;
       opacity: 0;
       transition: opacity var(--transition-normal);
@@ -373,12 +442,10 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       z-index: 1000;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: var(--bg-surface);
       border-top: 1px solid var(--border-card);
       padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom)) 0.25rem;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 -4px 20px var(--accent-soft);
       justify-content: space-around;
       align-items: center;
     }
@@ -448,13 +515,18 @@ SHARED_CSS = """
     /* Watchlist Horizontal Ticker Ribbon (Robinhood / Apple Stocks Style) */
     .watchlist-ticker-strip {
       display: flex;
-      overflow-x: auto;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 100%;
       gap: 0.5rem;
       padding: 0.35rem 0 0.65rem 0;
       margin-bottom: 1.25rem;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
     }
+
+    .hero-section, .hero-container { min-width: 0; max-width: 100%; }
+    .comparative-select { max-width: 100%; min-width: 0; }
 
     .watchlist-ticker-strip::-webkit-scrollbar {
       display: none;
@@ -474,12 +546,12 @@ SHARED_CSS = """
       color: var(--text-primary);
       flex-shrink: 0;
       transition: all var(--transition-fast);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      box-shadow: 0 1px 2px var(--accent-soft);
       min-height: 36px;
     }
 
     .ticker-strip-pill:hover {
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       background: var(--bg-surface-elevated);
       transform: translateY(-1px);
     }
@@ -515,7 +587,7 @@ SHARED_CSS = """
     }
 
     .perf-toggle-btn.active {
-      background: #ffffff;
+      background: var(--bg-surface);
       color: var(--text-primary);
       box-shadow: var(--shadow-sm);
     }
@@ -851,7 +923,6 @@ SHARED_CSS = """
       padding: 0.5rem 0.95rem;
       border-radius: var(--radius-full);
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(12px);
       border: 1px solid var(--border-card);
       cursor: pointer;
       transition: all var(--transition-fast);
@@ -859,9 +930,9 @@ SHARED_CSS = """
     }
 
     .top-header-btn:hover {
-      background: #ffffff;
+      background: var(--bg-surface);
       color: var(--text-primary);
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       transform: translateY(-1px);
       box-shadow: var(--shadow-card);
     }
@@ -879,18 +950,17 @@ SHARED_CSS = """
       width: 36px;
       height: 36px;
       border-radius: var(--radius-sm);
-      background: linear-gradient(135deg, #c2410c, #9a3412);
+      background: var(--text-primary);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(194, 65, 12, 0.3);
+      color: var(--bg-base);
       flex-shrink: 0;
     }
 
     .brand-title {
       font-size: 1.15rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--text-primary);
       line-height: 1;
@@ -898,7 +968,7 @@ SHARED_CSS = """
 
     .nav-section-title {
       font-size: 0.68rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-muted);
@@ -932,8 +1002,8 @@ SHARED_CSS = """
     }
 
     .nav-link.active {
-      background: #eff6ff;
-      color: #1d4ed8;
+      background: var(--accent-soft);
+      color: var(--accent);
       font-weight: 700;
     }
 
@@ -952,7 +1022,7 @@ SHARED_CSS = """
     }
 
     .nav-count {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.72rem;
       font-weight: 700;
       background: var(--bg-surface-elevated);
@@ -962,8 +1032,8 @@ SHARED_CSS = """
     }
 
     .nav-link.active .nav-count {
-      background: #dbeafe;
-      color: #1e40af;
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     .sidebar-footer {
@@ -1076,8 +1146,7 @@ SHARED_CSS = """
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
+      background: var(--bg-surface);
       border: 1px solid var(--border-card);
       padding: 0.42rem 1.25rem;
       border-radius: var(--radius-full);
@@ -1112,7 +1181,7 @@ SHARED_CSS = """
 
     .hero-title {
       font-size: 2.65rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: -0.04em;
       color: var(--text-primary);
       margin-bottom: 0.55rem;
@@ -1171,12 +1240,10 @@ SHARED_CSS = """
       pointer-events: auto;
       width: 172px;
       padding: 0.72rem 0.85rem;
-      background: rgba(255, 255, 255, 0.90);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(226, 232, 240, 0.90);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
+      box-shadow: 0 10px 25px -5px var(--accent-soft), 0 4px 6px -2px var(--accent-soft);
       text-decoration: none;
       text-align: left;
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease, opacity 0.35s ease;
@@ -1186,21 +1253,11 @@ SHARED_CSS = """
       z-index: 30;
     }
 
-    .orbit-card-glow {
-      position: absolute;
-      top: -30%;
-      left: -30%;
-      width: 160%;
-      height: 160%;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-      opacity: 0.4;
-    }
+    .orbit-card-glow { display: none; }
 
     .orbit-card:hover .orbit-card-glow {
       opacity: 1;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.16) 0%, transparent 70%);
+      background: var(--bg-surface);
     }
 
     .orbit-card-header {
@@ -1215,7 +1272,7 @@ SHARED_CSS = """
       font-size: 0.68rem;
       font-weight: 700;
       color: var(--accent-blue);
-      background: rgba(37, 99, 235, 0.08);
+      background: var(--accent-soft);
       padding: 0.1rem 0.4rem;
       border-radius: var(--radius-full);
       font-family: var(--font-mono);
@@ -1321,10 +1378,10 @@ SHARED_CSS = """
 
     .orbit-card:hover {
       border-color: var(--accent-blue);
-      box-shadow: 0 16px 36px -6px rgba(37, 99, 235, 0.20), 0 0 0 1px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 16px 36px -6px var(--accent-soft), 0 0 0 1px var(--accent-soft);
       transform: scale(1.06) translate3d(0, -4px, 75px) !important;
       z-index: 45 !important;
-      background: #ffffff;
+      background: var(--bg-surface);
     }
 
     .orbit-card.card-fading {
@@ -1345,13 +1402,11 @@ SHARED_CSS = """
     .search-box {
       display: flex;
       align-items: center;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(203, 213, 225, 0.95);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-xl);
       padding: 0.95rem 1.4rem;
-      box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+      box-shadow: 0 12px 32px -4px var(--accent-soft), 0 4px 12px -2px var(--accent-soft);
       transition: all var(--transition-normal);
       cursor: text;
       width: 100%;
@@ -1360,8 +1415,8 @@ SHARED_CSS = """
 
     .search-box:focus-within, .search-box.focused {
       border-color: var(--accent-blue);
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15), 0 20px 40px -8px rgba(37, 99, 235, 0.16);
-      background: #ffffff;
+      box-shadow: 0 0 0 4px var(--accent-soft), 0 20px 40px -8px var(--accent-soft);
+      background: var(--bg-surface);
       transform: translateY(-2px);
     }
 
@@ -1385,7 +1440,7 @@ SHARED_CSS = """
     }
 
     .search-input::placeholder {
-      color: #94a3b8;
+      color: var(--text-muted);
     }
 
     .search-shortcut {
@@ -1396,7 +1451,7 @@ SHARED_CSS = """
       border: 1px solid var(--border-card);
       border-radius: 6px;
       padding: 0.18rem 0.5rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.72rem;
       font-weight: 700;
       color: var(--text-muted);
@@ -1412,8 +1467,7 @@ SHARED_CSS = """
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(20px);
+      background: var(--bg-surface);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-dropdown);
@@ -1437,7 +1491,7 @@ SHARED_CSS = """
 
     .dropdown-section-title {
       font-size: 0.7rem;
-      font-weight: 800;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--text-muted);
@@ -1478,8 +1532,8 @@ SHARED_CSS = """
     }
 
     .dropdown-tab-card:hover {
-      background: #eff6ff;
-      border-color: #bfdbfe;
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
       transform: translateY(-1px);
     }
 
@@ -1538,7 +1592,7 @@ SHARED_CSS = """
     }
 
     .ticker-jump-pill {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.75rem;
       font-weight: 700;
       padding: 0.22rem 0.6rem;
@@ -1551,9 +1605,9 @@ SHARED_CSS = """
     }
 
     .ticker-jump-pill:hover {
-      background: #eff6ff;
-      border-color: #93c5fd;
-      color: #1d4ed8;
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
+      color: var(--accent);
       transform: translateY(-1px);
     }
 
@@ -1585,8 +1639,8 @@ SHARED_CSS = """
     }
 
     .search-result-item:hover {
-      background: #eff6ff;
-      border-color: #bfdbfe;
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
       transform: translateX(2px);
     }
 
@@ -1674,13 +1728,13 @@ SHARED_CSS = """
       margin-bottom: 0.85rem;
       width: 100%;
       box-sizing: border-box;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 2px 8px var(--accent-soft);
       transition: all var(--transition-fast);
     }
 
     .quick-lookup-card.loading {
-      border-color: #93c5fd;
-      background: #f8fbff;
+      border-color: var(--accent-soft);
+      background: var(--accent-soft);
     }
 
     .quick-lookup-header {
@@ -1704,9 +1758,9 @@ SHARED_CSS = """
     .quick-lookup-badge {
       font-size: 0.68rem;
       font-weight: 700;
-      color: #1d4ed8;
-      background: #dbeafe;
-      border: 1px solid #bfdbfe;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-soft);
       padding: 0.12rem 0.45rem;
       border-radius: var(--radius-full);
       display: inline-flex;
@@ -1732,7 +1786,7 @@ SHARED_CSS = """
     .quick-lookup-price-val {
       font-family: var(--font-mono);
       font-size: 1.35rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       letter-spacing: -0.02em;
     }
@@ -1749,13 +1803,13 @@ SHARED_CSS = """
     }
 
     .quick-lookup-change.pos {
-      color: #15803d;
-      background: rgba(22, 163, 74, 0.1);
+      color: var(--pos);
+      background: var(--pos-soft);
     }
 
     .quick-lookup-change.neg {
-      color: #b91c1c;
-      background: rgba(220, 38, 38, 0.1);
+      color: var(--neg);
+      background: var(--neg-soft);
     }
 
     .quick-lookup-change.neu {
@@ -1772,7 +1826,7 @@ SHARED_CSS = """
 
     .quick-lookup-headlines-title {
       font-size: 0.72rem;
-      font-weight: 800;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
@@ -1799,8 +1853,8 @@ SHARED_CSS = """
     }
 
     .quick-lookup-news-item:hover {
-      background: #eff6ff;
-      border-color: #bfdbfe;
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
       transform: translateX(2px);
     }
 
@@ -1846,7 +1900,6 @@ SHARED_CSS = """
 
     .bento-card {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       padding: 1.65rem;
@@ -1863,28 +1916,18 @@ SHARED_CSS = """
     }
 
     .bento-card:hover {
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       box-shadow: var(--shadow-hover);
       transform: translateY(-2px);
     }
 
     .bento-card-primary {
-      background: linear-gradient(135deg, rgba(238, 242, 255, 0.95), rgba(255, 255, 255, 0.95));
-      border: 1px solid rgba(199, 210, 254, 0.8);
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-soft);
       position: relative;
     }
 
-    .bento-card-primary::before {
-      content: "";
-      position: absolute;
-      top: -40px;
-      right: -40px;
-      width: 140px;
-      height: 140px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
-      border-radius: 50%;
-      pointer-events: none;
-    }
+    .bento-card-primary::before { display: none; }
 
     .bento-side-stack {
       display: flex;
@@ -1908,11 +1951,11 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.35rem;
       font-size: 0.72rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: #4338ca;
-      background: #e0e7ff;
+      color: var(--accent);
+      background: var(--accent-soft);
       padding: 0.25rem 0.65rem;
       border-radius: var(--radius-full);
     }
@@ -1922,11 +1965,11 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.35rem;
       font-size: 0.72rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: #0369a1;
-      background: #e0f2fe;
+      color: var(--accent);
+      background: var(--accent-soft);
       padding: 0.25rem 0.65rem;
       border-radius: var(--radius-full);
     }
@@ -1936,11 +1979,11 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.35rem;
       font-size: 0.72rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: #15803d;
-      background: #dcfce7;
+      color: var(--pos);
+      background: var(--pos-soft);
       padding: 0.25rem 0.65rem;
       border-radius: var(--radius-full);
     }
@@ -1965,10 +2008,10 @@ SHARED_CSS = """
     }
 
     .bento-count {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 2.2rem;
-      font-weight: 800;
-      color: #1e1b4b;
+      font-weight: 600;
+      color: var(--text-primary);
       line-height: 1;
     }
 
@@ -1994,13 +2037,13 @@ SHARED_CSS = """
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(199, 210, 254, 0.6);
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-soft);
       border-radius: var(--radius-md);
       padding: 0.65rem 0.95rem;
       font-size: 0.82rem;
       font-weight: 600;
-      color: #4338ca;
+      color: var(--accent);
     }
 
     .bento-side-meta {
@@ -2025,7 +2068,6 @@ SHARED_CSS = """
 
     .recent-card {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(14px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       padding: 1.1rem 1.25rem;
@@ -2042,7 +2084,7 @@ SHARED_CSS = """
     }
 
     .recent-card:hover {
-      border-color: #94a3b8;
+      border-color: var(--text-muted);
       box-shadow: var(--shadow-hover);
       transform: translateY(-2px);
     }
@@ -2099,10 +2141,10 @@ SHARED_CSS = """
     }
 
     .recent-card-pill {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.72rem;
       font-weight: 700;
-      color: #4338ca;
+      color: var(--accent);
     }
 
     /* Section Headers */
@@ -2117,7 +2159,7 @@ SHARED_CSS = """
 
     .section-heading {
       font-size: 1.35rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: -0.025em;
       color: var(--text-primary);
     }
@@ -2127,7 +2169,6 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.4rem;
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(12px);
       border: 1px solid var(--border-card);
       padding: 0.4rem 0.85rem;
       border-radius: var(--radius-full);
@@ -2148,7 +2189,6 @@ SHARED_CSS = """
 
     .analytics-card {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       padding: 1.75rem;
@@ -2178,9 +2218,9 @@ SHARED_CSS = """
     }
 
     .analytics-metric-val {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 2rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       display: flex;
       align-items: center;
@@ -2191,7 +2231,7 @@ SHARED_CSS = """
       font-size: 0.75rem;
       font-weight: 700;
       color: var(--accent-emerald);
-      background: rgba(16, 185, 129, 0.12);
+      background: var(--pos-soft);
       padding: 0.2rem 0.55rem;
       border-radius: var(--radius-full);
     }
@@ -2225,8 +2265,8 @@ SHARED_CSS = """
     }
 
     .category-stat-row:hover {
-      background: #f8fafc;
-      border-color: #cbd5e1;
+      background: var(--bg-base);
+      border-color: var(--border-card);
     }
 
     .cat-stat-left {
@@ -2242,7 +2282,7 @@ SHARED_CSS = """
       height: 9px;
       border-radius: 50%;
       flex-shrink: 0;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 0 2px var(--bg-surface);
     }
 
     .cat-stat-name {
@@ -2262,34 +2302,34 @@ SHARED_CSS = """
     }
 
     .cat-stat-count {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.76rem;
       font-weight: 700;
       color: var(--text-primary);
     }
 
     .cat-stat-pct {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.68rem;
       font-weight: 600;
       color: var(--text-muted);
-      background: #f1f5f9;
+      background: var(--bg-surface-elevated);
       padding: 0.1rem 0.35rem;
       border-radius: 4px;
     }
 
     /* Ticker & Form Badges */
     .ticker-badge {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-weight: 700;
       font-size: 0.78rem;
       padding: 0.2rem 0.55rem;
       border-radius: 6px;
       display: inline-block;
       letter-spacing: 0.02em;
-      background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-card);
       flex-shrink: 0;
       white-space: nowrap !important;
       word-break: keep-all !important;
@@ -2300,13 +2340,13 @@ SHARED_CSS = """
 
     .ticker-badge:hover {
       transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      border-color: #94a3b8;
+      box-shadow: 0 2px 6px var(--accent-soft);
+      border-color: var(--text-muted);
       text-decoration: none;
     }
 
     .form-type-pill {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.68rem;
       font-weight: 700;
       color: var(--text-muted);
@@ -2355,27 +2395,27 @@ SHARED_CSS = """
     }
 
     .source-badge-edgar {
-      background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-card);
     }
 
     .source-badge-ir {
-      background: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-soft);
     }
 
     .source-badge-news {
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
+      background: var(--pos-soft);
+      color: var(--pos);
+      border: 1px solid var(--pos-soft);
     }
 
     /* Score Badges */
     .score-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
+      font-family: var(--font-mono);
+      font-weight: 600;
       font-size: 0.85rem;
       padding: 0.22rem 0.6rem;
       border-radius: var(--radius-sm);
@@ -2387,21 +2427,21 @@ SHARED_CSS = """
     }
 
     .score-high {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
+      background: var(--pos-soft);
+      color: var(--pos);
+      border: 1px solid var(--pos-soft);
     }
 
     .score-med {
-      background: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fde68a;
+      background: var(--warn-soft);
+      color: var(--warn);
+      border: 1px solid var(--warn-soft);
     }
 
     .score-low {
-      background: #f1f5f9;
-      color: #64748b;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      border: 1px solid var(--border-card);
     }
 
     /* Company Page Specific Styles */
@@ -2439,14 +2479,14 @@ SHARED_CSS = """
     }
     .company-strip-pill.active {
       background: var(--accent-blue);
-      color: #ffffff;
+      color: var(--on-accent);
       border-color: var(--accent-blue);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 4px 12px var(--accent-soft);
     }
     .company-strip-pill.active .ticker-badge {
-      background: rgba(255, 255, 255, 0.25);
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.4);
+      background: var(--bg-surface);
+      color: var(--on-accent);
+      border-color: var(--bg-surface);
     }
 
     .company-hero-box {
@@ -2473,9 +2513,9 @@ SHARED_CSS = """
       gap: 1rem;
     }
     .company-hero-symbol {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 1.5rem;
-      font-weight: 800;
+      font-weight: 600;
       padding: 0.35rem 0.95rem;
       border-radius: var(--radius-md);
       background: var(--bg-surface-elevated);
@@ -2484,7 +2524,7 @@ SHARED_CSS = """
     }
     .company-hero-name {
       font-size: 1.45rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       margin: 0;
       line-height: 1.2;
@@ -2497,8 +2537,8 @@ SHARED_CSS = """
       margin-top: 0.35rem;
     }
     .company-notes-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-base);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 0.85rem 1.1rem;
       font-size: 0.84rem;
@@ -2524,7 +2564,7 @@ SHARED_CSS = """
       transition: all 0.15s ease;
     }
     .company-kpi-card:hover {
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       transform: translateY(-1px);
     }
     .company-kpi-title {
@@ -2536,9 +2576,9 @@ SHARED_CSS = """
       margin-bottom: 0.25rem;
     }
     .company-kpi-val {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 1.25rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       line-height: 1.2;
     }
@@ -2580,7 +2620,7 @@ SHARED_CSS = """
       transition: all 0.15s ease;
     }
     .company-feed-item:hover {
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       box-shadow: var(--shadow-sm);
     }
     .company-feed-top {
@@ -2607,7 +2647,7 @@ SHARED_CSS = """
     }
     .company-side-title {
       font-size: 0.92rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       display: flex;
       align-items: center;
@@ -2635,16 +2675,16 @@ SHARED_CSS = """
       font-weight: 600;
       padding: 0.18rem 0.5rem;
       border-radius: var(--radius-sm);
-      background: #eef2ff;
-      color: #4338ca;
-      border: 1px solid #c7d2fe;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-soft);
       max-width: 100%;
       flex-wrap: wrap;
     }
 
     .crossref-rel-pill {
       font-size: 0.62rem;
-      font-weight: 800;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       padding: 0.1rem 0.35rem;
@@ -2653,15 +2693,15 @@ SHARED_CSS = """
     }
 
     .crossref-customer {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #86efac;
+      background: var(--pos-soft);
+      color: var(--pos);
+      border: 1px solid var(--pos-soft);
     }
 
     .crossref-supplier {
-      background: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fcd34d;
+      background: var(--warn-soft);
+      color: var(--warn);
+      border: 1px solid var(--warn-soft);
     }
 
     .crossref-accordion {
@@ -2673,9 +2713,9 @@ SHARED_CSS = """
     .crossref-summary-pill {
       font-size: 0.72rem;
       font-weight: 700;
-      color: #4338ca;
-      background: #eef2ff;
-      border: 1px solid #c7d2fe;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-soft);
       border-radius: var(--radius-full);
       padding: 0.22rem 0.65rem;
       cursor: pointer;
@@ -2694,8 +2734,8 @@ SHARED_CSS = """
     }
 
     .crossref-summary-pill:hover {
-      background: #e0e7ff;
-      border-color: #a5b4fc;
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
     }
 
     .accordion-arrow {
@@ -2711,7 +2751,7 @@ SHARED_CSS = """
     .crossref-dropdown-content {
       margin-top: 0.5rem;
       padding: 0.65rem 0.85rem;
-      background: #ffffff;
+      background: var(--bg-surface);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       display: flex;
@@ -2733,18 +2773,18 @@ SHARED_CSS = """
     /* Why It Matters Callout Box */
     .why-matters-box {
       margin-top: 0.6rem;
-      background: #eff6ff;
+      background: var(--accent-soft);
       border-left: 4px solid var(--accent-blue);
       padding: 0.65rem 0.95rem;
       border-radius: 0 var(--radius-md) var(--radius-md) 0;
       font-size: 0.835rem;
-      color: #1e3a8a;
+      color: var(--accent);
       line-height: 1.5;
     }
 
     .why-tag {
       font-weight: 700;
-      color: #1d4ed8;
+      color: var(--accent);
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.03em;
@@ -2768,14 +2808,14 @@ SHARED_CSS = """
     }
 
     .action-link:hover {
-      color: #1d4ed8;
+      color: var(--accent);
       transform: translateX(2px);
     }
 
     /* Primary Button */
     .btn-primary {
       background: var(--accent-blue);
-      color: #ffffff;
+      color: var(--on-accent);
       padding: 0.6rem 1.25rem;
       border-radius: var(--radius-full);
       font-weight: 600;
@@ -2792,7 +2832,7 @@ SHARED_CSS = """
     }
 
     .btn-primary:hover {
-      background: #1d4ed8;
+      background: var(--accent);
       box-shadow: var(--shadow-card);
       transform: translateY(-1px);
     }
@@ -2800,7 +2840,6 @@ SHARED_CSS = """
     /* Filter Controls Panel */
     .controls-panel {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       padding: 1.65rem;
@@ -2847,28 +2886,27 @@ SHARED_CSS = """
     }
 
     .filter-btn:hover {
-      background: #e2e8f0;
+      background: var(--border-card);
       color: var(--text-primary);
       transform: translateY(-1px);
     }
 
     .filter-btn.active {
       background: var(--accent-blue);
-      color: #ffffff;
+      color: var(--on-accent);
       border-color: var(--accent-blue);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 2px 8px var(--accent-soft);
     }
 
     .pill-count {
       font-size: 0.7rem;
       opacity: 0.85;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
     }
 
     /* Table Styles */
     .table-container {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       overflow-x: auto;
@@ -2886,7 +2924,7 @@ SHARED_CSS = """
     }
 
     th {
-      background: rgba(248, 250, 252, 0.85);
+      background: var(--bg-surface);
       color: var(--text-muted);
       font-size: 0.75rem;
       font-weight: 700;
@@ -2904,7 +2942,7 @@ SHARED_CSS = """
     }
 
     tr.news-row:hover td {
-      background: rgba(248, 250, 252, 0.7);
+      background: var(--bg-surface);
     }
 
     .headline-text {
@@ -2923,7 +2961,7 @@ SHARED_CSS = """
     }
 
     .date-cell {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.78rem;
       color: var(--text-muted);
       white-space: nowrap;
@@ -2932,7 +2970,6 @@ SHARED_CSS = """
     /* Priority Section & Editorial Suite Layout */
     .priority-section {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-xl);
       padding: 2rem;
@@ -2959,13 +2996,13 @@ SHARED_CSS = """
     }
 
     .priority-badge-icon {
-      background: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fde68a;
+      background: var(--warn-soft);
+      color: var(--warn);
+      border: 1px solid var(--warn-soft);
       padding: 0.35rem 0.75rem;
       border-radius: var(--radius-full);
       font-size: 0.75rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.05em;
       display: inline-flex;
       align-items: center;
@@ -2993,26 +3030,26 @@ SHARED_CSS = """
 
     .priority-card:hover {
       transform: translateY(-2px);
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       box-shadow: var(--shadow-card);
-      background: #ffffff;
+      background: var(--bg-surface);
     }
 
     /* #1 Lead Editorial Card */
     .priority-lead-card {
-      background: linear-gradient(135deg, rgba(238, 242, 255, 0.8), #ffffff);
-      border: 1px solid rgba(199, 210, 254, 0.9);
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-soft);
       padding: 2rem;
       box-shadow: var(--shadow-hover);
     }
 
     .priority-lead-badge {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.75rem;
-      font-weight: 800;
-      color: #4338ca;
-      background: #e0e7ff;
-      border: 1px solid #c7d2fe;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-soft);
       padding: 0.25rem 0.65rem;
       border-radius: var(--radius-full);
     }
@@ -3024,7 +3061,7 @@ SHARED_CSS = """
 
     .priority-lead-headline {
       font-size: 1.25rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       margin: 0.75rem 0 0.5rem 0;
       line-height: 1.35;
@@ -3056,23 +3093,23 @@ SHARED_CSS = """
     }
 
     .priority-rank-pill {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.72rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-muted);
-      background: #ffffff;
+      background: var(--bg-surface);
       padding: 0.18rem 0.5rem;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-card);
     }
 
     .priority-score-pill {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.82rem;
-      font-weight: 800;
-      color: #15803d;
-      background: #dcfce7;
-      border: 1px solid #bbf7d0;
+      font-weight: 600;
+      color: var(--pos);
+      background: var(--pos-soft);
+      border: 1px solid var(--pos-soft);
       padding: 0.22rem 0.6rem;
       border-radius: var(--radius-full);
       flex-shrink: 0;
@@ -3105,8 +3142,8 @@ SHARED_CSS = """
 
     /* Corporate Calendar Spotlight & Organic Grid */
     .calendar-spotlight-card {
-      background: linear-gradient(135deg, rgba(240, 249, 255, 0.9), #ffffff);
-      border: 1px solid rgba(186, 230, 253, 0.9);
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-soft);
       border-radius: var(--radius-xl);
       padding: 1.85rem;
       box-shadow: var(--shadow-card);
@@ -3124,11 +3161,11 @@ SHARED_CSS = """
 
     .spotlight-beacon-pill {
       font-size: 0.72rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: #0369a1;
-      background: #e0f2fe;
+      color: var(--accent);
+      background: var(--accent-soft);
       padding: 0.25rem 0.75rem;
       border-radius: var(--radius-full);
     }
@@ -3145,9 +3182,9 @@ SHARED_CSS = """
       min-width: 72px !important;
       padding: 0.6rem 0.85rem !important;
       border-radius: var(--radius-md) !important;
-      background: #ffffff !important;
-      border: 1px solid #bae6fd !important;
-      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.08) !important;
+      background: var(--bg-surface) !important;
+      border: 1px solid var(--accent-soft) !important;
+      box-shadow: 0 4px 12px var(--accent-soft) !important;
     }
 
     .calendar-grid {
@@ -3159,7 +3196,6 @@ SHARED_CSS = """
 
     .calendar-card {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       padding: 1.35rem;
@@ -3175,13 +3211,13 @@ SHARED_CSS = """
 
     .calendar-card:hover {
       transform: translateY(-2px);
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       box-shadow: var(--shadow-card);
     }
 
     .calendar-card-estimated {
-      border: 1px dashed #cbd5e1;
-      background: rgba(248, 250, 252, 0.85);
+      border: 1px dashed var(--border-card);
+      background: var(--bg-surface);
     }
 
     .calendar-card-header {
@@ -3203,7 +3239,7 @@ SHARED_CSS = """
 
     .calendar-origin-badge {
       font-size: 0.62rem;
-      font-weight: 800;
+      font-weight: 600;
       padding: 0.18rem 0.5rem;
       border-radius: var(--radius-full);
       letter-spacing: 0.04em;
@@ -3211,15 +3247,15 @@ SHARED_CSS = """
     }
 
     .origin-sourced {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
+      background: var(--pos-soft);
+      color: var(--pos);
+      border: 1px solid var(--pos-soft);
     }
 
     .origin-estimated {
-      background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #cbd5e1;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-card);
     }
 
     .calendar-type-pill {
@@ -3234,13 +3270,13 @@ SHARED_CSS = """
       margin-top: 0.35rem;
     }
 
-    .cal-type-earnings   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .cal-type-dividend   { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .cal-type-sec        { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
-    .cal-type-conference { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .cal-type-earnings   { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-soft); }
+    .cal-type-dividend   { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
+    .cal-type-sec        { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-soft); }
+    .cal-type-conference { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-soft); }
 
     .calendar-date-box {
-      background: #ffffff;
+      background: var(--bg-surface);
       border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 0.4rem 0.65rem;
@@ -3254,16 +3290,16 @@ SHARED_CSS = """
 
     .calendar-date-month {
       font-size: 0.65rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--accent-blue);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
 
     .calendar-date-day {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 1.35rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       line-height: 1.1;
     }
@@ -3311,7 +3347,6 @@ SHARED_CSS = """
 
     .economic-card {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       padding: 1.5rem;
@@ -3325,13 +3360,13 @@ SHARED_CSS = """
 
     .economic-card:hover {
       transform: translateY(-2px);
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       box-shadow: var(--shadow-card);
     }
 
     .economic-card-anchor {
-      background: linear-gradient(135deg, rgba(238, 242, 255, 0.9), #ffffff);
-      border: 1px solid rgba(199, 210, 254, 0.9);
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-soft);
       box-shadow: var(--shadow-hover);
     }
 
@@ -3346,7 +3381,7 @@ SHARED_CSS = """
 
     .economic-category-badge {
       font-size: 0.65rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--text-muted);
@@ -3366,14 +3401,14 @@ SHARED_CSS = """
       gap: 0.25rem;
     }
 
-    .trend-up   { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-    .trend-down { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .trend-flat { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .trend-up   { background: var(--neg-soft); color: var(--neg); border: 1px solid var(--neg-soft); }
+    .trend-down { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
+    .trend-flat { background: var(--bg-surface-elevated); color: var(--text-secondary); border: 1px solid var(--border-card); }
 
     .economic-val {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 2.1rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       line-height: 1;
       margin-bottom: 0.45rem;
@@ -3381,7 +3416,7 @@ SHARED_CSS = """
 
     .economic-val-anchor {
       font-size: 2.5rem;
-      color: #1e1b4b;
+      color: var(--text-primary);
     }
 
     .economic-series-name {
@@ -3430,7 +3465,6 @@ SHARED_CSS = """
 
     .macro-event-card {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-lg);
       padding: 1.15rem 1.25rem;
@@ -3451,13 +3485,13 @@ SHARED_CSS = """
       left: 0;
       width: 4px;
       height: 100%;
-      background: linear-gradient(180deg, #3b82f6, #6366f1);
+      background: var(--bg-surface);
       border-radius: 4px 0 0 4px;
     }
 
     .macro-event-card:hover {
       transform: translateY(-2px);
-      border-color: #cbd5e1;
+      border-color: var(--border-card);
       box-shadow: var(--shadow-card);
     }
 
@@ -3470,7 +3504,7 @@ SHARED_CSS = """
 
     .macro-event-authority {
       font-size: 0.68rem;
-      font-weight: 800;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
@@ -3481,9 +3515,9 @@ SHARED_CSS = """
       font-weight: 700;
       padding: 0.2rem 0.55rem;
       border-radius: var(--radius-full);
-      background: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-soft);
     }
 
     .macro-event-title {
@@ -3522,8 +3556,8 @@ SHARED_CSS = """
       position: relative;
       margin: 0.85rem 0 0.65rem 0;
       padding: 0.35rem 0 0.15rem 0;
-      background: rgba(248, 250, 252, 0.6);
-      border: 1px solid rgba(226, 232, 240, 0.8);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-md);
       padding: 0.5rem 0.65rem 0.35rem 0.65rem;
     }
@@ -3540,7 +3574,7 @@ SHARED_CSS = """
       justify-content: space-between;
       align-items: center;
       font-size: 0.68rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       color: var(--text-muted);
       margin-top: 0.25rem;
     }
@@ -3548,12 +3582,12 @@ SHARED_CSS = """
     .sparkline-tooltip {
       position: absolute;
       display: none;
-      background: rgba(15, 23, 42, 0.92);
-      color: #ffffff;
+      background: var(--scrim);
+      color: var(--on-accent);
       padding: 0.3rem 0.55rem;
       border-radius: var(--radius-sm);
       font-size: 0.72rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       pointer-events: none;
       z-index: 20;
       white-space: nowrap;
@@ -3563,8 +3597,8 @@ SHARED_CSS = """
 
     /* AI Macro Synthesis Box */
     .ai-synthesis-card {
-      background: linear-gradient(135deg, rgba(240, 249, 255, 0.85), rgba(245, 243, 255, 0.85));
-      border: 1px solid rgba(199, 210, 254, 0.9);
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-soft);
       border-radius: var(--radius-md);
       padding: 0.75rem 0.9rem;
       margin: 0.85rem 0 1.15rem 0;
@@ -3584,14 +3618,14 @@ SHARED_CSS = """
       align-items: center;
       gap: 0.35rem;
       font-size: 0.68rem;
-      font-weight: 800;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #4338ca;
+      color: var(--accent);
     }
 
     .ai-synthesis-badge svg {
-      color: #6366f1;
+      color: var(--accent);
     }
 
     .ai-synthesis-meta {
@@ -3601,7 +3635,7 @@ SHARED_CSS = """
 
     .ai-synthesis-content {
       font-size: 0.825rem;
-      color: #1e1b4b;
+      color: var(--text-primary);
       line-height: 1.45;
       font-weight: 500;
       font-style: normal;
@@ -3610,7 +3644,6 @@ SHARED_CSS = """
     /* Health Section */
     .health-section {
       background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glass);
       border-radius: var(--radius-xl);
       padding: 2rem;
@@ -3639,13 +3672,13 @@ SHARED_CSS = """
 
     .health-title {
       font-size: 1.25rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
     }
 
     .health-status-badge {
       font-size: 0.75rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       padding: 0.3rem 0.75rem;
@@ -3655,9 +3688,9 @@ SHARED_CSS = """
       gap: 0.4rem;
     }
 
-    .health-badge-healthy  { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-    .health-badge-warning  { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-    .health-badge-critical { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .health-badge-healthy  { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
+    .health-badge-warning  { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-soft); }
+    .health-badge-critical { background: var(--neg-soft); color: var(--neg); border: 1px solid var(--neg-soft); }
 
     .health-grid {
       display: grid;
@@ -3684,9 +3717,9 @@ SHARED_CSS = """
     }
 
     .health-metric-val {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 1.65rem;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--text-primary);
       line-height: 1.1;
       margin-bottom: 0.25rem;
@@ -3751,9 +3784,9 @@ SHARED_CSS = """
       margin-bottom: 0.25rem;
     }
     .perf-kpi-val {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 1.25rem;
-      font-weight: 800;
+      font-weight: 600;
       line-height: 1.2;
     }
     .perf-kpi-sub {
@@ -3835,7 +3868,7 @@ SHARED_CSS = """
     }
     .company-browser-sec-btn.active {
       background: var(--accent-blue);
-      color: #ffffff;
+      color: var(--on-accent);
       border-color: var(--accent-blue);
     }
     .company-browser-grid {
@@ -3864,17 +3897,17 @@ SHARED_CSS = """
     }
     .company-browser-card:hover {
       border-color: var(--accent-blue);
-      background: #f8fbff;
+      background: var(--accent-soft);
       transform: translateY(-1px);
     }
     .company-browser-card.active {
       border-color: var(--accent-blue);
       background: var(--accent-blue-soft);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+      box-shadow: 0 0 0 2px var(--accent-soft);
     }
     .company-browser-card.active .company-browser-card-name {
       color: var(--accent-blue);
-      font-weight: 800;
+      font-weight: 600;
     }
     .company-browser-card-left {
       display: flex;
@@ -3970,9 +4003,9 @@ SHARED_CSS = """
     }
     .feed-sector-btn.active {
       background: var(--accent-blue);
-      color: #ffffff;
+      color: var(--on-accent);
       border-color: var(--accent-blue);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+      box-shadow: 0 2px 8px var(--accent-soft);
     }
     .feed-ticker-picker-wrap {
       position: relative;
@@ -4067,8 +4100,8 @@ NAVIGATION_LAYOUT_HTML = """
       </svg>
     </div>
     <div style="display:flex; align-items:center; gap:0.45rem;">
-      <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.01em;">StockPulse</span>
-      <span class="pulse-dot" style="background:#10b981; width:7px; height:7px;" title="Live Disclosures Active"></span>
+      <span style="font-size:1.05rem; font-weight: 600; color:var(--text-primary); letter-spacing:-0.01em;">StockPulse</span>
+      <span class="pulse-dot" style="background:var(--pos); width:7px; height:7px;" title="Live Disclosures Active"></span>
     </div>
   </a>
   <div class="mobile-header-right">
@@ -4145,8 +4178,8 @@ NAVIGATION_LAYOUT_HTML = """
   <div class="sidebar-footer" style="margin-top:auto; padding-top:1.5rem;">
     <div class="sidebar-health-box">
       <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
-        <span class="pulse-dot" style="background:#10b981;"></span>
-        <span style="font-size:0.75rem; font-weight:700; color:#15803d;">ALL SYSTEMS HEALTHY</span>
+        <span class="pulse-dot" style="background:var(--pos);"></span>
+        <span style="font-size:0.75rem; font-weight:700; color:var(--pos);">ALL SYSTEMS HEALTHY</span>
       </div>
       <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.4;">
         {{ watchlist_companies|length }} Watchlist Holdings Monitored<br>
@@ -4183,6 +4216,18 @@ NAVIGATION_LAYOUT_HTML = """
 
 # JavaScript for Mobile Drawer, Unified Search & Header Actions
 SHARED_MOBILE_JS = """
+// Everything inserted through innerHTML goes through these two.
+function escapeHtml(value) {
+  return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function safeHref(value) {
+  const url = String(value || '');
+  return /^https?:\\/\\//i.test(url) ? escapeHtml(url) : '#';
+}
+
 function toggleMobileNav() {
   const sidebar = document.getElementById('appSidebar');
   const backdrop = document.getElementById('mobileBackdrop');
@@ -4254,9 +4299,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Personal stock news dashboard overview with widget preview cards, recently viewed companies, and instant search suggestions.">
   <title>StockPulse — What's on the agenda?</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -4273,7 +4319,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           Analytics &amp; Trends
         </a>
         <span class="section-time-pill" style="font-size:0.75rem; padding:0.3rem 0.75rem;">
-          <span class="pulse-dot" style="background:#10b981;"></span> Live
+          <span class="pulse-dot" style="background:var(--pos);"></span> Live
         </span>
       </div>
 
@@ -4283,7 +4329,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <!-- Animated Intro Greeting Header -->
           <div class="hero-intro-box">
             <a href="calendar.html" class="hero-badge intro-fade-1">
-              <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
+              <span class="pulse-dot" style="background:var(--pos); margin-right:0.2rem; flex-shrink:0;"></span>
               {% if calendar_events %}
               <span>Next Event: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
               {% else %}
@@ -4433,7 +4479,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.4rem;">
               <span>Watchlist Holdings ({{ watchlist_companies|length }})</span>
             </div>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#f8fafc; border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
+            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:var(--bg-base); border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
               Company Directory ↗
             </a>
@@ -4479,7 +4525,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </a>
 
         <!-- Widget 2: Next Corporate Catalyst Milestone Focus -->
-        <a href="calendar.html" class="bento-card" style="background: linear-gradient(135deg, rgba(240, 253, 244, 0.95), rgba(255, 255, 255, 0.95)); border: 1px solid rgba(187, 247, 208, 0.8);">
+        <a href="calendar.html" class="bento-card" style="background: var(--bg-surface); border: 1px solid var(--pos-soft);">
           <div class="bento-badge-top">
             <span class="bento-pill-cal">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
@@ -4490,9 +4536,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div>
             {% if calendar_events %}
             <div style="display:flex; align-items:center; gap:0.9rem; margin:0.6rem 0;">
-              <div class="calendar-date-box" style="width:52px; min-width:52px; padding:0.35rem 0.45rem; border-radius:var(--radius-md); box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-                <div class="calendar-date-month" style="font-size:0.72rem; font-weight:800;">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                <div class="calendar-date-day" style="font-size:1.25rem; font-weight:800;">{{ calendar_events[0].event_date[8:10] }}</div>
+              <div class="calendar-date-box" style="width:52px; min-width:52px; padding:0.35rem 0.45rem; border-radius:var(--radius-md); box-shadow:0 2px 6px var(--accent-soft);">
+                <div class="calendar-date-month" style="font-size:0.72rem; font-weight: 600;">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
+                <div class="calendar-date-day" style="font-size:1.25rem; font-weight: 600;">{{ calendar_events[0].event_date[8:10] }}</div>
               </div>
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
@@ -4512,7 +4558,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <div style="font-size:0.8rem; color:var(--text-muted);">Tracking upcoming earnings releases, FDA decisions, and shareholder votes.</div>
             {% endif %}
           </div>
-          <div class="bento-footer-pill" style="border-top:1px solid rgba(220, 252, 231, 0.8);">
+          <div class="bento-footer-pill" style="border-top:1px solid var(--pos-soft);">
             <span>{{ calendar_events|length }} Upcoming Milestones</span>
             <span>→</span>
           </div>
@@ -4523,7 +4569,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <div class="recently-viewed-section" id="recentlyViewedSection">
         <div class="section-header-row" style="margin-bottom:0.85rem; padding-top:0.25rem;">
           <div style="display:flex; align-items:center; gap:0.55rem;">
-            <div style="background:rgba(59, 130, 246, 0.1); color:#3b82f6; width:28px; height:28px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center;">
+            <div style="background:var(--accent-soft); color:var(--accent); width:28px; height:28px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <h2 class="section-heading" style="margin:0; font-size:1.15rem;">Recently Viewed Companies</h2>
@@ -4617,14 +4663,14 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         }
 
         html += `
-          <a href="company.html?ticker=${sym}" class="recent-card" title="View ${co.name} (${sym}) deep dive">
+          <a href="company.html?ticker=${escapeHtml(sym)}" class="recent-card" title="View ${escapeHtml(co.name)} (${escapeHtml(sym)}) deep dive">
             <div class="recent-card-top">
-              <span class="ticker-badge ticker-${sym}">${sym}</span>
-              <span class="recent-card-time">${timeLabel}</span>
+              <span class="ticker-badge ticker-${escapeHtml(sym)}">${escapeHtml(sym)}</span>
+              <span class="recent-card-time">${escapeHtml(timeLabel)}</span>
             </div>
             <div class="recent-card-body">
-              <div class="recent-card-name">${co.name}</div>
-              <div class="recent-card-sector">${co.sector || 'Equities'}</div>
+              <div class="recent-card-name">${escapeHtml(co.name)}</div>
+              <div class="recent-card-sector">${escapeHtml(co.sector || 'Equities')}</div>
             </div>
             <div class="recent-card-footer">
               <span class="recent-card-pill">${count} disclosures</span>
@@ -4737,13 +4783,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div id="quickLookupCard" class="quick-lookup-card loading">
             <div class="quick-lookup-header">
               <div class="quick-lookup-title-group" id="quickLookupTitleGroup">
-                <span class="ticker-badge" id="quickLookupBadge">${rawUpper}</span>
+                <span class="ticker-badge" id="quickLookupBadge">${escapeHtml(rawUpper)}</span>
                 <span class="quick-lookup-badge">⚡ Live Quick Lookup &bull; Outside Watchlist</span>
               </div>
-              <span class="quick-lookup-meta" id="quickLookupStatus"><span class="pulse-dot" style="background:#3b82f6;"></span> Querying Finnhub...</span>
+              <span class="quick-lookup-meta" id="quickLookupStatus"><span class="pulse-dot" style="background:var(--accent);"></span> Querying Finnhub...</span>
             </div>
             <div id="quickLookupBody" style="font-size:0.8rem; color:var(--text-muted); padding:0.25rem 0;">
-              Fetching live real-time price &amp; recent headlines for <strong>${rawVal.trim()}</strong>...
+              Fetching live real-time price &amp; recent headlines for <strong>${escapeHtml(rawVal.trim())}</strong>...
             </div>
           </div>
         `;
@@ -4768,12 +4814,12 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         html += '<div class="dropdown-section-title">Matching Watchlist Companies</div>';
         matchedCompanies.slice(0, 3).forEach(c => {
           html += `
-            <a href="company.html?ticker=${c.symbol}" class="search-result-item">
+            <a href="company.html?ticker=${escapeHtml(c.symbol)}" class="search-result-item">
               <div class="search-result-left">
-                <span class="ticker-badge ticker-${c.symbol}">${c.symbol}</span>
+                <span class="ticker-badge ticker-${escapeHtml(c.symbol)}">${escapeHtml(c.symbol)}</span>
                 <div class="search-result-info">
-                  <div class="search-result-title">${c.name}</div>
-                  <div class="search-result-sub">${c.sector}</div>
+                  <div class="search-result-title">${escapeHtml(c.name)}</div>
+                  <div class="search-result-sub">${escapeHtml(c.sector)}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Company View ↗</span>
@@ -4789,10 +4835,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           html += `
             <a href="calendar.html" class="search-result-item">
               <div class="search-result-left">
-                <span class="ticker-badge ticker-${ev.ticker}">${ev.ticker}</span>
+                <span class="ticker-badge ticker-${escapeHtml(ev.ticker)}">${escapeHtml(ev.ticker)}</span>
                 <div class="search-result-info">
-                  <div class="search-result-title">${ev.headline}</div>
-                  <div class="search-result-sub">${ev.display_date} &bull; ${ev.event_type}</div>
+                  <div class="search-result-title">${escapeHtml(ev.headline)}</div>
+                  <div class="search-result-sub">${escapeHtml(ev.display_date)} &bull; ${escapeHtml(ev.event_type)}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Calendar ↗</span>
@@ -4810,8 +4856,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <div class="search-result-left">
                 <div class="search-result-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
                 <div class="search-result-info">
-                  <div class="search-result-title">${ind.name}: ${ind.formatted_value}</div>
-                  <div class="search-result-sub">${ind.category} &bull; Relevant: ${ind.relevant_tickers}</div>
+                  <div class="search-result-title">${escapeHtml(ind.name)}: ${escapeHtml(ind.formatted_value)}</div>
+                  <div class="search-result-sub">${escapeHtml(ind.category)} &bull; Relevant: ${escapeHtml(ind.relevant_tickers)}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Macro ↗</span>
@@ -4827,10 +4873,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           html += `
             <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
               <div class="search-result-left">
-                <span class="ticker-badge ticker-${it.ticker}">${it.ticker}</span>
+                <span class="ticker-badge ticker-${escapeHtml(it.ticker)}">${escapeHtml(it.ticker)}</span>
                 <div class="search-result-info">
-                  <div class="search-result-title">${it.clean_headline}</div>
-                  <div class="search-result-sub">${it.category} &bull; ${it.published_date} &bull; Score: ${it.score}</div>
+                  <div class="search-result-title">${escapeHtml(it.clean_headline)}</div>
+                  <div class="search-result-sub">${escapeHtml(it.category)} &bull; ${escapeHtml(it.published_date)} &bull; Score: ${escapeHtml(it.score)}</div>
                 </div>
               </div>
               <span class="action-link" style="font-size:0.75rem;">Feed ↗</span>
@@ -4866,7 +4912,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             if (status) status.innerHTML = '<span style="color:var(--text-muted);">Endpoint Pending</span>';
             body.innerHTML = `
               <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
-                Live quick-lookup endpoint for "<strong>${query}</strong>" is currently offline or pending Cloudflare deployment.
+                Live quick-lookup endpoint for "<strong>${escapeHtml(query)}</strong>" is currently offline or pending Cloudflare deployment.
                 <div style="margin-top:0.35rem; font-size:0.72rem;">Run local dev server or configure FINNHUB_API_KEY on Cloudflare Pages.</div>
               </div>
             `;
@@ -4883,7 +4929,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             if (status) status.innerHTML = '<span style="color:var(--text-muted);">Unlisted Ticker</span>';
             body.innerHTML = `
               <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
-                ${errData.message || errData.error || `No live quote or news found on Finnhub for "<strong>${query}</strong>".`}
+                ${errData.message || errData.error ? escapeHtml(errData.message || errData.error) : `No live quote or news found on Finnhub for "<strong>${escapeHtml(query)}</strong>".`}
                 <div style="margin-top:0.35rem; font-size:0.72rem;">Try checking the company or ticker spelling or searching for general keywords.</div>
               </div>
             `;
@@ -4900,7 +4946,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             if (status) status.innerHTML = '<span style="color:var(--text-muted);">No Data</span>';
             body.innerHTML = `
               <div style="font-size:0.8rem; color:var(--text-muted);">
-                ${data.message || `No quote or news records found for <strong>${query}</strong>.`}
+                ${data.message ? escapeHtml(data.message) : `No quote or news records found for <strong>${escapeHtml(query)}</strong>.`}
               </div>
             `;
             return;
@@ -4908,10 +4954,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           card.classList.remove('loading');
           if (headerGroup && data.symbol) {
-            const coName = data.company_name ? `<span style="font-weight:700; color:var(--text-primary); font-size:0.88rem; margin-left:0.4rem;">${data.company_name}</span>` : '';
-            const resFrom = data.resolved_from ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.3rem;">(resolved from "${data.resolved_from}")</span>` : '';
+            const coName = data.company_name ? `<span style="font-weight:700; color:var(--text-primary); font-size:0.88rem; margin-left:0.4rem;">${escapeHtml(data.company_name)}</span>` : '';
+            const resFrom = data.resolved_from ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.3rem;">(resolved from "${escapeHtml(data.resolved_from)}")</span>` : '';
             headerGroup.innerHTML = `
-              <span class="ticker-badge ticker-${data.symbol}">${data.symbol}</span>
+              <span class="ticker-badge ticker-${escapeHtml(data.symbol)}">${escapeHtml(data.symbol)}</span>
               ${coName}
               ${resFrom}
               <span class="quick-lookup-badge" style="margin-left:0.35rem;">⚡ Live Quick Lookup</span>
@@ -4920,7 +4966,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           if (status) {
             const timeStr = data.queried_at ? new Date(data.queried_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Live';
-            status.innerHTML = `<span class="pulse-dot" style="background:#10b981;"></span> Live &bull; ${timeStr}`;
+            status.innerHTML = `<span class="pulse-dot" style="background:var(--pos);"></span> Live &bull; ${timeStr}`;
           }
 
           let bodyHtml = '';
@@ -4950,11 +4996,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <div class="quick-lookup-headlines-title">Recent Headlines (Live Media)</div>
               <div class="quick-lookup-headlines-list">
                 ${data.headlines.map(h => `
-                  <a href="${h.url}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
-                    <div class="quick-lookup-news-headline">${h.headline}</div>
+                  <a href="${safeHref(h.url)}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
+                    <div class="quick-lookup-news-headline">${escapeHtml(h.headline)}</div>
                     <div class="quick-lookup-news-meta">
-                      <span style="font-weight:600; color:var(--text-secondary);">${h.source}</span>
-                      ${h.time_ago ? `<span>&bull;</span><span>${h.time_ago}</span>` : ''}
+                      <span style="font-weight:600; color:var(--text-secondary);">${escapeHtml(h.source)}</span>
+                      ${h.time_ago ? `<span>&bull;</span><span>${escapeHtml(h.time_ago)}</span>` : ''}
                       <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read ↗</span>
                     </div>
                   </a>
@@ -5082,11 +5128,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         }
 
         card.href = `company.html?ticker=${encodeURIComponent(sym)}`;
-        card.title = `View ${name} (${sym}) Research Hub`;
+        card.title = `View ${name} (${escapeHtml(sym)}) Research Hub`;
 
         const tickerBadge = card.querySelector('.ticker-badge');
         if (tickerBadge) {
-          tickerBadge.className = `ticker-badge ticker-${sym}`;
+          tickerBadge.className = `ticker-badge ticker-${escapeHtml(sym)}`;
           tickerBadge.textContent = sym;
         }
 
@@ -5141,9 +5187,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Dedicated Analytics Hub for StockPulse: filing velocity trends, disclosure category breakdowns, peer comparative performance, and automated pipeline telemetry.">
   <title>StockPulse — Analytics &amp; Performance Trends</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
 """ + SHARED_CSS + """
@@ -5159,12 +5206,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
           <div>
             <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
-              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem; font-weight:800;">INTELLIGENCE ANALYTICS</span>
+              <span class="category-badge" style="background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem; font-weight: 600;">INTELLIGENCE ANALYTICS</span>
               <span class="section-time-pill" style="font-size:0.75rem; padding:0.2rem 0.65rem;">
-                <span class="pulse-dot" style="background:#10b981;"></span> Live Telemetry
+                <span class="pulse-dot" style="background:var(--pos);"></span> Live Telemetry
               </span>
             </div>
-            <h1 style="font-size:1.85rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.02em; margin:0 0 0.35rem 0;">Analytics &amp; Performance Trends</h1>
+            <h1 style="font-size:1.85rem; font-weight: 600; color:var(--text-primary); letter-spacing:-0.02em; margin:0 0 0.35rem 0;">Analytics &amp; Performance Trends</h1>
             <p style="font-size:0.9rem; color:var(--text-muted); margin:0; max-width:720px;">
               Multi-dimensional analysis of disclosure velocity, thematic category allocations, 3-month peer stock returns vs. S&amp;P 500, and data pipeline safeguards.
             </p>
@@ -5181,22 +5228,22 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         <div class="analytics-stat-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:1rem; margin-top:1.5rem;">
           <div class="bento-card" style="padding:1.15rem;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Disclosures</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:var(--text-primary); margin:0.25rem 0;">{{ stats.total }}</div>
-            <div style="font-size:0.72rem; color:#15803d; font-weight:600;">Indexed &amp; Scored</div>
+            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--text-primary); margin:0.25rem 0;">{{ stats.total }}</div>
+            <div style="font-size:0.72rem; color:var(--pos); font-weight:600;">Indexed &amp; Scored</div>
           </div>
           <div class="bento-card" style="padding:1.15rem;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">High Priority (≥ 7.0)</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:#b45309; margin:0.25rem 0;">{{ stats.high_priority_count }}</div>
+            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--warn); margin:0.25rem 0;">{{ stats.high_priority_count }}</div>
             <div style="font-size:0.72rem; color:var(--text-muted);">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0) | round(1) }}% of total volume</div>
           </div>
           <div class="bento-card" style="padding:1.15rem;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Monitored Companies</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:var(--accent-blue); margin:0.25rem 0;">{{ watchlist_companies|length }}</div>
+            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--accent-blue); margin:0.25rem 0;">{{ watchlist_companies|length }}</div>
             <div style="font-size:0.72rem; color:var(--text-muted);">EDGAR, IR &amp; News</div>
           </div>
           <div class="bento-card" style="padding:1.15rem;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Categories Classified</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:#7c3aed; margin:0.25rem 0;">{{ stats.by_category|length }}</div>
+            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--accent); margin:0.25rem 0;">{{ stats.by_category|length }}</div>
             <div style="font-size:0.72rem; color:var(--text-muted);">AI classification rules</div>
           </div>
         </div>
@@ -5258,8 +5305,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         <div class="comparative-perf-header">
           <div>
             <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
-              <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
+              <span class="category-badge" style="background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem;">MARKET CONTEXT</span>
+              <h3 style="font-size:1.2rem; font-weight: 600; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
             </div>
             <p style="font-size:0.835rem; color:var(--text-muted); margin:0.35rem 0 0 0;">
               Contextual move analysis: Normalized % return (Day 0 = 0.0%) against top 3 competitors and the S&amp;P 500 (SPY) benchmark.
@@ -5311,7 +5358,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           <div class="health-title-group">
             <h3 class="health-title">Pipeline Health &amp; Safeguards</h3>
             <span class="health-status-badge health-badge-healthy">
-              <span class="pulse-dot" style="background:#10b981;"></span>
+              <span class="pulse-dot" style="background:var(--pos);"></span>
               HEALTHY &bull; OPERATIONAL
             </span>
           </div>
@@ -5323,7 +5370,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         <div class="health-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
           <div class="health-metric-card">
             <div class="health-metric-title">SEC EDGAR Filings</div>
-            <div class="health-metric-val" style="color:#15803d;">{{ latest_run.edgar_count if latest_run else 450 }}</div>
+            <div class="health-metric-val" style="color:var(--pos);">{{ latest_run.edgar_count if latest_run else 450 }}</div>
             <div class="health-metric-sub">{{ watchlist_companies|length }} companies queried</div>
           </div>
           <div class="health-metric-card">
@@ -5333,17 +5380,17 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           </div>
           <div class="health-metric-card">
             <div class="health-metric-title">News Media Coverage</div>
-            <div class="health-metric-val" style="color:#047857;">{{ latest_run.news_media_count if latest_run and latest_run.news_media_count is defined else stats.by_source.get('News Media', 0) }}</div>
+            <div class="health-metric-val" style="color:var(--pos);">{{ latest_run.news_media_count if latest_run and latest_run.news_media_count is defined else stats.by_source.get('News Media', 0) }}</div>
             <div class="health-metric-sub">Finnhub 3rd-party journalism</div>
           </div>
           <div class="health-metric-card">
             <div class="health-metric-title">Total Unique Yield</div>
-            <div class="health-metric-val" style="color:#7c3aed;">{{ latest_run.total_unique if latest_run else stats.total }}</div>
+            <div class="health-metric-val" style="color:var(--accent);">{{ latest_run.total_unique if latest_run else stats.total }}</div>
             <div class="health-metric-sub">After deduplication</div>
           </div>
           <div class="health-metric-card">
             <div class="health-metric-title">High Priority Stories</div>
-            <div class="health-metric-val" style="color:#b45309;">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
+            <div class="health-metric-val" style="color:var(--warn);">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
             <div class="health-metric-sub">Score ≥ 7.0 / 10.0</div>
           </div>
         </div>
@@ -5532,14 +5579,14 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               ctx.moveTo(sx, sy);
               ctx.lineTo(ex, ey);
               ctx.lineTo(endHorizontalX, ey);
-              ctx.strokeStyle = '#94a3b8';
+              ctx.strokeStyle = 'var(--text-muted)';
               ctx.lineWidth = 1.2;
               ctx.stroke();
 
               ctx.textAlign = isRight ? 'left' : 'right';
               ctx.textBaseline = 'middle';
               ctx.font = '600 10px Inter, sans-serif';
-              ctx.fillStyle = '#0f172a';
+              ctx.fillStyle = 'var(--text-primary)';
               ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
             });
             ctx.restore();
@@ -5596,10 +5643,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             const pct = Math.round((count / totalCount) * 100);
             const color = sliceColors[idx % sliceColors.length];
             legHtml += `
-              <div class="category-stat-row" title="${label}: ${count} (${pct}%)">
+              <div class="category-stat-row" title="${escapeHtml(label)}: ${count} (${pct}%)">
                 <div class="cat-stat-left">
                   <span class="category-legend-dot" style="background:${color};"></span>
-                  <span class="cat-stat-name">${label}</span>
+                  <span class="cat-stat-name">${escapeHtml(label)}</span>
                 </div>
                 <div class="cat-stat-right">
                   <span class="cat-stat-count">${count}</span>
@@ -5656,42 +5703,42 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       const comps = coData.competitors || [];
       const spy = coData.benchmark;
 
-      const targetColor = '#2563eb';
+      const targetColor = 'var(--accent)';
       const compColors = ['#ea580c', '#0284c7', '#9333ea'];
-      const spyColor = '#64748b';
+      const spyColor = 'var(--text-muted)';
 
       // 1. Populate KPI Ribbon
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
-        const tgtColor = tgtPct >= 0 ? '#15803d' : '#b91c1c';
+        const tgtColor = tgtPct >= 0 ? 'var(--pos)' : 'var(--neg)';
         const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
 
         const alphaPeers = coData.alpha_vs_peers;
-        const alphaPeersColor = alphaPeers >= 0 ? '#15803d' : '#b91c1c';
+        const alphaPeersColor = alphaPeers >= 0 ? 'var(--pos)' : 'var(--neg)';
 
         const spyPct = spy ? spy.total_pct_change : 0;
         const avgPeerPct = coData.avg_competitor_pct;
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${symbol} 3M Return</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
             <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
-            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? '#15803d' : '#b91c1c'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">${comps.map(c => c.symbol).join(', ') || 'None'}</div>
+            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
-            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? '#15803d' : '#b91c1c'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Broad Market Benchmark</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Peer Relative Alpha</div>
             <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? '#15803d' : (coData.assessment_type === 'negative' ? '#b91c1c' : '#475569')};">${coData.assessment}</div>
+            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? 'var(--pos)' : (coData.assessment_type === 'negative' ? 'var(--neg)' : 'var(--text-secondary)')};">${escapeHtml(coData.assessment)}</div>
           </div>
         `;
       }
@@ -5710,13 +5757,13 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             </tr>
           </thead>
           <tbody>
-            <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
-              <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
-              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target</span></td>
-              <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:var(--text-muted);">&mdash;</td>
+            <tr style="background:var(--accent-soft); font-weight:700;">
+              <td><span class="ticker-badge ticker-${escapeHtml(symbol)}">${escapeHtml(symbol)}</span> ${escapeHtml(coData.name)}</td>
+              <td><span class="form-type-pill" style="background:var(--accent-soft); color:var(--accent);">Target</span></td>
+              <td style="font-family: var(--font-mono);">$${target.base_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono);">$${target.latest_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono); color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family: var(--font-mono); color:var(--text-muted);">&mdash;</td>
             </tr>
         `;
 
@@ -5724,12 +5771,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td><a href="company.html?ticker=${c.symbol}" class="ticker-badge" style="font-size:0.75rem;">${c.symbol}</a></td>
+              <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" class="ticker-badge" style="font-size:0.75rem;">${escapeHtml(c.symbol)}</a></td>
               <td><span class="form-type-pill">Peer #${idx+1}</span></td>
-              <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${delta >= 0 ? '#15803d' : '#b91c1c'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td style="font-family: var(--font-mono);">$${c.base_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono);">$${c.latest_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono); color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family: var(--font-mono); color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -5738,12 +5785,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr style="border-top:2px dashed var(--border-card);">
-              <td><span class="form-type-pill" style="background:#f1f5f9; color:#334155; font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
+              <td><span class="form-type-pill" style="background:var(--bg-surface-elevated); color:var(--text-secondary); font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
               <td><span class="form-type-pill">Benchmark</span></td>
-              <td style="font-family:'JetBrains Mono';">$${spy.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${spy.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${spy.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${spyDelta >= 0 ? '#15803d' : '#b91c1c'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+              <td style="font-family: var(--font-mono);">$${spy.base_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono);">$${spy.latest_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono); color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family: var(--font-mono); color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -5884,9 +5931,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Full intelligence feed of scored stock news and SEC filings with interactive filtering and AI takeaways.">
   <title>StockPulse — Full Intelligence Feed</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -5903,7 +5951,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill">
-            <span class="pulse-dot" style="background:#10b981;"></span> {{ items|length }} Total Items
+            <span class="pulse-dot" style="background:var(--pos);"></span> {{ items|length }} Total Items
           </span>
         </div>
       </header>
@@ -5917,11 +5965,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </span>
             <div>
-              <h2 style="font-size:1.25rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
+              <h2 style="font-size:1.25rem; font-weight: 600; color:var(--text-primary);">Top Impact Disclosures</h2>
               <p style="font-size:0.82rem; color:var(--text-muted);">Curated high-scoring stories with investor takeaways and supply-chain cross-references</p>
             </div>
           </div>
-          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.85rem; border-radius:var(--radius-full); border:1px solid #86efac; width:fit-content;">
+          <div style="font-family: var(--font-mono); font-size:0.8rem; color:var(--pos); font-weight:700; background:var(--pos-soft); padding:0.35rem 0.85rem; border-radius:var(--radius-full); border:1px solid var(--pos-soft); width:fit-content;">
             SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
           </div>
         </div>
@@ -6092,7 +6140,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <div style="margin-bottom:0.75rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
             <span class="filter-label" style="margin-bottom:0;">Browse by Sector:</span>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
+            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
           </div>
           <div class="feed-sector-bar">
             <button class="feed-sector-btn active" data-sector="ALL" onclick="setFeedSectorFilter('ALL', this)">
@@ -6125,7 +6173,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   <span class="pill-count">{{ items|length }}</span>
                 </div>
                 {% for sec in sector_directory %}
-                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}" style="padding:0.35rem 0.85rem; font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-card);">
+                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}" style="padding:0.35rem 0.85rem; font-size:0.68rem; font-weight: 600; text-transform:uppercase; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-card);">
                   {{ sec.name }}
                 </div>
                 {% for co in sec.companies %}
@@ -6509,9 +6557,10 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Forthcoming corporate calendar showing upcoming earnings dates, dividend ex-dates, and statutory SEC filing deadlines.">
   <title>StockPulse — Forthcoming Corporate Calendar</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -6563,7 +6612,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
               <span class="calendar-origin-badge origin-sourced">Confirmed</span>
               {% endif %}
             </div>
-            <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">{{ spot.headline }}</h3>
+            <h3 style="font-size:1.15rem; font-weight: 600; color:var(--text-primary); margin-bottom:0.35rem;">{{ spot.headline }}</h3>
             <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.45;">{{ spot.details }}</p>
           </div>
           {% if spot.source_url %}
@@ -6694,9 +6743,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, 10Y Treasuries, CPI inflation, WTI Crude, and unemployment to company sensitivities.">
   <title>StockPulse — Macroeconomic Snapshot &amp; Sensitivities</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -6724,7 +6774,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem;">
           <div style="display:flex; align-items:center; gap:0.5rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--accent-blue);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <h2 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Upcoming Macroeconomic Releases &amp; Decisions</h2>
+            <h2 style="font-size:1.05rem; font-weight: 600; color:var(--text-primary); margin:0;">Upcoming Macroeconomic Releases &amp; Decisions</h2>
           </div>
           <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Federal Reserve &amp; Agency Schedule</span>
         </div>
@@ -6758,7 +6808,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         <div style="margin-bottom:0.75rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
             <span class="filter-label" style="margin-bottom:0;">Filter by Sector:</span>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
+            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
           </div>
           <div class="feed-sector-bar">
             <button class="feed-sector-btn active econ-sec-btn" data-sector="ALL" onclick="filterEconomicBySector('ALL', this)">
@@ -6846,7 +6896,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
       <!-- Watchlist Sensitivity Matrix Table -->
       <section style="background:var(--bg-surface-glass); backdrop-filter:blur(16px); border:1px solid var(--border-glass); border-radius:var(--radius-xl); padding:2rem; box-shadow:var(--shadow-card);">
-        <h3 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">Watchlist Sensitivity Matrix</h3>
+        <h3 style="font-size:1.25rem; font-weight: 600; color:var(--text-primary); margin-bottom:0.35rem;">Watchlist Sensitivity Matrix</h3>
         <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:1.5rem;">Documented sensitivities driving company-specific macroeconomic exposure</p>
 
         <div class="table-container">
@@ -6937,14 +6987,14 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         svg.innerHTML = `
           <defs>
             <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.32" />
-              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.32" />
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.0" />
             </linearGradient>
           </defs>
           <path d="${areaD}" fill="url(#${gradId})" />
-          <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4.5" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" />
-          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="#0f172a" stroke="#ffffff" stroke-width="2" style="display:none;" />
+          <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4.5" fill="var(--accent)" stroke="var(--bg-surface)" stroke-width="2" />
+          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--text-primary)" stroke="var(--bg-surface)" stroke-width="2" style="display:none;" />
         `;
 
         // Update labels
@@ -7070,9 +7120,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company Releases, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
   <title>StockPulse — Company Directory</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
 """ + SHARED_CSS + """
@@ -7090,7 +7141,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span class="section-time-pill">
-            <span class="pulse-dot" style="background:#10b981;"></span> {{ watchlist_companies|length }} Monitored Holdings
+            <span class="pulse-dot" style="background:var(--pos);"></span> {{ watchlist_companies|length }} Monitored Holdings
           </span>
         </div>
       </header>
@@ -7100,8 +7151,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         <div class="company-browser-top">
           <div>
             <div style="display:flex; align-items:center; gap:0.45rem;">
-              <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">Browse Holdings</span>
-              <span class="category-badge" style="font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Companies</span>
+              <span style="font-size:1.05rem; font-weight: 600; color:var(--text-primary);">Browse Holdings</span>
+              <span class="category-badge" style="font-size:0.7rem; font-weight: 600; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Companies</span>
             </div>
             <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem;">Select any company to load its interactive deep-dive research profile below</div>
           </div>
@@ -7115,11 +7166,11 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         <!-- Sector Category Filter Tabs -->
         <div class="company-browser-sectors">
           <button class="company-browser-sec-btn active" data-sector="ALL" onclick="filterCompanySector('ALL', this)">
-            All Sectors <span class="tab-count" style="font-family:'JetBrains Mono'; font-size:0.68rem; margin-left:0.2rem;">{{ watchlist_companies|length }}</span>
+            All Sectors <span class="tab-count" style="font-family: var(--font-mono); font-size:0.68rem; margin-left:0.2rem;">{{ watchlist_companies|length }}</span>
           </button>
           {% for sec in sector_directory %}
           <button class="company-browser-sec-btn" data-sector="{{ sec.name }}" onclick="filterCompanySector('{{ sec.name }}', this)">
-            {{ sec.name }} <span class="tab-count" style="font-family:'JetBrains Mono'; font-size:0.68rem; margin-left:0.2rem;">{{ sec.count }}</span>
+            {{ sec.name }} <span class="tab-count" style="font-family: var(--font-mono); font-size:0.68rem; margin-left:0.2rem;">{{ sec.count }}</span>
           </button>
           {% endfor %}
         </div>
@@ -7142,7 +7193,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 </div>
               </div>
               <div class="company-browser-card-stats">
-                <div class="company-browser-card-alpha" style="color:{% if co.alpha_vs_spy > 0 %}#15803d{% elif co.alpha_vs_spy < 0 %}#b91c1c{% else %}var(--text-muted){% endif %};">
+                <div class="company-browser-card-alpha" style="color:{% if co.alpha_vs_spy > 0 %}var(--pos){% elif co.alpha_vs_spy < 0 %}var(--neg){% else %}var(--text-muted){% endif %};">
                   {% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%
                 </div>
                 <div class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</div>
@@ -7207,7 +7258,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <div style="display:flex; gap:0.35rem; flex-wrap:wrap; justify-content:flex-end;">
                 {% if co.regulators %}
                   {% for reg in co.regulators %}
-                  <span class="form-type-pill" style="background:#f8fafc; color:#334155; border-color:#cbd5e1;">{{ reg }}</span>
+                  <span class="form-type-pill" style="background:var(--bg-base); color:var(--text-secondary); border-color:var(--border-card);">{{ reg }}</span>
                   {% endfor %}
                 {% else %}
                   <span class="form-type-pill">SEC</span>
@@ -7234,7 +7285,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
             <div class="company-kpi-card">
               <div class="company-kpi-title">High-Impact Signals</div>
-              <div class="company-kpi-val" style="color:{% if ns.high_count > 0 %}#dc2626{% else %}#15803d{% endif %};">
+              <div class="company-kpi-val" style="color:{% if ns.high_count > 0 %}var(--neg){% else %}var(--pos){% endif %};">
                 {{ ns.high_count }}
               </div>
               <div class="company-kpi-sub">Materiality Score &ge; 7.0</div>
@@ -7271,8 +7322,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           <div class="comparative-perf-header">
             <div>
               <div style="display:flex; align-items:center; gap:0.6rem;">
-                <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
-                <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
+                <span class="category-badge" style="background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem;">MARKET CONTEXT</span>
+                <h3 style="font-size:1.15rem; font-weight: 600; color:var(--text-primary); margin:0;">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
               </div>
               <p style="font-size:0.82rem; color:var(--text-muted); margin:0.3rem 0 0 0;">
                 Is {{ co.symbol }}'s move normal or unusual? Normalized % change since Day 0 relative to top 3 competitors and the S&amp;P 500 (SPY).
@@ -7305,7 +7356,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           <div class="company-card-deck">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; background:var(--bg-surface); padding:1rem 1.25rem; border:1px solid var(--border-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">
               <div>
-                <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Intelligence Feed</h3>
+                <h3 style="font-size:1.05rem; font-weight: 600; color:var(--text-primary); margin:0;">Intelligence Feed</h3>
                 <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">News Media &bull; SEC EDGAR &bull; Company Releases ({{ co_news|length }} Total)</div>
               </div>
 
@@ -7451,7 +7502,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                   <div style="padding:0.65rem 0.85rem; background:var(--bg-base); border:1px solid var(--border-card); border-radius:var(--radius-md);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
                       <span style="font-size:0.82rem; font-weight:700; color:var(--text-primary);">{{ ind.name }}</span>
-                      <span style="font-family:'JetBrains Mono', monospace; font-size:0.88rem; font-weight:800; color:var(--accent-blue);">{{ ind.formatted_value }}</span>
+                      <span style="font-family: var(--font-mono); font-size:0.88rem; font-weight: 600; color:var(--accent-blue);">{{ ind.formatted_value }}</span>
                     </div>
                     <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">{{ ind.context_note }}</div>
                   </div>
@@ -7481,7 +7532,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <!-- Key Customers -->
               {% if co.key_customers %}
               <div style="margin-bottom:0.85rem;">
-                <div style="font-size:0.72rem; font-weight:700; color:#15803d; text-transform:uppercase; margin-bottom:0.35rem;">Key Customers</div>
+                <div style="font-size:0.72rem; font-weight:700; color:var(--pos); text-transform:uppercase; margin-bottom:0.35rem;">Key Customers</div>
                 <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
                   {% for cust in co.key_customers %}
                   <a href="company.html?ticker={{ cust }}" onclick="event.preventDefault(); switchCompany('{{ cust }}')" class="crossref-badge" style="text-decoration:none; cursor:pointer;">
@@ -7496,7 +7547,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <!-- Key Suppliers -->
               {% if co.key_suppliers %}
               <div style="margin-bottom:0.85rem;">
-                <div style="font-size:0.72rem; font-weight:700; color:#4338ca; text-transform:uppercase; margin-bottom:0.35rem;">Key Suppliers</div>
+                <div style="font-size:0.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; margin-bottom:0.35rem;">Key Suppliers</div>
                 <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
                   {% for supp in co.key_suppliers %}
                   <a href="company.html?ticker={{ supp }}" onclick="event.preventDefault(); switchCompany('{{ supp }}')" class="crossref-badge" style="text-decoration:none; cursor:pointer;">
@@ -7511,7 +7562,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <!-- Competitors -->
               {% if co.competitors %}
               <div>
-                <div style="font-size:0.72rem; font-weight:700; color:#b45309; text-transform:uppercase; margin-bottom:0.35rem;">Competitors</div>
+                <div style="font-size:0.72rem; font-weight:700; color:var(--warn); text-transform:uppercase; margin-bottom:0.35rem;">Competitors</div>
                 <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
                   {% for comp in co.competitors %}
                   <a href="company.html?ticker={{ comp }}" onclick="event.preventDefault(); switchCompany('{{ comp }}')" class="ticker-badge ticker-{{ comp }}" style="font-size:0.72rem; text-decoration:none; cursor:pointer;">{{ comp }}</a>
@@ -7571,42 +7622,42 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       const comps = coData.competitors || [];
       const spy = coData.benchmark;
 
-      const targetColor = '#2563eb';
+      const targetColor = 'var(--accent)';
       const compColors = ['#ea580c', '#0284c7', '#9333ea'];
-      const spyColor = '#64748b';
+      const spyColor = 'var(--text-muted)';
 
       // 1. KPI Ribbon
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
-        const tgtColor = tgtPct >= 0 ? '#15803d' : '#b91c1c';
+        const tgtColor = tgtPct >= 0 ? 'var(--pos)' : 'var(--neg)';
         const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
 
         const alphaPeers = coData.alpha_vs_peers;
-        const alphaPeersColor = alphaPeers >= 0 ? '#15803d' : '#b91c1c';
+        const alphaPeersColor = alphaPeers >= 0 ? 'var(--pos)' : 'var(--neg)';
 
         const spyPct = spy ? spy.total_pct_change : 0;
         const avgPeerPct = coData.avg_competitor_pct;
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${symbol} 3M Return</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
             <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
-            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? '#15803d' : '#b91c1c'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">${comps.map(c => c.symbol).join(', ') || 'None'}</div>
+            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
-            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? '#15803d' : '#b91c1c'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Broad Market Benchmark</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Peer Relative Alpha</div>
             <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? '#15803d' : (coData.assessment_type === 'negative' ? '#b91c1c' : '#475569')};">${coData.assessment}</div>
+            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? 'var(--pos)' : (coData.assessment_type === 'negative' ? 'var(--neg)' : 'var(--text-secondary)')};">${escapeHtml(coData.assessment)}</div>
           </div>
         `;
       }
@@ -7625,13 +7676,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </tr>
           </thead>
           <tbody>
-            <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
-              <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
-              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target</span></td>
-              <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:var(--text-muted);">&mdash;</td>
+            <tr style="background:var(--accent-soft); font-weight:700;">
+              <td><span class="ticker-badge ticker-${escapeHtml(symbol)}">${escapeHtml(symbol)}</span> ${escapeHtml(coData.name)}</td>
+              <td><span class="form-type-pill" style="background:var(--accent-soft); color:var(--accent);">Target</span></td>
+              <td style="font-family: var(--font-mono);">$${target.base_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono);">$${target.latest_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono); color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family: var(--font-mono); color:var(--text-muted);">&mdash;</td>
             </tr>
         `;
 
@@ -7639,12 +7690,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td><a href="company.html?ticker=${c.symbol}" onclick="event.preventDefault(); switchCompany('${c.symbol}')" class="ticker-badge" style="font-size:0.75rem; cursor:pointer;">${c.symbol}</a></td>
+              <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" onclick="event.preventDefault(); switchCompany('${escapeHtml(c.symbol)}')" class="ticker-badge" style="font-size:0.75rem; cursor:pointer;">${escapeHtml(c.symbol)}</a></td>
               <td><span class="form-type-pill">Peer #${idx+1}</span></td>
-              <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${delta >= 0 ? '#15803d' : '#b91c1c'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td style="font-family: var(--font-mono);">$${c.base_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono);">$${c.latest_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono); color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family: var(--font-mono); color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -7653,12 +7704,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr style="border-top:2px dashed var(--border-card);">
-              <td><span class="form-type-pill" style="background:#f1f5f9; color:#334155; font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
+              <td><span class="form-type-pill" style="background:var(--bg-surface-elevated); color:var(--text-secondary); font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
               <td><span class="form-type-pill">Benchmark</span></td>
-              <td style="font-family:'JetBrains Mono';">$${spy.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${spy.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${spy.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${spyDelta >= 0 ? '#15803d' : '#b91c1c'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+              <td style="font-family: var(--font-mono);">$${spy.base_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono);">$${spy.latest_price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono); color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td style="font-family: var(--font-mono); color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -7914,6 +7965,11 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 # ==============================================================================
 # MASTER RENDER ENGINE
 # ==============================================================================
+def _script_json(value: Any) -> str:
+    """Serialize for a <script> block, so text containing '</script>' cannot end the block."""
+    return json.dumps(value).replace("</", "<\\/")
+
+
 def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
@@ -8029,7 +8085,7 @@ def render_dashboard(
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,
-        "chart_data_json": json.dumps(chart_data),
+        "chart_data_json": _script_json(chart_data),
         "economic_indicators": economic_indicators,
         "upcoming_economic_events": upcoming_economic_events,
         "calendar_events": calendar_events,
@@ -8038,7 +8094,7 @@ def render_dashboard(
         "generated_at": now_str,
         "watchlist_companies": enriched_watchlist,
         "sector_directory": sector_directory,
-        "sector_directory_json": json.dumps([
+        "sector_directory_json": _script_json([
             {
                 "name": s["name"],
                 "icon": s["icon"],
@@ -8057,7 +8113,7 @@ def render_dashboard(
             } for s in sector_directory
         ]),
         "performance_data": performance_data,
-        "performance_data_json": json.dumps(performance_data or {}),
+        "performance_data_json": _script_json(performance_data or {}),
     }
 
     # 4. Render and save all 6 pages

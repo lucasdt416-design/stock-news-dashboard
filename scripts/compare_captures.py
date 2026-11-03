@@ -28,6 +28,11 @@ def load(path):
         return json.load(f)["pages"]
 
 
+def stable_ids(page):
+    """Sparkline gradient ids are random per render, so they are not comparable."""
+    return {i for i in page["ids"] if not i.startswith("grad-")}
+
+
 def compare(before, after):
     out = []
     for name in sorted(set(before) | set(after)):
@@ -39,8 +44,8 @@ def compare(before, after):
         new_text = Counter(norm(t) for t in new["text"])
         removed = sorted((old_text - new_text).elements())
         added = sorted((new_text - old_text).elements())
-        ids_gone = sorted(set(old["ids"]) - set(new["ids"]))
-        ids_new = sorted(set(new["ids"]) - set(old["ids"]))
+        ids_gone = sorted(stable_ids(old) - stable_ids(new))
+        ids_new = sorted(stable_ids(new) - stable_ids(old))
         chart_changes = []
         old_charts = {c["id"]: c for c in old["charts"]}
         new_charts = {c["id"]: c for c in new["charts"]}
