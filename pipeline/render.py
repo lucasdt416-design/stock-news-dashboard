@@ -1,21 +1,8 @@
-"""Multi-page static HTML dashboard generator with responsive architecture & organic editorial design (Phase 7).
+"""Static HTML generator for the StockPulse site.
 
-Unified Shared Layout & Organic Flow System:
-- Organic Design Language: Softer, larger border-radius tokens (14px–36px), atmospheric ambient backdrop meshes, and soft diffused shadows replacing rigid rectangular grids.
-- Asymmetric & Varied Card Layouts:
-  1. Home (index.html): Asymmetric Hero Bento Deck with a prominent Featured Intelligence Card, companion Catalyst Beacon, and Macro Pulse widget; curved analytics charts and health hub.
-  2. Feed (news.html): Editorial Priority Suite with a spacious Lead #1 Feature Card and staggered secondary cards; floating rounded filter pills.
-  3. Calendar (calendar.html): Spotlight Next Milestone Banner with prominent date box and countdown badge, followed by organic cards.
-  4. Macro (economic.html): Anchor rate cards (Fed Funds & Inflation) with oversized focal metrics, followed by responsive sensitivity matrices.
-- Brand Polish: Removed "Cloud Intelligence" tagline from beneath the StockPulse logo for clean, centered typography.
-- Bulletproof Search Dropdown: Nested flex constraints (min-width: 0, text-overflow: ellipsis, box-sizing: border-box) guaranteeing zero overflow outside the search container.
-- Responsive top navbar, off-canvas slide-over drawer, and bottom navigation bar.
-
-Generates:
-1. site/index.html    - Home / Overview: Hero greeting, live search, widget preview cards & rich charts
-2. site/news.html     - Full Intelligence Feed: Priority Panel, Filters, Search, Sort & News Table
-3. site/calendar.html - Forthcoming Corporate Calendar: Earnings calls, Dividends, Filing Deadlines
-4. site/economic.html - Macroeconomic Intelligence: FRED indicators, Live Sensitivity Filtering & Matrix
+Renders one page per view from the database: index (front page), news (feed), calendar,
+economic, company, and analytics. Pages share SHARED_CSS, NAVIGATION_LAYOUT_HTML, and
+SHARED_MOBILE_JS. Design rules are in docs/redesign-plan.md.
 """
 
 import json
@@ -462,8 +449,6 @@ SHARED_CSS = """
       padding: 0.25rem 0.5rem;
       line-height: 1;
     }
-    .comparative-select { max-width: 100%; min-width: 0; }
-
     /* Responsive Viewports */
     @media (max-width: 1024px) {
       .app-layout {
@@ -509,14 +494,6 @@ SHARED_CSS = """
         box-sizing: border-box !important;
       }
 
-      .analytics-grid {
-        grid-template-columns: 1fr !important;
-        gap: 1.25rem !important;
-      }
-
-      .priority-section, .health-section {
-        padding: 1.25rem !important;
-      }
     }
 
     /* Dedicated Phone Viewports (<= 640px and <= 480px / 375px - 414px) */
@@ -525,37 +502,6 @@ SHARED_CSS = """
         padding: 0.85rem 0.85rem calc(5.5rem + env(safe-area-inset-bottom)) 0.85rem !important;
       }
 
-      .bento-card {
-        padding: 1.15rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .comparative-perf-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.75rem !important;
-      }
-
-      .analytics-card {
-        padding: 1rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .health-section {
-        padding: 1rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .health-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.65rem !important;
-      }
-
-      .health-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.5rem !important;
-      }
     }
 
     /* Sidebar Brand (Logo and Title Only - No Tagline) */
@@ -632,13 +578,6 @@ SHARED_CSS = """
     }
 
     .theme-toggle:hover { color: var(--text-primary); }
-
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
 
     .catalyst-ticker, .ticker-badge {
       white-space: nowrap !important;
@@ -910,7 +849,7 @@ SHARED_CSS = """
     .econ-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
     .sparkline-wrapper { position: relative; cursor: crosshair; }
     .sparkline-svg { display: block; width: 100%; height: auto; overflow: visible; }
-    .sparkline-labels { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-muted); }
+    .sparkline-labels { display: flex; justify-content: space-between; gap: 0.5rem; white-space: nowrap; margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-muted); }
     .sparkline-tooltip { display: none; position: absolute; transform: translate(-50%, -130%); padding: 0.15rem 0.4rem; background: var(--text-primary); color: var(--bg-base); font-family: var(--font-mono); font-size: 0.68rem; white-space: nowrap; pointer-events: none; z-index: 5; }
     .econ-figure { text-align: right; }
     .economic-val { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 500; letter-spacing: -0.02em; white-space: nowrap; }
@@ -938,10 +877,15 @@ SHARED_CSS = """
     .econ-release.is-passed .cal-headline, .econ-release.is-passed .cal-date { color: var(--text-muted); }
 
     @media (max-width: 860px) {
+      .economic-card { grid-template-columns: minmax(0, 1fr) 9.5rem 9.5rem; gap: 0.25rem 1.25rem; }
+      .econ-matrix .mx-factors { display: none; }
+      .econ-matrix .mx-col { width: 2.6rem; }
+    }
+
+    @media (max-width: 620px) {
       .economic-card { grid-template-columns: minmax(0, 1fr) auto; }
       .economic-card .sparkline-wrapper { grid-column: 1 / -1; grid-row: 2; margin: 0.5rem 0 0.25rem; }
-      .econ-matrix .mx-factors, .mx-name { display: none; }
-      .econ-matrix .mx-col { width: 2.6rem; }
+      .mx-name { display: none; }
     }
 
     /* Companies */
@@ -1012,6 +956,53 @@ SHARED_CSS = """
       table.perf-table td:nth-child(2), table.perf-table th:nth-child(2), table.perf-table td:nth-child(3), table.perf-table th:nth-child(3) { display: none; }
     }
 
+    /* Analytics */
+    .analytics-stat-row { margin-top: 0; }
+    .analytics-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; margin-bottom: 3.5rem; }
+    .analytics-donut-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 2.5rem; align-items: center; }
+    .analytics-card { margin: 0; min-width: 0; background: none; border: none; padding: 0; }
+    .chart-canvas-container { position: relative; height: 300px; width: 100%; margin-top: 0.75rem; }
+    .chart-canvas-donut { height: 300px; margin-top: 0; }
+    .category-legend-list { margin-top: 0.75rem; }
+    .category-stat-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.84rem; }
+    .cat-stat-left { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
+    .category-legend-dot { width: 8px; height: 8px; flex-shrink: 0; }
+    .cat-stat-name { overflow-wrap: anywhere; }
+    .cat-stat-right { display: flex; gap: 0.75rem; flex-shrink: 0; font-family: var(--font-mono); font-size: 0.78rem; }
+    .cat-stat-pct { width: 2.5rem; text-align: right; color: var(--text-muted); }
+    .analytics-perf-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.25rem 2rem; }
+    .analytics-perf-picker { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; max-width: 100%; }
+    .health-section { margin: 3.5rem 0 0; background: none; border: none; padding: 0; box-shadow: none; }
+    .health-status { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.45; padding-top: 0.75rem; overflow-wrap: anywhere; }
+    .health-status.is-alert { color: var(--neg); }
+    .health-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 0; }
+
+    @media (max-width: 860px) {
+      .analytics-grid { gap: 2.75rem; }
+      .analytics-donut-layout { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+      .chart-canvas-container { height: 260px; }
+      .chart-canvas-donut { height: 220px; }
+      .health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* Home: front page */
+    .fp-masthead { margin-bottom: 2rem; max-width: 46rem; }
+    .fp-dateline { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.9rem; }
+    .fp-title { font-size: clamp(2.3rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.022em; margin-bottom: 0.9rem; }
+    .fp-standfirst { font-family: var(--font-serif); font-size: 1.2rem; line-height: 1.45; color: var(--text-secondary); }
+
+    .fp-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 4rem; margin-bottom: 4rem; }
+    .fp-kicker { font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 0.5rem; }
+    .fp-lead-title { font-size: clamp(1.6rem, 3vw, 2.15rem); line-height: 1.15; margin-bottom: 0.7rem; }
+    .fp-lead-title a { color: inherit; text-decoration: none; }
+    .fp-lead-title a:hover, .fp-row-title:hover { color: var(--accent); }
+    .fp-lead-summary { font-size: 1.02rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 0.8rem; max-width: 38rem; }
+    .fp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1rem; font-size: 0.78rem; color: var(--text-muted); padding-bottom: 1.5rem; }
+
+    .fp-list { list-style: none; border-top: 1px solid var(--text-primary); }
+    .fp-row { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .fp-row-title { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.3; color: inherit; text-decoration: none; }
+    .fp-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
     /* Small list styles shared by the economy and company pages. */
     .fp-more { display: inline-block; margin-top: 0.9rem; font-size: 0.88rem; font-weight: 600; color: var(--accent); text-decoration: none; }
     .fp-more:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -1289,206 +1280,12 @@ SHARED_CSS = """
       .top-date { display: none; }
     }
 
-    .bento-card {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.65rem;
-      box-shadow: var(--shadow-card);
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-normal);
-      min-width: 0;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .bento-card:hover {
-      border-color: var(--border-card);
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-    }
-
     /* Recently Viewed Companies Quick Access Deck */
     .recently-viewed-section {
       margin-bottom: 2.75rem;
       width: 100%;
       position: relative;
       z-index: 1;
-    }
-
-    /* Section Headers */
-    .section-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.85rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .section-heading {
-      font-size: 1.35rem;
-      font-weight: 600;
-      letter-spacing: -0.025em;
-      color: var(--text-primary);
-    }
-
-    .section-time-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-card);
-      padding: 0.4rem 0.85rem;
-      border-radius: var(--radius-full);
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      max-width: 100%;
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Analytics Grid & Cards */
-    .analytics-grid {
-      display: grid;
-      grid-template-columns: 3fr 2fr;
-      gap: 1.5rem;
-      margin-bottom: 3.5rem;
-    }
-
-    .analytics-card {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-width: 0;
-    }
-
-    .analytics-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1.25rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .analytics-card-title {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.25rem;
-    }
-
-    .analytics-metric-val {
-      font-family: var(--font-mono);
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .analytics-delta-pill {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--accent-emerald);
-      background: var(--pos-soft);
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-full);
-    }
-
-    .chart-canvas-container {
-      position: relative;
-      height: 250px;
-      width: 100%;
-      min-height: 200px;
-    }
-
-    .category-legend-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 0.5rem;
-      margin-top: 1.25rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-card);
-    }
-
-    .category-stat-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.45rem 0.65rem;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-
-    .category-stat-row:hover {
-      background: var(--bg-base);
-      border-color: var(--border-card);
-    }
-
-    .cat-stat-left {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .category-legend-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      box-shadow: 0 0 0 2px var(--bg-surface);
-    }
-
-    .cat-stat-name {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .cat-stat-right {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .cat-stat-count {
-      font-family: var(--font-mono);
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .cat-stat-pct {
-      font-family: var(--font-mono);
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-      padding: 0.1rem 0.35rem;
-      border-radius: 4px;
     }
 
     /* Ticker & Form Badges */
@@ -1502,33 +1299,6 @@ SHARED_CSS = """
     }
 
     a.ticker-badge:hover { color: var(--accent); }
-
-    .form-type-pill {
-      font-family: var(--font-mono);
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-      padding: 0.15rem 0.5rem;
-      border-radius: 6px;
-      border: 1px solid var(--border-card);
-      display: inline-block;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    .category-badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-full);
-      display: inline-block;
-      background: var(--bg-surface-elevated);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-card);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
 
     /* Action Link */
     .action-link {
@@ -1549,144 +1319,11 @@ SHARED_CSS = """
     }
 
     /* Table Styles */
-    table {
-      width: 100%;
-      min-width: 680px;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.875rem;
-    }
 
-    th {
-      background: var(--bg-surface);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 1rem 1.15rem;
-      border-bottom: 1px solid var(--border-card);
-      white-space: nowrap;
-    }
 
-    td {
-      padding: 1.25rem 1.15rem;
-      border-bottom: 1px solid var(--border-card);
-      vertical-align: top;
-    }
 
     tr.news-row:hover td {
       background: var(--bg-surface);
-    }
-
-    /* Health Section */
-    .health-section {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-xl);
-      padding: 2rem;
-      box-shadow: var(--shadow-card);
-      margin-top: 3.5rem;
-      min-width: 0;
-    }
-
-    .health-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      padding-bottom: 1.35rem;
-      border-bottom: 1px solid var(--border-card);
-      margin-bottom: 1.75rem;
-    }
-
-    .health-title-group {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      flex-wrap: wrap;
-    }
-
-    .health-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .health-status-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      padding: 0.3rem 0.75rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .health-badge-healthy  { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
-
-    .health-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.15rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .health-metric-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.25rem;
-      min-width: 0;
-    }
-
-    .health-metric-title {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.4rem;
-    }
-
-    .health-metric-val {
-      font-family: var(--font-mono);
-      font-size: 1.65rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1.1;
-      margin-bottom: 0.25rem;
-    }
-
-    .health-metric-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-    }
-
-    /* Comparative Stock Performance Module */
-    .comparative-perf-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-      padding-bottom: 1.15rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-    .comparative-select {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.45rem 1rem;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      outline: none;
-      cursor: pointer;
     }
     /* Feed Sector Filter Bar & Ticker Popover */
 """
@@ -2529,7 +2166,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         (c.symbol || '').toUpperCase() === rawUpper || 
         (c.name || '').toLowerCase() === val
       );
-      const isSearchTermEligible = val.length >= 2 && /^[a-zA-Z0-9\s.\-]{2,40}$/.test(rawVal.trim());
+      const isSearchTermEligible = val.length >= 2 && /^[a-zA-Z0-9\\s.\\-]{2,40}$/.test(rawVal.trim());
       const isOutsideWatchlist = isSearchTermEligible && !isExactWatchlist && (matchedCompanies.length === 0);
 
       const totalMatches = matchedCompanies.length + matchedNews.length + matchedCal.length + matchedEcon.length;
@@ -2853,9 +2490,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Dedicated Analytics Hub for StockPulse: filing velocity trends, disclosure category breakdowns, peer comparative performance, and automated pipeline telemetry.">
-  <title>StockPulse — Analytics &amp; Performance Trends</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <meta name="description" content="Coverage by company and category, peer performance, and pipeline health.">
+  <title>StockPulse — Analytics</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2870,199 +2507,110 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <!-- Analytics Header Hero Banner -->
-      <div class="page-header" style="margin-bottom:1.75rem;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
-              <span class="category-badge" style="background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem; font-weight: 600;">INTELLIGENCE ANALYTICS</span>
-              <span class="section-time-pill" style="font-size:0.75rem; padding:0.2rem 0.65rem;">
-                <span class="pulse-dot" style="background:var(--pos);"></span> Live Telemetry
-              </span>
-            </div>
-            <h1 style="font-size:1.85rem; font-weight: 600; color:var(--text-primary); letter-spacing:-0.02em; margin:0 0 0.35rem 0;">Analytics &amp; Performance Trends</h1>
-            <p style="font-size:0.9rem; color:var(--text-muted); margin:0; max-width:720px;">
-              Multi-dimensional analysis of disclosure velocity, thematic category allocations, 3-month peer stock returns vs. S&amp;P 500, and data pipeline safeguards.
-            </p>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.6rem;">
-            <button class="section-time-pill" onclick="window.location.reload()" style="cursor:pointer; border:1px solid var(--border-card); background:var(--bg-surface-elevated); padding:0.45rem 0.85rem; font-weight:600;" title="Refresh live telemetry">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-              Refresh Data
-            </button>
-          </div>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">Analytics</h1>
+        <p class="page-standfirst">What the pipeline has collected, how a holding compares with its peers, and whether collection is healthy.</p>
+      </header>
 
-        <!-- Quick Summary Stat Cards -->
-        <div class="analytics-stat-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:1rem; margin-top:1.5rem;">
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Disclosures</div>
-            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--text-primary); margin:0.25rem 0;">{{ stats.total }}</div>
-            <div style="font-size:0.72rem; color:var(--pos); font-weight:600;">Indexed &amp; Scored</div>
-          </div>
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">High Priority (≥ 7.0)</div>
-            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--warn); margin:0.25rem 0;">{{ stats.high_priority_count }}</div>
-            <div style="font-size:0.72rem; color:var(--text-muted);">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0) | round(1) }}% of total volume</div>
-          </div>
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Monitored Companies</div>
-            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--accent-blue); margin:0.25rem 0;">{{ watchlist_companies|length }}</div>
-            <div style="font-size:0.72rem; color:var(--text-muted);">EDGAR, IR &amp; News</div>
-          </div>
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Categories Classified</div>
-            <div style="font-family: var(--font-mono); font-size:1.6rem; font-weight: 600; color:var(--accent); margin:0.25rem 0;">{{ stats.by_category|length }}</div>
-            <div style="font-size:0.72rem; color:var(--text-muted);">AI classification rules</div>
-          </div>
+      <dl class="company-kpi-ribbon analytics-stat-row">
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Stories</dt>
+          <dd class="company-kpi-val">{{ stats.total }}</dd>
+          <dd class="company-kpi-sub">Scored and stored</dd>
         </div>
-      </div>
-
-      <!-- Section 1: Velocity & Category Breakdown -->
-      <div class="section-header-row" style="padding-top:0.5rem; margin-bottom:0.85rem;">
-        <h2 class="section-heading" style="font-size:1.25rem;">Velocity &amp; Category Breakdown</h2>
-        <span class="section-time-pill">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-          Multi-Day Lookback
-        </span>
-      </div>
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Scored 7 or higher</dt>
+          <dd class="company-kpi-val">{{ stats.high_priority_count }}</dd>
+          <dd class="company-kpi-sub">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0)|round(1) }}% of stories</dd>
+        </div>
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Companies</dt>
+          <dd class="company-kpi-val">{{ watchlist_companies|length }}</dd>
+          <dd class="company-kpi-sub">On the watchlist</dd>
+        </div>
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Categories</dt>
+          <dd class="company-kpi-val">{{ stats.by_category|length }}</dd>
+          <dd class="company-kpi-sub">In use across stories</dd>
+        </div>
+      </dl>
 
       <div class="analytics-grid">
-        <!-- Metric Card 1: Rich Disclosure Trend Graph with Gradients -->
-        <div class="analytics-card">
-          <div>
-            <div class="analytics-card-header">
-              <div>
-                <div class="analytics-card-title">Daily Filing &amp; Intelligence Velocity</div>
-                <div class="analytics-metric-val">
-                  {{ stats.total }} <span class="analytics-delta-pill">↗ Active Trend</span>
-                </div>
-              </div>
-              <span class="section-time-pill" style="font-size:0.75rem;">Top Tickers</span>
-            </div>
-            <div class="chart-canvas-container">
-              <canvas id="timelineChart"></canvas>
-            </div>
+        <figure class="analytics-card">
+          <h2 class="fp-heading">Stories per day</h2>
+          <figcaption class="econ-note">The five most-covered companies, over the last 14 days with stories.</figcaption>
+          <div class="chart-canvas-container">
+            <canvas id="timelineChart" role="img" aria-label="Line chart of stories per day for the five most-covered companies."></canvas>
           </div>
-        </div>
+        </figure>
 
-        <!-- Metric Card 2: Category Breakdown Donut with Data Callout Badges -->
-        <div class="analytics-card">
-          <div>
-            <div class="analytics-card-header">
-              <div>
-                <div class="analytics-card-title">Intelligence by Category</div>
-                <div class="analytics-metric-val" style="font-size:1.5rem;">
-                  {{ stats.by_category|length }} Categories
-                </div>
-              </div>
-              <span class="section-time-pill" style="font-size:0.75rem;">Slices &amp; Callouts</span>
+        <figure class="analytics-card">
+          <h2 class="fp-heading">Stories by category</h2>
+          <figcaption class="econ-note">Share of all {{ stats.total }} stories, across {{ stats.by_category|length }} categories.</figcaption>
+          <div class="analytics-donut-layout">
+            <div class="chart-canvas-container chart-canvas-donut">
+              <canvas id="categoryChart" role="img" aria-label="Donut chart of stories by category. The list beside it has every figure."></canvas>
             </div>
-            <div class="chart-canvas-container" style="height: 220px;">
-              <canvas id="categoryChart"></canvas>
-            </div>
+            <div class="category-legend-list" id="categoryLegendList"></div>
           </div>
-          
-          <div class="category-legend-list" id="categoryLegendList">
-            <!-- Dynamically populated legend badges with counts & percentages -->
-          </div>
-        </div>
+        </figure>
       </div>
 
-      <!-- Section 2: 3-Month Comparative Performance vs Peers & S&P 500 -->
-      <div class="comparative-perf-card" style="margin-top:2rem;">
-        <div class="comparative-perf-header">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-              <span class="category-badge" style="background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem;">MARKET CONTEXT</span>
-              <h3 style="font-size:1.2rem; font-weight: 600; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
-            </div>
-            <p style="font-size:0.835rem; color:var(--text-muted); margin:0.35rem 0 0 0;">
-              Contextual move analysis: Normalized % return (Day 0 = 0.0%) against top 3 competitors and the S&amp;P 500 (SPY) benchmark.
-            </p>
-          </div>
-
-          <!-- Watchlist Company Selector Dropdown -->
-          <div style="display:flex; align-items:center; gap:0.6rem; width:100%; max-width:320px;">
-            <label for="perfCompanySelect" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Stock:</label>
-            <select id="perfCompanySelect" class="comparative-select" style="flex:1;" onchange="renderComparativePerformanceChart(this.value)">
+      <section class="comparative-perf-card" aria-labelledby="analyticsPerfHeading">
+        <h2 class="fp-heading" id="analyticsPerfHeading">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h2>
+        <div class="analytics-perf-tools">
+          <p class="econ-note">Percent change since the start of the period, against up to three competitors and the S&amp;P 500.</p>
+          <label class="analytics-perf-picker"><span class="filter-label">Company</span>
+            <select id="perfCompanySelect" class="econ-select comparative-select" onchange="renderComparativePerformanceChart(this.value)">
               {% for sec in sector_directory %}
-              <optgroup label="{{ sec.name }} ({{ sec.count }})">
+              <optgroup label="{{ sec.name }}">
                 {% for co in sec.companies %}
-                <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
+                <option value="{{ co.symbol }}">{{ co.symbol }} · {{ co.name }}</option>
                 {% endfor %}
               </optgroup>
               {% endfor %}
             </select>
-          </div>
+          </label>
         </div>
-
-        <!-- Mobile Segmented View Toggle (Chart vs Table) -->
-        <div class="perf-mobile-toggle">
-          <button class="perf-toggle-btn active" id="perfToggleChartBtn" onclick="switchPerfView('chart')">Chart View</button>
-          <button class="perf-toggle-btn" id="perfToggleTableBtn" onclick="switchPerfView('table')">Comparison Table</button>
+        <div class="perf-kpi-grid" id="perfKpiGrid"></div>
+        <div class="perf-chart-box" id="perfChartContainer">
+          <canvas id="comparativeChartCanvas" role="img" aria-label="Line chart of the selected company, its peers, and the S&amp;P 500. The table below has the figures."></canvas>
         </div>
-
-        <!-- Real-time Alpha & Return Metrics Ribbon -->
-        <div class="perf-kpi-grid" id="perfKpiGrid">
-          <!-- Dynamically populated via JS based on selected company -->
-        </div>
-
-        <!-- Interactive Chart Canvas Container -->
-        <div id="perfChartContainer" style="position:relative; height:280px; width:100%;">
-          <canvas id="comparativeChartCanvas"></canvas>
-        </div>
-
-        <!-- Competitor Breakdown Table Container -->
         <div class="perf-table-wrap" id="perfTableContainer">
-          <table class="perf-table" id="perfBreakdownTable">
-            <!-- Dynamically populated table -->
-          </table>
+          <table class="perf-table" id="perfBreakdownTable"></table>
         </div>
-      </div>
+      </section>
 
-      <!-- Section 3: Health & Pipeline Safeguards -->
-      <section class="health-section" id="health" style="margin-top:2rem;">
-        <div class="health-header">
-          <div class="health-title-group">
-            <h3 class="health-title">Pipeline Health &amp; Safeguards</h3>
-            <span class="health-status-badge health-badge-healthy">
-              <span class="pulse-dot" style="background:var(--pos);"></span>
-              HEALTHY &bull; OPERATIONAL
-            </span>
+      <section class="health-section" id="health" aria-labelledby="analyticsHealthHeading">
+        <h2 class="fp-heading" id="analyticsHealthHeading">Pipeline Health &amp; Safeguards</h2>
+        {% if latest_run %}
+        <p class="health-status{% if latest_run.status != 'HEALTHY' %} is-alert{% endif %}">Latest run: {{ latest_run.status|lower }}. {{ latest_run.health_message }}</p>
+        <p class="econ-note">Run at {{ latest_run.run_timestamp|replace('T', ' ') }}. Typical volume: {{ latest_run.moving_avg_raw }} items per run.</p>
+        {% else %}
+        <p class="health-status">No pipeline runs recorded yet.</p>
+        {% endif %}
+        <dl class="company-kpi-ribbon health-grid">
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">SEC EDGAR Filings</dt>
+            <dd class="company-kpi-val">{{ latest_run.edgar_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">
-            Moving Avg Baseline: {{ latest_run.moving_avg_raw if latest_run else 570 }} items/run
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">Company Releases</dt>
+            <dd class="company-kpi-val">{{ latest_run.company_ir_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-        </div>
-
-        <div class="health-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
-          <div class="health-metric-card">
-            <div class="health-metric-title">SEC EDGAR Filings</div>
-            <div class="health-metric-val" style="color:var(--pos);">{{ latest_run.edgar_count if latest_run else 450 }}</div>
-            <div class="health-metric-sub">{{ watchlist_companies|length }} companies queried</div>
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">News Stories</dt>
+            <dd class="company-kpi-val">{{ latest_run.news_media_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">Company Releases</div>
-            <div class="health-metric-val" style="color:var(--accent-blue);">{{ latest_run.company_ir_count if latest_run else 100 }}</div>
-            <div class="health-metric-sub">Official press room feeds</div>
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">Unique After Deduplication</dt>
+            <dd class="company-kpi-val">{{ latest_run.total_unique if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">News Media Coverage</div>
-            <div class="health-metric-val" style="color:var(--pos);">{{ latest_run.news_media_count if latest_run and latest_run.news_media_count is defined else stats.by_source.get('News Media', 0) }}</div>
-            <div class="health-metric-sub">Finnhub 3rd-party journalism</div>
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">Scored 7 or Higher</dt>
+            <dd class="company-kpi-val">{{ latest_run.high_impact_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">Total Unique Yield</div>
-            <div class="health-metric-val" style="color:var(--accent);">{{ latest_run.total_unique if latest_run else stats.total }}</div>
-            <div class="health-metric-sub">After deduplication</div>
-          </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">High Priority Stories</div>
-            <div class="health-metric-val" style="color:var(--warn);">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
-            <div class="health-metric-sub">Score ≥ 7.0 / 10.0</div>
-          </div>
-        </div>
+        </dl>
       </section>
     </main>
   </div>
@@ -3084,14 +2632,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       // 1. Per-Ticker Timeline Line Chart with Interactive Legend
       const ctxTimeline = document.getElementById('timelineChart')?.getContext('2d');
       if (ctxTimeline && rawChartData && rawChartData.timeline_dates && rawChartData.timeline_series) {
-        const linePalette = [
-          { stroke: '#2563eb', fillTop: 'rgba(37, 99, 235, 0.20)', fillBot: 'rgba(37, 99, 235, 0.0)' },
-          { stroke: '#10b981', fillTop: 'rgba(16, 185, 129, 0.18)', fillBot: 'rgba(16, 185, 129, 0.0)' },
-          { stroke: '#7c3aed', fillTop: 'rgba(124, 58, 237, 0.18)', fillBot: 'rgba(124, 58, 237, 0.0)' },
-          { stroke: '#f59e0b', fillTop: 'rgba(245, 158, 11, 0.18)', fillBot: 'rgba(245, 158, 11, 0.0)' },
-          { stroke: '#0284c7', fillTop: 'rgba(2, 132, 199, 0.18)', fillBot: 'rgba(2, 132, 199, 0.0)' },
-          { stroke: '#e11d48', fillTop: 'rgba(225, 29, 72, 0.18)', fillBot: 'rgba(225, 29, 72, 0.0)' },
-        ];
+        const linePalette = ['--series-1', '--series-2', '--series-3', '--series-4', '--series-5', '--series-6'].map(cssColor);
 
         const sortedTickers = Object.keys(rawChartData.timeline_series).sort((a, b) => {
           const sumA = (rawChartData.timeline_series[a] || []).reduce((s, v) => s + v, 0);
@@ -3099,31 +2640,23 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           return sumB - sumA;
         });
 
-        // On mobile phones, focus on top 3-4 series to avoid cramped line clutter
-        const displayTickers = sortedTickers.slice(0, isPhone ? 3 : 5);
+        const displayTickers = sortedTickers.slice(0, 5);
 
         const datasets = displayTickers.map((ticker, idx) => {
-          const theme = linePalette[idx % linePalette.length];
-          const grad = ctxTimeline.createLinearGradient(0, 0, 0, 220);
-          grad.addColorStop(0, theme.fillTop);
-          grad.addColorStop(1, theme.fillBot);
-
+          const stroke = linePalette[idx];
           return {
             label: ticker,
             data: rawChartData.timeline_series[ticker] || [],
-            borderColor: theme.stroke,
-            backgroundColor: grad,
-            borderWidth: isPhone ? 1.8 : (isNarrow ? 2.0 : 2.5),
-            fill: true,
-            tension: 0.38,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: theme.stroke,
-            pointBorderWidth: 1.5,
-            pointRadius: isPhone ? 2 : (isNarrow ? 2.5 : 3.5),
+            borderColor: stroke,
+            backgroundColor: stroke,
+            borderWidth: 2,
+            fill: false,
+            tension: 0,
+            pointBackgroundColor: stroke,
+            pointBorderColor: cssColor('--bg-base'),
+            pointBorderWidth: 2,
+            pointRadius: isPhone ? 3 : 4,
             pointHoverRadius: 5,
-            pointHoverBackgroundColor: theme.stroke,
-            pointHoverBorderColor: '#ffffff',
-            pointHoverBorderWidth: 2,
           };
         });
 
@@ -3150,19 +2683,19 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                   boxHeight: 8,
                   usePointStyle: true,
                   pointStyle: 'circle',
-                  font: { family: 'Hanken Grotesk', size: isPhone ? 10 : (isNarrow ? 10 : 11), weight: '600' },
-                  color: '#475569',
+                  font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                  color: cssColor('--text-secondary'),
                   padding: isPhone ? 6 : (isNarrow ? 8 : 14)
                 }
               },
               tooltip: {
-                backgroundColor: '#0f172a',
-                titleColor: '#f8fafc',
-                bodyColor: '#e2e8f0',
-                titleFont: { family: 'Hanken Grotesk', size: 11, weight: 'bold' },
+                backgroundColor: cssColor('--text-primary'),
+                titleColor: cssColor('--bg-base'),
+                bodyColor: cssColor('--bg-base'),
+                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
                 bodyFont: { family: 'Hanken Grotesk', size: 11 },
                 padding: 10,
-                cornerRadius: 8,
+                cornerRadius: 2,
                 displayColors: true,
                 boxWidth: 8,
                 boxHeight: 8,
@@ -3174,7 +2707,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 grid: { display: false, drawBorder: false },
                 ticks: { 
                   font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
-                  color: '#64748b',
+                  color: cssColor('--text-muted'),
                   maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
                   autoSkip: true,
                   maxRotation: 0
@@ -3182,11 +2715,11 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               },
               y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
+                grid: { color: cssColor('--border-subtle'), drawBorder: false },
                 ticks: { 
                   precision: 0, 
                   font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
-                  color: '#64748b', 
+                  color: cssColor('--text-muted'), 
                   maxTicksLimit: isPhone ? 4 : 6,
                   stepSize: 1 
                 }
@@ -3202,10 +2735,17 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       const catCounts = (rawChartData && rawChartData.category_counts) || [];
 
       if (ctxCat && catLabels.length > 0) {
-        const sliceColors = [
-          '#2563eb', '#10b981', '#7c3aed', '#f59e0b', '#0284c7', 
-          '#e11d48', '#8b5cf6', '#ec4899', '#059669', '#d97706', '#64748b', '#0ea5e9'
-        ];
+        // Color follows the category, not its rank. Beyond the six series colors, categories
+        // share a neutral, and the list below names every one.
+        const categoryColors = {
+          'Earnings & Financials': '--series-1',
+          'M&A & Strategic Deals': '--series-2',
+          'Regulation & Policy / Litigation': '--series-3',
+          'Leadership & Governance': '--series-4',
+          'Insider Transactions': '--series-5',
+          'Capital Structure & Offerings': '--series-6',
+        };
+        const sliceColors = catLabels.map(label => cssColor(categoryColors[label] || '--text-muted'));
 
         const totalCount = catCounts.reduce((a, b) => a + b, 0) || 1;
 
@@ -3248,14 +2788,14 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               ctx.moveTo(sx, sy);
               ctx.lineTo(ex, ey);
               ctx.lineTo(endHorizontalX, ey);
-              ctx.strokeStyle = 'var(--text-muted)';
-              ctx.lineWidth = 1.2;
+              ctx.strokeStyle = cssColor('--text-muted');
+              ctx.lineWidth = 1;
               ctx.stroke();
 
               ctx.textAlign = isRight ? 'left' : 'right';
               ctx.textBaseline = 'middle';
-              ctx.font = '600 10px Inter, sans-serif';
-              ctx.fillStyle = 'var(--text-primary)';
+              ctx.font = "11px 'Hanken Grotesk', sans-serif";
+              ctx.fillStyle = cssColor('--text-primary');
               ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
             });
             ctx.restore();
@@ -3268,9 +2808,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             labels: catLabels,
             datasets: [{
               data: catCounts,
-              backgroundColor: sliceColors.slice(0, catLabels.length),
+              backgroundColor: sliceColors,
               borderWidth: 2,
-              borderColor: '#ffffff',
+              borderColor: cssColor('--bg-base'),
               hoverOffset: 4
             }]
           },
@@ -3285,13 +2825,13 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: '#0f172a',
-                titleColor: '#f8fafc',
-                bodyColor: '#e2e8f0',
-                titleFont: { family: 'Hanken Grotesk', size: 11, weight: 'bold' },
+                backgroundColor: cssColor('--text-primary'),
+                titleColor: cssColor('--bg-base'),
+                bodyColor: cssColor('--bg-base'),
+                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
                 bodyFont: { family: 'Hanken Grotesk', size: 11 },
                 padding: 8,
-                cornerRadius: 8,
+                cornerRadius: 2,
                 callbacks: {
                   label: function(context) {
                     const val = context.parsed || 0;
@@ -3310,7 +2850,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           catLabels.forEach((label, idx) => {
             const count = catCounts[idx] || 0;
             const pct = Math.round((count / totalCount) * 100);
-            const color = sliceColors[idx % sliceColors.length];
+            const color = sliceColors[idx];
             legHtml += `
               <div class="category-stat-row" title="${escapeHtml(label)}: ${count} (${pct}%)">
                 <div class="cat-stat-left">
@@ -3334,26 +2874,6 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     // =========================================================================
     const perfData = {{ performance_data_json|safe }};
     let comparativeChartInstance = null;
-
-    function switchPerfView(view) {
-      const chartContainer = document.getElementById('perfChartContainer');
-      const tableContainer = document.getElementById('perfTableContainer');
-      const chartBtn = document.getElementById('perfToggleChartBtn');
-      const tableBtn = document.getElementById('perfToggleTableBtn');
-
-      if (view === 'table') {
-        if (chartContainer) chartContainer.style.display = 'none';
-        if (tableContainer) tableContainer.style.display = 'block';
-        chartBtn?.classList.remove('active');
-        tableBtn?.classList.add('active');
-      } else {
-        if (chartContainer) chartContainer.style.display = 'block';
-        if (tableContainer) tableContainer.style.display = 'none';
-        tableBtn?.classList.remove('active');
-        chartBtn?.classList.add('active');
-        if (comparativeChartInstance) comparativeChartInstance.resize();
-      }
-    }
 
     function renderComparativePerformanceChart(symbol) {
       if (!perfData || !perfData.companies) return;
@@ -3380,7 +2900,6 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
         const tgtColor = tgtPct >= 0 ? 'var(--pos)' : 'var(--neg)';
-        const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
 
         const alphaPeers = coData.alpha_vs_peers;
         const alphaPeersColor = alphaPeers >= 0 ? 'var(--pos)' : 'var(--neg)';
@@ -3391,7 +2910,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
-            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
@@ -3417,22 +2936,22 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         let rowsHtml = `
           <thead>
             <tr>
-              <th>Ticker / Entity</th>
+              <th>Name</th>
               <th>Role</th>
-              <th>Base (3M)</th>
+              <th>Start</th>
               <th>Latest</th>
-              <th>3M % Change</th>
-              <th>Alpha</th>
+              <th>Change</th>
+              <th>Against this company</th>
             </tr>
           </thead>
           <tbody>
-            <tr style="background:var(--accent-soft); font-weight:700;">
+            <tr class="perf-row-target">
               <td><span class="ticker-badge ticker-${escapeHtml(symbol)}">${escapeHtml(symbol)}</span> ${escapeHtml(coData.name)}</td>
-              <td><span class="form-type-pill" style="background:var(--accent-soft); color:var(--accent);">Target</span></td>
-              <td style="font-family: var(--font-mono);">$${target.base_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono);">$${target.latest_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono); color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family: var(--font-mono); color:var(--text-muted);">&mdash;</td>
+              <td>This company</td>
+              <td class="perf-num">$${target.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${target.latest_price.toFixed(2)}</td>
+              <td class="perf-num" style="color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num">&mdash;</td>
             </tr>
         `;
 
@@ -3441,11 +2960,11 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           rowsHtml += `
             <tr>
               <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" class="ticker-badge" style="font-size:0.75rem;">${escapeHtml(c.symbol)}</a></td>
-              <td><span class="form-type-pill">Peer #${idx+1}</span></td>
-              <td style="font-family: var(--font-mono);">$${c.base_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono);">$${c.latest_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono); color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family: var(--font-mono); color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td>Peer</td>
+              <td class="perf-num">$${c.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
+              <td class="perf-num" style="color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num" style="color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -3453,13 +2972,13 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         if (spy) {
           const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
-            <tr style="border-top:2px dashed var(--border-card);">
-              <td><span class="form-type-pill" style="background:var(--bg-surface-elevated); color:var(--text-secondary); font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
-              <td><span class="form-type-pill">Benchmark</span></td>
-              <td style="font-family: var(--font-mono);">$${spy.base_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono);">$${spy.latest_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono); color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family: var(--font-mono); color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+            <tr>
+              <td><span class="ticker-badge">SPY</span> S&amp;P 500 ETF</td>
+              <td>Benchmark</td>
+              <td class="perf-num">$${spy.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${spy.latest_price.toFixed(2)}</td>
+              <td class="perf-num" style="color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num" style="color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -3478,13 +2997,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
       const datasets = [
         {
-          label: `${symbol} (Target)`,
+          label: symbol,
           data: target.series.map(pt => pt.pct_change),
           borderColor: targetColor,
-          backgroundColor: 'rgba(37, 99, 235, 0.08)',
-          borderWidth: isPhone ? 2.2 : 3,
-          fill: true,
-          tension: 0.25,
+          borderWidth: 2.5,
+          fill: false,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 5,
         }
@@ -3493,12 +3011,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       comps.forEach((c, idx) => {
         const color = compColors[idx % compColors.length];
         datasets.push({
-          label: `${c.symbol} (Peer)`,
+          label: c.symbol,
           data: c.series.map(pt => pt.pct_change),
           borderColor: color,
-          borderWidth: isPhone ? 1.5 : 2,
+          borderWidth: 1.5,
           fill: false,
-          tension: 0.25,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 4,
         });
@@ -3533,17 +3051,19 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11, weight: '600' },
-                color: '#475569',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                color: cssColor('--text-secondary'),
                 padding: isPhone ? 6 : 10
               }
             },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '700' },
+              backgroundColor: cssColor('--text-primary'),
+              titleColor: cssColor('--bg-base'),
+              bodyColor: cssColor('--bg-base'),
+              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
               bodyFont: { family: 'Hanken Grotesk', size: 11 },
               padding: 10,
-              cornerRadius: 8,
+              cornerRadius: 2,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -3557,16 +3077,16 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
                 font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                color: cssColor('--text-muted'),
                 maxRotation: 0
               }
             },
             y: {
-              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
                 font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
             }
@@ -3578,10 +3098,18 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     function initAnalyticsPage() {
       initCharts();
       renderComparativePerformanceChart('NVDA');
-      whenChartFontsReady(() => {
-        if (window.Chart) Object.values(Chart.instances).forEach(chart => chart.update('none'));
-      });
+      whenChartFontsReady(redrawAnalyticsCharts);
     }
+
+    function redrawAnalyticsCharts() {
+      if (typeof Chart === 'undefined') return;
+      Object.values(Chart.instances).forEach(chart => chart.destroy());
+      comparativeChartInstance = null;
+      initCharts();
+      renderComparativePerformanceChart(document.getElementById('perfCompanySelect')?.value || 'NVDA');
+    }
+
+    document.addEventListener('themechange', redrawAnalyticsCharts);
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initAnalyticsPage);
