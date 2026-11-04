@@ -464,38 +464,6 @@ SHARED_CSS = """
     }
     .comparative-select { max-width: 100%; min-width: 0; }
 
-    /* Mobile Segmented View Toggle (Comparative Performance Module) */
-    .perf-mobile-toggle {
-      display: none;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-full);
-      padding: 0.25rem;
-      gap: 0.25rem;
-      margin-bottom: 1rem;
-      width: 100%;
-    }
-
-    .perf-toggle-btn {
-      flex: 1;
-      padding: 0.4rem 0.75rem;
-      border: none;
-      background: transparent;
-      border-radius: var(--radius-full);
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      text-align: center;
-    }
-
-    .perf-toggle-btn.active {
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-    }
-
     /* Responsive Viewports */
     @media (max-width: 1024px) {
       .app-layout {
@@ -541,10 +509,6 @@ SHARED_CSS = """
         box-sizing: border-box !important;
       }
 
-      .hero-title {
-        font-size: 1.85rem !important;
-      }
-
       .analytics-grid {
         grid-template-columns: 1fr !important;
         gap: 1.25rem !important;
@@ -561,18 +525,8 @@ SHARED_CSS = """
         padding: 0.85rem 0.85rem calc(5.5rem + env(safe-area-inset-bottom)) 0.85rem !important;
       }
 
-      .hero-title {
-        font-size: 1.55rem !important;
-        line-height: 1.25 !important;
-      }
-
       .bento-card {
         padding: 1.15rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .comparative-perf-card {
-        padding: 1rem !important;
         border-radius: var(--radius-lg) !important;
       }
 
@@ -580,19 +534,6 @@ SHARED_CSS = """
         flex-direction: column !important;
         align-items: flex-start !important;
         gap: 0.75rem !important;
-      }
-
-      .perf-mobile-toggle {
-        display: flex !important;
-      }
-
-      .perf-kpi-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.5rem !important;
-      }
-
-      .perf-kpi-val {
-        font-size: 1.05rem !important;
       }
 
       .analytics-card {
@@ -704,17 +645,6 @@ SHARED_CSS = """
       word-break: keep-all !important;
       overflow-wrap: normal !important;
       display: inline-block;
-    }
-
-    .hero-title {
-      font-size: 2.65rem;
-      font-weight: 600;
-      letter-spacing: -0.04em;
-      color: var(--text-primary);
-      margin-bottom: 0.55rem;
-      word-break: normal;
-      overflow-wrap: normal;
-      line-height: 1.18;
     }
 
     /* Global Search & Command Bar (⌘K) with Bulletproof Overflow Containment */
@@ -909,7 +839,7 @@ SHARED_CSS = """
     .news-row { display: grid; grid-template-columns: 2.5rem 3.75rem minmax(0, 1fr) 3.5rem; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
     .feed-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
     .news-row.is-high .feed-score { color: var(--text-primary); }
-    .feed-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
+    .feed-headline { font-family: var(--font-serif); font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
     .news-row.is-high .feed-headline { font-weight: 500; }
     .feed-headline a { color: inherit; text-decoration: none; }
     .feed-headline a:hover { color: var(--accent); }
@@ -1012,6 +942,74 @@ SHARED_CSS = """
       .economic-card .sparkline-wrapper { grid-column: 1 / -1; grid-row: 2; margin: 0.5rem 0 0.25rem; }
       .econ-matrix .mx-factors, .mx-name { display: none; }
       .econ-matrix .mx-col { width: 2.6rem; }
+    }
+
+    /* Companies */
+    .company-directory-browser { margin-bottom: 3rem; }
+    .company-directory-browser .econ-note { padding-bottom: 0; }
+    .company-browser-grid { columns: 2; column-gap: 3rem; margin-top: 0.75rem; }
+    .company-browser-sector { break-inside: avoid; padding-bottom: 1.25rem; }
+    .company-browser-sector-name { font-size: 0.98rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--text-primary); }
+    .company-browser-card { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; width: 100%; background: none; border: none; border-bottom: 1px solid var(--border-subtle); padding: 0.5rem 0; text-align: left; color: inherit; cursor: pointer; }
+    .company-browser-card:hover .company-browser-card-name { color: var(--accent); }
+    .company-browser-card.active .company-browser-card-name { font-weight: 600; }
+    .company-browser-card-left { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; min-width: 0; }
+    .company-browser-card-info { display: flex; flex-direction: column; min-width: 0; }
+    .company-browser-card-name { font-size: 0.88rem; overflow-wrap: anywhere; }
+    .company-browser-card-sec { font-size: 0.74rem; color: var(--text-muted); }
+    .company-browser-card-stats { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+    .company-browser-card-alpha { font-family: var(--font-mono); font-size: 0.8rem; }
+    .company-browser-card-stories { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+
+    .company-profile-container { border-top: 1px solid var(--text-primary); padding-top: 2rem; }
+    .company-hero-symbol { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .company-hero-name { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 0.6rem; }
+    .company-notes-card { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.45; color: var(--text-secondary); max-width: 44rem; margin-bottom: 0.75rem; }
+    .company-links { display: flex; flex-wrap: wrap; gap: 0.2rem 1.25rem; font-size: 0.8rem; color: var(--text-muted); }
+    .company-links a { color: var(--accent); text-decoration: none; }
+    .company-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .company-kpi-ribbon { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin: 1.75rem 0 3rem; padding-top: 0.75rem; border-top: 1px solid var(--border-card); }
+    .company-kpi-title { font-size: 0.76rem; color: var(--text-muted); }
+    .company-kpi-val { font-family: var(--font-mono); font-size: 1.35rem; letter-spacing: -0.02em; margin: 0.1rem 0; }
+    .company-kpi-sub { font-size: 0.74rem; line-height: 1.4; color: var(--text-muted); }
+
+    .comparative-perf-card { margin-bottom: 3rem; }
+    .perf-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin: 1rem 0 1.5rem; }
+    .perf-kpi-box { min-width: 0; }
+    .perf-kpi-label { font-size: 0.76rem; color: var(--text-muted); }
+    .perf-kpi-val { font-family: var(--font-mono); font-size: 1.2rem; letter-spacing: -0.02em; }
+    .perf-kpi-sub { font-size: 0.74rem; line-height: 1.4; color: var(--text-muted); overflow-wrap: anywhere; }
+    .perf-chart-box { position: relative; height: 280px; width: 100%; }
+    .perf-table-wrap { margin-top: 1.25rem; overflow-x: auto; }
+    table.perf-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 0.84rem; }
+    table.perf-table th, table.perf-table td { padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid var(--border-subtle); text-align: left; font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; white-space: nowrap; background: none; vertical-align: baseline; }
+    table.perf-table th { font-size: 0.76rem; color: var(--text-muted); border-bottom-color: var(--border-card); }
+    table.perf-table td:nth-child(n+3), table.perf-table th:nth-child(n+3) { text-align: right; padding-right: 0; padding-left: 0.75rem; }
+    .perf-row-target td { font-weight: 600; }
+    .perf-num { font-family: var(--font-mono); }
+
+    .company-grid-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 3.5rem; align-items: start; }
+    .company-feed-tools { padding: 0.5rem 0 0.25rem; }
+    .company-feed-tools .feed-search { border-bottom-color: var(--border-card); font-size: 0.9rem; padding: 0.45rem 0; }
+    .company-news-item { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) 3.25rem; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .company-news-item.is-high .feed-score { color: var(--text-primary); }
+    .company-news-item.is-high .feed-headline { font-weight: 500; }
+    .company-side-deck { display: flex; flex-direction: column; gap: 2.5rem; }
+    .company-side-sub { display: block; font-size: 0.74rem; color: var(--text-muted); }
+    .company-side-note { font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); padding-top: 0.6rem; overflow-wrap: anywhere; }
+    .company-names { font-size: 0.86rem; line-height: 1.6; overflow-wrap: anywhere; }
+    .company-outside { color: var(--text-secondary); }
+    .company-sep { color: var(--text-muted); }
+
+    @media (max-width: 860px) {
+      .company-browser-grid { columns: 1; }
+      .company-grid-layout { grid-template-columns: minmax(0, 1fr); gap: 2.75rem; }
+      .company-kpi-ribbon, .perf-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+      .perf-chart-box { height: 240px; }
+      table.perf-table { font-size: 0.78rem; }
+      table.perf-table td, table.perf-table th { white-space: normal; }
+      table.perf-table td:nth-child(2), table.perf-table th:nth-child(2), table.perf-table td:nth-child(3), table.perf-table th:nth-child(3) { display: none; }
     }
 
     /* Small list styles shared by the economy and company pages. */
@@ -1532,421 +1530,6 @@ SHARED_CSS = """
       flex-shrink: 0;
     }
 
-    /* Distinct Source Badges */
-    .source-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 0.18rem 0.55rem;
-      border-radius: var(--radius-full);
-      white-space: nowrap;
-      letter-spacing: 0.01em;
-      text-decoration: none;
-      flex-shrink: 0;
-    }
-
-    .source-badge-edgar {
-      background: var(--bg-surface-elevated);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-card);
-    }
-
-    .source-badge-ir {
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid var(--accent-soft);
-    }
-
-    .source-badge-news {
-      background: var(--pos-soft);
-      color: var(--pos);
-      border: 1px solid var(--pos-soft);
-    }
-
-    /* Score Badges */
-    .score-badge {
-      font-family: var(--font-mono);
-      font-weight: 600;
-      font-size: 0.85rem;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-sm);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    .score-high {
-      background: var(--pos-soft);
-      color: var(--pos);
-      border: 1px solid var(--pos-soft);
-    }
-
-    .score-med {
-      background: var(--warn-soft);
-      color: var(--warn);
-      border: 1px solid var(--warn-soft);
-    }
-
-    .score-low {
-      background: var(--bg-surface-elevated);
-      color: var(--text-muted);
-      border: 1px solid var(--border-card);
-    }
-
-    /* Company Page Specific Styles */
-    .company-strip-wrap {
-      margin-bottom: 1.5rem;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-      -webkit-overflow-scrolling: touch;
-    }
-    .company-strip {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-      min-width: max-content;
-    }
-    .company-strip-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.45rem 0.85rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-    .company-strip-pill:hover {
-      border-color: var(--border-accent);
-      color: var(--text-primary);
-      transform: translateY(-1px);
-    }
-    .company-strip-pill.active {
-      background: var(--accent-blue);
-      color: var(--on-accent);
-      border-color: var(--accent-blue);
-      box-shadow: 0 4px 12px var(--accent-soft);
-    }
-    .company-strip-pill.active .ticker-badge {
-      background: var(--bg-surface);
-      color: var(--on-accent);
-      border-color: var(--bg-surface);
-    }
-
-    .company-hero-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem 1.75rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-sm);
-    }
-    .company-hero-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 1rem;
-      border-bottom: 1px solid var(--border-card);
-      padding-bottom: 1.25rem;
-      margin-bottom: 1.25rem;
-    }
-    .company-hero-left {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .company-hero-symbol {
-      font-family: var(--font-mono);
-      font-size: 1.5rem;
-      font-weight: 600;
-      padding: 0.35rem 0.95rem;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface-elevated);
-      border: 2px solid var(--border-card);
-      color: var(--text-primary);
-    }
-    .company-hero-name {
-      font-size: 1.45rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin: 0;
-      line-height: 1.2;
-    }
-    .company-meta-pills {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      flex-wrap: wrap;
-      margin-top: 0.35rem;
-    }
-    .company-notes-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1.1rem;
-      font-size: 0.84rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      margin-top: 0.85rem;
-    }
-
-    .company-kpi-ribbon {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem;
-      margin-top: 1.15rem;
-    }
-    .company-kpi-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1.1rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all 0.15s ease;
-    }
-    .company-kpi-card:hover {
-      border-color: var(--border-card);
-      transform: translateY(-1px);
-    }
-    .company-kpi-title {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
-    }
-    .company-kpi-val {
-      font-family: var(--font-mono);
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1.2;
-    }
-    .company-kpi-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .company-grid-layout {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 1.5rem;
-    }
-    @media (max-width: 1024px) {
-      .company-grid-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .company-card-deck {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .company-side-deck {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .company-feed-item {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.1rem 1.25rem;
-      transition: all 0.15s ease;
-    }
-    .company-feed-item:hover {
-      border-color: var(--border-card);
-      box-shadow: var(--shadow-sm);
-    }
-    .company-feed-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .company-feed-title {
-      font-size: 0.98rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-      line-height: 1.4;
-    }
-    .company-side-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem;
-      box-shadow: var(--shadow-sm);
-    }
-    .company-side-title {
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.85rem;
-      padding-bottom: 0.65rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    /* Collapsible Cross-Reference Accordion */
-    .crossref-badges-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.35rem;
-      margin-top: 0.45rem;
-      max-width: 100%;
-    }
-
-    .crossref-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 0.18rem 0.5rem;
-      border-radius: var(--radius-sm);
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid var(--accent-soft);
-      max-width: 100%;
-      flex-wrap: wrap;
-    }
-
-    .crossref-rel-pill {
-      font-size: 0.62rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 0.1rem 0.35rem;
-      border-radius: 4px;
-      white-space: nowrap;
-    }
-
-    .crossref-customer {
-      background: var(--pos-soft);
-      color: var(--pos);
-      border: 1px solid var(--pos-soft);
-    }
-
-    .crossref-supplier {
-      background: var(--warn-soft);
-      color: var(--warn);
-      border: 1px solid var(--warn-soft);
-    }
-
-    .crossref-accordion {
-      display: inline-block;
-      margin-top: 0.2rem;
-      max-width: 100%;
-    }
-
-    .crossref-summary-pill {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-soft);
-      border-radius: var(--radius-full);
-      padding: 0.22rem 0.65rem;
-      cursor: pointer;
-      list-style: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      transition: all var(--transition-fast);
-      user-select: none;
-      max-width: 100%;
-      word-break: normal;
-    }
-
-    .crossref-summary-pill::-webkit-details-marker {
-      display: none;
-    }
-
-    .crossref-summary-pill:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-    }
-
-    .accordion-arrow {
-      font-size: 0.75rem;
-      transition: transform var(--transition-fast);
-      display: inline-block;
-    }
-
-    .crossref-accordion[open] .accordion-arrow {
-      transform: rotate(180deg);
-    }
-
-    .crossref-dropdown-content {
-      margin-top: 0.5rem;
-      padding: 0.65rem 0.85rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-      box-shadow: var(--shadow-dropdown);
-      max-width: 100%;
-    }
-
-    .crossref-dropdown-item {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      padding: 0.15rem 0;
-    }
-
-    /* Why It Matters Callout Box */
-    .why-matters-box {
-      margin-top: 0.6rem;
-      background: var(--accent-soft);
-      border-left: 4px solid var(--accent-blue);
-      padding: 0.65rem 0.95rem;
-      border-radius: 0 var(--radius-md) var(--radius-md) 0;
-      font-size: 0.835rem;
-      color: var(--accent);
-      line-height: 1.5;
-    }
-
-    .why-tag {
-      font-weight: 700;
-      color: var(--accent);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      white-space: nowrap;
-    }
-
     /* Action Link */
     .action-link {
       color: var(--accent-blue);
@@ -1994,42 +1577,6 @@ SHARED_CSS = """
 
     tr.news-row:hover td {
       background: var(--bg-surface);
-    }
-
-    .summary-text {
-      color: var(--text-secondary);
-      font-size: 0.825rem;
-      line-height: 1.45;
-      margin-top: 0.35rem;
-    }
-
-    .calendar-date-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.4rem 0.65rem;
-      text-align: center;
-      width: 56px;
-      min-width: 56px;
-      flex-shrink: 0;
-      align-self: flex-start;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .calendar-date-month {
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: var(--accent-blue);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .calendar-date-day {
-      font-family: var(--font-mono);
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1.1;
     }
 
     /* Health Section */
@@ -2120,14 +1667,6 @@ SHARED_CSS = """
     }
 
     /* Comparative Stock Performance Module */
-    .comparative-perf-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-xl);
-      padding: 1.5rem 1.75rem;
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 1.75rem;
-    }
     .comparative-perf-header {
       display: flex;
       justify-content: space-between;
@@ -2149,216 +1688,6 @@ SHARED_CSS = """
       outline: none;
       cursor: pointer;
     }
-    .perf-kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-    }
-    .perf-kpi-box {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .perf-kpi-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
-    }
-    .perf-kpi-val {
-      font-family: var(--font-mono);
-      font-size: 1.25rem;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-    .perf-kpi-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-    }
-    .perf-table-wrap {
-      margin-top: 1.25rem;
-      overflow-x: auto;
-    }
-    .perf-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-    .perf-table th {
-      text-align: left;
-      font-weight: 700;
-      color: var(--text-muted);
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid var(--border-card);
-      text-transform: uppercase;
-      font-size: 0.68rem;
-      letter-spacing: 0.05em;
-    }
-    .perf-table td {
-      padding: 0.6rem 0.75rem;
-      border-bottom: 1px solid var(--border-card);
-      color: var(--text-primary);
-    }
-
-    /* Company Page Categorized Directory Browser */
-    .company-directory-browser {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-sm);
-    }
-    .company-browser-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    .company-browser-sectors {
-      display: flex;
-      gap: 0.35rem;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding-bottom: 0.25rem;
-      margin-bottom: 1rem;
-    }
-    .company-browser-sectors::-webkit-scrollbar {
-      display: none;
-    }
-    .company-browser-sec-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all var(--transition-fast);
-    }
-    .company-browser-sec-btn:hover {
-      border-color: var(--accent-blue);
-      color: var(--text-primary);
-    }
-    .company-browser-sec-btn.active {
-      background: var(--accent-blue);
-      color: var(--on-accent);
-      border-color: var(--accent-blue);
-    }
-    .company-browser-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 0.65rem;
-      max-height: 320px;
-      overflow-y: auto;
-      padding-right: 0.25rem;
-    }
-    .company-browser-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.6rem;
-      padding: 0.6rem 0.75rem;
-      min-height: 60px;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      cursor: pointer;
-      text-align: left;
-      transition: all var(--transition-fast);
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .company-browser-card:hover {
-      border-color: var(--accent-blue);
-      background: var(--accent-soft);
-      transform: translateY(-1px);
-    }
-    .company-browser-card.active {
-      border-color: var(--accent-blue);
-      background: var(--accent-blue-soft);
-      box-shadow: 0 0 0 2px var(--accent-soft);
-    }
-    .company-browser-card.active .company-browser-card-name {
-      color: var(--accent-blue);
-      font-weight: 600;
-    }
-    .company-browser-card-left {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-    .company-browser-card-info {
-      flex: 1 1 auto;
-      min-width: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .company-browser-card-name {
-      font-size: 0.81rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.25;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      word-break: break-word;
-    }
-    .company-browser-card-sec {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 0.15rem;
-      line-height: 1.2;
-    }
-    .company-browser-card-stats {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      justify-content: center;
-      flex-shrink: 0;
-      text-align: right;
-      margin-left: auto;
-      padding-left: 0.35rem;
-    }
-    .company-browser-card-alpha {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .company-browser-card-stories {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      margin-top: 0.15rem;
-      line-height: 1.2;
-    }
-
     /* Feed Sector Filter Bar & Ticker Popover */
 """
 
@@ -2431,6 +1760,20 @@ function safeHref(value) {
   return /^https?:\\/\\//i.test(url) ? escapeHtml(url) : '#';
 }
 
+// Canvas charts can't read CSS variables, so resolve them to real colors first.
+function cssColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// Charts measure their legends with the current font, so draw again once the web fonts arrive.
+function whenChartFontsReady(callback) {
+  if (!document.fonts || !document.fonts.load) return;
+  Promise.all([
+    document.fonts.load("11px 'Hanken Grotesk'"),
+    document.fonts.load("500 12px 'Hanken Grotesk'"),
+  ]).then(callback).catch(() => {});
+}
+
 function currentTheme() {
   return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
 }
@@ -2477,6 +1820,7 @@ function closeMobileNav() {
 }
 
 function focusMobileSearch() {
+  document.getElementById('companyDirectory')?.setAttribute('open', '');
   const input = document.getElementById('globalSearchInput') || document.getElementById('companyStripFilter') || document.getElementById('searchInput');
   if (input) {
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2500,6 +1844,7 @@ document.addEventListener('keydown', (e) => {
       globalSearch.focus();
       if (typeof openSearchDropdown === 'function') openSearchDropdown();
     } else if (companySearch) {
+      document.getElementById('companyDirectory')?.setAttribute('open', '');
       companySearch.focus();
     } else if (feedSearch) {
       feedSearch.focus();
@@ -3805,7 +3150,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                   boxHeight: 8,
                   usePointStyle: true,
                   pointStyle: 'circle',
-                  font: { family: 'Inter', size: isPhone ? 10 : (isNarrow ? 10 : 11), weight: '600' },
+                  font: { family: 'Hanken Grotesk', size: isPhone ? 10 : (isNarrow ? 10 : 11), weight: '600' },
                   color: '#475569',
                   padding: isPhone ? 6 : (isNarrow ? 8 : 14)
                 }
@@ -3814,8 +3159,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 backgroundColor: '#0f172a',
                 titleColor: '#f8fafc',
                 bodyColor: '#e2e8f0',
-                titleFont: { family: 'Inter', size: 11, weight: 'bold' },
-                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                titleFont: { family: 'Hanken Grotesk', size: 11, weight: 'bold' },
+                bodyFont: { family: 'Hanken Grotesk', size: 11 },
                 padding: 10,
                 cornerRadius: 8,
                 displayColors: true,
@@ -3828,7 +3173,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               x: {
                 grid: { display: false, drawBorder: false },
                 ticks: { 
-                  font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
                   color: '#64748b',
                   maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
                   autoSkip: true,
@@ -3840,7 +3185,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
                 ticks: { 
                   precision: 0, 
-                  font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
                   color: '#64748b', 
                   maxTicksLimit: isPhone ? 4 : 6,
                   stepSize: 1 
@@ -3943,8 +3288,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 backgroundColor: '#0f172a',
                 titleColor: '#f8fafc',
                 bodyColor: '#e2e8f0',
-                titleFont: { family: 'Inter', size: 11, weight: 'bold' },
-                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                titleFont: { family: 'Hanken Grotesk', size: 11, weight: 'bold' },
+                bodyFont: { family: 'Hanken Grotesk', size: 11 },
                 padding: 8,
                 cornerRadius: 8,
                 callbacks: {
@@ -4027,9 +3372,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       const comps = coData.competitors || [];
       const spy = coData.benchmark;
 
-      const targetColor = 'var(--accent)';
-      const compColors = ['#ea580c', '#0284c7', '#9333ea'];
-      const spyColor = 'var(--text-muted)';
+      const targetColor = cssColor('--text-primary');
+      const compColors = [cssColor('--series-1'), cssColor('--series-2'), cssColor('--series-3')];
+      const spyColor = cssColor('--text-muted');
 
       // 1. Populate KPI Ribbon
       if (kpiGrid && target) {
@@ -4188,15 +3533,15 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Inter', size: isPhone ? 10 : 11, weight: '600' },
+                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11, weight: '600' },
                 color: '#475569',
                 padding: isPhone ? 6 : 10
               }
             },
             tooltip: {
               backgroundColor: '#0f172a',
-              titleFont: { family: 'Inter', size: 12, weight: '700' },
-              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '700' },
+              bodyFont: { family: 'Hanken Grotesk', size: 11 },
               padding: 10,
               cornerRadius: 8,
               callbacks: {
@@ -4211,7 +3556,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
                 color: '#94a3b8',
                 maxRotation: 0
               }
@@ -4220,7 +3565,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               grid: { color: 'rgba(226, 232, 240, 0.8)' },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
                 color: '#94a3b8',
                 maxTicksLimit: isPhone ? 4 : 6
               }
@@ -4233,6 +3578,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     function initAnalyticsPage() {
       initCharts();
       renderComparativePerformanceChart('NVDA');
+      whenChartFontsReady(() => {
+        if (window.Chart) Object.values(Chart.instances).forEach(chart => chart.update('none'));
+      });
     }
 
     if (document.readyState === 'loading') {
@@ -5080,8 +4428,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company Releases, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
-  <title>StockPulse — Company Directory</title>
+  <meta name="description" content="Your watchlist by sector, with a file on each company: performance, stories, events, and relationships.">
+  <title>StockPulse — Companies</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -5097,77 +4445,46 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.5rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Company Directory</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Browse all {{ watchlist_companies|length }} monitored holdings, search by ticker or sector, and inspect 360° deep-dive intelligence profiles</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill">
-            <span class="pulse-dot" style="background:var(--pos);"></span> {{ watchlist_companies|length }} Monitored Holdings
-          </span>
-        </div>
+      {% set watchlist_symbols = watchlist_companies|map(attribute='symbol')|list %}
+      <header class="page-header">
+        <h1 class="page-title">Companies</h1>
+        <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to read its file.</p>
       </header>
 
-      <!-- Unified Company Directory & Sector Browser Component -->
-      <section class="company-directory-browser">
-        <div class="company-browser-top">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.45rem;">
-              <span style="font-size:1.05rem; font-weight: 600; color:var(--text-primary);">Browse Holdings</span>
-              <span class="category-badge" style="font-size:0.7rem; font-weight: 600; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Companies</span>
-            </div>
-            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem;">Select any company to load its interactive deep-dive research profile below</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <div style="position:relative; width:100%; max-width:280px;">
-              <input type="text" id="companyStripFilter" placeholder="Search ticker, company, or sector..." oninput="filterCompanyStrip(this.value)" style="width:100%; background:var(--bg-base); border:1.5px solid var(--border-card); border-radius:var(--radius-full); padding:0.42rem 0.95rem; font-size:0.82rem; color:var(--text-primary); outline:none;">
-            </div>
-          </div>
-        </div>
-
-        <!-- Sector Category Filter Tabs -->
-        <div class="company-browser-sectors">
-          <button class="company-browser-sec-btn active" data-sector="ALL" onclick="filterCompanySector('ALL', this)">
-            All Sectors <span class="tab-count" style="font-family: var(--font-mono); font-size:0.68rem; margin-left:0.2rem;">{{ watchlist_companies|length }}</span>
-          </button>
+      <details class="company-directory-browser" id="companyDirectory" open>
+        <summary class="feed-filters-toggle">All companies</summary>
+        <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" oninput="filterCompanyStrip(this.value)">
+        <p class="econ-note">Percentages show 3-month return against the S&amp;P 500.</p>
+        <div class="company-browser-grid company-strip" id="companyStripContainer">
           {% for sec in sector_directory %}
-          <button class="company-browser-sec-btn" data-sector="{{ sec.name }}" onclick="filterCompanySector('{{ sec.name }}', this)">
-            {{ sec.name }} <span class="tab-count" style="font-family: var(--font-mono); font-size:0.68rem; margin-left:0.2rem;">{{ sec.count }}</span>
-          </button>
-          {% endfor %}
-        </div>
-
-        <!-- 30 Holdings Grid (Retains .company-strip & .company-strip-pill for tests and styles) -->
-        <div class="company-strip-wrap" style="overflow:visible;">
-          <div class="company-browser-grid company-strip" id="companyStripContainer">
-            {% for co in watchlist_companies %}
-            <button class="company-browser-card company-strip-pill {% if loop.first %}active{% endif %}" 
-                    data-ticker="{{ co.symbol }}" 
+          <section class="company-browser-sector">
+            <h2 class="company-browser-sector-name">{{ sec.name }}</h2>
+            {% for co in sec.companies %}
+            <button class="company-browser-card company-strip-pill" type="button"
+                    data-ticker="{{ co.symbol }}"
                     data-name="{{ co.name|lower }}"
-                    data-sector="{{ co.macro_sector|lower }}"
-                    onclick="switchCompany('{{ co.symbol }}')"
-                    title="{{ co.name }} ({{ co.symbol }}) — {{ co.macro_sector }}">
-              <div class="company-browser-card-left">
-                <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem; flex-shrink:0;">{{ co.symbol }}</span>
-                <div class="company-browser-card-info">
-                  <div class="company-browser-card-name">{{ co.name }}</div>
-                  <div class="company-browser-card-sec">{{ co.sector | replace('_', ' ') | title }}</div>
-                </div>
-              </div>
-              <div class="company-browser-card-stats">
-                <div class="company-browser-card-alpha" style="color:{% if co.alpha_vs_spy > 0 %}var(--pos){% elif co.alpha_vs_spy < 0 %}var(--neg){% else %}var(--text-muted){% endif %};">
-                  {% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%
-                </div>
-                <div class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</div>
-              </div>
+                    data-sector="{{ co.macro_sector|lower }} {{ co.sector|replace('_', ' ')|lower }}"
+                    onclick="switchCompany(this.dataset.ticker)">
+              <span class="company-browser-card-left">
+                <span class="ticker-badge">{{ co.symbol }}</span>
+                <span class="company-browser-card-info">
+                  <span class="company-browser-card-name">{{ co.name }}</span>
+                  <span class="company-browser-card-sec">{{ co.sector|replace('_', ' ')|title }}</span>
+                </span>
+              </span>
+              <span class="company-browser-card-stats">
+                {% if performance_data and co.symbol in (performance_data.companies or {}) %}
+                <span class="company-browser-card-alpha" style="color:{% if co.alpha_vs_spy > 0 %}var(--pos){% elif co.alpha_vs_spy < 0 %}var(--neg){% else %}var(--text-muted){% endif %};">{% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%</span>
+                {% endif %}
+                <span class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</span>
+              </span>
             </button>
             {% endfor %}
-          </div>
+          </section>
+          {% endfor %}
         </div>
-      </section>
+      </details>
 
-      <!-- Container for each company (one shown at a time) -->
       {% for co in watchlist_companies %}
       {% set co_news = [] %}
       {% for it in items %}
@@ -5191,353 +4508,141 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         {% if it.source == 'news_media' %}{% set ns.news_count = ns.news_count + 1 %}{% endif %}
       {% endfor %}
 
-      <div class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}" style="{% if not loop.first %}display:none;{% endif %}">
-        
-        <!-- Company Hero Header Box -->
-        <div class="company-hero-box">
-          <div class="company-hero-header">
-            <div class="company-hero-left">
-              <div class="company-hero-symbol ticker-{{ co.symbol }}">{{ co.symbol }}</div>
-              <div>
-                <h2 class="company-hero-name">{{ co.name }}</h2>
-                <div class="company-meta-pills">
-                  <span class="category-badge" style="font-size:0.75rem;">{{ co.sector | replace('_', ' ') | title }}</span>
-                  {% if co.cik %}
-                  <a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View SEC EDGAR Submissions">
-                    CIK: {{ co.cik }} ↗
-                  </a>
-                  {% endif %}
-                  {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}
-                  <a href="{{ co.newsroom_url or co.ir_page_url or co.ir_feed_url }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View {{ co.name }} Official Newsroom &amp; Press Releases">
-                    Newsroom ↗
-                  </a>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
+      <article class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}"{% if not loop.first %} hidden{% endif %}>
+        <header class="company-hero-box">
+          <p class="company-hero-symbol">{{ co.symbol }} · {{ co.sector|replace('_', ' ')|title }}</p>
+          <h2 class="company-hero-name">{{ co.name }}</h2>
+          {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
+          <p class="company-links">
+            {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">CIK {{ co.cik }} ↗</a>{% endif %}
+            {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ co.newsroom_url or co.ir_page_url or co.ir_feed_url }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
+            <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
+          </p>
 
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem;">
-              <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Key Regulators</div>
-              <div style="display:flex; gap:0.35rem; flex-wrap:wrap; justify-content:flex-end;">
-                {% if co.regulators %}
-                  {% for reg in co.regulators %}
-                  <span class="form-type-pill" style="background:var(--bg-base); color:var(--text-secondary); border-color:var(--border-card);">{{ reg }}</span>
-                  {% endfor %}
-                {% else %}
-                  <span class="form-type-pill">SEC</span>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-
-          {% if co.notes %}
-          <div class="company-notes-card">
-            <strong style="color:var(--text-primary);">Analyst Strategic Focus:</strong> {{ co.notes }}
-          </div>
-          {% endif %}
-
-          <!-- Company Vital Metrics Ribbon -->
-          <div class="company-kpi-ribbon">
+          <dl class="company-kpi-ribbon">
             <div class="company-kpi-card">
-              <div class="company-kpi-title">Intelligence Disclosures</div>
-              <div class="company-kpi-val">{{ co_news|length }}</div>
-              <div class="company-kpi-sub">
-                {{ ns.news_count }} News &bull; {{ ns.edgar_count }} SEC &bull; {{ ns.ir_count }} IR
-              </div>
+              <dt class="company-kpi-title">Stories</dt>
+              <dd class="company-kpi-val">{{ co_news|length }}</dd>
+              <dd class="company-kpi-sub">{{ ns.news_count }} news, {{ ns.edgar_count }} SEC, {{ ns.ir_count }} releases</dd>
             </div>
-
             <div class="company-kpi-card">
-              <div class="company-kpi-title">High-Impact Signals</div>
-              <div class="company-kpi-val" style="color:{% if ns.high_count > 0 %}var(--neg){% else %}var(--pos){% endif %};">
-                {{ ns.high_count }}
-              </div>
-              <div class="company-kpi-sub">Materiality Score &ge; 7.0</div>
+              <dt class="company-kpi-title">Scored 7 or higher</dt>
+              <dd class="company-kpi-val">{{ ns.high_count }}</dd>
             </div>
-
             <div class="company-kpi-card">
-              <div class="company-kpi-title">Next Event</div>
-              <div class="company-kpi-val" style="font-size:1.02rem;">
-                {% if co_events %}
-                  {{ co_events[0].display_date }}
-                {% else %}
-                  None Scheduled
-                {% endif %}
-              </div>
-              <div class="company-kpi-sub" title="{% if co_events %}{{ co_events[0].headline }}{% endif %}">
-                {% if co_events %}{{ co_events[0].headline }}{% else %}Next 60 days clear{% endif %}
-              </div>
+              <dt class="company-kpi-title">Next event</dt>
+              <dd class="company-kpi-val">{% if co_events %}{{ short_date(co_events[0].event_date) }}{% else %}None{% endif %}</dd>
+              <dd class="company-kpi-sub">{% if co_events %}{{ event_kind(co_events[0].event_type or '') }}{% else %}Nothing scheduled{% endif %}</dd>
             </div>
-
             <div class="company-kpi-card">
-              <div class="company-kpi-title">Ecosystem Network</div>
-              <div class="company-kpi-val">
-                {{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}
-              </div>
-              <div class="company-kpi-sub">
-                {{ co.key_customers|length if co.key_customers else 0 }} Customers &bull; {{ co.key_suppliers|length if co.key_suppliers else 0 }} Suppliers &bull; {{ co.competitors|length if co.competitors else 0 }} Competitors
-              </div>
+              <dt class="company-kpi-title">Relationships</dt>
+              <dd class="company-kpi-val">{{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}</dd>
+              <dd class="company-kpi-sub">{{ co.key_customers|length if co.key_customers else 0 }} customers, {{ co.key_suppliers|length if co.key_suppliers else 0 }} suppliers, {{ co.competitors|length if co.competitors else 0 }} competitors</dd>
             </div>
-          </div>
-        </div>
+          </dl>
+        </header>
 
-        <!-- 3-Month Comparative Performance Card for this stock -->
-        <div class="comparative-perf-card" style="margin-bottom:1.5rem;">
-          <div class="comparative-perf-header">
-            <div>
-              <div style="display:flex; align-items:center; gap:0.6rem;">
-                <span class="category-badge" style="background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem;">MARKET CONTEXT</span>
-                <h3 style="font-size:1.15rem; font-weight: 600; color:var(--text-primary); margin:0;">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
-              </div>
-              <p style="font-size:0.82rem; color:var(--text-muted); margin:0.3rem 0 0 0;">
-                Is {{ co.symbol }}'s move normal or unusual? Normalized % change since Day 0 relative to top 3 competitors and the S&amp;P 500 (SPY).
-              </p>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.4rem;">
-              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.85rem; padding:0.25rem 0.6rem;">{{ co.symbol }}</span>
-            </div>
-          </div>
-
-          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}">
-            <!-- Dynamically populated via JS -->
-          </div>
-
-          <div style="position:relative; height:280px; width:100%;">
-            <canvas id="compPerfCanvas-{{ co.symbol }}"></canvas>
-          </div>
-
+        <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
+          <h3 class="fp-heading">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
+          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the period.</p>
+          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
+          <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
           <div class="perf-table-wrap">
-            <table class="perf-table" id="compPerfTable-{{ co.symbol }}">
-              <!-- Dynamically populated via JS -->
-            </table>
+            <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
           </div>
-        </div>
+        </section>
 
-        <!-- 2-Column Main Deck -->
         <div class="company-grid-layout">
-          
-          <!-- Left Main Column: Intelligence Feed across all 3 sources -->
-          <div class="company-card-deck">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; background:var(--bg-surface); padding:1rem 1.25rem; border:1px solid var(--border-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">
-              <div>
-                <h3 style="font-size:1.05rem; font-weight: 600; color:var(--text-primary); margin:0;">Intelligence Feed</h3>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">News Media &bull; SEC EDGAR &bull; Company Releases ({{ co_news|length }} Total)</div>
+          <section class="company-card-deck" aria-label="Stories">
+            <h3 class="fp-heading">Stories</h3>
+            <div class="company-feed-tools">
+              <div class="filter-options" role="group" aria-label="Filter by source">
+                <button class="filter-btn active company-source-filter-btn" type="button" data-source="ALL" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'ALL', this)">All <span class="pill-count">{{ co_news|length }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="news_media" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'news_media', this)">News <span class="pill-count">{{ ns.news_count }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="sec_edgar" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'sec_edgar', this)">SEC <span class="pill-count">{{ ns.edgar_count }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="company_ir" data-ticker="{{ co.symbol }}" onclick="filterCompanyNews(this.dataset.ticker, 'company_ir', this)">Releases <span class="pill-count">{{ ns.ir_count }}</span></button>
               </div>
-
-              <!-- In-Page Source Filters -->
-              <div style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:center;">
-                <button class="filter-btn active company-source-filter-btn" data-source="ALL" onclick="filterCompanyNews('{{ co.symbol }}', 'ALL', this)">All ({{ co_news|length }})</button>
-                <button class="filter-btn company-source-filter-btn" data-source="news_media" onclick="filterCompanyNews('{{ co.symbol }}', 'news_media', this)">News Media ({{ ns.news_count }})</button>
-                <button class="filter-btn company-source-filter-btn" data-source="sec_edgar" onclick="filterCompanyNews('{{ co.symbol }}', 'sec_edgar', this)">SEC EDGAR ({{ ns.edgar_count }})</button>
-                <button class="filter-btn company-source-filter-btn" data-source="company_ir" onclick="filterCompanyNews('{{ co.symbol }}', 'company_ir', this)">Company Releases ({{ ns.ir_count }})</button>
-              </div>
+              <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" oninput="searchCompanyFeed(this.dataset.ticker, this.value)">
             </div>
 
-            <!-- In-Page Keyword Search Bar -->
-            <div style="background:var(--bg-surface); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:0.6rem 0.95rem; display:flex; align-items:center; gap:0.6rem;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" class="company-feed-search-input" id="search-{{ co.symbol }}" placeholder="Search within {{ co.symbol }} disclosures (e.g. revenue, CEO, lawsuit, chip, contract)..." oninput="searchCompanyFeed('{{ co.symbol }}', this.value)" style="border:none; background:transparent; width:100%; outline:none; font-size:0.84rem; color:var(--text-primary);">
-            </div>
-
-            <!-- Feed Items List -->
             {% if co_news %}
               {% for it in co_news %}
-              <div class="company-feed-item company-news-item" data-source="{{ it.source }}">
-                <div class="company-feed-top">
-                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-                    <span class="score-badge {% if it.score >= 7.0 %}score-high{% elif it.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ it.score_breakdown }}">
-                      {{ it.score }}
-                    </span>
-                    <span class="source-badge {% if it.source == 'sec_edgar' %}source-badge-edgar{% elif it.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">
-                      {{ it.source_label }}
-                    </span>
-                    {% if it.form_or_type %}
-                    <span class="form-type-pill">{{ it.form_or_type }}</span>
-                    {% endif %}
-                    <span class="category-badge">{{ it.category }}</span>
-                  </div>
-                  <span class="date-cell">{{ it.published_date }}</span>
-                </div>
-
-                <div class="company-feed-title">{{ it.clean_headline }}</div>
-
-                {% if it.cross_references_list %}
-                  {% if it.cross_references_list|length == 1 %}
-                    {% set ref = it.cross_references_list[0] %}
-                    <div class="crossref-badges-wrap" style="margin-bottom:0.45rem;">
-                      <span class="crossref-badge" title="{{ ref.impact_note }}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <a href="company.html?ticker={{ ref.related_ticker }}" onclick="event.preventDefault(); switchCompany('{{ ref.related_ticker }}')" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                        ({{ ref.matched_entity }})
-                      </span>
+              <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}">
+                <span class="feed-score" title="{{ it.score_breakdown }}">{{ it.score }}</span>
+                <div class="feed-body">
+                  <h4 class="feed-headline"><a href="{{ it.url if it.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
+                  {% if it.llm_summary and it.score >= 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
+                  <details class="feed-details">
+                    <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
+                    <div class="feed-details-body">
+                      {% if it.llm_summary and it.score < 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
+                      {% if it.summary %}<p>{{ it.summary }}</p>{% endif %}
+                      {% if it.cross_references_list %}
+                      <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
+                      <ul class="feed-refs">
+                        {% for ref in it.cross_references_list %}
+                        <li>{% if ref.related_ticker in watchlist_symbols %}<a href="company.html?ticker={{ ref.related_ticker|urlencode }}" data-ticker="{{ ref.related_ticker }}" onclick="event.preventDefault(); switchCompany(this.dataset.ticker)" class="ticker-badge">{{ ref.related_ticker }}</a>{% else %}<span class="company-outside">{{ ref.related_ticker }}</span>{% endif %} {{ ref.impact_note }}</li>
+                        {% endfor %}
+                      </ul>
+                      {% endif %}
+                      {% if it.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                      <a href="{{ it.url if it.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
                     </div>
-                  {% else %}
-                    <div class="crossref-badges-wrap" style="margin-bottom:0.45rem;">
-                      <details class="crossref-accordion">
-                        <summary class="crossref-summary-pill">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          Also relevant to {{ it.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                        </summary>
-                        <div class="crossref-dropdown-content">
-                          {% for ref in it.cross_references_list %}
-                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <a href="company.html?ticker={{ ref.related_ticker }}" onclick="event.preventDefault(); switchCompany('{{ ref.related_ticker }}')" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                          </div>
-                          {% endfor %}
-                        </div>
-                      </details>
-                    </div>
-                  {% endif %}
-                {% endif %}
-
-                {% if it.llm_summary %}
-                <div class="why-matters-box" style="margin-top:0.4rem; margin-bottom:0.5rem;">
-                  <span class="why-tag">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    Takeaway:
-                  </span>
-                  {{ it.llm_summary }}
+                  </details>
                 </div>
-                {% endif %}
-
-                <p class="summary-text" style="font-size:0.835rem; margin-bottom:0.65rem;">{{ it.summary }}</p>
-
-                <div style="display:flex; justify-content:flex-end;">
-                  <a href="{{ it.url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.78rem;">
-                    {% if it.source == 'sec_edgar' %}View SEC Filing ↗{% elif it.source == 'company_ir' %}View Press Release ↗{% else %}Read Full Article ↗{% endif %}
-                  </a>
-                </div>
-              </div>
+                <span class="date-cell">{{ short_date(it.published_date) }}</span>
+              </article>
               {% endfor %}
+              <p class="fp-empty company-feed-empty" hidden>No stories match.</p>
             {% else %}
-              <div class="company-feed-item" style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
-                <div style="margin-bottom:0.5rem; color:var(--text-muted);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg></div>
-                <div style="font-weight:700; color:var(--text-primary);">No Recent Disclosures Found</div>
-                <div style="font-size:0.82rem; margin-top:0.25rem;">No filings, company releases, or news media recorded in this period for {{ co.symbol }}.</div>
-              </div>
+              <p class="home-empty">No stories recorded for {{ co.symbol }} in this period.</p>
             {% endif %}
-          </div>
+          </section>
 
-          <!-- Right Sidebar Column: Calendar, Sensitivities, Supply Chain -->
-          <div class="company-side-deck">
-            
-            <!-- Box 1: Upcoming Corporate Calendar -->
-            <div class="company-side-box">
-              <div class="company-side-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                Forthcoming Calendar ({{ co_events|length }})
-              </div>
-
+          <aside class="company-side-deck">
+            <section class="company-side-box">
+              <h3 class="fp-heading">Forthcoming Calendar</h3>
               {% if co_events %}
-                <div style="display:flex; flex-direction:column; gap:0.65rem;">
-                  {% for ev in co_events %}
-                  <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0.75rem; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-card);">
-                    <div class="calendar-date-box" style="width:42px; min-width:42px; padding:0.18rem 0.35rem;">
-                      <div class="calendar-date-month" style="font-size:0.6rem;">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                      <div class="calendar-date-day" style="font-size:1.05rem;">{{ ev.event_date[8:10] }}</div>
-                    </div>
-                    <div style="flex:1; min-width:0;">
-                      <div style="font-size:0.835rem; font-weight:700; color:var(--text-primary); line-height:1.3;">{{ ev.headline }}</div>
-                      <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem;">{{ ev.relative_badge }} &bull; {{ ev.event_type }}</div>
-                    </div>
-                  </div>
-                  {% endfor %}
-                </div>
-              {% else %}
-                <div style="font-size:0.82rem; color:var(--text-muted); text-align:center; padding:1rem 0;">
-                  No scheduled earnings or dividend dates in next 60 days.
-                </div>
-              {% endif %}
-            </div>
-
-            <!-- Box 2: Macroeconomic Sensitivities (FRED) -->
-            <div class="company-side-box">
-              <div class="company-side-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                Macroeconomic Sensitivities
-              </div>
-
-              <div style="display:flex; flex-direction:column; gap:0.65rem;">
-                {% for ind in economic_indicators %}
-                  {% if ind.tickers_list and co.symbol in ind.tickers_list %}
-                  <div style="padding:0.65rem 0.85rem; background:var(--bg-base); border:1px solid var(--border-card); border-radius:var(--radius-md);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
-                      <span style="font-size:0.82rem; font-weight:700; color:var(--text-primary);">{{ ind.name }}</span>
-                      <span style="font-family: var(--font-mono); font-size:0.88rem; font-weight: 600; color:var(--accent-blue);">{{ ind.formatted_value }}</span>
-                    </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">{{ ind.context_note }}</div>
-                  </div>
-                  {% endif %}
+              <ul class="fp-side-list">
+                {% for ev in co_events %}
+                <li class="fp-event">
+                  <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
+                  <span class="fp-event-text">{{ ev.headline }}<span class="company-side-sub">{{ ev.relative_badge }} · {{ event_kind(ev.event_type or '') }}</span></span>
+                </li>
                 {% endfor %}
-                
-                {% if co.macro_sensitivities %}
-                <div style="margin-top:0.4rem; padding-top:0.65rem; border-top:1px solid var(--border-card);">
-                  <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">Specific Macro Factors</div>
-                  <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                    {% for m in co.macro_sensitivities %}
-                    <span class="category-badge" style="font-size:0.7rem;">{{ m | replace('_', ' ') | title }}</span>
-                    {% endfor %}
-                  </div>
-                </div>
+              </ul>
+              {% else %}
+              <p class="home-empty">Nothing scheduled.</p>
+              {% endif %}
+            </section>
+
+            <section class="company-side-box">
+              <h3 class="fp-heading">Macroeconomic Sensitivities</h3>
+              <ul class="fp-side-list">
+                {% for ind in economic_indicators %}
+                {% if ind.tickers_list and co.symbol in ind.tickers_list %}
+                <li class="fp-indicator" title="{{ ind.context_note }}">
+                  <span>{{ ind.name }}</span>
+                  <span class="fp-indicator-value">{{ ind.formatted_value.split(' (')[0] }}</span>
+                </li>
                 {% endif %}
-              </div>
-            </div>
+                {% endfor %}
+              </ul>
+              {% if co.macro_sensitivities %}<p class="company-side-note">Also watching: {{ co.macro_sensitivities|join(', ')|replace('_', ' ') }}</p>{% endif %}
+            </section>
 
-            <!-- Box 3: Supply Chain & Corporate Ecosystem -->
-            <div class="company-side-box">
-              <div class="company-side-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                Corporate Ecosystem
-              </div>
-
-              <!-- Key Customers -->
-              {% if co.key_customers %}
-              <div style="margin-bottom:0.85rem;">
-                <div style="font-size:0.72rem; font-weight:700; color:var(--pos); text-transform:uppercase; margin-bottom:0.35rem;">Key Customers</div>
-                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                  {% for cust in co.key_customers %}
-                  <a href="company.html?ticker={{ cust }}" onclick="event.preventDefault(); switchCompany('{{ cust }}')" class="crossref-badge" style="text-decoration:none; cursor:pointer;">
-                    <span class="crossref-rel-pill crossref-customer">Customer</span>
-                    <strong>{{ cust }}</strong>
-                  </a>
-                  {% endfor %}
-                </div>
-              </div>
+            <section class="company-side-box">
+              <h3 class="fp-heading">Corporate Ecosystem</h3>
+              {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
+              {% if names %}
+              <p class="feed-detail-label">{{ label }}</p>
+              <p class="company-names">{% for name in names %}{% if name in watchlist_symbols %}<a href="company.html?ticker={{ name|urlencode }}" data-ticker="{{ name }}" onclick="event.preventDefault(); switchCompany(this.dataset.ticker)" class="ticker-badge">{{ name }}</a>{% else %}<span class="company-outside">{{ name }}</span>{% endif %}{% if not loop.last %}<span class="company-sep">, </span>{% endif %}{% endfor %}</p>
               {% endif %}
-
-              <!-- Key Suppliers -->
-              {% if co.key_suppliers %}
-              <div style="margin-bottom:0.85rem;">
-                <div style="font-size:0.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; margin-bottom:0.35rem;">Key Suppliers</div>
-                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                  {% for supp in co.key_suppliers %}
-                  <a href="company.html?ticker={{ supp }}" onclick="event.preventDefault(); switchCompany('{{ supp }}')" class="crossref-badge" style="text-decoration:none; cursor:pointer;">
-                    <span class="crossref-rel-pill crossref-supplier">Supplier</span>
-                    <strong>{{ supp }}</strong>
-                  </a>
-                  {% endfor %}
-                </div>
-              </div>
-              {% endif %}
-
-              <!-- Competitors -->
-              {% if co.competitors %}
-              <div>
-                <div style="font-size:0.72rem; font-weight:700; color:var(--warn); text-transform:uppercase; margin-bottom:0.35rem;">Competitors</div>
-                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                  {% for comp in co.competitors %}
-                  <a href="company.html?ticker={{ comp }}" onclick="event.preventDefault(); switchCompany('{{ comp }}')" class="ticker-badge ticker-{{ comp }}" style="font-size:0.72rem; text-decoration:none; cursor:pointer;">{{ comp }}</a>
-                  {% endfor %}
-                </div>
-              </div>
-              {% endif %}
-            </div>
-
-          </div>
+              {% endfor %}
+            </section>
+          </aside>
         </div>
-      </div>
+      </article>
       {% endfor %}
     </main>
   </div>
@@ -5585,15 +4690,14 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       const comps = coData.competitors || [];
       const spy = coData.benchmark;
 
-      const targetColor = 'var(--accent)';
-      const compColors = ['#ea580c', '#0284c7', '#9333ea'];
-      const spyColor = 'var(--text-muted)';
+      const targetColor = cssColor('--text-primary');
+      const compColors = [cssColor('--series-1'), cssColor('--series-2'), cssColor('--series-3')];
+      const spyColor = cssColor('--text-muted');
 
       // 1. KPI Ribbon
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
         const tgtColor = tgtPct >= 0 ? 'var(--pos)' : 'var(--neg)';
-        const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
 
         const alphaPeers = coData.alpha_vs_peers;
         const alphaPeersColor = alphaPeers >= 0 ? 'var(--pos)' : 'var(--neg)';
@@ -5604,7 +4708,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
-            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
@@ -5630,22 +4734,22 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         let rowsHtml = `
           <thead>
             <tr>
-              <th>Ticker / Entity</th>
+              <th>Name</th>
               <th>Role</th>
-              <th>Base (3M)</th>
+              <th>Start</th>
               <th>Latest</th>
-              <th>3M % Change</th>
-              <th>Alpha</th>
+              <th>Change</th>
+              <th>Against this company</th>
             </tr>
           </thead>
           <tbody>
-            <tr style="background:var(--accent-soft); font-weight:700;">
+            <tr class="perf-row-target">
               <td><span class="ticker-badge ticker-${escapeHtml(symbol)}">${escapeHtml(symbol)}</span> ${escapeHtml(coData.name)}</td>
-              <td><span class="form-type-pill" style="background:var(--accent-soft); color:var(--accent);">Target</span></td>
-              <td style="font-family: var(--font-mono);">$${target.base_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono);">$${target.latest_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono); color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family: var(--font-mono); color:var(--text-muted);">&mdash;</td>
+              <td>This company</td>
+              <td class="perf-num">$${target.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${target.latest_price.toFixed(2)}</td>
+              <td class="perf-num" style="color:${target.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num">&mdash;</td>
             </tr>
         `;
 
@@ -5653,12 +4757,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" onclick="event.preventDefault(); switchCompany('${escapeHtml(c.symbol)}')" class="ticker-badge" style="font-size:0.75rem; cursor:pointer;">${escapeHtml(c.symbol)}</a></td>
-              <td><span class="form-type-pill">Peer #${idx+1}</span></td>
-              <td style="font-family: var(--font-mono);">$${c.base_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono);">$${c.latest_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono); color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family: var(--font-mono); color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td>${document.getElementById('profile-' + c.symbol) ? `<a href="company.html?ticker=${encodeURIComponent(c.symbol)}" data-ticker="${escapeHtml(c.symbol)}" onclick="event.preventDefault(); switchCompany(this.dataset.ticker)" class="ticker-badge">${escapeHtml(c.symbol)}</a>` : `<span class="ticker-badge">${escapeHtml(c.symbol)}</span>`}</td>
+              <td>Peer</td>
+              <td class="perf-num">$${c.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
+              <td class="perf-num" style="color:${c.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num" style="color:${delta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -5666,13 +4770,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         if (spy) {
           const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
-            <tr style="border-top:2px dashed var(--border-card);">
-              <td><span class="form-type-pill" style="background:var(--bg-surface-elevated); color:var(--text-secondary); font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
-              <td><span class="form-type-pill">Benchmark</span></td>
-              <td style="font-family: var(--font-mono);">$${spy.base_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono);">$${spy.latest_price.toFixed(2)}</td>
-              <td style="font-family: var(--font-mono); color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family: var(--font-mono); color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+            <tr>
+              <td><span class="ticker-badge">SPY</span> S&amp;P 500 ETF</td>
+              <td>Benchmark</td>
+              <td class="perf-num">$${spy.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${spy.latest_price.toFixed(2)}</td>
+              <td class="perf-num" style="color:${spy.total_pct_change >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num" style="color:${spyDelta >= 0 ? 'var(--pos)' : 'var(--neg)'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -5691,13 +4795,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
       const datasets = [
         {
-          label: `${symbol} (Target)`,
+          label: symbol,
           data: target.series.map(pt => pt.pct_change),
           borderColor: targetColor,
-          backgroundColor: 'rgba(37, 99, 235, 0.08)',
-          borderWidth: isPhone ? 2.2 : 3,
-          fill: true,
-          tension: 0.25,
+          borderWidth: 2.5,
+          fill: false,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 5,
         }
@@ -5706,12 +4809,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       comps.forEach((c, idx) => {
         const color = compColors[idx % compColors.length];
         datasets.push({
-          label: `${c.symbol} (Peer)`,
+          label: c.symbol,
           data: c.series.map(pt => pt.pct_change),
           borderColor: color,
-          borderWidth: isPhone ? 1.5 : 2,
+          borderWidth: 1.5,
           fill: false,
-          tension: 0.25,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 4,
         });
@@ -5746,17 +4849,19 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Inter', size: isPhone ? 10 : 11, weight: '600' },
-                color: '#475569',
-                padding: isPhone ? 6 : 10
+                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                color: cssColor('--text-secondary'),
+                padding: isPhone ? 8 : 12
               }
             },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleFont: { family: 'Inter', size: 12, weight: '700' },
-              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              backgroundColor: cssColor('--text-primary'),
+              titleColor: cssColor('--bg-base'),
+              bodyColor: cssColor('--bg-base'),
+              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
+              bodyFont: { family: 'Hanken Grotesk', size: 11 },
               padding: 10,
-              cornerRadius: 8,
+              cornerRadius: 2,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -5769,17 +4874,17 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                color: cssColor('--text-muted'),
                 maxRotation: 0
               }
             },
             y: {
-              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
             }
@@ -5788,92 +4893,63 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    let currentCompanySector = 'ALL';
-
-    function filterCompanySector(secName, btn) {
-      currentCompanySector = secName;
-      document.querySelectorAll('.company-browser-sec-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      const q = (document.getElementById('companyStripFilter')?.value || '').toLowerCase().trim();
-      applyCompanyCardFilters(q);
-    }
-
     function filterCompanyStrip(rawVal) {
       const q = (rawVal || '').toLowerCase().trim();
-      applyCompanyCardFilters(q);
+      document.querySelectorAll('.company-strip-pill').forEach(pill => {
+        const haystack = [pill.dataset.ticker, pill.dataset.name, pill.dataset.sector].join(' ').toLowerCase();
+        pill.hidden = Boolean(q) && !haystack.includes(q);
+      });
+      document.querySelectorAll('.company-browser-sector').forEach(group => {
+        group.hidden = !group.querySelector('.company-strip-pill:not([hidden])');
+      });
     }
 
-    function applyCompanyCardFilters(q) {
-      const pills = document.querySelectorAll('.company-strip-pill');
-      pills.forEach(pill => {
-        const sym = (pill.getAttribute('data-ticker') || '').toLowerCase();
-        const name = (pill.getAttribute('data-name') || '').toLowerCase();
-        const sec = (pill.getAttribute('data-sector') || '').toLowerCase();
-
-        const sectorMatch = (currentCompanySector === 'ALL' || sec === currentCompanySector.toLowerCase());
-        const textMatch = (!q || sym.includes(q) || name.includes(q) || sec.includes(q));
-
-        if (sectorMatch && textMatch) {
-          pill.style.display = 'flex';
-        } else {
-          pill.style.display = 'none';
-        }
+    function applyCompanyFeedFilter(container, source, query) {
+      let shown = 0;
+      container.querySelectorAll('.company-news-item').forEach(row => {
+        const sourceMatch = source === 'ALL' || row.getAttribute('data-source') === source;
+        const textMatch = !query || (row.textContent || '').toLowerCase().includes(query);
+        row.hidden = !(sourceMatch && textMatch);
+        if (!row.hidden) shown += 1;
       });
+      const empty = container.querySelector('.company-feed-empty');
+      if (empty) empty.hidden = shown !== 0;
     }
 
     function searchCompanyFeed(ticker, rawVal) {
       const container = document.getElementById('profile-' + ticker);
       if (!container) return;
 
-      const q = (rawVal || '').toLowerCase().trim();
       const activeSourceBtn = container.querySelector('.company-source-filter-btn.active');
       const activeSource = activeSourceBtn ? activeSourceBtn.getAttribute('data-source') || 'ALL' : 'ALL';
-
-      const rows = container.querySelectorAll('.company-news-item');
-      rows.forEach(row => {
-        const rowSource = row.getAttribute('data-source');
-        const sourceMatch = (activeSource === 'ALL' || rowSource === activeSource);
-        const text = (row.textContent || '').toLowerCase();
-        const textMatch = (!q || text.includes(q));
-
-        if (sourceMatch && textMatch) {
-          row.style.display = 'block';
-        } else {
-          row.style.display = 'none';
-        }
-      });
+      applyCompanyFeedFilter(container, activeSource, (rawVal || '').toLowerCase().trim());
     }
 
-    function switchCompany(ticker, pushState = true) {
+    let currentCompany = null;
+
+    // showOnly: load a company without counting it as viewed, as on a bare visit to the directory.
+    function switchCompany(ticker, pushState = true, showOnly = false) {
       const allProfiles = document.querySelectorAll('.company-profile-container');
-      allProfiles.forEach(el => el.style.display = 'none');
-      
-      const target = document.getElementById('profile-' + ticker);
-      if (target) {
-        target.style.display = 'block';
-      } else if (allProfiles.length > 0) {
-        allProfiles[0].style.display = 'block';
-        ticker = allProfiles[0].getAttribute('data-ticker');
+      let target = document.getElementById('profile-' + ticker);
+      const found = Boolean(target);
+      if (!target) {
+        target = allProfiles[0];
+        if (!target) return;
+        ticker = target.getAttribute('data-ticker');
       }
+      allProfiles.forEach(el => { el.hidden = el !== target; });
+      currentCompany = ticker;
 
-      // Track visit in localStorage for Home page quick access
-      trackRecentlyViewedCompany(ticker);
+      const directory = document.getElementById('companyDirectory');
+      if (directory) directory.open = showOnly;
+      if (found && !showOnly) trackRecentlyViewedCompany(ticker);
 
-      // Render comparative chart for this company
       renderCompanyComparativeChart(ticker);
 
-      // Update switcher pills
       document.querySelectorAll('.company-strip-pill').forEach(pill => {
-        if (pill.getAttribute('data-ticker') === ticker) {
-          pill.classList.add('active');
-          pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        } else {
-          pill.classList.remove('active');
-        }
+        pill.classList.toggle('active', pill.getAttribute('data-ticker') === ticker);
       });
 
-      // Scroll window to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       if (pushState) {
@@ -5891,33 +4967,28 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       if (btn) btn.classList.add('active');
 
       const searchInput = document.getElementById('search-' + ticker);
-      const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
-
-      const rows = container.querySelectorAll('.company-news-item');
-      rows.forEach(row => {
-        const rowSource = row.getAttribute('data-source');
-        const sourceMatch = (source === 'ALL' || rowSource === source);
-        const text = (row.textContent || '').toLowerCase();
-        const textMatch = (!query || text.includes(query));
-
-        if (sourceMatch && textMatch) {
-          row.style.display = 'block';
-        } else {
-          row.style.display = 'none';
-        }
-      });
+      applyCompanyFeedFilter(container, source, (searchInput ? searchInput.value : '').toLowerCase().trim());
     }
 
-    window.addEventListener('popstate', (e) => {
-      const params = new URLSearchParams(window.location.search);
-      const ticker = params.get('ticker') || 'NVDA';
-      switchCompany(ticker, false);
+    window.addEventListener('popstate', () => {
+      const ticker = new URLSearchParams(window.location.search).get('ticker');
+      switchCompany(ticker || 'NVDA', false, !ticker);
+    });
+
+    document.addEventListener('themechange', () => {
+      if (currentCompany) renderCompanyComparativeChart(currentCompany);
     });
 
     window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const ticker = (params.get('ticker') || 'NVDA').toUpperCase();
-      switchCompany(ticker, false);
+      const requested = new URLSearchParams(window.location.search).get('ticker');
+      if (requested) {
+        switchCompany(requested.toUpperCase(), false);
+      } else {
+        switchCompany('NVDA', false, true);
+      }
+      whenChartFontsReady(() => {
+        if (currentCompany) renderCompanyComparativeChart(currentCompany);
+      });
     });
   </script>
 </body>

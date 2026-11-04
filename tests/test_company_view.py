@@ -109,7 +109,7 @@ class TestCompanyViewAndRender(unittest.TestCase):
         self.assertIn("Corporate Ecosystem", content)
         self.assertIn("Macroeconomic Sensitivities", content)
         self.assertIn("Forthcoming Calendar", content)
-        self.assertIn("Intelligence Feed", content)
+        self.assertIn("company-card-deck", content)
 
         # Verify human-readable Newsroom links
         self.assertIn("https://nvidianews.nvidia.com", content)
