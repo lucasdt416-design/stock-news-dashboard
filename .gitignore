@@ -7,3 +7,5 @@ site/
 .env
 
 
+data/demo.db
+.capture/
