@@ -21,7 +21,7 @@ Generates:
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 import yaml
 from jinja2 import Template
@@ -372,14 +372,6 @@ SHARED_CSS = """
       justify-content: space-between;
     }
 
-    .mobile-header-left {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      text-decoration: none;
-      color: inherit;
-    }
-
     .mobile-header-right {
       display: flex;
       align-items: center;
@@ -404,7 +396,6 @@ SHARED_CSS = """
     .mobile-action-btn:hover, .mobile-hamburger-btn:hover {
       color: var(--accent);
     }
-
 
     .mobile-drawer-backdrop {
       display: none;
@@ -455,14 +446,10 @@ SHARED_CSS = """
       margin-top: -1px;
     }
 
-
-
     .mobile-tab-link.active {
       color: var(--text-primary);
       border-top-color: var(--text-primary);
     }
-
-
 
     .sidebar-close-btn {
       display: none;
@@ -474,54 +461,7 @@ SHARED_CSS = """
       padding: 0.25rem 0.5rem;
       line-height: 1;
     }
-
-    /* Watchlist Horizontal Ticker Ribbon (Robinhood / Apple Stocks Style) */
-    .watchlist-ticker-strip {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      max-width: 100%;
-      gap: 0.5rem;
-      padding: 0.35rem 0 0.65rem 0;
-      margin-bottom: 1.25rem;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .hero-section, .hero-container { min-width: 0; max-width: 100%; }
     .comparative-select { max-width: 100%; min-width: 0; }
-
-    .watchlist-ticker-strip::-webkit-scrollbar {
-      display: none;
-    }
-
-    .ticker-strip-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-full);
-      padding: 0.35rem 0.75rem;
-      text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      flex-shrink: 0;
-      transition: all var(--transition-fast);
-      box-shadow: 0 1px 2px var(--accent-soft);
-      min-height: 36px;
-    }
-
-    .ticker-strip-pill:hover {
-      border-color: var(--border-card);
-      background: var(--bg-surface-elevated);
-      transform: translateY(-1px);
-    }
-
-    .ticker-strip-pill:active {
-      transform: scale(0.96);
-    }
 
     /* Mobile Segmented View Toggle (Comparative Performance Module) */
     .perf-mobile-toggle {
@@ -600,60 +540,8 @@ SHARED_CSS = """
         box-sizing: border-box !important;
       }
 
-      .hero-container {
-        margin: 0.5rem auto 1.25rem auto !important;
-      }
-
-      .hero-orbit-stage {
-        flex-direction: column !important;
-        min-height: auto !important;
-        perspective: none !important;
-        transform-style: flat !important;
-        margin: 0.5rem 0 1.5rem 0 !important;
-      }
-
-      .orbit-centerpiece {
-        max-width: 100% !important;
-      }
-
-      .orbit-track {
-        position: static !important;
-        inset: auto !important;
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.65rem !important;
-        width: 100% !important;
-        max-width: 600px !important;
-        margin-top: 0.85rem !important;
-        transform: none !important;
-        z-index: 10 !important;
-      }
-
-      .orbit-card {
-        position: static !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        transform: none !important;
-        animation: none !important;
-        padding: 0.65rem 0.75rem !important;
-      }
-
       .hero-title {
         font-size: 1.85rem !important;
-      }
-
-      .hero-subtext {
-        font-size: 0.88rem !important;
-        margin-bottom: 1rem !important;
-      }
-
-      .search-wrapper {
-        margin-bottom: 0 !important;
-      }
-
-      .hero-bento-deck {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
       }
 
       .analytics-grid {
@@ -677,69 +565,9 @@ SHARED_CSS = """
         line-height: 1.25 !important;
       }
 
-      .hero-subtext {
-        font-size: 0.82rem !important;
-        margin-bottom: 0.85rem !important;
-      }
-
-      .hero-badge {
-        font-size: 0.72rem !important;
-        padding: 0.3rem 0.75rem !important;
-        max-width: 100% !important;
-        white-space: normal !important;
-        text-align: left !important;
-        line-height: 1.3 !important;
-      }
-
-      .orbit-track {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.45rem !important;
-        margin-top: 0.75rem !important;
-      }
-
-      .orbit-card {
-        padding: 0.5rem 0.6rem !important;
-        border-radius: var(--radius-md) !important;
-      }
-
-      .orbit-card-name {
-        font-size: 0.72rem !important;
-      }
-
-      .orbit-card-score {
-        font-size: 0.62rem !important;
-        padding: 0.08rem 0.3rem !important;
-      }
-
-      .orbit-pill-catalyst {
-        font-size: 0.62rem !important;
-        max-width: 90px !important;
-      }
-
-      .search-wrapper {
-        margin-bottom: 0 !important;
-      }
-
-      .search-box {
-        padding: 0.6rem 0.85rem !important;
-        min-height: 44px !important;
-      }
-
-      .search-shortcut {
-        display: none !important;
-      }
-
       .bento-card {
         padding: 1.15rem !important;
         border-radius: var(--radius-lg) !important;
-      }
-
-      .bento-score-hero {
-        margin: 0.5rem 0 0.75rem 0 !important;
-      }
-
-      .bento-count {
-        font-size: 2rem !important;
       }
 
       .priority-section {
@@ -773,33 +601,9 @@ SHARED_CSS = """
         gap: 1rem !important;
       }
 
-      .news-grid {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-      }
-
       .calendar-grid {
         grid-template-columns: 1fr !important;
         gap: 0.85rem !important;
-      }
-
-      .econ-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.85rem !important;
-      }
-
-      .recently-viewed-grid {
-        display: flex !important;
-        overflow-x: auto !important;
-        gap: 0.75rem !important;
-        padding-bottom: 0.5rem !important;
-        scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
-
-      .recent-card {
-        flex: 0 0 240px !important;
-        scroll-snap-align: start !important;
       }
 
       .comparative-perf-card {
@@ -820,10 +624,6 @@ SHARED_CSS = """
       .perf-kpi-grid {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 0.5rem !important;
-      }
-
-      .perf-kpi-card {
-        padding: 0.65rem !important;
       }
 
       .perf-kpi-val {
@@ -850,22 +650,7 @@ SHARED_CSS = """
         align-items: flex-start !important;
         gap: 0.5rem !important;
       }
-
-      .company-profile-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.75rem !important;
-      }
-
-      .company-metric-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.5rem !important;
-      }
     }
-
-    /* Top Navigation Bar */
-
-
 
     /* Sidebar Brand (Logo and Title Only - No Tagline) */
     .sidebar-brand {
@@ -873,7 +658,6 @@ SHARED_CSS = """
       text-decoration: none;
       color: inherit;
     }
-
 
     .brand-title {
       font-family: var(--font-display);
@@ -883,7 +667,6 @@ SHARED_CSS = """
       color: var(--text-primary);
       line-height: 1;
     }
-
 
     .sidebar-nav {
       display: flex;
@@ -912,14 +695,11 @@ SHARED_CSS = """
       font-weight: 600;
     }
 
-
-
     .nav-count {
       font-family: var(--font-mono);
       font-size: 0.72rem;
       color: var(--text-muted);
     }
-
 
     .sidebar-footer {
       margin-top: auto;
@@ -947,128 +727,11 @@ SHARED_CSS = """
 
     .theme-toggle:hover { color: var(--text-primary); }
 
-
     .pulse-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       display: inline-block;
-    }
-
-    /* =========================================================================
-       HERO INTRO ANIMATION & 3D ORBITAL SEARCH CENTERPIECE
-       ========================================================================= */
-    .hero-section {
-      width: 100%;
-      margin: 0 auto;
-      padding: 0.5rem 0 1.25rem 0;
-      position: relative;
-      z-index: 50;
-    }
-
-    .hero-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      margin: 0 auto;
-      max-width: 980px;
-      width: 100%;
-      position: relative;
-    }
-
-    .hero-intro-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 1.25rem;
-      width: 100%;
-    }
-
-    /* Staggered Word & Line Intro Animations */
-    .intro-fade-1 {
-      opacity: 0;
-      transform: translateY(12px);
-      animation: heroFadeSlide 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: 0.05s;
-    }
-
-    .hero-word-wrap {
-      display: inline-flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.35rem 0.6rem;
-    }
-
-    .intro-word {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(16px) scale(0.95);
-      filter: blur(4px);
-      animation: wordReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: calc(0.12s + var(--w-idx, 0) * 0.08s);
-    }
-
-    .intro-fade-2 {
-      opacity: 0;
-      transform: translateY(10px);
-      animation: heroFadeSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: 0.46s;
-    }
-
-    @keyframes wordReveal {
-      0% {
-        opacity: 0;
-        transform: translateY(16px) scale(0.95);
-        filter: blur(4px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        filter: blur(0);
-      }
-    }
-
-    @keyframes heroFadeSlide {
-      0% {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      padding: 0.42rem 1.25rem;
-      border-radius: var(--radius-full);
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 1.15rem;
-      transition: all var(--transition-fast);
-      text-decoration: none;
-      max-width: 100%;
-      text-align: center;
-      line-height: 1.4;
-      white-space: normal;
-      word-break: normal !important;
-      overflow-wrap: normal !important;
-    }
-
-    .hero-badge:hover {
-      border-color: var(--accent-blue);
-      color: var(--accent-blue);
-      box-shadow: var(--shadow-card);
-      transform: translateY(-1px);
     }
 
     .catalyst-ticker, .ticker-badge {
@@ -1089,243 +752,33 @@ SHARED_CSS = """
       line-height: 1.18;
     }
 
-    .hero-subtext {
-      font-size: 0.96rem;
-      color: var(--text-muted);
-      line-height: 1.55;
-      margin-bottom: 1rem;
-      word-break: normal;
-      max-width: 620px;
-    }
-
-    /* 3D Orbital Stage Container */
-    .hero-orbit-stage {
-      position: relative;
-      width: 100%;
-      max-width: 920px;
-      min-height: 195px;
-      margin: 0.5rem auto 2.25rem auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      perspective: 1200px;
-      perspective-origin: 50% 50%;
-      transform-style: preserve-3d;
-    }
-
-    .orbit-centerpiece {
-      position: relative;
-      z-index: 20;
-      width: 100%;
-      max-width: 580px;
-      margin: 0 auto;
-    }
-
-    /* 3D Orbital Track */
-    .orbit-track {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform-style: preserve-3d;
-      z-index: 30;
-    }
-
-    /* Floating Orbit Suggestion Cards */
-    .orbit-card {
-      position: absolute;
-      pointer-events: auto;
-      width: 172px;
-      padding: 0.72rem 0.85rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 10px 25px -5px var(--accent-soft), 0 4px 6px -2px var(--accent-soft);
-      text-decoration: none;
-      text-align: left;
-      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease, opacity 0.35s ease;
-      transform-style: preserve-3d;
-      cursor: pointer;
-      overflow: hidden;
-      z-index: 30;
-    }
-
-    .orbit-card-glow { display: none; }
-
-    .orbit-card:hover .orbit-card-glow {
-      opacity: 1;
-      background: var(--bg-surface);
-    }
-
-    .orbit-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.4rem;
-      margin-bottom: 0.28rem;
-    }
-
-    .orbit-card-score {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--accent-blue);
-      background: var(--accent-soft);
-      padding: 0.1rem 0.4rem;
-      border-radius: var(--radius-full);
-      font-family: var(--font-mono);
-    }
-
-    .orbit-card-name {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.25;
-      min-height: 2.5em;
-      margin-bottom: 0.3rem;
-      word-break: break-word;
-    }
-
-    .orbit-card-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .orbit-pill-catalyst {
-      font-size: 0.66rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: var(--bg-surface-elevated);
-      padding: 0.08rem 0.35rem;
-      border-radius: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 110px;
-    }
-
-    .orbit-arrow {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      transition: transform 0.2s ease, color 0.2s ease;
-    }
-
-    .orbit-card:hover .orbit-arrow {
-      color: var(--accent-blue);
-      transform: translate(2px, -2px);
-    }
-
-    /* 3D Coordinates for the 4 Orbit Cards (Desktop) */
-    .orbit-card-0 {
-      top: 5px;
-      left: 10px;
-      transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg);
-      animation: orbitFloat0 7s ease-in-out infinite;
-    }
-
-    .orbit-card-1 {
-      top: 5px;
-      right: 10px;
-      transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg);
-      animation: orbitFloat1 7s ease-in-out infinite 1.75s;
-    }
-
-    .orbit-card-2 {
-      bottom: 5px;
-      left: 20px;
-      transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg);
-      animation: orbitFloat2 7s ease-in-out infinite 3.5s;
-    }
-
-    .orbit-card-3 {
-      bottom: 5px;
-      right: 20px;
-      transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg);
-      animation: orbitFloat3 7s ease-in-out infinite 5.25s;
-    }
-
-    /* Subtle 3D Ambient Float Keyframes */
-    @keyframes orbitFloat0 {
-      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg); }
-      50% { transform: translate3d(-5px, -7px, 46px) rotate3d(0.6, 1, 0, 9deg); }
-    }
-    @keyframes orbitFloat1 {
-      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg); }
-      50% { transform: translate3d(5px, -7px, 46px) rotate3d(0.6, -1, 0, 9deg); }
-    }
-    @keyframes orbitFloat2 {
-      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg); }
-      50% { transform: translate3d(-4px, 5px, 32px) rotate3d(-0.6, 1, 0, 8deg); }
-    }
-    @keyframes orbitFloat3 {
-      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg); }
-      50% { transform: translate3d(4px, 5px, 32px) rotate3d(-0.6, -1, 0, 8deg); }
-    }
-
-    .hero-orbit-stage:hover .orbit-card {
-      animation-play-state: paused;
-    }
-
-    .orbit-card:hover {
-      border-color: var(--accent-blue);
-      box-shadow: 0 16px 36px -6px var(--accent-soft), 0 0 0 1px var(--accent-soft);
-      transform: scale(1.06) translate3d(0, -4px, 75px) !important;
-      z-index: 45 !important;
-      background: var(--bg-surface);
-    }
-
-    .orbit-card.card-fading {
-      opacity: 0.1;
-      transform: scale(0.92) translate3d(0, 0, 0) !important;
-    }
-
     /* Global Search & Command Bar (⌘K) with Bulletproof Overflow Containment */
     .search-wrapper {
       position: relative;
       width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-      box-sizing: border-box;
-      z-index: 20;
+      margin: 0 0 3rem;
+      z-index: 50;
     }
+
+    .search-wrapper:has(.search-dropdown.active) { z-index: 300; }
 
     .search-box {
       display: flex;
       align-items: center;
+      gap: 0.85rem;
+      height: 66px;
+      padding: 0 1.35rem;
       background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-xl);
-      padding: 0.95rem 1.4rem;
-      box-shadow: 0 12px 32px -4px var(--accent-soft), 0 4px 12px -2px var(--accent-soft);
-      transition: all var(--transition-normal);
+      border: 2px solid var(--border-card);
+      border-radius: 18px;
       cursor: text;
-      width: 100%;
-      box-sizing: border-box;
     }
 
-    .search-box:focus-within, .search-box.focused {
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 0 4px var(--accent-soft), 0 20px 40px -8px var(--accent-soft);
-      background: var(--bg-surface);
-      transform: translateY(-2px);
-    }
+    .search-box:hover { border-color: var(--text-muted); }
+    .search-box:focus-within { border-color: var(--accent); }
 
-    .search-icon-wrap {
-      display: flex;
-      align-items: center;
-      color: var(--text-muted);
-      margin-right: 0.85rem;
-      flex-shrink: 0;
-    }
+    .search-icon-wrap { display: flex; color: var(--text-muted); flex-shrink: 0; }
+    .search-box:focus-within .search-icon-wrap { color: var(--accent); }
 
     .search-input {
       flex: 1;
@@ -1333,468 +786,372 @@ SHARED_CSS = """
       border: none;
       outline: none;
       background: transparent;
-      font-size: 0.94rem;
-      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: 500;
       color: var(--text-primary);
     }
 
-    .search-input::placeholder {
-      color: var(--text-muted);
-    }
+    .search-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
     .search-shortcut {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-      background: var(--bg-surface-elevated);
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
       border: 1px solid var(--border-card);
       border-radius: 6px;
-      padding: 0.18rem 0.5rem;
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
+      padding: 0.15rem 0.4rem;
       flex-shrink: 0;
     }
 
-    /* Tab Suggestions & Live Autocomplete Dropdown - Bulletproof Containment */
     .search-dropdown {
       position: absolute;
-      top: calc(100% + 10px);
+      top: calc(100% + 6px);
       left: 0;
       right: 0;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
       background: var(--bg-surface);
       border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
       box-shadow: var(--shadow-dropdown);
-      padding: 1.15rem;
+      padding: 0.5rem 1rem 1rem;
       z-index: 100;
       display: none;
-      max-height: 420px;
+      max-height: 440px;
       overflow-x: hidden;
       overflow-y: auto;
     }
 
-    .search-dropdown.active {
-      display: block;
-      animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .search-dropdown.active { display: block; }
 
     .dropdown-section-title {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-size: 0.74rem;
       color: var(--text-muted);
-      margin-bottom: 0.6rem;
-      padding-left: 0.25rem;
+      margin: 0.85rem 0 0.15rem;
     }
 
     .dropdown-tabs-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.6rem;
-      margin-bottom: 1rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    @media (max-width: 500px) {
-      .dropdown-tabs-grid {
-        grid-template-columns: 1fr;
-      }
+      column-gap: 2rem;
     }
 
     .dropdown-tab-card {
       display: flex;
-      align-items: center;
+      justify-content: space-between;
+      align-items: baseline;
       gap: 0.75rem;
-      padding: 0.7rem 0.9rem;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+      color: inherit;
       text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-      min-width: 0;
-      width: 100%;
-      box-sizing: border-box;
-      overflow: hidden;
     }
 
-    .dropdown-tab-card:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      transform: translateY(-1px);
-    }
-
-    .dropdown-tab-icon {
-      width: 22px;
-      height: 22px;
-      color: var(--accent-blue);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .dropdown-tab-info {
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
-    .dropdown-tab-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .dropdown-tab-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .dropdown-tickers-wrap {
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border-card);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .dropdown-tickers-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 0.4rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .ticker-jump-pill {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all var(--transition-fast);
-    }
-
-    .ticker-jump-pill:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      color: var(--accent);
-      transform: translateY(-1px);
-    }
-
-    /* Live Search Results List - Contained Layout */
-    .search-results-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
+    .dropdown-tab-card:hover .dropdown-tab-title { color: var(--accent); }
+    .dropdown-tab-title { font-size: 0.92rem; }
+    .dropdown-tab-sub { font-size: 0.76rem; color: var(--text-muted); white-space: nowrap; }
 
     .search-result-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
+      gap: 1rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+      color: inherit;
       text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
     }
 
-    .search-result-item:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      transform: translateX(2px);
+    .search-result-item:hover .search-result-title { color: var(--accent); }
+    .search-result-left { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; flex: 1; }
+    .search-result-icon { display: none; }
+    .search-result-info { min-width: 0; }
+    .search-result-title { font-size: 0.92rem; overflow-wrap: anywhere; }
+    .search-result-sub { font-size: 0.76rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .search-result-item .action-link { color: var(--text-muted); white-space: nowrap; }
+
+    .search-no-results { padding: 1.25rem 0 0.5rem; }
+    .no-results-icon { display: none; }
+    .no-results-title { font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .no-results-sub { font-size: 0.82rem; color: var(--text-muted); }
+
+    .quick-lookup-card { padding: 0.75rem 0; border-bottom: 1px solid var(--border-card); }
+    .quick-lookup-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem; }
+    .quick-lookup-title-group { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; min-width: 0; }
+    .quick-lookup-badge, .quick-lookup-meta, .quick-lookup-range { font-size: 0.76rem; color: var(--text-muted); }
+    .quick-lookup-price-strip { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; margin: 0.35rem 0; }
+    .quick-lookup-price-val { font-family: var(--font-mono); font-size: 1.1rem; }
+    .quick-lookup-change { font-family: var(--font-mono); font-size: 0.85rem; }
+    .quick-lookup-change.pos { color: var(--pos); }
+    .quick-lookup-change.neg { color: var(--neg); }
+    .quick-lookup-change.neu { color: var(--text-muted); }
+    .quick-lookup-headlines-title { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.6rem; }
+    .quick-lookup-news-item { display: block; padding: 0.45rem 0; border-bottom: 1px solid var(--border-subtle); color: inherit; text-decoration: none; }
+    .quick-lookup-news-item:hover .quick-lookup-news-headline { color: var(--accent); }
+    .quick-lookup-news-headline { font-size: 0.9rem; overflow-wrap: anywhere; }
+    .quick-lookup-news-meta { display: flex; gap: 0.4rem; font-size: 0.74rem; color: var(--text-muted); }
+    .quick-lookup-action-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-size: 0.76rem; padding-top: 0.6rem; }
+
+    /* Home: search bar orbited by the watchlist. The sidebar becomes a top bar here only. */
+    .page-home .app-layout { display: block; }
+    .page-home .app-main { max-width: none; padding: 0 !important; }
+
+    @media (min-width: 1025px) {
+      .page-home .app-sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        height: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+        padding: 1.1rem 2rem;
+        background: transparent;
+        border: 0;
+        overflow: visible;
+      }
+      .page-home .app-sidebar .sidebar-brand { display: none; }
+      .page-home .app-sidebar > div:first-child:has(.sidebar-brand) { display: none; }
+      .page-home .sidebar-nav { flex-direction: row; gap: 1.5rem; flex: 1; }
+      .page-home .nav-link { gap: 0.4rem; }
+      .page-home .sidebar-footer { display: flex; align-items: center; gap: 1.25rem; margin: 0; padding: 0; }
+      .page-home .theme-toggle { margin: 0; }
     }
 
-    .search-result-left {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
+    @media (max-width: 1024px) {
+      .page-home .mobile-top-header .sidebar-brand { visibility: hidden; }
+      .page-home .mobile-top-header { background: transparent; border: 0; position: absolute; width: 100%; }
     }
 
-    .search-result-icon {
-      width: 20px;
-      height: 20px;
-      color: var(--accent-blue);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .search-result-info {
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
-    .search-result-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .search-result-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .search-no-results {
-      text-align: center;
-      padding: 2rem 1rem;
-      color: var(--text-muted);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .no-results-icon {
-      font-size: 1.75rem;
-      margin-bottom: 0.4rem;
-    }
-
-    .no-results-title {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-      word-break: break-word;
-      overflow-wrap: break-word;
-    }
-
-    .no-results-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      word-break: break-word;
-      overflow-wrap: break-word;
-    }
-
-    /* Quick Lookup Card (Lightweight Live Quote & Headlines for Outside Watchlist) */
-    .quick-lookup-card {
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.95rem 1.15rem;
-      margin-bottom: 0.85rem;
-      width: 100%;
-      box-sizing: border-box;
-      box-shadow: 0 2px 8px var(--accent-soft);
-      transition: all var(--transition-fast);
-    }
-
-    .quick-lookup-card.loading {
-      border-color: var(--accent-soft);
-      background: var(--accent-soft);
-    }
-
-    .quick-lookup-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 0.65rem;
-      padding-bottom: 0.55rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    .quick-lookup-title-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .quick-lookup-badge {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-soft);
-      padding: 0.12rem 0.45rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      white-space: nowrap;
-    }
-
-    .quick-lookup-meta {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
-
-    .quick-lookup-price-strip {
-      display: flex;
-      align-items: baseline;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .quick-lookup-price-val {
-      font-family: var(--font-mono);
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      letter-spacing: -0.02em;
-    }
-
-    .quick-lookup-change {
-      font-family: var(--font-mono);
-      font-size: 0.84rem;
-      font-weight: 700;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-    }
-
-    .quick-lookup-change.pos {
-      color: var(--pos);
-      background: var(--pos-soft);
-    }
-
-    .quick-lookup-change.neg {
-      color: var(--neg);
-      background: var(--neg-soft);
-    }
-
-    .quick-lookup-change.neu {
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-    }
-
-    .quick-lookup-range {
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      margin-left: auto;
-    }
-
-    .quick-lookup-headlines-title {
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.45rem;
-    }
-
-    .quick-lookup-headlines-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-    }
-
-    .quick-lookup-news-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      padding: 0.45rem 0.65rem;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-    }
-
-    .quick-lookup-news-item:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-soft);
-      transform: translateX(2px);
-    }
-
-    .quick-lookup-news-headline {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1.3;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .quick-lookup-news-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-    }
-
-    .quick-lookup-action-bar {
-      margin-top: 0.75rem;
-      padding-top: 0.55rem;
-      border-top: 1px solid var(--border-card);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.74rem;
-    }
-
-    /* Asymmetric Hero Bento Deck (Replacing rigid 3-column cards) */
-    .hero-bento-deck {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 1.35rem;
-      margin-bottom: 3.5rem;
-      width: 100%;
+    .orbit-hero {
       position: relative;
-      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100svh;
+      overflow-x: clip;
+    }
+
+    .orbit-dust {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 60;
+      text-align: center;
+      padding: clamp(4.25rem, 10vh, 6.5rem) 1rem 0;
+      pointer-events: none;
+    }
+
+    .hero-wordmark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(3.4rem, 8.5vw, 7rem);
+      line-height: 0.95;
+      letter-spacing: -0.015em;
+    }
+
+    .hero-wordmark span { color: var(--accent); }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.25rem, 2.5vw, 2.1rem);
+      line-height: 1.15;
+      letter-spacing: 0;
+      margin-top: 0.55rem;
+    }
+
+    .hero-orbit-stage {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 480px;
+      cursor: grab;
+      touch-action: pan-y;
+    }
+
+    .hero-orbit-stage.is-dragging { cursor: grabbing; }
+
+    .hero-orbit-stage .search-wrapper {
+      position: absolute;
+      top: 36%;
+      left: 50%;
+      width: min(620px, calc(100% - 2rem));
+      margin: 0;
+      transform: translate(-50%, calc(-50% - var(--bar-lift, 0px)));
+      transition: transform 0.28s ease-out;
+      cursor: auto;
+    }
+
+    .hero-orbit-stage .search-dropdown { max-height: min(40vh, 340px); }
+
+    .orbit-ring {
+      list-style: none;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .orbit-slot {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
+      will-change: transform, opacity;
+    }
+
+    .orbit-slot[hidden] { display: none; }
+
+    .orbit-chip {
+      display: block;
+      width: 156px;
+      padding: 0.6rem 0.8rem 0.65rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .orbit-chip:hover { border-color: var(--accent); }
+    .orbit-chip:focus-visible { outline-offset: 3px; border-color: var(--accent); }
+
+    .orbit-ticker { display: block; font-size: 1.45rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+    .orbit-name { display: block; font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .orbit-fact { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.3rem; font-size: 0.74rem; color: var(--text-muted); white-space: nowrap; }
+    .orbit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+    .orbit-dot.is-high { background: var(--accent); }
+
+    .orbit-browse {
+      position: absolute;
+      left: 50%;
+      bottom: 1.1rem;
+      transform: translateX(-50%);
+      z-index: 70;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      text-underline-offset: 3px;
+      padding: 0.4rem 0.6rem;
+    }
+
+    /* The default until the script proves motion is welcome: a plain grid of the same links. */
+    .orbit-static.hero-orbit-stage { flex: none; min-height: 0; cursor: auto; touch-action: auto; padding: 1.75rem 1rem 0; }
+    .orbit-static .search-wrapper { position: relative; top: auto; left: auto; transform: none; width: 100%; max-width: 620px; margin: 0 auto 1.75rem; }
+    .orbit-static .orbit-ring {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.75rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      pointer-events: auto;
+    }
+    .orbit-static .orbit-slot { position: static; will-change: auto; }
+    .orbit-static .orbit-slot.is-dim { opacity: 0.3; }
+    .orbit-static .orbit-chip { width: auto; }
+    .orbit-hero:has(.orbit-static) { min-height: 0; }
+    .orbit-hero:has(.orbit-static) .orbit-browse { position: static; transform: none; display: block; text-align: center; margin: 1.25rem 0 0; }
+    .orbit-hero:has(.orbit-static) .orbit-dust { display: none; }
+
+    @media (max-width: 640px) {
+      .hero-copy { padding-top: 3.75rem; }
+      .search-box { height: 58px; padding: 0 1rem; }
+      .search-shortcut { display: none; }
+      .dropdown-tabs-grid { grid-template-columns: minmax(0, 1fr); }
+      .orbit-chip { width: 110px; padding: 0.4rem 0.55rem 0.45rem; border-radius: 12px; }
+      .orbit-ticker { font-size: 1.1rem; }
+      .orbit-name, .orbit-fact { font-size: 0.66rem; }
+      .orbit-browse { bottom: calc(3.6rem + env(safe-area-inset-bottom)); }
+    }
+
+    .home-below {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+    }
+
+    .home-doors {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .door {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1.5rem;
+      min-height: 164px;
+      padding: 1.35rem 1.4rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .door:hover { border-color: var(--accent); }
+    .door:hover .door-title { color: var(--accent); }
+    .door-title { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; }
+    .door-line { font-size: 0.95rem; line-height: 1.4; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+    .home-heading { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .home-heading-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+
+    .home-stories { margin-bottom: 3.5rem; }
+    .top-list { list-style: none; border-top: 1px solid var(--border-card); }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 3rem 4.5rem minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: baseline;
+      padding: 0.95rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .top-score { font-size: 1.3rem; font-weight: 700; color: var(--text-muted); }
+    .top-score.is-high { color: var(--accent); }
+    .top-ticker { font-weight: 700; color: var(--text-primary); text-decoration: none; }
+    .top-ticker:hover, .top-title:hover { color: var(--accent); }
+    .top-title { font-size: 1.05rem; font-weight: 500; color: var(--text-primary); text-decoration: none; overflow-wrap: anywhere; }
+    .top-date { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; }
+    .home-more { display: inline-block; margin-top: 0.9rem; color: var(--accent); font-weight: 600; text-underline-offset: 3px; }
+    .home-empty { color: var(--text-muted); padding: 1rem 0; }
+
+    .recent-list { list-style: none; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .recent-list a { display: flex; align-items: baseline; gap: 0.55rem; padding: 0.55rem 0.8rem; background: var(--bg-surface); border: 1px solid var(--border-card); border-radius: 12px; color: inherit; text-decoration: none; }
+    .recent-list a:hover { border-color: var(--accent); }
+    .recent-ticker { font-weight: 700; }
+    .recent-name, .recent-when { font-size: 0.8rem; color: var(--text-muted); }
+    .home-clear { background: none; border: 0; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-size: 0.85rem; min-height: 24px; }
+
+    @media (max-width: 1024px) {
+      .home-doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .home-below { padding: 2rem 1rem calc(5rem + env(safe-area-inset-bottom)); }
+      .home-doors { gap: 0.65rem; }
+      .door { min-height: 128px; padding: 1rem; gap: 0.9rem; }
+      .door-title { font-size: 1.2rem; }
+      .door-line { font-size: 0.85rem; }
+      .top-row { grid-template-columns: 2.4rem 3.6rem minmax(0, 1fr); }
+      .top-date { display: none; }
     }
 
     .bento-card {
@@ -1820,230 +1177,12 @@ SHARED_CSS = """
       transform: translateY(-2px);
     }
 
-    .bento-card-primary {
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      position: relative;
-    }
-
-    .bento-card-primary::before { display: none; }
-
-    .bento-side-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 1.15rem;
-    }
-
-    .bento-card-side {
-      padding: 1.35rem 1.5rem;
-    }
-
-    .bento-badge-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
-    }
-
-    .bento-pill-accent {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
-    .bento-pill-cal {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
-    .bento-pill-econ {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--pos);
-      background: var(--pos-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
-    .bento-arrow {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      transition: transform var(--transition-fast);
-    }
-
-    .bento-card:hover .bento-arrow {
-      color: var(--accent-blue);
-      transform: translateX(3px);
-    }
-
-    .bento-score-hero {
-      display: flex;
-      align-items: baseline;
-      gap: 0.6rem;
-      margin-bottom: 0.6rem;
-    }
-
-    .bento-count {
-      font-family: var(--font-mono);
-      font-size: 2.2rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1;
-    }
-
-    .bento-sublabel {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-    }
-
-    .bento-headline-preview {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.4;
-      margin-bottom: 1.25rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .bento-footer-pill {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      border-radius: var(--radius-md);
-      padding: 0.65rem 0.95rem;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .bento-side-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.35rem;
-    }
-
     /* Recently Viewed Companies Quick Access Deck */
     .recently-viewed-section {
       margin-bottom: 2.75rem;
       width: 100%;
       position: relative;
       z-index: 1;
-    }
-
-    .recently-viewed-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1rem;
-    }
-
-    .recent-card {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.1rem 1.25rem;
-      box-shadow: var(--shadow-sm);
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-normal);
-      position: relative;
-      overflow: hidden;
-      min-height: 118px;
-    }
-
-    .recent-card:hover {
-      border-color: var(--text-muted);
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-    }
-
-    .recent-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .recent-card-time {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .recent-card-body {
-      margin-bottom: 0.65rem;
-    }
-
-    .recent-card-name {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.3;
-      min-height: 2.6em;
-      word-break: break-word;
-    }
-
-    .recent-card-sector {
-      font-size: 0.74rem;
-      color: var(--text-secondary);
-      margin-top: 0.15rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .recent-card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border-card);
-      padding-top: 0.5rem;
-      margin-top: auto;
-    }
-
-    .recent-card-pill {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--accent);
     }
 
     /* Section Headers */
@@ -2220,29 +1359,14 @@ SHARED_CSS = """
     /* Ticker & Form Badges */
     .ticker-badge {
       font-family: var(--font-mono);
-      font-weight: 700;
-      font-size: 0.78rem;
-      padding: 0.2rem 0.55rem;
-      border-radius: 6px;
-      display: inline-block;
-      letter-spacing: 0.02em;
-      background: var(--bg-surface-elevated);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-card);
-      flex-shrink: 0;
-      white-space: nowrap !important;
-      word-break: keep-all !important;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--text-primary);
       text-decoration: none;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-      cursor: pointer;
+      letter-spacing: 0.01em;
     }
 
-    .ticker-badge:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px var(--accent-soft);
-      border-color: var(--text-muted);
-      text-decoration: none;
-    }
+    a.ticker-badge:hover { color: var(--accent); }
 
     .form-type-pill {
       font-family: var(--font-mono);
@@ -2269,13 +1393,6 @@ SHARED_CSS = """
       border: 1px solid var(--border-card);
       white-space: nowrap;
       flex-shrink: 0;
-    }
-
-    .source-tag {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      white-space: nowrap;
     }
 
     /* Distinct Source Badges */
@@ -2942,17 +2059,6 @@ SHARED_CSS = """
       box-shadow: var(--shadow-hover);
     }
 
-    .priority-lead-badge {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-soft);
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
     .score-pill-lead {
       font-size: 0.92rem !important;
       padding: 0.25rem 0.75rem !important;
@@ -3588,8 +2694,6 @@ SHARED_CSS = """
     }
 
     .health-badge-healthy  { background: var(--pos-soft); color: var(--pos); border: 1px solid var(--pos-soft); }
-    .health-badge-warning  { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-soft); }
-    .health-badge-critical { background: var(--neg-soft); color: var(--neg); border: 1px solid var(--neg-soft); }
 
     .health-grid {
       display: grid;
@@ -4146,8 +3250,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Personal stock news dashboard overview with widget preview cards, recently viewed companies, and instant search suggestions.">
-  <title>StockPulse — What's on the agenda?</title>
+  <meta name="description" content="Search your watchlist and see the top stories, upcoming events and the economy.">
+  <title>StockPulse: what happened to your stocks?</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4157,274 +3261,104 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 """ + SHARED_CSS + """
   </style>
 </head>
-<body>
+<body class="page-home">
   <div class="app-layout">
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <!-- Redesigned Hero & 3D Orbital Search Centerpiece Section -->
-      <section class="hero-section">
-        <div class="hero-container">
-          <!-- Animated Intro Greeting Header -->
-          <div class="hero-intro-box">
-            <a href="calendar.html" class="hero-badge intro-fade-1">
-              <span class="pulse-dot" style="background:var(--pos); margin-right:0.2rem; flex-shrink:0;"></span>
-              {% if calendar_events %}
-              <span>Next Event: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
-              {% else %}
-              <span><strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; {{ watchlist_companies|length }} Companies Monitored ↗</span>
-              {% endif %}
-            </a>
-            <h1 class="hero-title">
-              <span class="hero-word-wrap">
-                <span class="intro-word" style="--w-idx:0;">What's</span>
-                <span class="intro-word" style="--w-idx:1;">on</span>
-                <span class="intro-word" style="--w-idx:2;">the</span>
-                <span class="intro-word" style="--w-idx:3;">agenda?</span>
+      <section class="orbit-hero" id="orbitHero" aria-label="Search your watchlist">
+        <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
+
+        <div class="hero-copy">
+          <p class="hero-wordmark">Stock<span>Pulse</span></p>
+          <h1 class="hero-headline">What happened to your stocks?</h1>
+        </div>
+
+        <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
+          <div class="search-wrapper" id="heroSearchWrapper">
+            <div class="search-box" id="globalSearchBox">
+              <span class="search-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               </span>
-            </h1>
-            <p class="hero-subtext intro-fade-2">Review overnight SEC filings, corporate announcements, forthcoming milestones, and FRED macroeconomic sensitivities.</p>
-          </div>
+              <input type="text" id="globalSearchInput" class="search-input" aria-label="Search companies, stories and tickers" placeholder="Search a company or ticker" autocomplete="off" spellcheck="false">
+              <span class="search-shortcut">⌘K</span>
+            </div>
 
-          <!-- 3D Orbital Stage & Centered Search Centerpiece -->
-          <div class="hero-orbit-stage" id="heroOrbitStage">
-            <!-- Centerpiece: Search Command Bar -->
-            <div class="orbit-centerpiece">
-              <div class="search-wrapper" id="heroSearchWrapper">
-                <div class="search-box" id="globalSearchBox">
-                  <span class="search-icon-wrap">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  </span>
-                  <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
-                  <span class="search-shortcut">⌘ K</span>
-                </div>
-
-                <!-- Interactive Live Suggestions / Autocomplete Dropdown -->
-                <div class="search-dropdown" id="searchDropdown">
-                  <div id="defaultDropdownContent">
-                    <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
-                    <div class="dropdown-tabs-grid">
-                      <a href="news.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Intelligence Feed</div>
-                          <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
-                        </div>
-                      </a>
-                      <a href="calendar.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Corporate Calendar</div>
-                          <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
-                        </div>
-                      </a>
-                      <a href="economic.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Economic Snapshot</div>
-                          <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
-                        </div>
-                      </a>
-                      <a href="analytics.html" class="dropdown-tab-card" onclick="closeSearchDropdown()">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Analytics &amp; Trends</div>
-                          <div class="dropdown-tab-sub">Velocity &amp; Benchmarks</div>
-                        </div>
-                      </a>
-                    </div>
-
-                    <div style="padding-top:0.75rem; border-top:1px solid var(--border-card); text-align:center;">
-                      <a href="company.html" class="action-link" style="font-size:0.8rem; font-weight:700; color:var(--accent-blue); text-decoration:none;">Browse All {{ watchlist_companies|length }} Companies in Directory ↗</a>
-                    </div>
-                  </div>
-
-                  <!-- Dynamic Live Search Results Container -->
-                  <div id="liveSearchResults" style="display:none;"></div>
+            <div class="search-dropdown" id="searchDropdown">
+              <div id="defaultDropdownContent">
+                <div class="dropdown-tabs-grid">
+                  <a href="news.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Feed</span><span class="dropdown-tab-sub">{{ stats.total }} stories</span></a>
+                  <a href="calendar.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Calendar</span><span class="dropdown-tab-sub">{{ calendar_events|length }} events</span></a>
+                  <a href="economic.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Economy</span><span class="dropdown-tab-sub">{{ economic_indicators|length }} indicators</span></a>
+                  <a href="company.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Companies</span><span class="dropdown-tab-sub">{{ watchlist_companies|length }} on the watchlist</span></a>
                 </div>
               </div>
-            </div>
-
-            <!-- 3D Floating Orbital Suggestion Cards (4 Dynamic Nodes) -->
-            <div class="orbit-track" id="orbitTrack" aria-label="Quick Watchlist Highlights">
-              <!-- Node 0 (Top-Left) -->
-              <a href="company.html?ticker=NVDA" class="orbit-card orbit-card-0" id="orbitCard0" data-orbit-slot="0">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-NVDA">NVDA</span>
-                  <span class="orbit-card-score">Score 9.0</span>
-                </div>
-                <div class="orbit-card-name">NVIDIA Corporation</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Semiconductors</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 1 (Top-Right) -->
-              <a href="company.html?ticker=AAPL" class="orbit-card orbit-card-1" id="orbitCard1" data-orbit-slot="1">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-AAPL">AAPL</span>
-                  <span class="orbit-card-score">Score 8.5</span>
-                </div>
-                <div class="orbit-card-name">Apple Inc.</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Consumer Tech</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 2 (Bottom-Left) -->
-              <a href="company.html?ticker=MSFT" class="orbit-card orbit-card-2" id="orbitCard2" data-orbit-slot="2">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-MSFT">MSFT</span>
-                  <span class="orbit-card-score">Score 8.0</span>
-                </div>
-                <div class="orbit-card-name">Microsoft Corp.</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Cloud &amp; Copilot</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 3 (Bottom-Right) -->
-              <a href="company.html?ticker=AMD" class="orbit-card orbit-card-3" id="orbitCard3" data-orbit-slot="3">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-AMD">AMD</span>
-                  <span class="orbit-card-score">Score 7.8</span>
-                </div>
-                <div class="orbit-card-name">Advanced Micro Devices</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Data Center</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
+              <div id="liveSearchResults" style="display:none;"></div>
             </div>
           </div>
 
-          <!-- Watchlist Holdings Ribbon -->
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-top:0.85rem; margin-bottom:0.35rem; width:100%; max-width:920px;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.4rem;">
-              <span>Watchlist Holdings ({{ watchlist_companies|length }})</span>
-            </div>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:var(--bg-base); border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-              Company Directory ↗
-            </a>
-          </div>
-
-          <div class="watchlist-ticker-strip">
-            {% for co in watchlist_companies %}
-            <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} &bull; {{ co.macro_sector }}">
-              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
-            </a>
+          <ul class="orbit-ring" id="orbitRing" aria-label="Companies with the biggest stories">
+            {% for co in orbit_companies %}
+            <li class="orbit-slot" data-symbol="{{ co.symbol }}" data-name="{{ co.name }}"{% if loop.index > 12 %} hidden{% endif %}>
+              <a class="orbit-chip" href="company.html?ticker={{ co.symbol|urlencode }}" draggable="false">
+                <span class="orbit-ticker">{{ co.symbol }}</span>
+                <span class="orbit-name">{{ co.name }}</span>
+                <span class="orbit-fact">{% if co.top_score is not none %}<span class="orbit-dot{% if co.top_score >= 7 %} is-high{% endif %}" title="Top story score {{ co.top_score }}"></span>{% if co.new_count %}{{ co.new_count }} new {{ 'story' if co.new_count == 1 else 'stories' }}{% else %}Top story {{ co.top_score }}{% endif %}{% else %}No stories yet{% endif %}</span>
+              </a>
+            </li>
             {% endfor %}
-          </div>
+          </ul>
         </div>
+
+        <a class="orbit-browse" href="company.html">Browse all {{ watchlist_companies|length }} companies</a>
       </section>
 
-      <!-- Top 2 Focus Bento Widgets Below Hero -->
-      <div class="hero-bento-deck">
-        <!-- Widget 1: Featured Priority Intelligence Card -->
-        <a href="news.html" class="bento-card bento-card-primary">
-          <div class="bento-badge-top">
-            <span class="bento-pill-accent">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              FEATURED INTELLIGENCE
-            </span>
-            <span class="bento-arrow">Explore Feed ›</span>
-          </div>
-          <div>
-            <div class="bento-score-hero">
-              <span class="bento-count">{{ priority_items|length }}</span>
-              <span class="bento-sublabel">High-Impact Disclosures Monitored</span>
-            </div>
-            {% if priority_items %}
-            <div class="bento-headline-preview">
-              <span class="ticker-badge ticker-{{ priority_items[0].ticker }}" style="margin-right:0.35rem;">{{ priority_items[0].ticker }}</span>
-              {{ priority_items[0].clean_headline }}
-            </div>
-            {% endif %}
-          </div>
-          <div class="bento-footer-pill">
-            <span>High-Impact Score ≥ 7.0 &bull; Transparent Scoring</span>
-            <span>→</span>
-          </div>
-        </a>
+      <div class="home-below">
+        <nav class="home-doors" aria-label="Sections">
+          <a class="door" href="news.html">
+            <span class="door-title">Today's news</span>
+            <span class="door-line">{{ stats.high_priority_count }} to read first, out of {{ stats.total }} stories</span>
+          </a>
+          <a class="door" href="calendar.html">
+            <span class="door-title">Calendar</span>
+            <span class="door-line">{% if next_earnings %}Next earnings: {{ next_earnings.ticker }}, {{ short_date(next_earnings.event_date) }}{% elif calendar_events %}Next: {{ calendar_events[0].ticker }}, {{ short_date(calendar_events[0].event_date) }}{% else %}Nothing scheduled{% endif %}</span>
+          </a>
+          <a class="door" href="economic.html">
+            <span class="door-title">Economy</span>
+            <span class="door-line">{% if economic_indicators %}{{ economic_indicators[0].name }}: {{ economic_indicators[0].formatted_value.split(' (')[0] }}{% else %}No indicators available{% endif %}</span>
+          </a>
+          <a class="door" href="company.html">
+            <span class="door-title">All companies</span>
+            <span class="door-line">{{ watchlist_companies|length }} on the watchlist, {{ orbit_companies|selectattr('top_score', 'ne', none)|list|length }} with stories</span>
+          </a>
+        </nav>
 
-        <!-- Widget 2: Next Corporate Catalyst Milestone Focus -->
-        <a href="calendar.html" class="bento-card" style="background: var(--bg-surface); border: 1px solid var(--pos-soft);">
-          <div class="bento-badge-top">
-            <span class="bento-pill-cal">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              NEXT EVENT
-            </span>
-            <span class="bento-arrow">Calendar ›</span>
-          </div>
-          <div>
-            {% if calendar_events %}
-            <div style="display:flex; align-items:center; gap:0.9rem; margin:0.6rem 0;">
-              <div class="calendar-date-box" style="width:52px; min-width:52px; padding:0.35rem 0.45rem; border-radius:var(--radius-md); box-shadow:0 2px 6px var(--accent-soft);">
-                <div class="calendar-date-month" style="font-size:0.72rem; font-weight: 600;">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                <div class="calendar-date-day" style="font-size:1.25rem; font-weight: 600;">{{ calendar_events[0].event_date[8:10] }}</div>
-              </div>
-              <div style="flex:1; min-width:0;">
-                <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                  <span class="ticker-badge ticker-{{ calendar_events[0].ticker }}">{{ calendar_events[0].ticker }}</span>
-                  <span class="category-badge" style="font-size:0.68rem; padding:0.1rem 0.45rem;">{{ calendar_events[0].event_type }}</span>
-                </div>
-                <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); line-height:1.35; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
-                  {{ calendar_events[0].headline }}
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
-                  {{ calendar_events[0].relative_badge }}
-                </div>
-              </div>
-            </div>
-            {% else %}
-            <div style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0.5rem 0;">Corporate Calendar Active</div>
-            <div style="font-size:0.8rem; color:var(--text-muted);">Tracking upcoming earnings releases, FDA decisions, and shareholder votes.</div>
-            {% endif %}
-          </div>
-          <div class="bento-footer-pill" style="border-top:1px solid var(--pos-soft);">
-            <span>{{ calendar_events|length }} Upcoming Milestones</span>
-            <span>→</span>
-          </div>
-        </a>
-      </div>
+        <section class="home-stories" aria-labelledby="homeStoriesHeading">
+          <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
+          {% if priority_items %}
+          <ol class="top-list">
+            {% for it in priority_items[:5] %}
+            <li class="top-row">
+              <span class="top-score{% if it.score >= 7 %} is-high{% endif %}" title="{{ it.score_breakdown }}">{{ it.score }}</span>
+              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
+              <a class="top-title" href="{{ it.url if it.url.startswith('http') else 'news.html' }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+              <span class="top-date">{{ short_date(it.published_date) }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
+          {% endif %}
+          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
+        </section>
 
-      <!-- Recently Viewed Companies Quick Access Deck -->
-      <div class="recently-viewed-section" id="recentlyViewedSection">
-        <div class="section-header-row" style="margin-bottom:0.85rem; padding-top:0.25rem;">
-          <div style="display:flex; align-items:center; gap:0.55rem;">
-            <div style="background:var(--accent-soft); color:var(--accent); width:28px; height:28px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <h2 class="section-heading" style="margin:0; font-size:1.15rem;">Recently Viewed Companies</h2>
-            <span class="badge" id="recentlyViewedCountBadge" style="font-size:0.7rem; background:var(--bg-surface-elevated); color:var(--text-muted); padding:0.15rem 0.5rem; border-radius:var(--radius-full);"></span>
+        <section id="recentlyViewedSection" aria-labelledby="homeRecentHeading" hidden>
+          <div class="home-heading-row">
+            <h2 class="home-heading" id="homeRecentHeading">Recently viewed</h2>
+            <button class="home-clear" id="clearRecentlyViewedBtn" type="button" onclick="clearRecentlyViewed()">Clear</button>
           </div>
-          <div style="display:flex; align-items:center; gap:0.65rem;">
-            <button id="clearRecentlyViewedBtn" onclick="clearRecentlyViewed()" title="Clear your recently viewed history" style="background:none; border:none; font-size:0.75rem; color:var(--text-muted); cursor:pointer; padding:0.25rem 0.5rem; border-radius:4px; transition:color 0.15s;">
-              Clear History
-            </button>
-            <a href="company.html" class="bento-arrow" style="font-size:0.8rem; text-decoration:none;">All {{ watchlist_companies|length }} Companies ›</a>
-          </div>
-        </div>
-
-        <div class="recently-viewed-grid" id="recentlyViewedGrid">
-          <!-- Populated dynamically via localStorage -->
-        </div>
+          <ul class="recent-list" id="recentlyViewedGrid"></ul>
+        </section>
       </div>
     </main>
   </div>
@@ -4437,94 +3371,465 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     const econIndicators = {{ economic_indicators|tojson|safe }};
     const watchlistCompanies = {{ watchlist_companies|tojson|safe }};
 
-    function renderRecentlyViewed() {
-      const grid = document.getElementById('recentlyViewedGrid');
-      const badge = document.getElementById('recentlyViewedCountBadge');
-      const clearBtn = document.getElementById('clearRecentlyViewedBtn');
-      if (!grid) return;
-
-      const companyLookup = {};
-      (watchlistCompanies || []).forEach(c => {
-        companyLookup[c.symbol] = c;
-      });
-
-      const tickerCounts = {};
-      (allItems || []).forEach(it => {
-        if (it.ticker) {
-          tickerCounts[it.ticker] = (tickerCounts[it.ticker] || 0) + 1;
-        }
-      });
-
+    // Recently viewed comes from localStorage, so anything not on the watchlist is thrown away.
+    function readRecentlyViewed() {
       let stored = [];
-      let isDefault = false;
       try {
-        const raw = localStorage.getItem('stockpulse_recently_viewed');
-        if (raw) {
-          stored = JSON.parse(raw);
-        }
+        stored = JSON.parse(localStorage.getItem('stockpulse_recently_viewed') || '[]');
       } catch (e) {
-        stored = [];
+        return [];
+      }
+      if (!Array.isArray(stored)) return [];
+      const known = new Set((watchlistCompanies || []).map(c => c.symbol));
+      const seen = new Set();
+      const clean = [];
+      stored.forEach(item => {
+        const symbol = String(item && typeof item === 'object' ? item.symbol : item).toUpperCase();
+        if (!known.has(symbol) || seen.has(symbol)) return;
+        seen.add(symbol);
+        const visitedAt = item && Number.isFinite(item.visitedAt) ? item.visitedAt : null;
+        clean.push({ symbol, visitedAt });
+      });
+      return clean;
+    }
+
+    function renderRecentlyViewed() {
+      const section = document.getElementById('recentlyViewedSection');
+      const grid = document.getElementById('recentlyViewedGrid');
+      if (!grid || !section) return;
+
+      const stored = readRecentlyViewed();
+      if (stored.length === 0) {
+        section.hidden = true;
+        grid.innerHTML = '';
+        return;
       }
 
-      if (!Array.isArray(stored) || stored.length === 0) {
-        isDefault = true;
-        // Suggested starter companies for quick launchpad
-        stored = [
-          { symbol: 'NVDA', visitedAt: null },
-          { symbol: 'AAPL', visitedAt: null },
-          { symbol: 'TSLA', visitedAt: null },
-          { symbol: 'MSFT', visitedAt: null },
-          { symbol: 'AMZN', visitedAt: null },
-          { symbol: 'GOOGL', visitedAt: null },
-        ];
-        if (clearBtn) clearBtn.style.display = 'none';
-        if (badge) badge.textContent = 'Suggested';
-      } else {
-        if (clearBtn) clearBtn.style.display = 'inline-block';
-        if (badge) badge.textContent = `${stored.length} viewed`;
-      }
+      const companies = {};
+      (watchlistCompanies || []).forEach(c => { companies[c.symbol] = c; });
 
-      const itemsToRender = stored.slice(0, 8);
-      let html = '';
-
-      itemsToRender.forEach(item => {
-        const sym = (typeof item === 'string' ? item : item.symbol).toUpperCase();
-        const co = companyLookup[sym] || { name: sym, sector: 'Watchlist Company' };
-        const count = tickerCounts[sym] || 0;
-
-        let timeLabel = 'Quick Access';
+      section.hidden = false;
+      grid.innerHTML = stored.slice(0, 8).map(item => {
+        let when = '';
         if (item.visitedAt) {
           const diffSec = Math.floor((Date.now() - item.visitedAt) / 1000);
-          if (diffSec < 60) timeLabel = 'Just now';
-          else if (diffSec < 3600) timeLabel = `${Math.floor(diffSec / 60)}m ago`;
-          else if (diffSec < 86400) timeLabel = `${Math.floor(diffSec / 3600)}h ago`;
-          else timeLabel = `${Math.floor(diffSec / 86400)}d ago`;
+          if (diffSec < 60) when = 'Just now';
+          else if (diffSec < 3600) when = `${Math.floor(diffSec / 60)}m ago`;
+          else if (diffSec < 86400) when = `${Math.floor(diffSec / 3600)}h ago`;
+          else when = `${Math.floor(diffSec / 86400)}d ago`;
         }
-
-        html += `
-          <a href="company.html?ticker=${escapeHtml(sym)}" class="recent-card" title="View ${escapeHtml(co.name)} (${escapeHtml(sym)}) deep dive">
-            <div class="recent-card-top">
-              <span class="ticker-badge ticker-${escapeHtml(sym)}">${escapeHtml(sym)}</span>
-              <span class="recent-card-time">${escapeHtml(timeLabel)}</span>
-            </div>
-            <div class="recent-card-body">
-              <div class="recent-card-name">${escapeHtml(co.name)}</div>
-              <div class="recent-card-sector">${escapeHtml(co.sector || 'Equities')}</div>
-            </div>
-            <div class="recent-card-footer">
-              <span class="recent-card-pill">${count} disclosures</span>
-              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-blue);">Explore ›</span>
-            </div>
-          </a>
-        `;
-      });
-
-      grid.innerHTML = html;
+        return `
+          <li>
+            <a href="company.html?ticker=${encodeURIComponent(item.symbol)}">
+              <span class="recent-ticker">${escapeHtml(item.symbol)}</span>
+              <span class="recent-name">${escapeHtml(companies[item.symbol].name)}</span>
+              <span class="recent-when">${escapeHtml(when)}</span>
+            </a>
+          </li>`;
+      }).join('');
     }
 
     function clearRecentlyViewed() {
-      localStorage.removeItem('stockpulse_recently_viewed');
+      try {
+        localStorage.removeItem('stockpulse_recently_viewed');
+      } catch (e) { /* storage may be blocked */ }
       renderRecentlyViewed();
+      orbit.refresh();
+    }
+
+    // A ring of real company links orbiting the search bar. The chips are ordinary links in an
+    // ordinary list: this script only positions them, and without it they stay a static grid.
+    const orbit = (function createOrbit() {
+      const stage = document.getElementById('heroOrbitStage');
+      const hero = document.getElementById('orbitHero');
+      const ring = document.getElementById('orbitRing');
+      const canvas = document.getElementById('orbitDust');
+      const dropdown = document.getElementById('searchDropdown');
+      const bar = document.getElementById('globalSearchBox');
+      const input = document.getElementById('globalSearchInput');
+      const TWO_PI = Math.PI * 2;
+      const AUTO_SPEED = 0.11;
+      const all = [...ring.querySelectorAll('.orbit-slot')].map(el => ({
+        el,
+        symbol: el.dataset.symbol,
+        name: (el.dataset.name || '').toLowerCase(),
+        angle: 0,
+        target: 0,
+        dim: 0,
+        blur: -1,
+      }));
+      const bySymbol = new Map(all.map(c => [c.symbol, c]));
+
+      let visible = [];
+      let matches = [];
+      let query = '';
+      let live = false;
+      let running = false;
+      let rotation = 0;
+      let rotationTarget = null;
+      let velocity = 0;
+      let lastFrame = 0;
+      let hovered = false;
+      let ringFocused = false;
+      let searchFocused = false;
+      let onScreen = true;
+      let ringShift = 0;
+      let drag = null;
+      let suppressClick = false;
+      let barLifted = false;
+      const geo = { width: 0, cx: 0, cy: 0, radius: 0, sinTilt: 0, cosTilt: 1, focal: 1, barW: 0, barH: 0, chipW: 0, chipH: 0 };
+      const dust = { ctx: null, list: [], w: 0, h: 0, px: 0, py: 0, tx: 0, ty: 0, color: '', strength: 1 };
+
+      function slotCount() {
+        return stage.clientWidth < 640 ? 6 : (stage.clientWidth < 1025 ? 10 : 12);
+      }
+
+      // Recently viewed companies join the ring first, then the biggest stories fill it up.
+      function chooseVisible() {
+        const count = slotCount();
+        const chosen = [];
+        const add = c => { if (c && !chosen.includes(c) && chosen.length < count) chosen.push(c); };
+        matches.forEach(add);
+        readRecentlyViewed().slice(0, 4).forEach(item => add(bySymbol.get(item.symbol)));
+        all.forEach(add);
+        all.forEach(c => { c.el.hidden = !chosen.includes(c); });
+        return chosen;
+      }
+
+      // Matches take the front slots, spreading out left and right from the centre.
+      function assignSlots() {
+        const previous = visible;
+        visible = chooseVisible();
+        const n = visible.length;
+        if (!n) return;
+        const ordered = [...visible];
+        const order = [];
+        for (let i = 0; i < n; i += 1) order.push(i % 2 ? (i + 1) / 2 : (n - i / 2) % n);
+        const slots = new Array(n);
+        ordered.forEach((chip, i) => { slots[i] = order[i]; });
+        ordered.forEach((chip, i) => {
+          chip.target = (slots[i] * TWO_PI) / n;
+          if (!previous.includes(chip)) chip.angle = chip.target + Math.PI;
+          chip.dim = query && !matches.includes(chip) ? 1 : 0;
+          chip.el.classList.toggle('is-dim', chip.dim === 1);
+        });
+      }
+
+      function measure() {
+        const stageBox = stage.getBoundingClientRect();
+        const barBox = bar.getBoundingClientRect();
+        const narrow = stageBox.width < 640;
+        geo.width = stageBox.width;
+        geo.cx = stageBox.width / 2;
+        geo.cy = barBox.top - stageBox.top + barBox.height / 2 + ringShift;
+        geo.barW = barBox.width;
+        geo.barH = barBox.height;
+        geo.radius = narrow ? Math.max(100, stageBox.width / 2 - 62) : Math.min(stageBox.width * 0.4, 600);
+        // A phone-width bar spans the whole ring, so a shallow tilt would flatten the chips into
+        // one row under it. Tipping it further keeps a visible front and back.
+        const tilt = (narrow ? 58 : 17) * Math.PI / 180;
+        geo.sinTilt = Math.sin(tilt);
+        geo.cosTilt = Math.cos(tilt);
+        geo.focal = geo.radius * 3.4;
+        const sample = visible[0] && visible[0].el.firstElementChild;
+        geo.chipW = sample ? sample.offsetWidth : 150;
+        geo.chipH = sample ? sample.offsetHeight : 72;
+      }
+
+      function smoothstep(a, b, v) {
+        const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      }
+
+      function place(chip) {
+        const theta = chip.angle + rotation;
+        const sin = Math.sin(theta);
+        const cos = Math.cos(theta);
+        const near = (cos + 1) / 2;
+        const depth = geo.radius * cos * geo.cosTilt;
+        const perspective = geo.focal / (geo.focal - depth);
+        const scale = 0.55 + 0.7 * near;
+        const x = geo.radius * sin * perspective;
+        let y = geo.radius * cos * geo.sinTilt * perspective;
+
+        // Front chips never cross the bar: anything overlapping it sideways slides out from
+        // behind and below it before it comes forward in z-order.
+        const halfW = geo.chipW * scale / 2;
+        const halfH = geo.chipH * scale / 2;
+        const clearY = geo.barH / 2 + halfH + 12;
+        let front = cos > 0;
+        if (Math.abs(x) < geo.barW / 2 + halfW + 8) {
+          const blend = smoothstep(-0.45, -0.02, cos);
+          y = y + Math.max(0, clearY - y) * blend;
+          front = y >= clearY - 0.5;
+        }
+
+        const ease = chip.dim ? 0.2 : 1;
+        const opacity = (0.42 + 0.58 * Math.min(1, near * 1.5)) * ease;
+        const blur = near < 0.45 ? Math.round((0.45 - near) * 8) / 2 : 0;
+        const el = chip.el;
+        el.style.transform = `translate3d(${(geo.cx + x - geo.chipW / 2).toFixed(1)}px, ${(geo.cy + y - geo.chipH / 2).toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
+        el.style.opacity = opacity.toFixed(3);
+        el.style.zIndex = front ? String(100 + Math.round(near * 100)) : String(1 + Math.round(near * 40));
+        if (blur !== chip.blur) {
+          el.style.filter = blur ? `blur(${blur}px)` : 'none';
+          chip.blur = blur;
+        }
+      }
+
+      function shortest(from, to) {
+        let d = (to - from) % TWO_PI;
+        if (d > Math.PI) d -= TWO_PI;
+        if (d < -Math.PI) d += TWO_PI;
+        return d;
+      }
+
+      function frontOf(chip) {
+        rotationTarget = rotation + shortest(rotation, -chip.target);
+      }
+
+      function step(now) {
+        if (!running) return;
+        const dt = Math.min(0.05, (now - lastFrame) / 1000 || 0.016);
+        lastFrame = now;
+
+        const paused = hovered || ringFocused || searchFocused;
+        if (drag) {
+          velocity *= Math.exp(-dt * 12);
+        } else if (rotationTarget !== null) {
+          const gap = rotationTarget - rotation;
+          rotation += gap * (1 - Math.exp(-dt * 5));
+          velocity = 0;
+        } else {
+          rotation += velocity * dt;
+          velocity *= Math.exp(-dt * 1.8);
+          if (!paused) rotation += AUTO_SPEED * dt;
+        }
+
+        const settle = 1 - Math.exp(-dt * 6);
+        visible.forEach(chip => { chip.angle += shortest(chip.angle, chip.target) * settle; });
+
+        // An open results panel pushes the ring down, so what swung to the front stays in view.
+        let wantShift = 0;
+        if (dropdown.classList.contains('active')) {
+          const frontY = geo.radius * geo.sinTilt * (geo.focal / (geo.focal - geo.radius * geo.cosTilt));
+          wantShift = Math.max(0, geo.barH / 2 + dropdown.offsetHeight + 6 + geo.chipH * 0.625 + 12 - frontY);
+        }
+        ringShift += (wantShift - ringShift) * (1 - Math.exp(-dt * 7));
+        geo.cy = bar.getBoundingClientRect().top - stage.getBoundingClientRect().top + geo.barH / 2 + ringShift;
+        updateLift();
+
+        visible.forEach(place);
+        drawDust(dt, paused && !drag && rotationTarget === null ? velocity : velocity + AUTO_SPEED);
+        requestAnimationFrame(step);
+      }
+
+      // An open results panel needs the room, so the bar rises to just under the headline.
+      function updateLift() {
+        const open = dropdown.classList.contains('active');
+        if (open === barLifted) return;
+        barLifted = open;
+        if (!open) {
+          stage.style.removeProperty('--bar-lift');
+          return;
+        }
+        const rest = stage.getBoundingClientRect().top + stage.clientHeight * 0.36;
+        const roof = hero.querySelector('.hero-copy').getBoundingClientRect().bottom + geo.barH / 2 + 18;
+        stage.style.setProperty('--bar-lift', `${Math.max(0, rest - roof)}px`);
+      }
+
+      function setUpDust() {
+        dust.ctx = canvas.getContext('2d');
+        if (!dust.ctx) return false;
+        const count = hero.clientWidth < 640 ? 40 : 120;
+        dust.list = Array.from({ length: count }, () => {
+          const depth = 0.25 + Math.random() * 0.75;
+          return {
+            x: Math.random(),
+            y: Math.random(),
+            depth,
+            size: 0.5 + depth * 1.1,
+            alpha: 0.1 + depth * 0.32,
+          };
+        });
+        sizeDust();
+        return true;
+      }
+
+      function sizeDust() {
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        dust.w = hero.clientWidth;
+        dust.h = hero.clientHeight;
+        canvas.width = Math.round(dust.w * ratio);
+        canvas.height = Math.round(dust.h * ratio);
+        dust.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        dust.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+        dust.strength = document.documentElement.dataset.theme === 'light' ? 0.45 : 1;
+      }
+
+      function drawDust(dt, spin) {
+        const ctx = dust.ctx;
+        ctx.clearRect(0, 0, dust.w, dust.h);
+        dust.px += (dust.tx - dust.px) * (1 - Math.exp(-dt * 3));
+        dust.py += (dust.ty - dust.py) * (1 - Math.exp(-dt * 3));
+        ctx.fillStyle = dust.color;
+        dust.list.forEach(p => {
+          p.x = (p.x + spin * dt * 0.05 * p.depth + 1) % 1;
+          p.y = (p.y + dt * 0.002 * p.depth) % 1;
+          const x = ((p.x * dust.w + dust.px * 26 * p.depth) % dust.w + dust.w) % dust.w;
+          const y = ((p.y * dust.h + dust.py * 18 * p.depth) % dust.h + dust.h) % dust.h;
+          ctx.globalAlpha = p.alpha * dust.strength;
+          ctx.beginPath();
+          ctx.arc(x, y, p.size, 0, TWO_PI);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      function start() {
+        if (running || !live || !onScreen || document.hidden) return;
+        running = true;
+        lastFrame = performance.now();
+        requestAnimationFrame(step);
+      }
+
+      function stop() {
+        running = false;
+      }
+
+      function bindPointer() {
+        stage.addEventListener('pointerdown', e => {
+          if (e.button !== 0 || e.target.closest('.search-wrapper')) return;
+          drag = { id: e.pointerId, x: e.clientX, moved: 0, time: e.timeStamp };
+          rotationTarget = null;
+        });
+        stage.addEventListener('pointermove', e => {
+          if (!drag || e.pointerId !== drag.id) return;
+          const dx = e.clientX - drag.x;
+          drag.x = e.clientX;
+          drag.moved += Math.abs(dx);
+          if (drag.moved > 6) {
+            stage.classList.add('is-dragging');
+            if (!stage.hasPointerCapture(e.pointerId)) stage.setPointerCapture(e.pointerId);
+          }
+          const delta = dx / geo.radius;
+          rotation += delta;
+          const elapsed = Math.max(1, e.timeStamp - drag.time) / 1000;
+          velocity = velocity * 0.7 + (delta / elapsed) * 0.3;
+          drag.time = e.timeStamp;
+        });
+        const release = e => {
+          if (!drag || e.pointerId !== drag.id) return;
+          suppressClick = drag.moved > 6;
+          drag = null;
+          stage.classList.remove('is-dragging');
+          velocity = Math.max(-5, Math.min(5, velocity));
+        };
+        stage.addEventListener('pointerup', release);
+        // pointercancel means the browser took over for a vertical scroll, which is what we want.
+        stage.addEventListener('pointercancel', release);
+        // A drag that ends on a chip is a spin, not a click.
+        ring.addEventListener('click', e => {
+          if (suppressClick) e.preventDefault();
+          suppressClick = false;
+        });
+        ring.addEventListener('dragstart', e => e.preventDefault());
+        ring.addEventListener('pointerover', e => { if (e.pointerType === 'mouse' && e.target.closest('.orbit-slot')) hovered = true; });
+        ring.addEventListener('pointerout', e => { if (e.target.closest('.orbit-slot')) hovered = false; });
+        hero.addEventListener('pointermove', e => {
+          dust.tx = (e.clientX / window.innerWidth) * 2 - 1;
+          dust.ty = (e.clientY / window.innerHeight) * 2 - 1;
+        }, { passive: true });
+      }
+
+      function bindKeyboard() {
+        ring.addEventListener('focusin', e => {
+          ringFocused = true;
+          const chip = all.find(c => c.el.contains(e.target));
+          if (chip) frontOf(chip);
+        });
+        ring.addEventListener('focusout', e => {
+          if (ring.contains(e.relatedTarget)) return;
+          ringFocused = false;
+          if (!query) rotationTarget = null;
+        });
+        ring.addEventListener('keydown', e => {
+          if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+          const index = visible.findIndex(c => c.el.contains(document.activeElement));
+          if (index < 0) return;
+          e.preventDefault();
+          const bySlot = [...visible].sort((a, b) => a.target - b.target);
+          const at = bySlot.indexOf(visible[index]);
+          const next = bySlot[(at + (e.key === 'ArrowRight' ? -1 : 1) + bySlot.length) % bySlot.length];
+          next.el.querySelector('a').focus({ preventScroll: true });
+        });
+        input.addEventListener('focus', () => { searchFocused = true; });
+        input.addEventListener('blur', () => { searchFocused = false; });
+      }
+
+      function search(raw) {
+        query = (raw || '').trim().toLowerCase();
+        matches = query
+          ? all.filter(c => c.symbol.toLowerCase().includes(query) || c.name.includes(query))
+              .sort((a, b) => Number(b.symbol.toLowerCase().startsWith(query)) - Number(a.symbol.toLowerCase().startsWith(query)))
+          : [];
+        assignSlots();
+        if (live) {
+          measure();
+          if (query) rotationTarget = rotation + shortest(rotation, 0);
+          else if (!ringFocused) rotationTarget = null;
+        }
+      }
+
+      function refresh() {
+        assignSlots();
+        if (live) measure();
+      }
+
+      function init() {
+        visible = chooseVisible();
+        assignSlots();
+        const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (calm || !window.CSS || !CSS.supports('transform', 'translate3d(0, 0, 0)')) return;
+
+        try {
+          stage.classList.remove('orbit-static');
+          if (!setUpDust()) throw new Error('canvas unavailable');
+          measure();
+          visible.forEach(chip => { chip.angle = chip.target; place(chip); });
+          live = true;
+          bindPointer();
+          bindKeyboard();
+          window.addEventListener('resize', () => {
+            sizeDust();
+            assignSlots();
+            measure();
+          });
+          document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
+          document.addEventListener('themechange', sizeDust);
+          if (window.IntersectionObserver) {
+            new IntersectionObserver(entries => {
+              onScreen = entries[0].isIntersecting;
+              if (onScreen) start(); else stop();
+            }).observe(hero);
+          }
+          start();
+        } catch (err) {
+          // Anything unsupported falls back to the plain grid, which works without any of this.
+          live = false;
+          stop();
+          stage.classList.add('orbit-static');
+          all.forEach(c => { c.el.removeAttribute('style'); });
+        }
+      }
+
+      return { init, search, refresh };
+    })();
+
+    // Enter opens the first thing the dropdown is offering.
+    function openFirstSearchResult() {
+      const first = document.querySelector('#liveSearchResults a.search-result-item');
+      if (first) window.location.href = first.getAttribute('href');
     }
 
     function openSearchDropdown() {
@@ -4551,7 +3856,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     let lookupDebounceTimer = null;
 
     function handleSearchType(rawVal) {
-      console.log('[StockPulse Search] Keystroke input event received:', rawVal);
       const dropdown = document.getElementById('searchDropdown');
       if (dropdown) dropdown.classList.add('active');
       const val = (rawVal || '').toLowerCase().trim();
@@ -4571,6 +3875,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (defaultContent) defaultContent.style.display = 'none';
+      if (liveResults) liveResults.style.display = 'block';
       // 1. Match Companies & Tickers
       const matchedCompanies = watchlistCompanies.filter(c => 
         (c.symbol || '').toLowerCase().includes(val) ||
@@ -4623,12 +3928,12 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             <div class="quick-lookup-header">
               <div class="quick-lookup-title-group" id="quickLookupTitleGroup">
                 <span class="ticker-badge" id="quickLookupBadge">${escapeHtml(rawUpper)}</span>
-                <span class="quick-lookup-badge">⚡ Live Quick Lookup &bull; Outside Watchlist</span>
+                <span class="quick-lookup-badge">Outside your watchlist</span>
               </div>
-              <span class="quick-lookup-meta" id="quickLookupStatus"><span class="pulse-dot" style="background:var(--accent);"></span> Querying Finnhub...</span>
+              <span class="quick-lookup-meta" id="quickLookupStatus">Checking Finnhub</span>
             </div>
             <div id="quickLookupBody" style="font-size:0.8rem; color:var(--text-muted); padding:0.25rem 0;">
-              Fetching live real-time price &amp; recent headlines for <strong>${escapeHtml(rawVal.trim())}</strong>...
+              Fetching the latest price and headlines for <strong>${escapeHtml(rawVal.trim())}</strong>...
             </div>
           </div>
         `;
@@ -4639,7 +3944,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         liveResults.innerHTML = `
           <div class="search-no-results">
             <div class="no-results-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
-            <div class="no-results-title">Sorry, what you are searching for cannot be found, try being less specific.</div>
+            <div class="no-results-title">No matches. Try something less specific.</div>
             <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>, <em>NFLX</em>, <em>PLTR</em>), company name (<em>Netflix</em>, <em>Spotify</em>), or form type (<em>8-K</em>).</div>
           </div>
         `;
@@ -4650,7 +3955,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Company matches
       if (matchedCompanies.length > 0) {
-        html += '<div class="dropdown-section-title">Matching Watchlist Companies</div>';
+        html += '<div class="dropdown-section-title">Companies</div>';
         matchedCompanies.slice(0, 3).forEach(c => {
           html += `
             <a href="company.html?ticker=${escapeHtml(c.symbol)}" class="search-result-item">
@@ -4658,10 +3963,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <span class="ticker-badge ticker-${escapeHtml(c.symbol)}">${escapeHtml(c.symbol)}</span>
                 <div class="search-result-info">
                   <div class="search-result-title">${escapeHtml(c.name)}</div>
-                  <div class="search-result-sub">${escapeHtml(c.sector)}</div>
+                  <div class="search-result-sub">${escapeHtml(c.macro_sector || '')}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Company View ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4669,7 +3974,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Calendar matches
       if (matchedCal.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Upcoming Corporate Events</div>';
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Calendar</div>';
         matchedCal.slice(0, 2).forEach(ev => {
           html += `
             <a href="calendar.html" class="search-result-item">
@@ -4680,7 +3985,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(ev.display_date)} &bull; ${escapeHtml(ev.event_type)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Calendar ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4688,7 +3993,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Macroeconomic matches
       if (matchedEcon.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Macroeconomic Indicators</div>';
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Economy</div>';
         matchedEcon.slice(0, 2).forEach(ind => {
           html += `
             <a href="economic.html" class="search-result-item">
@@ -4696,10 +4001,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <div class="search-result-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
                 <div class="search-result-info">
                   <div class="search-result-title">${escapeHtml(ind.name)}: ${escapeHtml(ind.formatted_value)}</div>
-                  <div class="search-result-sub">${escapeHtml(ind.category)} &bull; Relevant: ${escapeHtml(ind.relevant_tickers)}</div>
+                  <div class="search-result-sub">${escapeHtml(ind.category)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Macro ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4707,7 +4012,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render News matches
       if (matchedNews.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Disclosures &amp; Intelligence (' + matchedNews.length + ')</div>';
+        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Stories (' + matchedNews.length + ')</div>';
         matchedNews.slice(0, 4).forEach(it => {
           html += `
             <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
@@ -4718,7 +4023,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                   <div class="search-result-sub">${escapeHtml(it.category)} &bull; ${escapeHtml(it.published_date)} &bull; Score: ${escapeHtml(it.score)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Feed ↗</span>
+              <span class="action-link" style="font-size:0.75rem;">Open</span>
             </a>
           `;
         });
@@ -4799,13 +4104,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <span class="ticker-badge ticker-${escapeHtml(data.symbol)}">${escapeHtml(data.symbol)}</span>
               ${coName}
               ${resFrom}
-              <span class="quick-lookup-badge" style="margin-left:0.35rem;">⚡ Live Quick Lookup</span>
+              <span class="quick-lookup-badge" style="margin-left:0.35rem;">Outside your watchlist</span>
             `;
           }
 
           if (status) {
             const timeStr = data.queried_at ? new Date(data.queried_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Live';
-            status.innerHTML = `<span class="pulse-dot" style="background:var(--pos);"></span> Live &bull; ${timeStr}`;
+            status.innerHTML = `As of ${escapeHtml(timeStr)}`;
           }
 
           let bodyHtml = '';
@@ -4832,7 +4137,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           if (data.headlines && data.headlines.length > 0) {
             bodyHtml += `
-              <div class="quick-lookup-headlines-title">Recent Headlines (Live Media)</div>
+              <div class="quick-lookup-headlines-title">Recent headlines</div>
               <div class="quick-lookup-headlines-list">
                 ${data.headlines.map(h => `
                   <a href="${safeHref(h.url)}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
@@ -4840,7 +4145,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                     <div class="quick-lookup-news-meta">
                       <span style="font-weight:600; color:var(--text-secondary);">${escapeHtml(h.source)}</span>
                       ${h.time_ago ? `<span>&bull;</span><span>${escapeHtml(h.time_ago)}</span>` : ''}
-                      <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read ↗</span>
+                      <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read</span>
                     </div>
                   </a>
                 `).join('')}
@@ -4854,8 +4159,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           bodyHtml += `
             <div class="quick-lookup-action-bar">
-              <span style="color:var(--text-muted);">Non-watchlist holding &bull; Live Finnhub quote</span>
-              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search In Feed ↗</a>
+              <span style="color:var(--text-muted);">Quote from Finnhub</span>
+              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search the feed</a>
             </div>
           `;
 
@@ -4892,114 +4197,21 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
     });
 
-    // =========================================================================
-    // 3D ORBITAL COMPANY SUGGESTION CYCLING ENGINE
-    // =========================================================================
-    let currentOrbitOffset = 0;
-    let orbitInterval = null;
-    let isOrbitPaused = false;
-
-    function getWatchlistForOrbit() {
-      if (Array.isArray(watchlistCompanies) && watchlistCompanies.length >= 4) {
-        return watchlistCompanies;
-      }
-      return [
-        { symbol: 'NVDA', name: 'NVIDIA Corporation', sector: 'Semiconductors' },
-        { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Consumer Electronics' },
-        { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Software & Cloud' },
-        { symbol: 'AMD', name: 'Advanced Micro Devices', sector: 'Semiconductors' },
-        { symbol: 'TSLA', name: 'Tesla, Inc.', sector: 'Automotive & Energy' },
-        { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Search & Cloud' },
-        { symbol: 'AMZN', name: 'Amazon.com, Inc.', sector: 'E-Commerce & Cloud' },
-        { symbol: 'BA', name: 'The Boeing Company', sector: 'Aerospace & Defense' },
-      ];
-    }
-
-    function initOrbitCards() {
-      const stage = document.getElementById('heroOrbitStage');
-      if (!stage) return;
-
-      const list = getWatchlistForOrbit();
-      if (list.length < 4) return;
-
-      updateOrbitCards(0);
-
-      stage.addEventListener('mouseenter', () => { isOrbitPaused = true; });
-      stage.addEventListener('mouseleave', () => { isOrbitPaused = false; });
-
-      // Periodically cycle the 4 cards smoothly every 7 seconds
-      if (orbitInterval) clearInterval(orbitInterval);
-      orbitInterval = setInterval(() => {
-        if (isOrbitPaused) return;
-        const searchInput = document.getElementById('globalSearchInput');
-        if (document.activeElement === searchInput) return;
-
-        currentOrbitOffset = (currentOrbitOffset + 4) % list.length;
-        transitionOrbitCards(currentOrbitOffset);
-      }, 7000);
-    }
-
-    function transitionOrbitCards(offset) {
-      const cards = document.querySelectorAll('.orbit-card');
-      cards.forEach(card => card.classList.add('card-fading'));
-
-      setTimeout(() => {
-        updateOrbitCards(offset);
-        cards.forEach(card => card.classList.remove('card-fading'));
-      }, 350);
-    }
-
-    function updateOrbitCards(offset) {
-      const list = getWatchlistForOrbit();
-      for (let i = 0; i < 4; i++) {
-        const card = document.getElementById(`orbitCard${i}`);
-        if (!card) continue;
-        const item = list[(offset + i) % list.length];
-        if (!item) continue;
-
-        const sym = item.symbol;
-        const name = item.name || sym;
-        const sector = item.sector ? item.sector.replace(/_/g, ' ') : 'Equities';
-
-        let catalystLabel = sector;
-        if (item.macro_sensitivities && item.macro_sensitivities.length > 0) {
-          catalystLabel = item.macro_sensitivities[0].replace(/_/g, ' ');
-        }
-
-        card.href = `company.html?ticker=${encodeURIComponent(sym)}`;
-        card.title = `View ${name} (${escapeHtml(sym)}) Research Hub`;
-
-        const tickerBadge = card.querySelector('.ticker-badge');
-        if (tickerBadge) {
-          tickerBadge.className = `ticker-badge ticker-${escapeHtml(sym)}`;
-          tickerBadge.textContent = sym;
-        }
-
-        const scoreEl = card.querySelector('.orbit-card-score');
-        if (scoreEl) {
-          const sampleScores = ['Score 9.0', 'Score 8.6', 'Score 8.2', 'Score 7.8', 'Score 8.4', 'Score 8.9'];
-          scoreEl.textContent = sampleScores[(offset + i) % sampleScores.length];
-        }
-
-        const nameEl = card.querySelector('.orbit-card-name');
-        if (nameEl) {
-          nameEl.textContent = name;
-        }
-
-        const catalystEl = card.querySelector('.orbit-pill-catalyst');
-        if (catalystEl) {
-          catalystEl.textContent = catalystLabel;
-        }
-      }
-    }
-
     function initHomePage() {
-      initOrbitCards();
       renderRecentlyViewed();
+      orbit.init();
       const searchInput = document.getElementById('globalSearchInput');
       if (searchInput) {
+        searchInput.addEventListener('focus', openSearchDropdown);
         searchInput.addEventListener('input', (e) => {
           handleSearchType(e.target.value);
+          orbit.search(e.target.value);
+        });
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            openFirstSearchResult();
+          }
         });
       }
     }
@@ -7809,6 +7021,57 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 # ==============================================================================
 # MASTER RENDER ENGINE
 # ==============================================================================
+def _short_date(value: Optional[str]) -> str:
+    """Turn '2026-11-04' into 'Nov 4'. Anything unparseable is returned unchanged."""
+    try:
+        parsed = datetime.strptime(str(value), "%Y-%m-%d")
+    except ValueError:
+        return str(value or "")
+    return f"{parsed.strftime('%b')} {parsed.day}"
+
+
+def _orbit_companies(
+    items: List[Dict[str, Any]], companies: List[Dict[str, Any]], today: Optional[date] = None
+) -> List[Dict[str, Any]]:
+    """Watchlist companies for the Home ring, biggest recent story first; no stories go last.
+
+    "New" means published in the last 7 days, the same window the live lookup uses for news.
+    """
+    today = today or date.today()
+    top_scores: Dict[str, float] = {}
+    new_counts: Dict[str, int] = {}
+    for item in items:
+        ticker, score = item.get("ticker"), item.get("score")
+        if not ticker or score is None:
+            continue
+        top_scores[ticker] = max(score, top_scores.get(ticker, score))
+        try:
+            age = (today - date.fromisoformat(str(item.get("published_date"))[:10])).days
+        except ValueError:
+            continue
+        if 0 <= age <= 7:
+            new_counts[ticker] = new_counts.get(ticker, 0) + 1
+    ranked = [
+        {
+            "symbol": co.get("symbol", ""),
+            "name": co.get("name", ""),
+            "top_score": top_scores.get(co.get("symbol")),
+            "new_count": new_counts.get(co.get("symbol"), 0),
+        }
+        for co in companies
+    ]
+    ranked.sort(key=lambda co: (co["top_score"] is None, -(co["top_score"] or 0), -co["new_count"], co["symbol"]))
+    return ranked
+
+
+def _next_earnings(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """The first earnings event in an already date-sorted calendar, if any."""
+    for event in events:
+        if "earning" in f"{event.get('event_type', '')} {event.get('headline', '')}".lower():
+            return event
+    return None
+
+
 def _script_json(value: Any) -> str:
     """Serialize for a <script> block, so text containing '</script>' cannot end the block."""
     return json.dumps(value).replace("</", "<\\/")
@@ -7926,6 +7189,9 @@ def render_dashboard(
             })
 
     common_context = {
+        "short_date": _short_date,
+        "orbit_companies": _orbit_companies(items, enriched_watchlist),
+        "next_earnings": _next_earnings(calendar_events),
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,

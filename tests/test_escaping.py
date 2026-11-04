@@ -27,3 +27,10 @@ def test_script_json_cannot_close_script_tag():
     assert "</script" not in encoded
     assert json.loads(encoded)["category"].startswith("</script>")
     assert re.search(r"<\\/script", encoded)
+
+
+def test_typing_reveals_search_results():
+    """Results were built but stayed display:none, so search looked dead."""
+    start = INDEX_TEMPLATE.index("function handleSearchType")
+    end = INDEX_TEMPLATE.index("function triggerLiveQuickLookup")
+    assert "liveResults.style.display = 'block'" in INDEX_TEMPLATE[start:end]
