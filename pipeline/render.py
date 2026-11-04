@@ -283,6 +283,10 @@ SHARED_CSS = """
       --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
     }
 
+    button, input, select, textarea {
+      font: inherit;
+    }
+
     h1, h2, h3 {
       font-family: var(--font-sans);
       font-weight: 650;
@@ -302,7 +306,6 @@ SHARED_CSS = """
 
     body {
       background-color: var(--bg-base);
-      background: var(--bg-surface);
       background-attachment: fixed;
       color: var(--text-primary);
       font-family: var(--font-sans);
@@ -322,19 +325,19 @@ SHARED_CSS = """
     }
 
     .app-sidebar {
-      width: 240px;
-      min-width: 240px;
-      max-width: 240px;
+      width: 216px;
+      min-width: 216px;
+      max-width: 216px;
       flex-shrink: 0;
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border-card);
+      background: var(--bg-base);
+      border-right: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
       position: sticky;
       top: 0;
       height: 100vh;
       overflow-y: auto;
-      padding: 1.5rem 1.15rem;
+      padding: 2rem 1.5rem 1.5rem;
       z-index: 100;
       transition: transform var(--transition-normal);
     }
@@ -343,9 +346,15 @@ SHARED_CSS = """
       flex: 1 1 0%;
       min-width: 0;
       width: 100%;
-      padding: 2.25rem 3rem 5rem 3rem;
+      max-width: 1180px;
+      padding: 3rem 4rem 6rem;
       margin: 0;
       box-sizing: border-box;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     /* Mobile Sticky Header & Bottom Navigation Bar */
@@ -356,9 +365,9 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       z-index: 950;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-card);
-      padding: 0.65rem 1rem;
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.5rem 0.5rem 0.5rem 1rem;
       align-items: center;
       justify-content: space-between;
     }
@@ -378,31 +387,24 @@ SHARED_CSS = """
     }
 
     .mobile-action-btn, .mobile-hamburger-btn {
-      width: 38px;
-      height: 38px;
-      min-width: 38px;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      background: transparent;
+      border: none;
       color: var(--text-primary);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       padding: 0;
-      transition: all var(--transition-fast);
       touch-action: manipulation;
     }
 
     .mobile-action-btn:hover, .mobile-hamburger-btn:hover {
-      background: var(--bg-surface);
-      border-color: var(--border-card);
-      color: var(--accent-blue);
+      color: var(--accent);
     }
 
-    .mobile-action-btn:active, .mobile-hamburger-btn:active {
-      transform: scale(0.95);
-    }
 
     .mobile-drawer-backdrop {
       display: none;
@@ -430,64 +432,37 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       z-index: 1000;
-      background: var(--bg-surface);
+      background: var(--bg-base);
       border-top: 1px solid var(--border-card);
-      padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom)) 0.25rem;
-      box-shadow: 0 -4px 20px var(--accent-soft);
+      padding: 0 0.25rem env(safe-area-inset-bottom);
       justify-content: space-around;
-      align-items: center;
+      align-items: stretch;
     }
 
     .mobile-tab-link {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.2rem;
-      padding: 0.3rem 0.25rem;
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.66rem;
-      font-weight: 600;
-      border-radius: var(--radius-sm);
-      transition: all var(--transition-fast);
+      font-size: 0.8rem;
+      font-weight: 500;
       flex: 1;
       text-align: center;
-      min-height: 44px;
+      min-height: 48px;
       touch-action: manipulation;
-      position: relative;
+      border-top: 2px solid transparent;
+      margin-top: -1px;
     }
 
-    .mobile-tab-link svg {
-      width: 20px;
-      height: 20px;
-      stroke-width: 2;
-      transition: transform var(--transition-fast);
-    }
 
-    .mobile-tab-link:active {
-      transform: scale(0.92);
-    }
 
     .mobile-tab-link.active {
-      color: var(--accent-blue);
-      font-weight: 700;
+      color: var(--text-primary);
+      border-top-color: var(--text-primary);
     }
 
-    .mobile-tab-link.active svg {
-      stroke: var(--accent-blue);
-      transform: translateY(-1px);
-    }
 
-    .mobile-tab-link.active::after {
-      content: '';
-      position: absolute;
-      bottom: 1px;
-      width: 16px;
-      height: 3px;
-      border-radius: var(--radius-full);
-      background: var(--accent-blue);
-    }
 
     .sidebar-close-btn {
       display: none;
@@ -595,10 +570,6 @@ SHARED_CSS = """
         display: flex !important;
       }
 
-      .top-header-bar {
-        display: none !important;
-      }
-
       .sidebar-close-btn {
         display: block !important;
       }
@@ -613,18 +584,19 @@ SHARED_CSS = """
         max-width: 280px !important;
         z-index: 1100 !important;
         transform: translateX(-100%) !important;
-        box-shadow: var(--shadow-modal) !important;
       }
 
       .app-sidebar.mobile-open {
         transform: translateX(0) !important;
+        background: var(--bg-surface) !important;
+        box-shadow: var(--shadow-modal) !important;
       }
 
       .app-main {
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        padding: 1.25rem 1rem calc(5.5rem + env(safe-area-inset-bottom)) 1rem !important;
+        padding: 1.75rem 1rem calc(5.5rem + env(safe-area-inset-bottom)) 1rem !important;
         box-sizing: border-box !important;
       }
 
@@ -892,150 +864,89 @@ SHARED_CSS = """
     }
 
     /* Top Navigation Bar */
-    .top-header-bar {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 2rem;
-    }
 
-    .top-header-btn {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.5rem 0.95rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-card);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-    }
 
-    .top-header-btn:hover {
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      border-color: var(--border-card);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-card);
-    }
 
     /* Sidebar Brand (Logo and Title Only - No Tagline) */
     .sidebar-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
+      display: block;
       text-decoration: none;
       color: inherit;
     }
 
-    .logo-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-sm);
-      background: var(--text-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--bg-base);
-      flex-shrink: 0;
-    }
 
     .brand-title {
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       color: var(--text-primary);
       line-height: 1;
     }
 
-    .nav-section-title {
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 0.6rem;
-      padding-left: 0.5rem;
-    }
 
     .sidebar-nav {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.1rem;
       flex: 1;
     }
 
     .nav-link {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: space-between;
-      padding: 0.68rem 0.95rem;
-      border-radius: var(--radius-sm);
+      padding: 0.42rem 0;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.88rem;
-      font-weight: 600;
-      transition: all var(--transition-fast);
+      font-size: 0.92rem;
+      font-weight: 400;
     }
 
     .nav-link:hover {
-      background: var(--bg-surface-elevated);
       color: var(--text-primary);
     }
 
     .nav-link.active {
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-weight: 700;
+      color: var(--text-primary);
+      font-weight: 600;
     }
 
-    .nav-item-left {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
 
-    .nav-svg {
-      width: 18px;
-      height: 18px;
-      stroke-width: 2;
-      stroke: currentColor;
-      flex-shrink: 0;
-    }
 
     .nav-count {
       font-family: var(--font-mono);
       font-size: 0.72rem;
-      font-weight: 700;
-      background: var(--bg-surface-elevated);
       color: var(--text-muted);
-      padding: 0.15rem 0.45rem;
-      border-radius: var(--radius-full);
     }
 
-    .nav-link.active .nav-count {
-      background: var(--accent-soft);
-      color: var(--accent);
-    }
 
     .sidebar-footer {
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--border-card);
-      margin-top: 1.25rem;
+      margin-top: auto;
+      padding-top: 1.5rem;
+      font-size: 0.74rem;
+      line-height: 1.55;
+      color: var(--text-muted);
     }
 
-    .sidebar-health-box {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem;
+    .sidebar-status-alert { color: var(--neg); font-weight: 600; }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      margin-top: 0.5rem;
+      min-height: 24px;
+      font: inherit;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--border-card);
+      text-underline-offset: 3px;
     }
+
+    .theme-toggle:hover { color: var(--text-primary); }
+
 
     .pulse-dot {
       width: 8px;
@@ -4079,128 +3990,56 @@ SHARED_CSS = """
 # RESPONSIVE NAVIGATION MACROS (SIDEBAR + MOBILE HEADER + MOBILE BOTTOM NAV)
 # ==============================================================================
 NAVIGATION_LAYOUT_HTML = """
-<!-- Mobile Sticky Top Header -->
 <div class="mobile-top-header">
-  <a href="index.html" class="mobile-header-left">
-    <div class="logo-badge" style="width:32px; height:32px;">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-      </svg>
-    </div>
-    <div style="display:flex; align-items:center; gap:0.45rem;">
-      <span style="font-size:1.05rem; font-weight: 600; color:var(--text-primary); letter-spacing:-0.01em;">StockPulse</span>
-      <span class="pulse-dot" style="background:var(--pos); width:7px; height:7px;" title="Live Disclosures Active"></span>
-    </div>
-  </a>
+  <a href="index.html" class="sidebar-brand"><span class="brand-title">StockPulse</span></a>
   <div class="mobile-header-right">
     <button class="mobile-action-btn" onclick="focusMobileSearch()" aria-label="Search">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
     </button>
     <button class="mobile-hamburger-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation drawer">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
     </button>
   </div>
 </div>
 
-<!-- Backdrop Overlay for Mobile Drawer -->
 <div class="mobile-drawer-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
 
-<!-- Slide-over Drawer / Desktop Sidebar -->
 <aside class="app-sidebar" id="appSidebar">
-  <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-card); padding-bottom:1.25rem; margin-bottom:1.25rem;">
-    <a href="index.html" class="sidebar-brand">
-      <div class="logo-badge">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-      </div>
-      <span class="brand-title">StockPulse</span>
-    </a>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2.25rem;">
+    <a href="index.html" class="sidebar-brand"><span class="brand-title">StockPulse</span></a>
     <button class="sidebar-close-btn" onclick="closeMobileNav()" aria-label="Close navigation">&times;</button>
   </div>
 
-  <div class="nav-section-title">Navigation</div>
-  <nav class="sidebar-nav">
-    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span class="nav-text">Home</span>
-      </div>
-    </a>
-    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-        <span class="nav-text">Company Directory</span>
-      </div>
-      <span class="nav-count">{{ watchlist_companies|length }}</span>
-    </a>
-    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-        <span class="nav-text">Intelligence Feed</span>
-      </div>
-      <span class="nav-count">{{ stats.total }}</span>
-    </a>
-    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-        <span class="nav-text">Corporate Calendar</span>
-      </div>
-      <span class="nav-count">{{ calendar_events|length }}</span>
-    </a>
-    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-        <span class="nav-text">Economic Snapshot</span>
-      </div>
-      <span class="nav-count">{{ economic_indicators|length }}</span>
-    </a>
-    <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span class="nav-text">Analytics &amp; Trends</span>
-      </div>
-    </a>
+  <nav class="sidebar-nav" aria-label="Pages">
+    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Home</span></a>
+    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Companies</span><span class="nav-count">{{ watchlist_companies|length }}</span></a>
+    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Feed</span><span class="nav-count">{{ stats.total }}</span></a>
+    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Calendar</span><span class="nav-count">{{ calendar_events|length }}</span></a>
+    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Economy</span><span class="nav-count">{{ economic_indicators|length }}</span></a>
+    <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" onclick="closeMobileNav()"><span class="nav-text">Analytics</span></a>
   </nav>
 
-  <div class="sidebar-footer" style="margin-top:auto; padding-top:1.5rem;">
-    <div class="sidebar-health-box">
-      <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
-        <span class="pulse-dot" style="background:var(--pos);"></span>
-        <span style="font-size:0.75rem; font-weight:700; color:var(--pos);">ALL SYSTEMS HEALTHY</span>
-      </div>
-      <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.4;">
-        {{ watchlist_companies|length }} Watchlist Holdings Monitored<br>
-        Updated: {{ generated_at }}
-      </div>
-    </div>
+  <div class="sidebar-footer">
+    {% if latest_run %}
+    <div{% if latest_run.status != 'HEALTHY' %} class="sidebar-status-alert"{% endif %}>Pipeline: {{ latest_run.status|lower }}</div>
+    {% else %}
+    <div>No pipeline runs recorded</div>
+    {% endif %}
+    <div>Updated: {{ generated_at }}</div>
+    <button class="theme-toggle" id="themeToggle" type="button" onclick="cycleTheme()">Switch to light</button>
   </div>
 </aside>
 
-<!-- Dedicated Mobile Phone Bottom Navigation Bar (5 Tabs: Home / Directory / Feed / Calendar / Economic) -->
-<div class="mobile-bottom-nav">
-  <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Home</span>
-  </a>
-  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-    <span>Directory</span>
-  </a>
-  <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-    <span>Feed</span>
-  </a>
-  <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-    <span>Calendar</span>
-  </a>
-  <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-    <span>Economic</span>
-  </a>
-</div>
+<nav class="mobile-bottom-nav" aria-label="Pages">
+  <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">Companies</a>
+  <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">Feed</a>
+  <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">Calendar</a>
+  <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">Economy</a>
+</nav>
 """
+
+THEME_BOOT_JS = "try{var t=localStorage.getItem('stockpulse_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}"
 
 # JavaScript for Mobile Drawer, Unified Search & Header Actions
 SHARED_MOBILE_JS = """
@@ -4215,6 +4054,28 @@ function safeHref(value) {
   const url = String(value || '');
   return /^https?:\\/\\//i.test(url) ? escapeHtml(url) : '#';
 }
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+}
+
+function labelThemeToggle() {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = currentTheme() === 'light' ? 'Switch to dark' : 'Switch to light';
+}
+
+function cycleTheme() {
+  const next = currentTheme() === 'light' ? 'dark' : 'light';
+  if (next === 'dark') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = next;
+  try {
+    localStorage.setItem('stockpulse_theme', next);
+  } catch (e) { /* storage may be blocked; the choice just won't persist */ }
+  labelThemeToggle();
+  document.dispatchEvent(new Event('themechange'));
+}
+
+document.addEventListener('DOMContentLoaded', labelThemeToggle);
 
 function toggleMobileNav() {
   const sidebar = document.getElementById('appSidebar');
@@ -4291,6 +4152,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -4300,17 +4162,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <!-- Top Right Bar for Desktop -->
-      <div class="top-header-bar">
-        <a href="analytics.html" class="top-header-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Analytics &amp; Trends
-        </a>
-        <span class="section-time-pill" style="font-size:0.75rem; padding:0.3rem 0.75rem;">
-          <span class="pulse-dot" style="background:var(--pos);"></span> Live
-        </span>
-      </div>
-
       <!-- Redesigned Hero & 3D Orbital Search Centerpiece Section -->
       <section class="hero-section">
         <div class="hero-container">
@@ -5180,6 +5031,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -5923,6 +5775,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -6549,6 +6402,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -6735,6 +6589,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -7113,6 +6968,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
