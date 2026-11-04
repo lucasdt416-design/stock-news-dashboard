@@ -1,0 +1,9 @@
+# Cloudflare Pages security headers, copied into site/ at deploy time.
+# There is no script-src here because these pages still use inline scripts and handlers;
+# the full policy with per-page hashes comes from the render step on security/02-csp.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'

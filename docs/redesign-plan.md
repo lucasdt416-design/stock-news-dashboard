@@ -1,5 +1,7 @@
 # StockPulse redesign plan
 
+> **Superseded in part.** The cream, serif and muted-blue look described here was replaced by an ink stage with one amber accent, and the "front page" Home by a search bar orbited by the watchlist. Details are in PRs #2 and #4.
+
 **Status: written by the implementing agent, not the owner.** The task named `docs/redesign-brief.md` as the source
 of truth, but that file is not in this repo, its history, or anywhere else that could be searched. If the original
 brief turns up, it overrides this document. It is deliberately named differently so it cannot overwrite the original.
@@ -56,14 +58,21 @@ subhead, a coloured badge per ticker, and sentence-long uppercase labels.
 | PR | Branch | Scope |
 |---|---|---|
 | 00 | `redesign/00-demo-and-capture-tooling` | Demo database, capture and comparison scripts, this plan. No visual change |
-| 01 | `redesign/01-design-foundations` | Palette, type, spacing, dark mode, removal of global gradients and shadows |
+| 01 | `redesign/01-design-foundations` | Palette, type, dark mode, removal of global gradients and shadows, escaping of dynamic text, overflow fixes |
 | 02 | `redesign/02-app-shell` | Sidebar, mobile navigation, truthful status |
-| 03 | `redesign/03-home-front-page` | Home as a front page, fake scores removed, search results escaped |
+| 03 | `redesign/03-home-front-page` | Home as a front page, fake scores removed |
 | 04 | `redesign/04-feed-reading-bands` | Feed organized by reading bands |
 | 05 | `redesign/05-calendar-timeline` | Timeline and agenda |
 | 06 | `redesign/06-economic-ledger` | Indicator ledger |
 | 07 | `redesign/07-company-dossier` | Directory index and company dossier |
 | 08 | `redesign/08-analytics-and-finish` | Analytics figures, chart styling, final cleanup |
+
+## Additions made along the way
+
+- PR 01 also took on escaping and overflow fixes, so every later PR could pass with zero console errors.
+- Charts read colors through `cssColor()`, because a canvas can't resolve CSS variables. They redraw after web fonts load and when the theme changes.
+- Chart series colors are the `--series-*` tokens, checked for color-blind separation against both page surfaces.
+- `scripts/capture_site.py` fails on any legend entry that drew no pixels, and on search results that aren't visible.
 
 ## Running it
 

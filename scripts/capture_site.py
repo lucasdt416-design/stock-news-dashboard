@@ -17,6 +17,7 @@ import socketserver
 import threading
 from functools import partial
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
 PAGES = [
@@ -58,16 +59,86 @@ SNAPSHOT_JS = """() => {
 }"""
 
 
+TIMEOUT_MS = 120000
+LOAD_ATTEMPTS = 3
+
+FULL_PAGE_CSS = """
+@media (min-width: 1025px) { .app-sidebar { height: auto !important; position: relative !important; } }
+.mobile-bottom-nav { display: none !important; }
+.mobile-top-header { position: relative !important; }
+"""
+
+
+# Chart.js can report a legend entry it never painted, so count the pixels it actually drew.
+UNDRAWN_LEGEND_JS = """() => {
+  if (!window.Chart) return [];
+  const missing = [];
+  document.querySelectorAll('canvas').forEach(canvas => {
+    const chart = window.Chart.getChart(canvas);
+    if (!chart || !chart.legend || !chart.legend.options.display || !chart.legend.legendHitBoxes) return;
+    const ratio = chart.currentDevicePixelRatio;
+    const ctx = canvas.getContext('2d');
+    chart.legend.legendHitBoxes.forEach((box, i) => {
+      const pixels = ctx.getImageData(box.left * ratio, box.top * ratio, box.width * ratio, box.height * ratio).data;
+      let ink = 0;
+      for (let k = 3; k < pixels.length; k += 4) if (pixels[k] > 40) ink += 1;
+      if (!ink) missing.push(canvas.id + ': ' + chart.legend.legendItems[i].text);
+    });
+  });
+  return missing;
+}"""
+
+
+def parse_headers_file(site):
+    """Read Cloudflare's _headers format, so local pages run under the same policy as production."""
+    rules, path = {}, None
+    try:
+        with open(os.path.join(site, "_headers"), encoding="utf-8") as f:
+            for raw in f:
+                line = raw.rstrip()
+                if not line or line.startswith("#"):
+                    continue
+                if not line.startswith(" "):
+                    path = line
+                    rules.setdefault(path, [])
+                else:
+                    name, value = line.strip().split(":", 1)
+                    rules[path].append((name, value.strip()))
+    except FileNotFoundError:
+        pass
+    return rules
+
+
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    header_rules = {}
+
     def log_message(self, *args):
         pass
 
+    def end_headers(self):
+        path = self.path.split("?")[0]
+        for name, value in self.header_rules.get("/*", []) + self.header_rules.get(path, []):
+            self.send_header(name, value)
+        super().end_headers()
+
 
 def serve(site):
+    QuietHandler.header_rules = parse_headers_file(site)
     socketserver.TCPServer.allow_reuse_address = True
     httpd = socketserver.ThreadingTCPServer(("127.0.0.1", 0), partial(QuietHandler, directory=site))
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd
+
+
+def load(page, url):
+    """Load a page, retrying because fonts and Chart.js come from a CDN and networks drop."""
+    for attempt in range(1, LOAD_ATTEMPTS + 1):
+        try:
+            page.goto(url, wait_until="networkidle")
+            return
+        except PlaywrightError:
+            if attempt == LOAD_ATTEMPTS:
+                raise
 
 
 def capture(site, out, widths, schemes, pages):
@@ -84,6 +155,8 @@ def capture(site, out, widths, schemes, pages):
                     color_scheme=scheme, reduced_motion="reduce",
                     device_scale_factor=1,
                 )
+                # The site is dark unless a visitor chooses light, so pick the theme the way a visitor does.
+                ctx.add_init_script(f"try{{localStorage.setItem('stockpulse_theme','{scheme}')}}catch(e){{}}")
                 # functions/api/lookup.js only runs on Cloudflare, so answer it the way it answers
                 # an unknown ticker. Otherwise every search logs a 404 that production never shows.
                 ctx.route("**/api/lookup*", lambda route: route.fulfill(
@@ -91,6 +164,7 @@ def capture(site, out, widths, schemes, pages):
                     body=json.dumps({"found": False, "message": "No demo data for this ticker."})))
                 for name, path in pages:
                     page = ctx.new_page()
+                    page.set_default_timeout(TIMEOUT_MS)
                     label = f"{name}-{width}-{scheme}"
                     page.on("console", lambda m, tag=label: report["problems"].append(f"{tag} console.{m.type}: {m.text}")
                             if m.type == "error" else None)
@@ -99,14 +173,24 @@ def capture(site, out, widths, schemes, pages):
                         f"{tag} request failed: {r.url}"))
                     page.on("response", lambda r, tag=label: report["problems"].append(
                         f"{tag} HTTP {r.status}: {r.url.replace(base, '')}") if r.status >= 400 else None)
-                    page.goto(f"{base}/{path}", wait_until="networkidle")
+                    page.add_init_script("""document.addEventListener('securitypolicyviolation', e => {
+                        console.error('CSP violation: ' + e.violatedDirective + ' ' + e.blockedURI); });""")
+                    load(page, f"{base}/{path}")
                     page.evaluate("document.fonts.ready")
                     page.wait_for_timeout(500)
                     snap = page.evaluate(SNAPSHOT_JS)
+                    for entry in page.evaluate(UNDRAWN_LEGEND_JS):
+                        report["problems"].append(f"{label} chart legend not drawn: {entry}")
                     if snap["overflow"] > 0:
                         report["problems"].append(f"{label} horizontal overflow: {snap['overflow']}px")
                     if name == "home":
                         check_search(page, label, report)
+                    if width < 1100:
+                        page.screenshot(path=os.path.join(out, f"{label}-fold.jpg"), type="jpeg", quality=82)
+                    # Fixed and sticky chrome lands mid-image in a stitched full-page shot, so lay it out flat.
+                    # Through the stylesheet API, because the page's CSP correctly blocks an injected <style>.
+                    page.evaluate("""css => { const sheet = new CSSStyleSheet(); sheet.replaceSync(css);
+                        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]; }""", FULL_PAGE_CSS)
                     page.screenshot(path=os.path.join(out, f"{label}.jpg"), full_page=True, type="jpeg", quality=82)
                     if label not in report["pages"] and width == widths[0] and scheme == schemes[0]:
                         report["pages"][name] = snap
@@ -122,10 +206,12 @@ def capture(site, out, widths, schemes, pages):
 def check_search(page, label, report):
     """Search must find watchlist companies, and event/news text must stay inert."""
     box = page.locator("#globalSearchInput")
-    box.fill("NVDA")
-    page.wait_for_timeout(150)
-    if page.locator("#liveSearchResults a").count() == 0:
-        report["problems"].append(f"{label} search: no results for NVDA")
+    box.click()
+    box.press_sequentially("NVDA", delay=30)
+    page.wait_for_timeout(200)
+    first_result = page.locator("#liveSearchResults a").first
+    if page.locator("#liveSearchResults a").count() == 0 or not first_result.is_visible():
+        report["problems"].append(f"{label} search: no visible results for NVDA")
     for query in ("Demo event", "escaping"):
         box.fill(query)
         # The browser fetches a broken <img> and fires onerror asynchronously, so give it time.

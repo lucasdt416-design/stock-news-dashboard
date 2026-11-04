@@ -1,30 +1,22 @@
-"""Multi-page static HTML dashboard generator with responsive architecture & organic editorial design (Phase 7).
+"""Static HTML generator for the StockPulse site.
 
-Unified Shared Layout & Organic Flow System:
-- Organic Design Language: Softer, larger border-radius tokens (14px–36px), atmospheric ambient backdrop meshes, and soft diffused shadows replacing rigid rectangular grids.
-- Asymmetric & Varied Card Layouts:
-  1. Home (index.html): Asymmetric Hero Bento Deck with a prominent Featured Intelligence Card, companion Catalyst Beacon, and Macro Pulse widget; curved analytics charts and health hub.
-  2. Feed (news.html): Editorial Priority Suite with a spacious Lead #1 Feature Card and staggered secondary cards; floating rounded filter pills.
-  3. Calendar (calendar.html): Spotlight Next Milestone Banner with prominent date box and countdown badge, followed by organic cards.
-  4. Macro (economic.html): Anchor rate cards (Fed Funds & Inflation) with oversized focal metrics, followed by responsive sensitivity matrices.
-- Brand Polish: Removed "Cloud Intelligence" tagline from beneath the StockPulse logo for clean, centered typography.
-- Bulletproof Search Dropdown: Nested flex constraints (min-width: 0, text-overflow: ellipsis, box-sizing: border-box) guaranteeing zero overflow outside the search container.
-- Responsive top navbar, off-canvas slide-over drawer, and bottom navigation bar.
-
-Generates:
-1. site/index.html    - Home / Overview: Hero greeting, live search, widget preview cards & rich charts
-2. site/news.html     - Full Intelligence Feed: Priority Panel, Filters, Search, Sort & News Table
-3. site/calendar.html - Forthcoming Corporate Calendar: Earnings calls, Dividends, Filing Deadlines
-4. site/economic.html - Macroeconomic Intelligence: FRED indicators, Live Sensitivity Filtering & Matrix
+Renders one page per view from the database: index (front page), news (feed), calendar,
+economic, company, and analytics. Pages share SHARED_CSS, NAVIGATION_LAYOUT_HTML, and
+SHARED_MOBILE_JS. Design rules are in docs/redesign-plan.md.
 """
 
+import base64
+import hashlib
 import json
 import logging
 import os
-from datetime import datetime
+import re
+import shutil
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import yaml
 from jinja2 import Template
+from pipeline.calendar import calculate_relative_badge
 from pipeline.normalize import clean_text
 from pipeline.persist import (
     get_all_news_items,
@@ -37,6 +29,12 @@ from pipeline.persist import (
 )
 
 logger = logging.getLogger(__name__)
+
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+CHART_JS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+SAFE_URL_PATTERN = re.compile(r"https?://[^\s\x00-\x1f\x7f\"'<>`]+", re.IGNORECASE)
+INLINE_SCRIPT_PATTERN = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.DOTALL)
+INLINE_STYLE_PATTERN = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL)
 
 
 def format_human_headline(item: Dict[str, Any]) -> str:
@@ -179,50 +177,132 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
 # SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
+    @font-face {
+      font-family: 'Fredoka';
+      src: url('assets/fonts/fredoka.woff2') format('woff2');
+      font-weight: 700;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Hanken Grotesk';
+      src: url('assets/fonts/hanken-grotesk.woff2') format('woff2');
+      font-weight: 400 700;
+      font-display: swap;
+    }
+
+    /* Ink stage with one amber accent. Dark is the default; light is opt-in via data-theme.
+       Green and red only ever mean up and down. */
     :root {
-      --bg-base: #f8fafc;
-      --bg-surface: #ffffff;
-      --bg-surface-elevated: #f1f5f9;
-      --bg-surface-glass: rgba(255, 255, 255, 0.92);
-      --bg-surface-highlight: #e2e8f0;
-      --bg-hover: #f1f5f9;
-      --border-subtle: #f1f5f9;
-      --border-card: #e2e8f0;
-      --border-glass: rgba(226, 232, 240, 0.85);
-      --border-accent: #2563eb;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #64748b;
-      --accent-blue: #2563eb;
-      --accent-blue-soft: #eff6ff;
-      --accent-orange-dark: #c2410c;
-      --accent-orange-main: #ea580c;
-      --accent-indigo: #4f46e5;
-      --accent-emerald: #10b981;
-      --accent-amber: #d97706;
-      --accent-purple: #7c3aed;
-      --accent-rose: #e11d48;
-      --accent-cyan: #0284c7;
-      
-      /* Organic Softer Border Radii */
-      --radius-xs: 6px;
-      --radius-sm: 10px;
-      --radius-md: 16px;
-      --radius-lg: 24px;
-      --radius-xl: 32px;
-      --radius-2xl: 40px;
-      --radius-full: 9999px;
-      
-      /* Organic Atmospheric Shadows */
-      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
-      --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-      --shadow-hover: 0 16px 36px -6px rgba(37, 99, 235, 0.09), 0 4px 14px -2px rgba(15, 23, 42, 0.03);
-      --shadow-float: 0 20px 40px -10px rgba(15, 23, 42, 0.08);
-      --shadow-dropdown: 0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.04);
-      --shadow-modal: 0 30px 60px -15px rgba(15, 23, 42, 0.25);
-      
-      --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-      --transition-normal: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      color-scheme: dark;
+      --bg-base: #0b0d12;
+      --bg-surface: #12151c;
+      --bg-surface-elevated: #1a1e27;
+      --bg-surface-glass: var(--bg-surface);
+      --bg-surface-highlight: #232834;
+      --bg-hover: #171b23;
+      --border-subtle: #1e222c;
+      --border-card: #2b303c;
+      --text-primary: #f4efe6;
+      --text-secondary: #c6c1b6;
+      --text-muted: #98948b;
+      --accent: #ffb020;
+      --accent-soft: #2b2211;
+      --on-accent: #0b0d12;
+      --pos: #3dd68c;
+      --pos-soft: #10271c;
+      --neg: #ff6b5e;
+      --neg-soft: #2e1614;
+      --warn: #f2c661;
+      --warn-soft: #2a2412;
+      --scrim: rgba(0, 0, 0, 0.6);
+      /* Chart series, validated for colour-blind separation on this surface. No greens or reds. */
+      --series-1: #3f92d0;
+      --series-2: #d05f94;
+      --series-3: #b28b28;
+      --series-4: #16a2ae;
+      --series-5: #d9642b;
+      --series-6: #9b78d0;
+      --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
+      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
+
+      /* Older names kept so existing components inherit the new palette. */
+      --border-glass: var(--border-card);
+      --border-accent: var(--accent);
+      --accent-blue: var(--accent);
+      --accent-blue-soft: var(--accent-soft);
+      --accent-indigo: var(--accent);
+      --accent-purple: var(--accent);
+      --accent-cyan: var(--accent);
+      --accent-emerald: var(--pos);
+      --accent-rose: var(--neg);
+      --accent-amber: var(--warn);
+      --accent-orange-dark: var(--warn);
+      --accent-orange-main: var(--warn);
+
+      /* Fredoka is for the wordmark and the Home headline only. Everything else is one sans. */
+      --font-display: 'Fredoka', 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      --font-sans: 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      --font-serif: var(--font-sans);
+      --font-mono: var(--font-sans);
+
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
+      --radius-2xl: 14px;
+      --radius-full: 999px;
+
+      --shadow-sm: none;
+      --shadow-card: none;
+      --shadow-hover: none;
+      --shadow-float: none;
+
+      --transition-fast: 0.12s ease-out;
+      --transition-normal: 0.18s ease-out;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg-base: #fbf8f1;
+      --bg-surface: #fffdf8;
+      --bg-surface-elevated: #f3efe5;
+      --bg-surface-highlight: #eae5d8;
+      --bg-hover: #f5f1e7;
+      --border-subtle: #ece7db;
+      --border-card: #dad4c5;
+      --text-primary: #12141a;
+      --text-secondary: #3e4049;
+      --text-muted: #62645f;
+      --accent: #955800;
+      --accent-soft: #f8ebd2;
+      --on-accent: #fffdf8;
+      --pos: #0f7a4a;
+      --pos-soft: #dff1e6;
+      --neg: #b3321f;
+      --neg-soft: #f8e2dd;
+      --warn: #7a5c00;
+      --warn-soft: #f4ecd2;
+      --scrim: rgba(18, 20, 26, 0.45);
+      --series-1: #1f6fb2;
+      --series-2: #be4a86;
+      --series-3: #8f7312;
+      --series-4: #00899f;
+      --series-5: #bc5a1e;
+      --series-6: #7a4fbf;
+      --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
+      --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-sans);
+      font-weight: 650;
+      letter-spacing: -0.015em;
     }
 
     * {
@@ -237,14 +317,11 @@ SHARED_CSS = """
     }
 
     body {
-      background-color: #f8fafc;
-      background-image: 
-        radial-gradient(at 15% 10%, rgba(219, 234, 254, 0.45) 0px, transparent 45%),
-        radial-gradient(at 85% 15%, rgba(254, 243, 199, 0.35) 0px, transparent 40%),
-        radial-gradient(at 50% 85%, rgba(241, 245, 249, 0.6) 0px, transparent 50%);
+      background-color: var(--bg-base);
       background-attachment: fixed;
       color: var(--text-primary);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: var(--font-sans);
+      font-feature-settings: 'tnum' 1;
       min-height: 100vh;
       line-height: 1.55;
       overflow-x: hidden;
@@ -260,20 +337,19 @@ SHARED_CSS = """
     }
 
     .app-sidebar {
-      width: 240px;
-      min-width: 240px;
-      max-width: 240px;
+      width: 216px;
+      min-width: 216px;
+      max-width: 216px;
       flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(16px);
-      border-right: 1px solid var(--border-card);
+      background: var(--bg-base);
+      border-right: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
       position: sticky;
       top: 0;
       height: 100vh;
       overflow-y: auto;
-      padding: 1.5rem 1.15rem;
+      padding: 2rem 1.5rem 1.5rem;
       z-index: 100;
       transition: transform var(--transition-normal);
     }
@@ -282,9 +358,15 @@ SHARED_CSS = """
       flex: 1 1 0%;
       min-width: 0;
       width: 100%;
-      padding: 2.25rem 3rem 5rem 3rem;
+      max-width: 1180px;
+      padding: 3rem 4rem 6rem;
       margin: 0;
       box-sizing: border-box;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     /* Mobile Sticky Header & Bottom Navigation Bar */
@@ -295,21 +377,11 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       z-index: 950;
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border-card);
-      padding: 0.65rem 1rem;
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.5rem 0.5rem 0.5rem 1rem;
       align-items: center;
       justify-content: space-between;
-    }
-
-    .mobile-header-left {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      text-decoration: none;
-      color: inherit;
     }
 
     .mobile-header-right {
@@ -319,30 +391,22 @@ SHARED_CSS = """
     }
 
     .mobile-action-btn, .mobile-hamburger-btn {
-      width: 38px;
-      height: 38px;
-      min-width: 38px;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      background: transparent;
+      border: none;
       color: var(--text-primary);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       padding: 0;
-      transition: all var(--transition-fast);
       touch-action: manipulation;
     }
 
     .mobile-action-btn:hover, .mobile-hamburger-btn:hover {
-      background: #ffffff;
-      border-color: #cbd5e1;
-      color: var(--accent-blue);
-    }
-
-    .mobile-action-btn:active, .mobile-hamburger-btn:active {
-      transform: scale(0.95);
+      color: var(--accent);
     }
 
     .mobile-drawer-backdrop {
@@ -352,9 +416,7 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: var(--scrim);
       z-index: 1050;
       opacity: 0;
       transition: opacity var(--transition-normal);
@@ -373,65 +435,32 @@ SHARED_CSS = """
       left: 0;
       right: 0;
       z-index: 1000;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: var(--bg-base);
       border-top: 1px solid var(--border-card);
-      padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom)) 0.25rem;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+      padding: 0 0.25rem env(safe-area-inset-bottom);
       justify-content: space-around;
-      align-items: center;
+      align-items: stretch;
     }
 
     .mobile-tab-link {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.2rem;
-      padding: 0.3rem 0.25rem;
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.66rem;
-      font-weight: 600;
-      border-radius: var(--radius-sm);
-      transition: all var(--transition-fast);
+      font-size: 0.8rem;
+      font-weight: 500;
       flex: 1;
       text-align: center;
-      min-height: 44px;
+      min-height: 48px;
       touch-action: manipulation;
-      position: relative;
-    }
-
-    .mobile-tab-link svg {
-      width: 20px;
-      height: 20px;
-      stroke-width: 2;
-      transition: transform var(--transition-fast);
-    }
-
-    .mobile-tab-link:active {
-      transform: scale(0.92);
+      border-top: 2px solid transparent;
+      margin-top: -1px;
     }
 
     .mobile-tab-link.active {
-      color: var(--accent-blue);
-      font-weight: 700;
-    }
-
-    .mobile-tab-link.active svg {
-      stroke: var(--accent-blue);
-      transform: translateY(-1px);
-    }
-
-    .mobile-tab-link.active::after {
-      content: '';
-      position: absolute;
-      bottom: 1px;
-      width: 16px;
-      height: 3px;
-      border-radius: var(--radius-full);
-      background: var(--accent-blue);
+      color: var(--text-primary);
+      border-top-color: var(--text-primary);
     }
 
     .sidebar-close-btn {
@@ -444,82 +473,6 @@ SHARED_CSS = """
       padding: 0.25rem 0.5rem;
       line-height: 1;
     }
-
-    /* Watchlist Horizontal Ticker Ribbon (Robinhood / Apple Stocks Style) */
-    .watchlist-ticker-strip {
-      display: flex;
-      overflow-x: auto;
-      gap: 0.5rem;
-      padding: 0.35rem 0 0.65rem 0;
-      margin-bottom: 1.25rem;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .watchlist-ticker-strip::-webkit-scrollbar {
-      display: none;
-    }
-
-    .ticker-strip-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-full);
-      padding: 0.35rem 0.75rem;
-      text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      flex-shrink: 0;
-      transition: all var(--transition-fast);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-      min-height: 36px;
-    }
-
-    .ticker-strip-pill:hover {
-      border-color: #cbd5e1;
-      background: var(--bg-surface-elevated);
-      transform: translateY(-1px);
-    }
-
-    .ticker-strip-pill:active {
-      transform: scale(0.96);
-    }
-
-    /* Mobile Segmented View Toggle (Comparative Performance Module) */
-    .perf-mobile-toggle {
-      display: none;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-full);
-      padding: 0.25rem;
-      gap: 0.25rem;
-      margin-bottom: 1rem;
-      width: 100%;
-    }
-
-    .perf-toggle-btn {
-      flex: 1;
-      padding: 0.4rem 0.75rem;
-      border: none;
-      background: transparent;
-      border-radius: var(--radius-full);
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      text-align: center;
-    }
-
-    .perf-toggle-btn.active {
-      background: #ffffff;
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-    }
-
     /* Responsive Viewports */
     @media (max-width: 1024px) {
       .app-layout {
@@ -533,10 +486,6 @@ SHARED_CSS = """
 
       .mobile-bottom-nav {
         display: flex !important;
-      }
-
-      .top-header-bar {
-        display: none !important;
       }
 
       .sidebar-close-btn {
@@ -553,85 +502,22 @@ SHARED_CSS = """
         max-width: 280px !important;
         z-index: 1100 !important;
         transform: translateX(-100%) !important;
-        box-shadow: var(--shadow-modal) !important;
       }
 
       .app-sidebar.mobile-open {
         transform: translateX(0) !important;
+        background: var(--bg-surface) !important;
+        box-shadow: var(--shadow-modal) !important;
       }
 
       .app-main {
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        padding: 1.25rem 1rem calc(5.5rem + env(safe-area-inset-bottom)) 1rem !important;
+        padding: 1.75rem 1rem calc(5.5rem + env(safe-area-inset-bottom)) 1rem !important;
         box-sizing: border-box !important;
       }
 
-      .hero-container {
-        margin: 0.5rem auto 1.25rem auto !important;
-      }
-
-      .hero-orbit-stage {
-        flex-direction: column !important;
-        min-height: auto !important;
-        perspective: none !important;
-        transform-style: flat !important;
-        margin: 0.5rem 0 1.5rem 0 !important;
-      }
-
-      .orbit-centerpiece {
-        max-width: 100% !important;
-      }
-
-      .orbit-track {
-        position: static !important;
-        inset: auto !important;
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.65rem !important;
-        width: 100% !important;
-        max-width: 600px !important;
-        margin-top: 0.85rem !important;
-        transform: none !important;
-        z-index: 10 !important;
-      }
-
-      .orbit-card {
-        position: static !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        transform: none !important;
-        animation: none !important;
-        padding: 0.65rem 0.75rem !important;
-      }
-
-      .hero-title {
-        font-size: 1.85rem !important;
-      }
-
-      .hero-subtext {
-        font-size: 0.88rem !important;
-        margin-bottom: 1rem !important;
-      }
-
-      .search-wrapper {
-        margin-bottom: 0 !important;
-      }
-
-      .hero-bento-deck {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-      }
-
-      .analytics-grid {
-        grid-template-columns: 1fr !important;
-        gap: 1.25rem !important;
-      }
-
-      .priority-section, .controls-panel, .health-section {
-        padding: 1.25rem !important;
-      }
     }
 
     /* Dedicated Phone Viewports (<= 640px and <= 480px / 375px - 414px) */
@@ -640,468 +526,82 @@ SHARED_CSS = """
         padding: 0.85rem 0.85rem calc(5.5rem + env(safe-area-inset-bottom)) 0.85rem !important;
       }
 
-      .hero-title {
-        font-size: 1.55rem !important;
-        line-height: 1.25 !important;
-      }
-
-      .hero-subtext {
-        font-size: 0.82rem !important;
-        margin-bottom: 0.85rem !important;
-      }
-
-      .hero-badge {
-        font-size: 0.72rem !important;
-        padding: 0.3rem 0.75rem !important;
-        max-width: 100% !important;
-        white-space: normal !important;
-        text-align: left !important;
-        line-height: 1.3 !important;
-      }
-
-      .orbit-track {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.45rem !important;
-        margin-top: 0.75rem !important;
-      }
-
-      .orbit-card {
-        padding: 0.5rem 0.6rem !important;
-        border-radius: var(--radius-md) !important;
-      }
-
-      .orbit-card-name {
-        font-size: 0.72rem !important;
-      }
-
-      .orbit-card-score {
-        font-size: 0.62rem !important;
-        padding: 0.08rem 0.3rem !important;
-      }
-
-      .orbit-pill-catalyst {
-        font-size: 0.62rem !important;
-        max-width: 90px !important;
-      }
-
-      .search-wrapper {
-        margin-bottom: 0 !important;
-      }
-
-      .search-box {
-        padding: 0.6rem 0.85rem !important;
-        min-height: 44px !important;
-      }
-
-      .search-shortcut {
-        display: none !important;
-      }
-
-      .bento-card {
-        padding: 1.15rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .bento-score-hero {
-        margin: 0.5rem 0 0.75rem 0 !important;
-      }
-
-      .bento-count {
-        font-size: 2rem !important;
-      }
-
-      .priority-section {
-        padding: 1rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .priority-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.65rem !important;
-        margin-bottom: 1rem !important;
-      }
-
-      .priority-card {
-        padding: 1rem !important;
-        border-radius: var(--radius-md) !important;
-      }
-
-      .priority-lead-card {
-        padding: 1.15rem !important;
-      }
-
-      .priority-lead-headline {
-        font-size: 1.1rem !important;
-        line-height: 1.35 !important;
-      }
-
-      .priority-subgrid {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-      }
-
-      .news-grid {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-      }
-
-      .calendar-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.85rem !important;
-      }
-
-      .econ-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.85rem !important;
-      }
-
-      .recently-viewed-grid {
-        display: flex !important;
-        overflow-x: auto !important;
-        gap: 0.75rem !important;
-        padding-bottom: 0.5rem !important;
-        scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
-
-      .recent-card {
-        flex: 0 0 240px !important;
-        scroll-snap-align: start !important;
-      }
-
-      .comparative-perf-card {
-        padding: 1rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .comparative-perf-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.75rem !important;
-      }
-
-      .perf-mobile-toggle {
-        display: flex !important;
-      }
-
-      .perf-kpi-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.5rem !important;
-      }
-
-      .perf-kpi-card {
-        padding: 0.65rem !important;
-      }
-
-      .perf-kpi-val {
-        font-size: 1.05rem !important;
-      }
-
-      .analytics-card {
-        padding: 1rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .health-section {
-        padding: 1rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .health-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.65rem !important;
-      }
-
-      .health-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.5rem !important;
-      }
-
-      .company-profile-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.75rem !important;
-      }
-
-      .company-metric-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.5rem !important;
-      }
-    }
-
-    /* Top Navigation Bar */
-    .top-header-bar {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 2rem;
-    }
-
-    .top-header-btn {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.5rem 0.95rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-card);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .top-header-btn:hover {
-      background: #ffffff;
-      color: var(--text-primary);
-      border-color: #cbd5e1;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-card);
     }
 
     /* Sidebar Brand (Logo and Title Only - No Tagline) */
     .sidebar-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
+      display: block;
       text-decoration: none;
       color: inherit;
     }
 
-    .logo-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-sm);
-      background: linear-gradient(135deg, #c2410c, #9a3412);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(194, 65, 12, 0.3);
-      flex-shrink: 0;
-    }
-
     .brand-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       color: var(--text-primary);
       line-height: 1;
-    }
-
-    .nav-section-title {
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 0.6rem;
-      padding-left: 0.5rem;
     }
 
     .sidebar-nav {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.1rem;
       flex: 1;
     }
 
     .nav-link {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: space-between;
-      padding: 0.68rem 0.95rem;
-      border-radius: var(--radius-sm);
+      padding: 0.42rem 0;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.88rem;
-      font-weight: 600;
-      transition: all var(--transition-fast);
+      font-size: 0.92rem;
+      font-weight: 400;
     }
 
     .nav-link:hover {
-      background: var(--bg-surface-elevated);
       color: var(--text-primary);
     }
 
     .nav-link.active {
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-weight: 700;
-    }
-
-    .nav-item-left {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .nav-svg {
-      width: 18px;
-      height: 18px;
-      stroke-width: 2;
-      stroke: currentColor;
-      flex-shrink: 0;
+      color: var(--text-primary);
+      font-weight: 600;
     }
 
     .nav-count {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.72rem;
-      font-weight: 700;
-      background: var(--bg-surface-elevated);
       color: var(--text-muted);
-      padding: 0.15rem 0.45rem;
-      border-radius: var(--radius-full);
-    }
-
-    .nav-link.active .nav-count {
-      background: #dbeafe;
-      color: #1e40af;
     }
 
     .sidebar-footer {
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--border-card);
-      margin-top: 1.25rem;
+      margin-top: auto;
+      padding-top: 1.5rem;
+      font-size: 0.74rem;
+      line-height: 1.55;
+      color: var(--text-muted);
     }
 
-    .sidebar-health-box {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem;
+    .sidebar-status-alert { color: var(--neg); font-weight: 600; }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      margin-top: 0.5rem;
+      min-height: 24px;
+      font: inherit;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--border-card);
+      text-underline-offset: 3px;
     }
 
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    /* =========================================================================
-       HERO INTRO ANIMATION & 3D ORBITAL SEARCH CENTERPIECE
-       ========================================================================= */
-    .hero-section {
-      width: 100%;
-      margin: 0 auto;
-      padding: 0.5rem 0 1.25rem 0;
-      position: relative;
-      z-index: 50;
-    }
-
-    .hero-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      margin: 0 auto;
-      max-width: 980px;
-      width: 100%;
-      position: relative;
-    }
-
-    .hero-intro-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 1.25rem;
-      width: 100%;
-    }
-
-    /* Staggered Word & Line Intro Animations */
-    .intro-fade-1 {
-      opacity: 0;
-      transform: translateY(12px);
-      animation: heroFadeSlide 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: 0.05s;
-    }
-
-    .hero-word-wrap {
-      display: inline-flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.35rem 0.6rem;
-    }
-
-    .intro-word {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(16px) scale(0.95);
-      filter: blur(4px);
-      animation: wordReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: calc(0.12s + var(--w-idx, 0) * 0.08s);
-    }
-
-    .intro-fade-2 {
-      opacity: 0;
-      transform: translateY(10px);
-      animation: heroFadeSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: 0.46s;
-    }
-
-    @keyframes wordReveal {
-      0% {
-        opacity: 0;
-        transform: translateY(16px) scale(0.95);
-        filter: blur(4px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        filter: blur(0);
-      }
-    }
-
-    @keyframes heroFadeSlide {
-      0% {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-card);
-      padding: 0.42rem 1.25rem;
-      border-radius: var(--radius-full);
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 1.15rem;
-      transition: all var(--transition-fast);
-      text-decoration: none;
-      max-width: 100%;
-      text-align: center;
-      line-height: 1.4;
-      white-space: normal;
-      word-break: normal !important;
-      overflow-wrap: normal !important;
-    }
-
-    .hero-badge:hover {
-      border-color: var(--accent-blue);
-      color: var(--accent-blue);
-      box-shadow: var(--shadow-card);
-      transform: translateY(-1px);
-    }
+    .theme-toggle:hover { color: var(--text-primary); }
 
     .catalyst-ticker, .ticker-badge {
       white-space: nowrap !important;
@@ -1110,268 +610,33 @@ SHARED_CSS = """
       display: inline-block;
     }
 
-    .hero-title {
-      font-size: 2.65rem;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      color: var(--text-primary);
-      margin-bottom: 0.55rem;
-      word-break: normal;
-      overflow-wrap: normal;
-      line-height: 1.18;
-    }
-
-    .hero-subtext {
-      font-size: 0.96rem;
-      color: var(--text-muted);
-      line-height: 1.55;
-      margin-bottom: 1rem;
-      word-break: normal;
-      max-width: 620px;
-    }
-
-    /* 3D Orbital Stage Container */
-    .hero-orbit-stage {
-      position: relative;
-      width: 100%;
-      max-width: 920px;
-      min-height: 195px;
-      margin: 0.5rem auto 2.25rem auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      perspective: 1200px;
-      perspective-origin: 50% 50%;
-      transform-style: preserve-3d;
-    }
-
-    .orbit-centerpiece {
-      position: relative;
-      z-index: 20;
-      width: 100%;
-      max-width: 580px;
-      margin: 0 auto;
-    }
-
-    /* 3D Orbital Track */
-    .orbit-track {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform-style: preserve-3d;
-      z-index: 30;
-    }
-
-    /* Floating Orbit Suggestion Cards */
-    .orbit-card {
-      position: absolute;
-      pointer-events: auto;
-      width: 172px;
-      padding: 0.72rem 0.85rem;
-      background: rgba(255, 255, 255, 0.90);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(226, 232, 240, 0.90);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
-      text-decoration: none;
-      text-align: left;
-      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease, opacity 0.35s ease;
-      transform-style: preserve-3d;
-      cursor: pointer;
-      overflow: hidden;
-      z-index: 30;
-    }
-
-    .orbit-card-glow {
-      position: absolute;
-      top: -30%;
-      left: -30%;
-      width: 160%;
-      height: 160%;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-      opacity: 0.4;
-    }
-
-    .orbit-card:hover .orbit-card-glow {
-      opacity: 1;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.16) 0%, transparent 70%);
-    }
-
-    .orbit-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.4rem;
-      margin-bottom: 0.28rem;
-    }
-
-    .orbit-card-score {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--accent-blue);
-      background: rgba(37, 99, 235, 0.08);
-      padding: 0.1rem 0.4rem;
-      border-radius: var(--radius-full);
-      font-family: var(--font-mono);
-    }
-
-    .orbit-card-name {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.25;
-      min-height: 2.5em;
-      margin-bottom: 0.3rem;
-      word-break: break-word;
-    }
-
-    .orbit-card-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .orbit-pill-catalyst {
-      font-size: 0.66rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: var(--bg-surface-elevated);
-      padding: 0.08rem 0.35rem;
-      border-radius: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 110px;
-    }
-
-    .orbit-arrow {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      transition: transform 0.2s ease, color 0.2s ease;
-    }
-
-    .orbit-card:hover .orbit-arrow {
-      color: var(--accent-blue);
-      transform: translate(2px, -2px);
-    }
-
-    /* 3D Coordinates for the 4 Orbit Cards (Desktop) */
-    .orbit-card-0 {
-      top: 5px;
-      left: 10px;
-      transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg);
-      animation: orbitFloat0 7s ease-in-out infinite;
-    }
-
-    .orbit-card-1 {
-      top: 5px;
-      right: 10px;
-      transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg);
-      animation: orbitFloat1 7s ease-in-out infinite 1.75s;
-    }
-
-    .orbit-card-2 {
-      bottom: 5px;
-      left: 20px;
-      transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg);
-      animation: orbitFloat2 7s ease-in-out infinite 3.5s;
-    }
-
-    .orbit-card-3 {
-      bottom: 5px;
-      right: 20px;
-      transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg);
-      animation: orbitFloat3 7s ease-in-out infinite 5.25s;
-    }
-
-    /* Subtle 3D Ambient Float Keyframes */
-    @keyframes orbitFloat0 {
-      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, 1, 0, 6deg); }
-      50% { transform: translate3d(-5px, -7px, 46px) rotate3d(0.6, 1, 0, 9deg); }
-    }
-    @keyframes orbitFloat1 {
-      0%, 100% { transform: translate3d(0, 0, 32px) rotate3d(0.5, -1, 0, 6deg); }
-      50% { transform: translate3d(5px, -7px, 46px) rotate3d(0.6, -1, 0, 9deg); }
-    }
-    @keyframes orbitFloat2 {
-      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, 1, 0, 5deg); }
-      50% { transform: translate3d(-4px, 5px, 32px) rotate3d(-0.6, 1, 0, 8deg); }
-    }
-    @keyframes orbitFloat3 {
-      0%, 100% { transform: translate3d(0, 0, 18px) rotate3d(-0.5, -1, 0, 5deg); }
-      50% { transform: translate3d(4px, 5px, 32px) rotate3d(-0.6, -1, 0, 8deg); }
-    }
-
-    .hero-orbit-stage:hover .orbit-card {
-      animation-play-state: paused;
-    }
-
-    .orbit-card:hover {
-      border-color: var(--accent-blue);
-      box-shadow: 0 16px 36px -6px rgba(37, 99, 235, 0.20), 0 0 0 1px rgba(37, 99, 235, 0.25);
-      transform: scale(1.06) translate3d(0, -4px, 75px) !important;
-      z-index: 45 !important;
-      background: #ffffff;
-    }
-
-    .orbit-card.card-fading {
-      opacity: 0.1;
-      transform: scale(0.92) translate3d(0, 0, 0) !important;
-    }
-
     /* Global Search & Command Bar (⌘K) with Bulletproof Overflow Containment */
     .search-wrapper {
       position: relative;
       width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-      box-sizing: border-box;
-      z-index: 20;
+      margin: 0 0 3rem;
+      z-index: 50;
     }
+
+    .search-wrapper:has(.search-dropdown.active) { z-index: 300; }
 
     .search-box {
       display: flex;
       align-items: center;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(203, 213, 225, 0.95);
-      border-radius: var(--radius-xl);
-      padding: 0.95rem 1.4rem;
-      box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
-      transition: all var(--transition-normal);
+      gap: 0.85rem;
+      height: 66px;
+      padding: 0 1.35rem;
+      background: var(--bg-surface);
+      border: 2px solid var(--border-card);
+      border-radius: 18px;
       cursor: text;
-      width: 100%;
-      box-sizing: border-box;
     }
 
-    .search-box:focus-within, .search-box.focused {
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15), 0 20px 40px -8px rgba(37, 99, 235, 0.16);
-      background: #ffffff;
-      transform: translateY(-2px);
-    }
+    .search-box:hover { border-color: var(--text-muted); }
+    .search-box:focus-within { border-color: var(--accent); }
 
-    .search-icon-wrap {
-      display: flex;
-      align-items: center;
-      color: var(--text-muted);
-      margin-right: 0.85rem;
-      flex-shrink: 0;
-    }
+    .search-icon-wrap { display: flex; color: var(--text-muted); flex-shrink: 0; }
+    .search-box:focus-within .search-icon-wrap { color: var(--accent); }
 
     .search-input {
       flex: 1;
@@ -1379,634 +644,683 @@ SHARED_CSS = """
       border: none;
       outline: none;
       background: transparent;
-      font-size: 0.94rem;
-      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: 500;
       color: var(--text-primary);
     }
 
-    .search-input::placeholder {
-      color: #94a3b8;
-    }
+    .search-input::placeholder { color: var(--text-muted); font-weight: 400; }
 
     .search-shortcut {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-      background: var(--bg-surface-elevated);
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
       border: 1px solid var(--border-card);
       border-radius: 6px;
-      padding: 0.18rem 0.5rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
+      padding: 0.15rem 0.4rem;
       flex-shrink: 0;
     }
 
-    /* Tab Suggestions & Live Autocomplete Dropdown - Bulletproof Containment */
     .search-dropdown {
       position: absolute;
-      top: calc(100% + 10px);
+      top: calc(100% + 6px);
       left: 0;
       right: 0;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(20px);
+      background: var(--bg-surface);
       border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
       box-shadow: var(--shadow-dropdown);
-      padding: 1.15rem;
+      padding: 0.5rem 1rem 1rem;
       z-index: 100;
       display: none;
-      max-height: 420px;
+      max-height: 440px;
       overflow-x: hidden;
       overflow-y: auto;
     }
 
-    .search-dropdown.active {
-      display: block;
-      animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .search-dropdown.active { display: block; }
 
     .dropdown-section-title {
-      font-size: 0.7rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-size: 0.74rem;
       color: var(--text-muted);
-      margin-bottom: 0.6rem;
-      padding-left: 0.25rem;
+      margin: 0.85rem 0 0.15rem;
     }
 
     .dropdown-tabs-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.6rem;
-      margin-bottom: 1rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    @media (max-width: 500px) {
-      .dropdown-tabs-grid {
-        grid-template-columns: 1fr;
-      }
+      column-gap: 2rem;
     }
 
     .dropdown-tab-card {
       display: flex;
-      align-items: center;
+      justify-content: space-between;
+      align-items: baseline;
       gap: 0.75rem;
-      padding: 0.7rem 0.9rem;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+      color: inherit;
       text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-      min-width: 0;
-      width: 100%;
-      box-sizing: border-box;
-      overflow: hidden;
     }
 
-    .dropdown-tab-card:hover {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      transform: translateY(-1px);
-    }
-
-    .dropdown-tab-icon {
-      width: 22px;
-      height: 22px;
-      color: var(--accent-blue);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .dropdown-tab-info {
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
-    .dropdown-tab-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .dropdown-tab-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .dropdown-tickers-wrap {
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border-card);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .dropdown-tickers-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 0.4rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .ticker-jump-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all var(--transition-fast);
-    }
-
-    .ticker-jump-pill:hover {
-      background: #eff6ff;
-      border-color: #93c5fd;
-      color: #1d4ed8;
-      transform: translateY(-1px);
-    }
-
-    /* Live Search Results List - Contained Layout */
-    .search-results-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
+    .dropdown-tab-card:hover .dropdown-tab-title { color: var(--accent); }
+    .dropdown-tab-title { font-size: 0.92rem; }
+    .dropdown-tab-sub { font-size: 0.76rem; color: var(--text-muted); white-space: nowrap; }
 
     .search-result-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
-    .search-result-item:hover {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      transform: translateX(2px);
-    }
-
-    .search-result-left {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
-    .search-result-icon {
-      width: 20px;
-      height: 20px;
-      color: var(--accent-blue);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .search-result-info {
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
-    .search-result-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .search-result-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      display: block;
-    }
-
-    .search-no-results {
-      text-align: center;
-      padding: 2rem 1rem;
-      color: var(--text-muted);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .no-results-icon {
-      font-size: 1.75rem;
-      margin-bottom: 0.4rem;
-    }
-
-    .no-results-title {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-      word-break: break-word;
-      overflow-wrap: break-word;
-    }
-
-    .no-results-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      word-break: break-word;
-      overflow-wrap: break-word;
-    }
-
-    /* Quick Lookup Card (Lightweight Live Quote & Headlines for Outside Watchlist) */
-    .quick-lookup-card {
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.95rem 1.15rem;
-      margin-bottom: 0.85rem;
-      width: 100%;
-      box-sizing: border-box;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      transition: all var(--transition-fast);
-    }
-
-    .quick-lookup-card.loading {
-      border-color: #93c5fd;
-      background: #f8fbff;
-    }
-
-    .quick-lookup-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 0.65rem;
-      padding-bottom: 0.55rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    .quick-lookup-title-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .quick-lookup-badge {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: #1d4ed8;
-      background: #dbeafe;
-      border: 1px solid #bfdbfe;
-      padding: 0.12rem 0.45rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      white-space: nowrap;
-    }
-
-    .quick-lookup-meta {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
-
-    .quick-lookup-price-strip {
-      display: flex;
-      align-items: baseline;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .quick-lookup-price-val {
-      font-family: var(--font-mono);
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      letter-spacing: -0.02em;
-    }
-
-    .quick-lookup-change {
-      font-family: var(--font-mono);
-      font-size: 0.84rem;
-      font-weight: 700;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-    }
-
-    .quick-lookup-change.pos {
-      color: #15803d;
-      background: rgba(22, 163, 74, 0.1);
-    }
-
-    .quick-lookup-change.neg {
-      color: #b91c1c;
-      background: rgba(220, 38, 38, 0.1);
-    }
-
-    .quick-lookup-change.neu {
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-    }
-
-    .quick-lookup-range {
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      margin-left: auto;
-    }
-
-    .quick-lookup-headlines-title {
-      font-size: 0.72rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.45rem;
-    }
-
-    .quick-lookup-headlines-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-    }
-
-    .quick-lookup-news-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      padding: 0.45rem 0.65rem;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      color: var(--text-primary);
-      transition: all var(--transition-fast);
-    }
-
-    .quick-lookup-news-item:hover {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      transform: translateX(2px);
-    }
-
-    .quick-lookup-news-headline {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      line-height: 1.3;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .quick-lookup-news-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-    }
-
-    .quick-lookup-action-bar {
-      margin-top: 0.75rem;
-      padding-top: 0.55rem;
-      border-top: 1px solid var(--border-card);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.74rem;
-    }
-
-    /* Asymmetric Hero Bento Deck (Replacing rigid 3-column cards) */
-    .hero-bento-deck {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 1.35rem;
-      margin-bottom: 3.5rem;
-      width: 100%;
-      position: relative;
-      z-index: 1;
-    }
-
-    .bento-card {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.65rem;
-      box-shadow: var(--shadow-card);
-      text-decoration: none;
+      gap: 1rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border-subtle);
       color: inherit;
+      text-decoration: none;
+    }
+
+    .search-result-item:hover .search-result-title { color: var(--accent); }
+    .search-result-left { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; flex: 1; }
+    .search-result-icon { display: none; }
+    .search-result-info { min-width: 0; }
+    .search-result-title { font-size: 0.92rem; overflow-wrap: anywhere; }
+    .search-result-sub { font-size: 0.76rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .search-result-item .action-link { color: var(--text-muted); white-space: nowrap; }
+
+    .search-no-results { padding: 1.25rem 0 0.5rem; }
+    .no-results-icon { display: none; }
+    .no-results-title { font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .no-results-sub { font-size: 0.82rem; color: var(--text-muted); }
+
+    .quick-lookup-card { padding: 0.75rem 0; border-bottom: 1px solid var(--border-card); }
+    .quick-lookup-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem; }
+    .quick-lookup-title-group { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; min-width: 0; }
+    .quick-lookup-badge, .quick-lookup-meta, .quick-lookup-range { font-size: 0.76rem; color: var(--text-muted); }
+    .quick-lookup-price-strip { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; margin: 0.35rem 0; }
+    .quick-lookup-price-val { font-family: var(--font-mono); font-size: 1.1rem; }
+    .quick-lookup-change { font-family: var(--font-mono); font-size: 0.85rem; }
+    .quick-lookup-change.pos { color: var(--pos); }
+    .quick-lookup-change.neg { color: var(--neg); }
+    .quick-lookup-change.neu { color: var(--text-muted); }
+    .quick-lookup-headlines-title { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.6rem; }
+    .quick-lookup-news-item { display: block; padding: 0.45rem 0; border-bottom: 1px solid var(--border-subtle); color: inherit; text-decoration: none; }
+    .quick-lookup-news-item:hover .quick-lookup-news-headline { color: var(--accent); }
+    .quick-lookup-news-headline { font-size: 0.9rem; overflow-wrap: anywhere; }
+    .quick-lookup-news-meta { display: flex; gap: 0.4rem; font-size: 0.74rem; color: var(--text-muted); }
+    .quick-lookup-action-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-size: 0.76rem; padding-top: 0.6rem; }
+
+    .table-container { width: 100%; overflow-x: auto; }
+
+    /* Shared page header */
+    .page-header { margin-bottom: 2.25rem; max-width: 46rem; }
+    .page-title { font-size: clamp(2.1rem, 4.5vw, 3rem); line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 0.6rem; }
+    .page-standfirst { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.45; color: var(--text-secondary); }
+
+    /* Feed */
+    .feed-toolbar { margin-bottom: 0.25rem; }
+    .feed-search { width: 100%; border: none; border-bottom: 1px solid var(--text-primary); background: transparent; color: var(--text-primary); font-size: 1rem; padding: 0.7rem 0; outline: none; }
+    .feed-search::placeholder { color: var(--text-muted); }
+    .feed-toolbar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.25rem; padding-top: 0.5rem; }
+    .feed-sort { display: flex; gap: 1rem; }
+    .feed-sort-btn, .feed-clear, .feed-group-toggle { background: none; border: none; padding: 0; min-height: 36px; font-size: 0.84rem; color: var(--text-muted); cursor: pointer; }
+    .feed-sort-btn:hover, .feed-clear:hover, .feed-group-toggle:hover { color: var(--text-primary); }
+    .feed-sort-btn.active { color: var(--text-primary); font-weight: 600; }
+    .feed-count { font-size: 0.84rem; color: var(--text-muted); }
+    .feed-clear, .feed-group-toggle { color: var(--accent); }
+
+    .controls-panel { background: none; border: none; padding: 0; margin: 0 0 1.75rem; box-shadow: none; }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    .feed-filters-toggle::after, .feed-details summary .feed-meta::after { content: ' +'; color: var(--text-muted); }
+    details[open] > .feed-filters-toggle::after, .feed-details[open] summary .feed-meta::after { content: ' \\2212'; }
+    .feed-filters-toggle { display: inline-flex; white-space: pre; align-items: center; min-height: 36px; font-size: 0.84rem; color: var(--text-secondary); cursor: pointer; }
+    .feed-filters-toggle:hover { color: var(--text-primary); }
+    .controls-panel[open] { padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); }
+
+    .filter-row { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.4rem 0; margin: 0; }
+    .filter-label { font-size: 0.8rem; color: var(--text-muted); text-transform: none; letter-spacing: 0; font-weight: 400; margin: 0; }
+    .filter-options, .feed-sector-bar { display: flex; flex-wrap: wrap; gap: 0 1rem; overflow: visible; padding: 0; margin: 0; }
+    .filter-btn { background: none; border: none; padding: 0; min-height: 32px; font-size: 0.84rem; font-weight: 400; color: var(--text-secondary); cursor: pointer; border-radius: 0; display: inline-flex; align-items: baseline; gap: 0.3rem; }
+    .filter-btn:hover { color: var(--text-primary); background: none; }
+    .filter-btn.active { color: var(--text-primary); font-weight: 600; background: none; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+    .pill-count { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); background: none; padding: 0; font-weight: 400; }
+
+    .feed-ticker-picker-wrap { position: relative; display: inline-block; max-width: 100%; }
+    .feed-ticker-picker-btn { background: none; border: none; padding: 0; min-height: 32px; font-size: 0.84rem; color: var(--text-primary); cursor: pointer; }
+    .feed-ticker-dropdown-menu { display: none; position: absolute; top: 100%; left: 0; width: 22rem; max-width: calc(100vw - 8.5rem); background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--shadow-dropdown); z-index: 200; }
+    .feed-ticker-dropdown-menu.active { display: block; }
+    .feed-ticker-dropdown-search input { width: 100%; border: none; border-bottom: 1px solid var(--border-card); background: transparent; color: var(--text-primary); padding: 0.6rem 0.75rem; font-size: 0.86rem; outline: none; }
+    .feed-ticker-dropdown-list { max-height: 300px; overflow-y: auto; }
+    .feed-ticker-item { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.45rem 0.75rem; font-size: 0.84rem; cursor: pointer; }
+    .feed-ticker-item:hover, .feed-ticker-item.active { background: var(--bg-hover); }
+    .feed-dropdown-sec-header { padding: 0.6rem 0.75rem 0.15rem; font-size: 0.74rem; color: var(--text-muted); }
+
+    .feed-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; padding: 2.25rem 0 0.5rem; border-bottom: 1px solid var(--text-primary); }
+    .feed-group:first-child { padding-top: 0.5rem; }
+    .feed-group-title { font-size: 1.3rem; }
+    .feed-group-note { font-size: 0.8rem; color: var(--text-muted); }
+    .feed-group-toggle { margin-left: auto; }
+
+    .news-row { display: grid; grid-template-columns: 2.5rem 3.75rem minmax(0, 1fr) 3.5rem; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .feed-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
+    .news-row.is-high .feed-score { color: var(--text-primary); }
+    .feed-headline { font-family: var(--font-serif); font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
+    .news-row.is-high .feed-headline { font-weight: 500; }
+    .feed-headline a { color: inherit; text-decoration: none; }
+    .feed-headline a:hover { color: var(--accent); }
+    .feed-takeaway { font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin-top: 0.25rem; max-width: 40rem; overflow-wrap: anywhere; }
+    .feed-details summary { cursor: pointer; margin-top: 0.15rem; min-height: 24px; }
+    .feed-details summary:hover .feed-meta { color: var(--text-primary); }
+    .feed-meta { font-size: 0.76rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .feed-details-body { padding: 0.35rem 0 0.5rem; font-size: 0.86rem; line-height: 1.5; color: var(--text-secondary); max-width: 40rem; overflow-wrap: anywhere; }
+    .feed-details-body > .feed-takeaway { margin-top: 0; margin-bottom: 0.35rem; }
+    .feed-detail-label { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.6rem; }
+    .feed-refs { list-style: none; }
+    .feed-refs li { padding: 0.1rem 0; }
+    .feed-breakdown { font-family: var(--font-mono); font-size: 0.74rem; }
+    .date-cell { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted); text-align: right; white-space: nowrap; }
+
+    @media (max-width: 620px) {
+      .news-row { grid-template-columns: 2.25rem minmax(0, 1fr) auto; gap: 0.15rem 0.5rem; }
+      .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
+      .filter-row { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; padding: 0.55rem 0; }
+      .filter-options, .feed-sector-bar { gap: 0 1.1rem; }
+      .filter-btn, .feed-ticker-picker-btn { min-height: 40px; }
+      .feed-ticker-dropdown-menu { max-width: calc(100vw - 2rem); }
+      .feed-details summary { min-height: 32px; }
+    }
+
+    /* Calendar */
+    .cal-timeline { margin: 0 0 2rem; }
+    .cal-track { position: relative; height: 72px; margin: 0 0.5rem; border-bottom: 1px solid var(--text-primary); }
+    .cal-month { position: absolute; top: 0; bottom: 0; padding-left: 0.35rem; border-left: 1px solid var(--border-card); font-size: 0.74rem; color: var(--text-muted); }
+    .cal-mark { position: absolute; width: 7px; height: 10px; margin-left: -3px; background: var(--text-primary); }
+    .cal-mark::before { content: ''; position: absolute; inset: -6px -3px; }
+    .cal-mark:hover { background: var(--accent); }
+    .cal-mark.is-estimated { background: var(--bg-base); box-shadow: inset 0 0 0 1px var(--text-primary); }
+    .cal-mark.is-estimated:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+    .cal-mark.is-dimmed { opacity: 0.15; }
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; margin-top: 0.6rem; font-size: 0.76rem; color: var(--text-muted); }
+    .cal-key { display: inline-block; width: 7px; height: 10px; margin-right: 0.45rem; background: var(--text-primary); }
+    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 1px var(--text-primary); }
+    .cal-today { color: var(--text-primary); border-left-color: var(--text-primary); }
+    .cal-filters { margin-bottom: 0.75rem; }
+
+    .cal-week { padding-top: 1.5rem; }
+    .cal-week-title { font-size: 1.3rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--text-primary); }
+    .calendar-card { display: grid; grid-template-columns: 6rem 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); scroll-margin-top: 5rem; }
+    .calendar-card:target { background: var(--accent-soft); }
+    .cal-when { display: flex; flex-direction: column; }
+    .cal-date { font-family: var(--font-mono); font-size: 0.82rem; }
+    .cal-relative { font-size: 0.74rem; color: var(--text-muted); }
+    .cal-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
+    .cal-details { font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+    .cal-estimated { color: var(--warn); }
+    .cal-source { font-size: 0.8rem; color: var(--accent); text-decoration: none; white-space: nowrap; }
+    .cal-source:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    @media (max-width: 620px) {
+      .cal-mark { width: 4px; margin-left: -2px; }
+      .calendar-card { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.75rem; }
+      .cal-when { flex-direction: row; gap: 0.5rem; align-items: baseline; grid-column: 1; }
+      .calendar-card > .ticker-badge { grid-column: 2; grid-row: 1; justify-self: end; }
+      .cal-body { grid-column: 1 / -1; }
+      .cal-source { grid-column: 1 / -1; padding: 0.35rem 0 0.1rem; }
+    }
+
+    /* Economy */
+    .econ-ledger { border-top: 1px solid var(--text-primary); margin-bottom: 3.5rem; }
+    .economic-card { display: grid; grid-template-columns: minmax(0, 1fr) 11rem 9rem; gap: 0.25rem 2rem; align-items: center; padding: 1.1rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .economic-series-name { font-size: 1.2rem; line-height: 1.25; }
+    .econ-sub { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+    .sparkline-wrapper { position: relative; cursor: crosshair; }
+    .sparkline-svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .sparkline-labels { display: flex; justify-content: space-between; gap: 0.5rem; white-space: nowrap; margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-muted); }
+    .sparkline-tooltip { display: none; position: absolute; transform: translate(-50%, -130%); padding: 0.15rem 0.4rem; background: var(--text-primary); color: var(--bg-base); font-family: var(--font-mono); font-size: 0.68rem; white-space: nowrap; pointer-events: none; z-index: 5; }
+    .econ-figure { text-align: right; }
+    .economic-val { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 500; letter-spacing: -0.02em; white-space: nowrap; }
+    .econ-change { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem; }
+    .econ-details { grid-column: 1 / -1; }
+    .econ-holdings { display: flex; flex-wrap: wrap; gap: 0.1rem 0.8rem; }
+
+    .econ-select { max-width: 100%; min-height: 32px; background: transparent; color: var(--text-primary); border: none; border-bottom: 1px solid var(--border-card); font-size: 0.84rem; padding: 0.2rem 0; }
+    .econ-section { margin-bottom: 3.5rem; }
+    .econ-note { font-size: 0.82rem; color: var(--text-muted); padding: 0.6rem 0 0.25rem; }
+    .econ-stale { color: var(--warn); }
+
+    table.econ-matrix { width: 100%; min-width: 0; border-collapse: collapse; font-size: 0.84rem; }
+    .econ-matrix th, .econ-matrix td { padding: 0.42rem 0.5rem 0.42rem 0; border-bottom: 1px solid var(--border-subtle); text-align: left; font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; color: inherit; vertical-align: baseline; white-space: normal; background: none; }
+    .econ-matrix thead th { font-size: 0.76rem; color: var(--text-muted); border-bottom: 1px solid var(--border-card); }
+    .econ-matrix .mx-col { width: 3.25rem; padding-right: 0; text-align: center; }
+    .econ-matrix .matrix-sector th { padding-top: 1.1rem; font-size: 0.76rem; color: var(--text-muted); border-bottom: 1px solid var(--border-card); }
+    .mx-name { color: var(--text-secondary); margin-left: 0.5rem; }
+    .econ-matrix .mx-factors { font-size: 0.78rem; color: var(--text-muted); padding-left: 1rem; }
+    .mx-dot { display: inline-block; width: 8px; height: 8px; background: var(--text-primary); vertical-align: baseline; }
+
+    .econ-schedule { list-style: none; }
+    .econ-release { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .econ-release .cal-when { flex-direction: column; gap: 0; }
+    .econ-release.is-passed .cal-headline, .econ-release.is-passed .cal-date { color: var(--text-muted); }
+
+    @media (max-width: 860px) {
+      .economic-card { grid-template-columns: minmax(0, 1fr) 9.5rem 9.5rem; gap: 0.25rem 1.25rem; }
+      .econ-matrix .mx-factors { display: none; }
+      .econ-matrix .mx-col { width: 2.6rem; }
+    }
+
+    @media (max-width: 620px) {
+      .economic-card { grid-template-columns: minmax(0, 1fr) auto; }
+      .economic-card .sparkline-wrapper { grid-column: 1 / -1; grid-row: 2; margin: 0.5rem 0 0.25rem; }
+      .mx-name { display: none; }
+    }
+
+    /* Companies */
+    .company-directory-browser { margin-bottom: 3rem; }
+    .company-directory-browser .econ-note { padding-bottom: 0; }
+    .company-browser-grid { columns: 2; column-gap: 3rem; margin-top: 0.75rem; }
+    .company-browser-sector { break-inside: avoid; padding-bottom: 1.25rem; }
+    .company-browser-sector-name { font-size: 0.98rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--text-primary); }
+    .company-browser-card { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; width: 100%; background: none; border: none; border-bottom: 1px solid var(--border-subtle); padding: 0.5rem 0; text-align: left; color: inherit; cursor: pointer; }
+    .company-browser-card:hover .company-browser-card-name { color: var(--accent); }
+    .company-browser-card.active .company-browser-card-name { font-weight: 600; }
+    .company-browser-card-left { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; min-width: 0; }
+    .company-browser-card-info { display: flex; flex-direction: column; min-width: 0; }
+    .company-browser-card-name { font-size: 0.88rem; overflow-wrap: anywhere; }
+    .company-browser-card-sec { font-size: 0.74rem; color: var(--text-muted); }
+    .company-browser-card-stats { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+    .company-browser-card-alpha { font-family: var(--font-mono); font-size: 0.8rem; }
+    .company-browser-card-stories { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+
+    .company-profile-container { border-top: 1px solid var(--text-primary); padding-top: 2rem; }
+    .company-hero-symbol { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .company-hero-name { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 0.6rem; }
+    .company-notes-card { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.45; color: var(--text-secondary); max-width: 44rem; margin-bottom: 0.75rem; }
+    .company-links { display: flex; flex-wrap: wrap; gap: 0.2rem 1.25rem; font-size: 0.8rem; color: var(--text-muted); }
+    .company-links a { color: var(--accent); text-decoration: none; }
+    .company-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .company-kpi-ribbon { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin: 1.75rem 0 3rem; padding-top: 0.75rem; border-top: 1px solid var(--border-card); }
+    .company-kpi-title { font-size: 0.76rem; color: var(--text-muted); }
+    .company-kpi-val { font-family: var(--font-mono); font-size: 1.35rem; letter-spacing: -0.02em; margin: 0.1rem 0; }
+    .company-kpi-sub { font-size: 0.74rem; line-height: 1.4; color: var(--text-muted); }
+
+    .comparative-perf-card { margin-bottom: 3rem; }
+    .perf-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin: 1rem 0 1.5rem; }
+    .perf-kpi-box { min-width: 0; }
+    .perf-kpi-label { font-size: 0.76rem; color: var(--text-muted); }
+    .perf-kpi-val { font-family: var(--font-mono); font-size: 1.2rem; letter-spacing: -0.02em; }
+    .perf-kpi-sub { font-size: 0.74rem; line-height: 1.4; color: var(--text-muted); overflow-wrap: anywhere; }
+    .perf-chart-box { position: relative; height: 280px; width: 100%; }
+    .perf-table-wrap { margin-top: 1.25rem; overflow-x: auto; }
+    table.perf-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 0.84rem; }
+    table.perf-table th, table.perf-table td { padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid var(--border-subtle); text-align: left; font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; white-space: nowrap; background: none; vertical-align: baseline; }
+    table.perf-table th { font-size: 0.76rem; color: var(--text-muted); border-bottom-color: var(--border-card); }
+    table.perf-table td:nth-child(n+3), table.perf-table th:nth-child(n+3) { text-align: right; padding-right: 0; padding-left: 0.75rem; }
+    .perf-row-target td { font-weight: 600; }
+    .perf-num { font-family: var(--font-mono); }
+
+    .company-grid-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 3.5rem; align-items: start; }
+    .company-feed-tools { padding: 0.5rem 0 0.25rem; }
+    .company-feed-tools .feed-search { border-bottom-color: var(--border-card); font-size: 0.9rem; padding: 0.45rem 0; }
+    .company-news-item { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) 3.25rem; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .company-news-item.is-high .feed-score { color: var(--text-primary); }
+    .company-news-item.is-high .feed-headline { font-weight: 500; }
+    .company-side-deck { display: flex; flex-direction: column; gap: 2.5rem; }
+    .company-side-sub { display: block; font-size: 0.74rem; color: var(--text-muted); }
+    .company-side-note { font-size: 0.8rem; line-height: 1.5; color: var(--text-muted); padding-top: 0.6rem; overflow-wrap: anywhere; }
+    .company-names { font-size: 0.86rem; line-height: 1.6; overflow-wrap: anywhere; }
+    .company-outside { color: var(--text-secondary); }
+    .company-sep { color: var(--text-muted); }
+
+    @media (max-width: 860px) {
+      .company-browser-grid { columns: 1; }
+      .company-grid-layout { grid-template-columns: minmax(0, 1fr); gap: 2.75rem; }
+      .company-kpi-ribbon, .perf-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+      .perf-chart-box { height: 240px; }
+      table.perf-table { font-size: 0.78rem; }
+      table.perf-table td, table.perf-table th { white-space: normal; }
+      table.perf-table td:nth-child(2), table.perf-table th:nth-child(2), table.perf-table td:nth-child(3), table.perf-table th:nth-child(3) { display: none; }
+    }
+
+    /* Analytics */
+    .analytics-stat-row { margin-top: 0; }
+    .analytics-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; margin-bottom: 3.5rem; }
+    .analytics-donut-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 2.5rem; align-items: center; }
+    .analytics-card { margin: 0; min-width: 0; background: none; border: none; padding: 0; }
+    .chart-canvas-container { position: relative; height: 300px; width: 100%; margin-top: 0.75rem; }
+    .chart-canvas-donut { height: 300px; margin-top: 0; }
+    .category-legend-list { margin-top: 0.75rem; }
+    .category-stat-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.84rem; }
+    .cat-stat-left { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
+    .category-legend-dot { width: 8px; height: 8px; flex-shrink: 0; }
+    .cat-stat-name { overflow-wrap: anywhere; }
+    .cat-stat-right { display: flex; gap: 0.75rem; flex-shrink: 0; font-family: var(--font-mono); font-size: 0.78rem; }
+    .cat-stat-pct { width: 2.5rem; text-align: right; color: var(--text-muted); }
+    .analytics-perf-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.25rem 2rem; }
+    .analytics-perf-picker { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; max-width: 100%; }
+    .health-section { margin: 3.5rem 0 0; background: none; border: none; padding: 0; box-shadow: none; }
+    .health-status { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.45; padding-top: 0.75rem; overflow-wrap: anywhere; }
+    .health-status.is-alert { color: var(--neg); }
+    .health-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 0; }
+
+    @media (max-width: 860px) {
+      .analytics-grid { gap: 2.75rem; }
+      .analytics-donut-layout { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+      .chart-canvas-container { height: 260px; }
+      .chart-canvas-donut { height: 220px; }
+      .health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* Home: front page */
+    .fp-masthead { margin-bottom: 2rem; max-width: 46rem; }
+    .fp-dateline { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.9rem; }
+    .fp-title { font-size: clamp(2.3rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.022em; margin-bottom: 0.9rem; }
+    .fp-standfirst { font-family: var(--font-serif); font-size: 1.2rem; line-height: 1.45; color: var(--text-secondary); }
+
+    .fp-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 4rem; margin-bottom: 4rem; }
+    .fp-kicker { font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 0.5rem; }
+    .fp-lead-title { font-size: clamp(1.6rem, 3vw, 2.15rem); line-height: 1.15; margin-bottom: 0.7rem; }
+    .fp-lead-title a { color: inherit; text-decoration: none; }
+    .fp-lead-title a:hover, .fp-row-title:hover { color: var(--accent); }
+    .fp-lead-summary { font-size: 1.02rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 0.8rem; max-width: 38rem; }
+    .fp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 1rem; font-size: 0.78rem; color: var(--text-muted); padding-bottom: 1.5rem; }
+
+    .fp-list { list-style: none; border-top: 1px solid var(--text-primary); }
+    .fp-row { display: grid; grid-template-columns: 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .fp-row-title { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.3; color: inherit; text-decoration: none; }
+    .fp-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
+    /* Replaces inline styles, which the Content-Security-Policy forbids. */
+    .sidebar-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.25rem; }
+    .action-small { font-size: 0.75rem; }
+    .dropdown-section-title.is-spaced { margin-top: 0.6rem; }
+    .tone-up { color: var(--pos); }
+    .tone-down { color: var(--neg); }
+    .tone-flat { color: var(--text-muted); }
+    .tone-strong { font-weight: 700; }
+    .lookup-note { font-size: 0.8rem; line-height: 1.4; color: var(--text-muted); }
+    .lookup-body { padding: 0.25rem 0; }
+    .lookup-gap { margin-top: 0.25rem; }
+    .lookup-hint { margin-top: 0.35rem; font-size: 0.72rem; }
+    .lookup-small { font-size: 0.72rem; }
+    .lookup-name { margin-left: 0.4rem; font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+    .lookup-from { margin-left: 0.3rem; font-size: 0.72rem; color: var(--text-muted); }
+    .lookup-badge-gap { margin-left: 0.35rem; }
+    .lookup-source { font-weight: 600; color: var(--text-secondary); }
+    .lookup-read { margin-left: auto; font-weight: 700; color: var(--accent); }
+
+    /* Small list styles shared by the economy and company pages. */
+    .fp-more { display: inline-block; margin-top: 0.9rem; font-size: 0.88rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+    .fp-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .fp-empty { color: var(--text-muted); font-size: 0.92rem; padding: 0.5rem 0; }
+    .fp-heading { font-size: 1.15rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-card); }
+    .fp-side-list { list-style: none; }
+    .fp-event, .fp-indicator { padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.86rem; }
+    .fp-event { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0.5rem; align-items: baseline; }
+    .fp-event-date { font-size: 0.76rem; color: var(--text-muted); }
+    .fp-indicator { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; color: var(--text-secondary); }
+    .fp-indicator-value { font-size: 0.82rem; color: var(--text-primary); white-space: nowrap; }
+
+    /* Home: search bar orbited by the watchlist. The sidebar becomes a top bar here only. */
+    .page-home .app-layout { display: block; }
+    .page-home .app-main { max-width: none; padding: 0 !important; }
+
+    @media (min-width: 1025px) {
+      .page-home .app-sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        height: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+        padding: 1.1rem 2rem;
+        background: transparent;
+        border: 0;
+        overflow: visible;
+      }
+      .page-home .app-sidebar .sidebar-brand { display: none; }
+      .page-home .app-sidebar > div:first-child:has(.sidebar-brand) { display: none; }
+      .page-home .sidebar-nav { flex-direction: row; gap: 1.5rem; flex: 1; }
+      .page-home .nav-link { gap: 0.4rem; }
+      .page-home .sidebar-footer { display: flex; align-items: center; gap: 1.25rem; margin: 0; padding: 0; }
+      .page-home .theme-toggle { margin: 0; }
+    }
+
+    @media (max-width: 1024px) {
+      .page-home .mobile-top-header .sidebar-brand { visibility: hidden; }
+      .page-home .mobile-top-header { background: transparent; border: 0; position: absolute; width: 100%; }
+    }
+
+    .orbit-hero {
+      position: relative;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-normal);
-      min-width: 0;
-      position: relative;
-      overflow: hidden;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100svh;
+      overflow-x: clip;
     }
 
-    .bento-card:hover {
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-    }
-
-    .bento-card-primary {
-      background: linear-gradient(135deg, rgba(238, 242, 255, 0.95), rgba(255, 255, 255, 0.95));
-      border: 1px solid rgba(199, 210, 254, 0.8);
-      position: relative;
-    }
-
-    .bento-card-primary::before {
-      content: "";
+    .orbit-dust {
       position: absolute;
-      top: -40px;
-      right: -40px;
-      width: 140px;
-      height: 140px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
-      border-radius: 50%;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 60;
+      text-align: center;
+      padding: clamp(4.25rem, 10vh, 6.5rem) 1rem 0;
       pointer-events: none;
     }
 
-    .bento-side-stack {
+    .hero-wordmark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(3.4rem, 8.5vw, 7rem);
+      line-height: 0.95;
+      letter-spacing: -0.015em;
+    }
+
+    .hero-wordmark span { color: var(--accent); }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.25rem, 2.5vw, 2.1rem);
+      line-height: 1.15;
+      letter-spacing: 0;
+      margin-top: 0.55rem;
+    }
+
+    .hero-orbit-stage {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 480px;
+      cursor: grab;
+      touch-action: pan-y;
+    }
+
+    .hero-orbit-stage.is-dragging { cursor: grabbing; }
+
+    .hero-orbit-stage .search-wrapper {
+      position: absolute;
+      top: 36%;
+      left: 50%;
+      width: min(620px, calc(100% - 2rem));
+      margin: 0;
+      transform: translate(-50%, calc(-50% - var(--bar-lift, 0px)));
+      transition: transform 0.28s ease-out;
+      cursor: auto;
+    }
+
+    .hero-orbit-stage .search-dropdown { max-height: min(40vh, 340px); }
+
+    .orbit-ring {
+      list-style: none;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .orbit-slot {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
+      will-change: transform, opacity;
+    }
+
+    .orbit-slot[hidden] { display: none; }
+
+    .orbit-chip {
+      display: block;
+      width: 156px;
+      padding: 0.6rem 0.8rem 0.65rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .orbit-chip:hover { border-color: var(--accent); }
+    .orbit-chip:focus-visible { outline-offset: 3px; border-color: var(--accent); }
+
+    .orbit-ticker { display: block; font-size: 1.45rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+    .orbit-name { display: block; font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .orbit-fact { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.3rem; font-size: 0.74rem; color: var(--text-muted); white-space: nowrap; }
+    .orbit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+    .orbit-dot.is-high { background: var(--accent); }
+
+    .orbit-browse {
+      position: absolute;
+      left: 50%;
+      bottom: 1.1rem;
+      transform: translateX(-50%);
+      z-index: 70;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      text-underline-offset: 3px;
+      padding: 0.4rem 0.6rem;
+    }
+
+    /* The default until the script proves motion is welcome: a plain grid of the same links. */
+    .orbit-static.hero-orbit-stage { flex: none; min-height: 0; cursor: auto; touch-action: auto; padding: 1.75rem 1rem 0; }
+    .orbit-static .search-wrapper { position: relative; top: auto; left: auto; transform: none; width: 100%; max-width: 620px; margin: 0 auto 1.75rem; }
+    .orbit-static .orbit-ring {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.75rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      pointer-events: auto;
+    }
+    .orbit-static .orbit-slot { position: static; will-change: auto; }
+    .orbit-static .orbit-slot.is-dim { opacity: 0.3; }
+    .orbit-static .orbit-chip { width: auto; }
+    .orbit-hero:has(.orbit-static) { min-height: 0; }
+    .orbit-hero:has(.orbit-static) .orbit-browse { position: static; transform: none; display: block; text-align: center; margin: 1.25rem 0 0; }
+    .orbit-hero:has(.orbit-static) .orbit-dust { display: none; }
+
+    @media (max-width: 640px) {
+      .hero-copy { padding-top: 3.75rem; }
+      .search-box { height: 58px; padding: 0 1rem; }
+      .search-shortcut { display: none; }
+      .dropdown-tabs-grid { grid-template-columns: minmax(0, 1fr); }
+      .orbit-chip { width: 110px; padding: 0.4rem 0.55rem 0.45rem; border-radius: 12px; }
+      .orbit-ticker { font-size: 1.1rem; }
+      .orbit-name, .orbit-fact { font-size: 0.66rem; }
+      .orbit-browse { bottom: calc(3.6rem + env(safe-area-inset-bottom)); }
+    }
+
+    .home-below {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+    }
+
+    .home-doors {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .door {
       display: flex;
       flex-direction: column;
-      gap: 1.15rem;
-    }
-
-    .bento-card-side {
-      padding: 1.35rem 1.5rem;
-    }
-
-    .bento-badge-top {
-      display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
+      gap: 1.5rem;
+      min-height: 164px;
+      padding: 1.35rem 1.4rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      color: inherit;
+      text-decoration: none;
     }
 
-    .bento-pill-accent {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: #4338ca;
-      background: #e0e7ff;
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
+    .door:hover { border-color: var(--accent); }
+    .door:hover .door-title { color: var(--accent); }
+    .door-title { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; }
+    .door-line { font-size: 0.95rem; line-height: 1.4; color: var(--text-secondary); overflow-wrap: anywhere; }
 
-    .bento-pill-cal {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: #0369a1;
-      background: #e0f2fe;
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
+    .home-heading { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .home-heading-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 
-    .bento-pill-econ {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: #15803d;
-      background: #dcfce7;
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
+    .home-stories { margin-bottom: 3.5rem; }
+    .top-list { list-style: none; border-top: 1px solid var(--border-card); }
 
-    .bento-arrow {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      transition: transform var(--transition-fast);
-    }
-
-    .bento-card:hover .bento-arrow {
-      color: var(--accent-blue);
-      transform: translateX(3px);
-    }
-
-    .bento-score-hero {
-      display: flex;
+    .top-row {
+      display: grid;
+      grid-template-columns: 3rem 4.5rem minmax(0, 1fr) auto;
+      gap: 0.75rem;
       align-items: baseline;
-      gap: 0.6rem;
-      margin-bottom: 0.6rem;
+      padding: 0.95rem 0;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .bento-count {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 2.2rem;
-      font-weight: 800;
-      color: #1e1b4b;
-      line-height: 1;
+    .top-score { font-size: 1.3rem; font-weight: 700; color: var(--text-muted); }
+    .top-score.is-high { color: var(--accent); }
+    .top-ticker { font-weight: 700; color: var(--text-primary); text-decoration: none; }
+    .top-ticker:hover, .top-title:hover { color: var(--accent); }
+    .top-title { font-size: 1.05rem; font-weight: 500; color: var(--text-primary); text-decoration: none; overflow-wrap: anywhere; }
+    .top-date { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; }
+    .home-more { display: inline-block; margin-top: 0.9rem; color: var(--accent); font-weight: 600; text-underline-offset: 3px; }
+    .home-empty { color: var(--text-muted); padding: 1rem 0; }
+
+    .recent-list { list-style: none; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .recent-list a { display: flex; align-items: baseline; gap: 0.55rem; padding: 0.55rem 0.8rem; background: var(--bg-surface); border: 1px solid var(--border-card); border-radius: 12px; color: inherit; text-decoration: none; }
+    .recent-list a:hover { border-color: var(--accent); }
+    .recent-ticker { font-weight: 700; }
+    .recent-name, .recent-when { font-size: 0.8rem; color: var(--text-muted); }
+    .home-clear { background: none; border: 0; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-size: 0.85rem; min-height: 24px; }
+
+    @media (max-width: 1024px) {
+      .home-doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
-    .bento-sublabel {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-    }
-
-    .bento-headline-preview {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.4;
-      margin-bottom: 1.25rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .bento-footer-pill {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(199, 210, 254, 0.6);
-      border-radius: var(--radius-md);
-      padding: 0.65rem 0.95rem;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: #4338ca;
-    }
-
-    .bento-side-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.35rem;
+    @media (max-width: 640px) {
+      .home-below { padding: 2rem 1rem calc(5rem + env(safe-area-inset-bottom)); }
+      .home-doors { gap: 0.65rem; }
+      .door { min-height: 128px; padding: 1rem; gap: 0.9rem; }
+      .door-title { font-size: 1.2rem; }
+      .door-line { font-size: 0.85rem; }
+      .top-row { grid-template-columns: 2.4rem 3.6rem minmax(0, 1fr); }
+      .top-date { display: none; }
     }
 
     /* Recently Viewed Companies Quick Access Deck */
@@ -2017,742 +1331,17 @@ SHARED_CSS = """
       z-index: 1;
     }
 
-    .recently-viewed-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1rem;
-    }
-
-    .recent-card {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(14px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.1rem 1.25rem;
-      box-shadow: var(--shadow-sm);
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-normal);
-      position: relative;
-      overflow: hidden;
-      min-height: 118px;
-    }
-
-    .recent-card:hover {
-      border-color: #94a3b8;
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-    }
-
-    .recent-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .recent-card-time {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .recent-card-body {
-      margin-bottom: 0.65rem;
-    }
-
-    .recent-card-name {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.3;
-      min-height: 2.6em;
-      word-break: break-word;
-    }
-
-    .recent-card-sector {
-      font-size: 0.74rem;
-      color: var(--text-secondary);
-      margin-top: 0.15rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .recent-card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border-card);
-      padding-top: 0.5rem;
-      margin-top: auto;
-    }
-
-    .recent-card-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #4338ca;
-    }
-
-    /* Section Headers */
-    .section-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.85rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .section-heading {
-      font-size: 1.35rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      color: var(--text-primary);
-    }
-
-    .section-time-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-card);
-      padding: 0.4rem 0.85rem;
-      border-radius: var(--radius-full);
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      max-width: 100%;
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Analytics Grid & Cards */
-    .analytics-grid {
-      display: grid;
-      grid-template-columns: 3fr 2fr;
-      gap: 1.5rem;
-      margin-bottom: 3.5rem;
-    }
-
-    .analytics-card {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-width: 0;
-    }
-
-    .analytics-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1.25rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .analytics-card-title {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.25rem;
-    }
-
-    .analytics-metric-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .analytics-delta-pill {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--accent-emerald);
-      background: rgba(16, 185, 129, 0.12);
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-full);
-    }
-
-    .chart-canvas-container {
-      position: relative;
-      height: 250px;
-      width: 100%;
-      min-height: 200px;
-    }
-
-    .category-legend-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 0.5rem;
-      margin-top: 1.25rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-card);
-    }
-
-    .category-stat-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.45rem 0.65rem;
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-
-    .category-stat-row:hover {
-      background: #f8fafc;
-      border-color: #cbd5e1;
-    }
-
-    .cat-stat-left {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .category-legend-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
-    }
-
-    .cat-stat-name {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .cat-stat-right {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .cat-stat-count {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .cat-stat-pct {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      background: #f1f5f9;
-      padding: 0.1rem 0.35rem;
-      border-radius: 4px;
-    }
-
     /* Ticker & Form Badges */
     .ticker-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 0.78rem;
-      padding: 0.2rem 0.55rem;
-      border-radius: 6px;
-      display: inline-block;
-      letter-spacing: 0.02em;
-      background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
-      flex-shrink: 0;
-      white-space: nowrap !important;
-      word-break: keep-all !important;
-      text-decoration: none;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-      cursor: pointer;
-    }
-
-    .ticker-badge:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      border-color: #94a3b8;
-      text-decoration: none;
-    }
-
-    .form-type-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-      padding: 0.15rem 0.5rem;
-      border-radius: 6px;
-      border: 1px solid var(--border-card);
-      display: inline-block;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    .category-badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-full);
-      display: inline-block;
-      background: var(--bg-surface-elevated);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-card);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .source-tag {
-      font-size: 0.72rem;
-      color: var(--text-muted);
+      font-family: var(--font-mono);
       font-weight: 500;
-      white-space: nowrap;
-    }
-
-    /* Distinct Source Badges */
-    .source-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 0.18rem 0.55rem;
-      border-radius: var(--radius-full);
-      white-space: nowrap;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      text-decoration: none;
       letter-spacing: 0.01em;
-      text-decoration: none;
-      flex-shrink: 0;
     }
 
-    .source-badge-edgar {
-      background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
-    }
-
-    .source-badge-ir {
-      background: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
-    }
-
-    .source-badge-news {
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
-    }
-
-    /* Score Badges */
-    .score-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
-      font-size: 0.85rem;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-sm);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    .score-high {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-    }
-
-    .score-med {
-      background: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fde68a;
-    }
-
-    .score-low {
-      background: #f1f5f9;
-      color: #64748b;
-      border: 1px solid #e2e8f0;
-    }
-
-    /* Company Page Specific Styles */
-    .company-strip-wrap {
-      margin-bottom: 1.5rem;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-      -webkit-overflow-scrolling: touch;
-    }
-    .company-strip {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-      min-width: max-content;
-    }
-    .company-strip-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.45rem 0.85rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-    .company-strip-pill:hover {
-      border-color: var(--border-accent);
-      color: var(--text-primary);
-      transform: translateY(-1px);
-    }
-    .company-strip-pill.active {
-      background: var(--accent-blue);
-      color: #ffffff;
-      border-color: var(--accent-blue);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-    }
-    .company-strip-pill.active .ticker-badge {
-      background: rgba(255, 255, 255, 0.25);
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.4);
-    }
-
-    .company-hero-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem 1.75rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-sm);
-    }
-    .company-hero-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 1rem;
-      border-bottom: 1px solid var(--border-card);
-      padding-bottom: 1.25rem;
-      margin-bottom: 1.25rem;
-    }
-    .company-hero-left {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .company-hero-symbol {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.5rem;
-      font-weight: 800;
-      padding: 0.35rem 0.95rem;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface-elevated);
-      border: 2px solid var(--border-card);
-      color: var(--text-primary);
-    }
-    .company-hero-name {
-      font-size: 1.45rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      margin: 0;
-      line-height: 1.2;
-    }
-    .company-meta-pills {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      flex-wrap: wrap;
-      margin-top: 0.35rem;
-    }
-    .company-notes-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1.1rem;
-      font-size: 0.84rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      margin-top: 0.85rem;
-    }
-
-    .company-kpi-ribbon {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem;
-      margin-top: 1.15rem;
-    }
-    .company-kpi-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1.1rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all 0.15s ease;
-    }
-    .company-kpi-card:hover {
-      border-color: #cbd5e1;
-      transform: translateY(-1px);
-    }
-    .company-kpi-title {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
-    }
-    .company-kpi-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      line-height: 1.2;
-    }
-    .company-kpi-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .company-grid-layout {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 1.5rem;
-    }
-    @media (max-width: 1024px) {
-      .company-grid-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .company-card-deck {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .company-side-deck {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .company-feed-item {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.1rem 1.25rem;
-      transition: all 0.15s ease;
-    }
-    .company-feed-item:hover {
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow-sm);
-    }
-    .company-feed-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .company-feed-title {
-      font-size: 0.98rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-      line-height: 1.4;
-    }
-    .company-side-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem;
-      box-shadow: var(--shadow-sm);
-    }
-    .company-side-title {
-      font-size: 0.92rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.85rem;
-      padding-bottom: 0.65rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    /* Collapsible Cross-Reference Accordion */
-    .crossref-badges-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.35rem;
-      margin-top: 0.45rem;
-      max-width: 100%;
-    }
-
-    .crossref-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 0.18rem 0.5rem;
-      border-radius: var(--radius-sm);
-      background: #eef2ff;
-      color: #4338ca;
-      border: 1px solid #c7d2fe;
-      max-width: 100%;
-      flex-wrap: wrap;
-    }
-
-    .crossref-rel-pill {
-      font-size: 0.62rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 0.1rem 0.35rem;
-      border-radius: 4px;
-      white-space: nowrap;
-    }
-
-    .crossref-customer {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #86efac;
-    }
-
-    .crossref-supplier {
-      background: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fcd34d;
-    }
-
-    .crossref-accordion {
-      display: inline-block;
-      margin-top: 0.2rem;
-      max-width: 100%;
-    }
-
-    .crossref-summary-pill {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #4338ca;
-      background: #eef2ff;
-      border: 1px solid #c7d2fe;
-      border-radius: var(--radius-full);
-      padding: 0.22rem 0.65rem;
-      cursor: pointer;
-      list-style: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      transition: all var(--transition-fast);
-      user-select: none;
-      max-width: 100%;
-      word-break: normal;
-    }
-
-    .crossref-summary-pill::-webkit-details-marker {
-      display: none;
-    }
-
-    .crossref-summary-pill:hover {
-      background: #e0e7ff;
-      border-color: #a5b4fc;
-    }
-
-    .accordion-arrow {
-      font-size: 0.75rem;
-      transition: transform var(--transition-fast);
-      display: inline-block;
-    }
-
-    .crossref-accordion[open] .accordion-arrow {
-      transform: rotate(180deg);
-    }
-
-    .crossref-dropdown-content {
-      margin-top: 0.5rem;
-      padding: 0.65rem 0.85rem;
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-      box-shadow: var(--shadow-dropdown);
-      max-width: 100%;
-    }
-
-    .crossref-dropdown-item {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      padding: 0.15rem 0;
-    }
-
-    /* Why It Matters Callout Box */
-    .why-matters-box {
-      margin-top: 0.6rem;
-      background: #eff6ff;
-      border-left: 4px solid var(--accent-blue);
-      padding: 0.65rem 0.95rem;
-      border-radius: 0 var(--radius-md) var(--radius-md) 0;
-      font-size: 0.835rem;
-      color: #1e3a8a;
-      line-height: 1.5;
-    }
-
-    .why-tag {
-      font-weight: 700;
-      color: #1d4ed8;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      white-space: nowrap;
-    }
+    a.ticker-badge:hover { color: var(--accent); }
 
     /* Action Link */
     .action-link {
@@ -2768,1421 +1357,168 @@ SHARED_CSS = """
     }
 
     .action-link:hover {
-      color: #1d4ed8;
+      color: var(--accent);
       transform: translateX(2px);
     }
 
-    /* Primary Button */
-    .btn-primary {
-      background: var(--accent-blue);
-      color: #ffffff;
-      padding: 0.6rem 1.25rem;
-      border-radius: var(--radius-full);
-      font-weight: 600;
-      font-size: 0.85rem;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      border: none;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-      white-space: nowrap;
-    }
-
-    .btn-primary:hover {
-      background: #1d4ed8;
-      box-shadow: var(--shadow-card);
-      transform: translateY(-1px);
-    }
-
-    /* Filter Controls Panel */
-    .controls-panel {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.65rem;
-      margin-bottom: 2.25rem;
-      box-shadow: var(--shadow-card);
-      min-width: 0;
-    }
-
-    .filter-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.95rem;
-    }
-
-    .filter-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .filter-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      min-width: 65px;
-    }
-
-    .filter-btn {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 0.38rem 0.8rem;
-      border-radius: var(--radius-full);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      white-space: nowrap;
-    }
-
-    .filter-btn:hover {
-      background: #e2e8f0;
-      color: var(--text-primary);
-      transform: translateY(-1px);
-    }
-
-    .filter-btn.active {
-      background: var(--accent-blue);
-      color: #ffffff;
-      border-color: var(--accent-blue);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-    }
-
-    .pill-count {
-      font-size: 0.7rem;
-      opacity: 0.85;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
     /* Table Styles */
-    .table-container {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      box-shadow: var(--shadow-card);
-      width: 100%;
-    }
 
-    table {
-      width: 100%;
-      min-width: 680px;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.875rem;
-    }
 
-    th {
-      background: rgba(248, 250, 252, 0.85);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 1rem 1.15rem;
-      border-bottom: 1px solid var(--border-card);
-      white-space: nowrap;
-    }
-
-    td {
-      padding: 1.25rem 1.15rem;
-      border-bottom: 1px solid var(--border-card);
-      vertical-align: top;
-    }
 
     tr.news-row:hover td {
-      background: rgba(248, 250, 252, 0.7);
-    }
-
-    .headline-text {
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-
-    .summary-text {
-      color: var(--text-secondary);
-      font-size: 0.825rem;
-      line-height: 1.45;
-      margin-top: 0.35rem;
-    }
-
-    .date-cell {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    /* Priority Section & Editorial Suite Layout */
-    .priority-section {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-xl);
-      padding: 2rem;
-      margin-bottom: 3rem;
-      box-shadow: var(--shadow-card);
-      min-width: 0;
-    }
-
-    .priority-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1.75rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    .priority-title-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-    }
-
-    .priority-badge-icon {
-      background: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fde68a;
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .priority-editorial-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 1.35rem;
-    }
-
-    .priority-card {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-fast);
-      min-width: 0;
-    }
-
-    .priority-card:hover {
-      transform: translateY(-2px);
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow-card);
-      background: #ffffff;
-    }
-
-    /* #1 Lead Editorial Card */
-    .priority-lead-card {
-      background: linear-gradient(135deg, rgba(238, 242, 255, 0.8), #ffffff);
-      border: 1px solid rgba(199, 210, 254, 0.9);
-      padding: 2rem;
-      box-shadow: var(--shadow-hover);
-    }
-
-    .priority-lead-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      font-weight: 800;
-      color: #4338ca;
-      background: #e0e7ff;
-      border: 1px solid #c7d2fe;
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-    }
-
-    .score-pill-lead {
-      font-size: 0.92rem !important;
-      padding: 0.25rem 0.75rem !important;
-    }
-
-    .priority-lead-headline {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      margin: 0.75rem 0 0.5rem 0;
-      line-height: 1.35;
-    }
-
-    .lead-why-box {
-      margin-top: 0.85rem;
-      padding: 0.85rem 1.15rem;
-      font-size: 0.9rem;
-    }
-
-    .priority-subgrid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .priority-subcard {
-      padding: 1.35rem;
-    }
-
-    .priority-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .priority-rank-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: var(--text-muted);
-      background: #ffffff;
-      padding: 0.18rem 0.5rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-card);
-    }
-
-    .priority-score-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      font-weight: 800;
-      color: #15803d;
-      background: #dcfce7;
-      border: 1px solid #bbf7d0;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-full);
-      flex-shrink: 0;
-    }
-
-    .priority-card-headline {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0.55rem 0;
-      line-height: 1.35;
-    }
-
-    .priority-card-summary {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-    }
-
-    .priority-card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 0.95rem;
-      border-top: 1px solid var(--border-card);
-      margin-top: 1.15rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    /* Corporate Calendar Spotlight & Organic Grid */
-    .calendar-spotlight-card {
-      background: linear-gradient(135deg, rgba(240, 249, 255, 0.9), #ffffff);
-      border: 1px solid rgba(186, 230, 253, 0.9);
-      border-radius: var(--radius-xl);
-      padding: 1.85rem;
-      box-shadow: var(--shadow-card);
-      margin-bottom: 2.5rem;
-    }
-
-    .spotlight-badge-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .spotlight-beacon-pill {
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: #0369a1;
-      background: #e0f2fe;
-      padding: 0.25rem 0.75rem;
-      border-radius: var(--radius-full);
-    }
-
-    .spotlight-content-row {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .spotlight-date-box {
-      width: 72px !important;
-      min-width: 72px !important;
-      padding: 0.6rem 0.85rem !important;
-      border-radius: var(--radius-md) !important;
-      background: #ffffff !important;
-      border: 1px solid #bae6fd !important;
-      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.08) !important;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-      gap: 1.35rem;
-      width: 100%;
-    }
-
-    .calendar-card {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.35rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-      min-width: 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .calendar-card:hover {
-      transform: translateY(-2px);
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow-card);
-    }
-
-    .calendar-card-estimated {
-      border: 1px dashed #cbd5e1;
-      background: rgba(248, 250, 252, 0.85);
-    }
-
-    .calendar-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .calendar-card-identity {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .calendar-origin-badge {
-      font-size: 0.62rem;
-      font-weight: 800;
-      padding: 0.18rem 0.5rem;
-      border-radius: var(--radius-full);
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-    }
-
-    .origin-sourced {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-    }
-
-    .origin-estimated {
-      background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #cbd5e1;
-    }
-
-    .calendar-type-pill {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      width: fit-content;
-      margin-top: 0.35rem;
-    }
-
-    .cal-type-earnings   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .cal-type-dividend   { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .cal-type-sec        { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
-    .cal-type-conference { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-
-    .calendar-date-box {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.4rem 0.65rem;
-      text-align: center;
-      width: 56px;
-      min-width: 56px;
-      flex-shrink: 0;
-      align-self: flex-start;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .calendar-date-month {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: var(--accent-blue);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .calendar-date-day {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      line-height: 1.1;
-    }
-
-    .calendar-card-headline {
-      font-size: 0.96rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0.5rem 0 0.35rem 0;
-      line-height: 1.35;
-    }
-
-    .calendar-card-details {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin: 0 0 0.95rem 0;
-      line-height: 1.45;
-    }
-
-    .calendar-card-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border-card);
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .relative-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    /* Macroeconomic Intelligence Grid & Anchor Cards */
-    .economic-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.35rem;
-    }
-
-    .economic-card {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-      min-width: 0;
-    }
-
-    .economic-card:hover {
-      transform: translateY(-2px);
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow-card);
-    }
-
-    .economic-card-anchor {
-      background: linear-gradient(135deg, rgba(238, 242, 255, 0.9), #ffffff);
-      border: 1px solid rgba(199, 210, 254, 0.9);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .economic-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.95rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .economic-category-badge {
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      background: var(--bg-surface-elevated);
-      padding: 0.22rem 0.55rem;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--border-card);
-    }
-
-    .economic-trend-badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .trend-up   { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-    .trend-down { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .trend-flat { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-
-    .economic-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 2.1rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      line-height: 1;
-      margin-bottom: 0.45rem;
-    }
-
-    .economic-val-anchor {
-      font-size: 2.5rem;
-      color: #1e1b4b;
-    }
-
-    .economic-series-name {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0 0 0.35rem 0;
-    }
-
-    .economic-context {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-      margin-bottom: 1.15rem;
-    }
-
-    .economic-tickers-wrap {
-      border-top: 1px solid var(--border-card);
-      padding-top: 0.95rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-    }
-
-    .economic-tickers-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-
-    .economic-tickers-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-    }
-
-    /* Macro Economic Calendar Strip */
-    .macro-events-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .macro-event-card {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.15rem 1.25rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 0.85rem;
-      box-shadow: var(--shadow-sm);
-      transition: all var(--transition-fast);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .macro-event-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: linear-gradient(180deg, #3b82f6, #6366f1);
-      border-radius: 4px 0 0 4px;
-    }
-
-    .macro-event-card:hover {
-      transform: translateY(-2px);
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow-card);
-    }
-
-    .macro-event-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .macro-event-authority {
-      font-size: 0.68rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-
-    .macro-event-countdown {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-full);
-      background: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
-    }
-
-    .macro-event-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.35;
-      margin: 0.35rem 0 0 0;
-    }
-
-    .macro-event-date-row {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    .macro-event-consensus {
-      font-size: 0.76rem;
-      color: var(--text-secondary);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
-      padding: 0.35rem 0.55rem;
-      line-height: 1.35;
-    }
-
-    .macro-event-consensus strong {
-      color: var(--text-primary);
-    }
-
-    /* Sparkline Chart Component */
-    .sparkline-wrapper {
-      position: relative;
-      margin: 0.85rem 0 0.65rem 0;
-      padding: 0.35rem 0 0.15rem 0;
-      background: rgba(248, 250, 252, 0.6);
-      border: 1px solid rgba(226, 232, 240, 0.8);
-      border-radius: var(--radius-md);
-      padding: 0.5rem 0.65rem 0.35rem 0.65rem;
-    }
-
-    .sparkline-svg {
-      width: 100%;
-      height: 60px;
-      overflow: visible;
-      display: block;
-    }
-
-    .sparkline-labels {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.68rem;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-
-    .sparkline-tooltip {
-      position: absolute;
-      display: none;
-      background: rgba(15, 23, 42, 0.92);
-      color: #ffffff;
-      padding: 0.3rem 0.55rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.72rem;
-      font-family: 'JetBrains Mono', monospace;
-      pointer-events: none;
-      z-index: 20;
-      white-space: nowrap;
-      transform: translate(-50%, -120%);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* AI Macro Synthesis Box */
-    .ai-synthesis-card {
-      background: linear-gradient(135deg, rgba(240, 249, 255, 0.85), rgba(245, 243, 255, 0.85));
-      border: 1px solid rgba(199, 210, 254, 0.9);
-      border-radius: var(--radius-md);
-      padding: 0.75rem 0.9rem;
-      margin: 0.85rem 0 1.15rem 0;
-      position: relative;
-    }
-
-    .ai-synthesis-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.35rem;
-      gap: 0.5rem;
-    }
-
-    .ai-synthesis-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.68rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #4338ca;
-    }
-
-    .ai-synthesis-badge svg {
-      color: #6366f1;
-    }
-
-    .ai-synthesis-meta {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-    }
-
-    .ai-synthesis-content {
-      font-size: 0.825rem;
-      color: #1e1b4b;
-      line-height: 1.45;
-      font-weight: 500;
-      font-style: normal;
-    }
-
-    /* Health Section */
-    .health-section {
-      background: var(--bg-surface-glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-xl);
-      padding: 2rem;
-      box-shadow: var(--shadow-card);
-      margin-top: 3.5rem;
-      min-width: 0;
-    }
-
-    .health-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      padding-bottom: 1.35rem;
-      border-bottom: 1px solid var(--border-card);
-      margin-bottom: 1.75rem;
-    }
-
-    .health-title-group {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      flex-wrap: wrap;
-    }
-
-    .health-title {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: var(--text-primary);
-    }
-
-    .health-status-badge {
-      font-size: 0.75rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      padding: 0.3rem 0.75rem;
-      border-radius: var(--radius-full);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .health-badge-healthy  { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-    .health-badge-warning  { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-    .health-badge-critical { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-
-    .health-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.15rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .health-metric-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.25rem;
-      min-width: 0;
-    }
-
-    .health-metric-title {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.4rem;
-    }
-
-    .health-metric-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.65rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      line-height: 1.1;
-      margin-bottom: 0.25rem;
-    }
-
-    .health-metric-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-    }
-
-    /* Comparative Stock Performance Module */
-    .comparative-perf-card {
       background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-xl);
-      padding: 1.5rem 1.75rem;
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 1.75rem;
     }
-    .comparative-perf-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-      padding-bottom: 1.15rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-    .comparative-select {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.45rem 1rem;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      outline: none;
-      cursor: pointer;
-    }
-    .perf-kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-    }
-    .perf-kpi-box {
-      background: var(--bg-base);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .perf-kpi-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
-    }
-    .perf-kpi-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.25rem;
-      font-weight: 800;
-      line-height: 1.2;
-    }
-    .perf-kpi-sub {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-    }
-    .perf-table-wrap {
-      margin-top: 1.25rem;
-      overflow-x: auto;
-    }
-    .perf-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-    .perf-table th {
-      text-align: left;
-      font-weight: 700;
-      color: var(--text-muted);
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid var(--border-card);
-      text-transform: uppercase;
-      font-size: 0.68rem;
-      letter-spacing: 0.05em;
-    }
-    .perf-table td {
-      padding: 0.6rem 0.75rem;
-      border-bottom: 1px solid var(--border-card);
-      color: var(--text-primary);
-    }
-
-    /* Company Page Categorized Directory Browser */
-    .company-directory-browser {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-sm);
-    }
-    .company-browser-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    .company-browser-sectors {
-      display: flex;
-      gap: 0.35rem;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding-bottom: 0.25rem;
-      margin-bottom: 1rem;
-    }
-    .company-browser-sectors::-webkit-scrollbar {
-      display: none;
-    }
-    .company-browser-sec-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all var(--transition-fast);
-    }
-    .company-browser-sec-btn:hover {
-      border-color: var(--accent-blue);
-      color: var(--text-primary);
-    }
-    .company-browser-sec-btn.active {
-      background: var(--accent-blue);
-      color: #ffffff;
-      border-color: var(--accent-blue);
-    }
-    .company-browser-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 0.65rem;
-      max-height: 320px;
-      overflow-y: auto;
-      padding-right: 0.25rem;
-    }
-    .company-browser-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.6rem;
-      padding: 0.6rem 0.75rem;
-      min-height: 60px;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      cursor: pointer;
-      text-align: left;
-      transition: all var(--transition-fast);
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .company-browser-card:hover {
-      border-color: var(--accent-blue);
-      background: #f8fbff;
-      transform: translateY(-1px);
-    }
-    .company-browser-card.active {
-      border-color: var(--accent-blue);
-      background: var(--accent-blue-soft);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-    }
-    .company-browser-card.active .company-browser-card-name {
-      color: var(--accent-blue);
-      font-weight: 800;
-    }
-    .company-browser-card-left {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-    .company-browser-card-info {
-      flex: 1 1 auto;
-      min-width: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .company-browser-card-name {
-      font-size: 0.81rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.25;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      word-break: break-word;
-    }
-    .company-browser-card-sec {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 0.15rem;
-      line-height: 1.2;
-    }
-    .company-browser-card-stats {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      justify-content: center;
-      flex-shrink: 0;
-      text-align: right;
-      margin-left: auto;
-      padding-left: 0.35rem;
-    }
-    .company-browser-card-alpha {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .company-browser-card-stories {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      margin-top: 0.15rem;
-      line-height: 1.2;
-    }
-
     /* Feed Sector Filter Bar & Ticker Popover */
-    .feed-sector-bar {
-      display: flex;
-      gap: 0.4rem;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding-bottom: 0.35rem;
-      margin-bottom: 0.75rem;
-    }
-    .feed-sector-bar::-webkit-scrollbar {
-      display: none;
-    }
-    .feed-sector-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all var(--transition-fast);
-    }
-    .feed-sector-btn:hover {
-      border-color: var(--accent-blue);
-      color: var(--text-primary);
-    }
-    .feed-sector-btn.active {
-      background: var(--accent-blue);
-      color: #ffffff;
-      border-color: var(--accent-blue);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
-    }
-    .feed-ticker-picker-wrap {
-      position: relative;
-      display: inline-block;
-    }
-    .feed-ticker-picker-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.95rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
-      transition: all var(--transition-fast);
-    }
-    .feed-ticker-picker-btn:hover {
-      border-color: var(--accent-blue);
-    }
-    .feed-ticker-dropdown-menu {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      width: 290px;
-      max-height: 340px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-dropdown);
-      z-index: 1000;
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .feed-ticker-dropdown-menu.active {
-      display: flex;
-    }
-    .feed-ticker-dropdown-search {
-      padding: 0.6rem;
-      border-bottom: 1px solid var(--border-card);
-      background: var(--bg-base);
-    }
-    .feed-ticker-dropdown-search input {
-      width: 100%;
-      padding: 0.38rem 0.65rem;
-      font-size: 0.82rem;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      outline: none;
-    }
-    .feed-ticker-dropdown-list {
-      overflow-y: auto;
-      max-height: 270px;
-      padding: 0.35rem 0;
-    }
-    .feed-ticker-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.45rem 0.85rem;
-      cursor: pointer;
-      font-size: 0.78rem;
-      color: var(--text-primary);
-      transition: background 0.15s ease;
-    }
-    .feed-ticker-item:hover {
-      background: var(--bg-surface-elevated);
-    }
-    .feed-ticker-item.active {
-      background: var(--accent-blue-soft);
-      color: var(--accent-blue);
-      font-weight: 700;
-    }
 """
 
 # ==============================================================================
 # RESPONSIVE NAVIGATION MACROS (SIDEBAR + MOBILE HEADER + MOBILE BOTTOM NAV)
 # ==============================================================================
 NAVIGATION_LAYOUT_HTML = """
-<!-- Mobile Sticky Top Header -->
 <div class="mobile-top-header">
-  <a href="index.html" class="mobile-header-left">
-    <div class="logo-badge" style="width:32px; height:32px;">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-      </svg>
-    </div>
-    <div style="display:flex; align-items:center; gap:0.45rem;">
-      <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.01em;">StockPulse</span>
-      <span class="pulse-dot" style="background:#10b981; width:7px; height:7px;" title="Live Disclosures Active"></span>
-    </div>
-  </a>
+  <a href="index.html" class="sidebar-brand"><span class="brand-title">StockPulse</span></a>
   <div class="mobile-header-right">
-    <button class="mobile-action-btn" onclick="focusMobileSearch()" aria-label="Search">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <button class="mobile-action-btn" data-click="focusMobileSearch" aria-label="Search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
     </button>
-    <button class="mobile-hamburger-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation drawer">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <button class="mobile-hamburger-btn" data-click="toggleMobileNav" aria-label="Toggle navigation drawer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
     </button>
   </div>
 </div>
 
-<!-- Backdrop Overlay for Mobile Drawer -->
-<div class="mobile-drawer-backdrop" id="mobileBackdrop" onclick="closeMobileNav()"></div>
+<div class="mobile-drawer-backdrop" id="mobileBackdrop" data-click="closeMobileNav"></div>
 
-<!-- Slide-over Drawer / Desktop Sidebar -->
 <aside class="app-sidebar" id="appSidebar">
-  <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-card); padding-bottom:1.25rem; margin-bottom:1.25rem;">
-    <a href="index.html" class="sidebar-brand">
-      <div class="logo-badge">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-      </div>
-      <span class="brand-title">StockPulse</span>
-    </a>
-    <button class="sidebar-close-btn" onclick="closeMobileNav()" aria-label="Close navigation">&times;</button>
+  <div class="sidebar-head">
+    <a href="index.html" class="sidebar-brand"><span class="brand-title">StockPulse</span></a>
+    <button class="sidebar-close-btn" data-click="closeMobileNav" aria-label="Close navigation">&times;</button>
   </div>
 
-  <div class="nav-section-title">Navigation</div>
-  <nav class="sidebar-nav">
-    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span class="nav-text">Home</span>
-      </div>
-    </a>
-    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-        <span class="nav-text">Company Directory</span>
-      </div>
-      <span class="nav-count">{{ watchlist_companies|length }}</span>
-    </a>
-    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-        <span class="nav-text">Intelligence Feed</span>
-      </div>
-      <span class="nav-count">{{ stats.total }}</span>
-    </a>
-    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-        <span class="nav-text">Corporate Calendar</span>
-      </div>
-      <span class="nav-count">{{ calendar_events|length }}</span>
-    </a>
-    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-        <span class="nav-text">Economic Snapshot</span>
-      </div>
-      <span class="nav-count">{{ economic_indicators|length }}</span>
-    </a>
-    <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" onclick="closeMobileNav()">
-      <div class="nav-item-left">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span class="nav-text">Analytics &amp; Trends</span>
-      </div>
-    </a>
+  <nav class="sidebar-nav" aria-label="Pages">
+    <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Home</span></a>
+    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span><span class="nav-count">{{ watchlist_companies|length }}</span></a>
+    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span><span class="nav-count">{{ stats.total }}</span></a>
+    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span><span class="nav-count">{{ calendar_events|length }}</span></a>
+    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Economy</span><span class="nav-count">{{ economic_indicators|length }}</span></a>
+    <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Analytics</span></a>
   </nav>
 
-  <div class="sidebar-footer" style="margin-top:auto; padding-top:1.5rem;">
-    <div class="sidebar-health-box">
-      <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
-        <span class="pulse-dot" style="background:#10b981;"></span>
-        <span style="font-size:0.75rem; font-weight:700; color:#15803d;">ALL SYSTEMS HEALTHY</span>
-      </div>
-      <div style="font-size:0.68rem; color:var(--text-muted); line-height:1.4;">
-        {{ watchlist_companies|length }} Watchlist Holdings Monitored<br>
-        Updated: {{ generated_at }}
-      </div>
-    </div>
+  <div class="sidebar-footer">
+    {% if latest_run %}
+    <div{% if latest_run.status != 'HEALTHY' %} class="sidebar-status-alert"{% endif %}>Pipeline: {{ latest_run.status|lower }}</div>
+    {% else %}
+    <div>No pipeline runs recorded</div>
+    {% endif %}
+    <div>Updated: {{ generated_at }}</div>
+    <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Switch to light</button>
   </div>
 </aside>
 
-<!-- Dedicated Mobile Phone Bottom Navigation Bar (5 Tabs: Home / Directory / Feed / Calendar / Economic) -->
-<div class="mobile-bottom-nav">
-  <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Home</span>
-  </a>
-  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-    <span>Directory</span>
-  </a>
-  <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-    <span>Feed</span>
-  </a>
-  <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-    <span>Calendar</span>
-  </a>
-  <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-    <span>Economic</span>
-  </a>
-</div>
+<nav class="mobile-bottom-nav" aria-label="Pages">
+  <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+  <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">Companies</a>
+  <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">Feed</a>
+  <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">Calendar</a>
+  <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">Economy</a>
+</nav>
 """
+
+THEME_BOOT_JS = "try{var t=localStorage.getItem('stockpulse_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}"
 
 # JavaScript for Mobile Drawer, Unified Search & Header Actions
 SHARED_MOBILE_JS = """
+// The Content-Security-Policy bans inline handlers, so elements name an action and this table
+// runs it. Only what's listed here can be triggered from markup.
+const PAGE_ACTIONS = {
+  click: {
+    clearFeedFilters: () => clearFeedFilters(),
+    clearRecentlyViewed: () => clearRecentlyViewed(),
+    closeMobileNav: () => closeMobileNav(),
+    cycleTheme: () => cycleTheme(),
+    filterCalendar: el => filterCalendar(el.dataset.val, el),
+    filterCompanyNews: el => filterCompanyNews(el.dataset.ticker, el.dataset.source, el),
+    filterEconomicBySector: el => filterEconomicBySector(el.dataset.sector, el),
+    focusMobileSearch: () => focusMobileSearch(),
+    openCompany: (el, event) => { event.preventDefault(); switchCompany(el.dataset.ticker); },
+    selectFeedTicker: el => selectFeedTicker(el.dataset.ticker),
+    setCategoryFilter: el => setCategoryFilter(el.dataset.val, el),
+    setFeedSectorFilter: el => setFeedSectorFilter(el.dataset.sector, el),
+    setSourceFilter: el => setSourceFilter(el.dataset.val, el),
+    sortRows: el => sortRows(el.dataset.sort),
+    switchCompany: el => switchCompany(el.dataset.ticker),
+    toggleFeedTickerDropdown: () => toggleFeedTickerDropdown(),
+    toggleMobileNav: () => toggleMobileNav(),
+  },
+  input: {
+    filterCompanyStrip: el => filterCompanyStrip(el.value),
+    filterFeedTickerDropdown: el => filterFeedTickerDropdown(el.value),
+    filterItems: () => filterItems(),
+    searchCompanyFeed: el => searchCompanyFeed(el.dataset.ticker, el.value),
+  },
+  change: {
+    filterEconomicByTicker: el => filterEconomicByTicker(el.value),
+    renderComparativePerformanceChart: el => renderComparativePerformanceChart(el.value),
+  },
+};
+
+Object.keys(PAGE_ACTIONS).forEach(type => {
+  document.addEventListener(type, event => {
+    const el = event.target.closest && event.target.closest(`[data-${type}]`);
+    if (!el) return;
+    const action = PAGE_ACTIONS[type][el.dataset[type]];
+    if (typeof action === 'function') action(el, event);
+  });
+});
+
+// Everything inserted through innerHTML goes through these two.
+function escapeHtml(value) {
+  return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function safeHref(value) {
+  const url = String(value || '');
+  return /^https?:\\/\\//i.test(url) ? escapeHtml(url) : '#';
+}
+
+// Canvas charts can't read CSS variables, so resolve them to real colors first.
+function cssColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// Charts measure their legends with the current font, so draw again once the web fonts arrive.
+function whenChartFontsReady(callback) {
+  if (!document.fonts || !document.fonts.load) return;
+  Promise.all([
+    document.fonts.load("11px 'Hanken Grotesk'"),
+    document.fonts.load("500 12px 'Hanken Grotesk'"),
+  ]).then(callback).catch(() => {});
+}
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+}
+
+function labelThemeToggle() {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = currentTheme() === 'light' ? 'Switch to dark' : 'Switch to light';
+}
+
+function cycleTheme() {
+  const next = currentTheme() === 'light' ? 'dark' : 'light';
+  if (next === 'dark') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = next;
+  try {
+    localStorage.setItem('stockpulse_theme', next);
+  } catch (e) { /* storage may be blocked; the choice just won't persist */ }
+  labelThemeToggle();
+  document.dispatchEvent(new Event('themechange'));
+}
+
+document.addEventListener('DOMContentLoaded', labelThemeToggle);
+
 function toggleMobileNav() {
   const sidebar = document.getElementById('appSidebar');
   const backdrop = document.getElementById('mobileBackdrop');
@@ -4207,7 +1543,8 @@ function closeMobileNav() {
 }
 
 function focusMobileSearch() {
-  const input = document.getElementById('globalSearchInput') || document.getElementById('companyStripFilter') || document.getElementById('feedSearchInput');
+  document.getElementById('companyDirectory')?.setAttribute('open', '');
+  const input = document.getElementById('globalSearchInput') || document.getElementById('companyStripFilter') || document.getElementById('searchInput');
   if (input) {
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => {
@@ -4225,11 +1562,12 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     const globalSearch = document.getElementById('globalSearchInput');
     const companySearch = document.getElementById('companyStripFilter');
-    const feedSearch = document.getElementById('feedSearchInput');
+    const feedSearch = document.getElementById('searchInput');
     if (globalSearch) {
       globalSearch.focus();
       if (typeof openSearchDropdown === 'function') openSearchDropdown();
     } else if (companySearch) {
+      document.getElementById('companyDirectory')?.setAttribute('open', '');
       companySearch.focus();
     } else if (feedSearch) {
       feedSearch.focus();
@@ -4252,294 +1590,112 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Personal stock news dashboard overview with widget preview cards, recently viewed companies, and instant search suggestions.">
-  <title>StockPulse — What's on the agenda?</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="description" content="Search your watchlist and see the top stories, upcoming events and the economy.">
+  <title>StockPulse: what happened to your stocks?</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
 </head>
-<body>
+<body class="page-home">
   <div class="app-layout">
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <!-- Top Right Bar for Desktop -->
-      <div class="top-header-bar">
-        <a href="analytics.html" class="top-header-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Analytics &amp; Trends
-        </a>
-        <span class="section-time-pill" style="font-size:0.75rem; padding:0.3rem 0.75rem;">
-          <span class="pulse-dot" style="background:#10b981;"></span> Live
-        </span>
-      </div>
+      <section class="orbit-hero" id="orbitHero" aria-label="Search your watchlist">
+        <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
 
-      <!-- Redesigned Hero & 3D Orbital Search Centerpiece Section -->
-      <section class="hero-section">
-        <div class="hero-container">
-          <!-- Animated Intro Greeting Header -->
-          <div class="hero-intro-box">
-            <a href="calendar.html" class="hero-badge intro-fade-1">
-              <span class="pulse-dot" style="background:#10b981; margin-right:0.2rem; flex-shrink:0;"></span>
-              {% if calendar_events %}
-              <span>Next Event: <strong class="catalyst-ticker" style="color:var(--text-primary);">{{ calendar_events[0].ticker }}</strong> ({{ calendar_events[0].display_date }}) &bull; {{ priority_items|length }} Priority Stories ↗</span>
-              {% else %}
-              <span><strong class="catalyst-ticker">{{ priority_items|length }} Priority Disclosures Active</strong> &bull; {{ watchlist_companies|length }} Companies Monitored ↗</span>
-              {% endif %}
-            </a>
-            <h1 class="hero-title">
-              <span class="hero-word-wrap">
-                <span class="intro-word" style="--w-idx:0;">What's</span>
-                <span class="intro-word" style="--w-idx:1;">on</span>
-                <span class="intro-word" style="--w-idx:2;">the</span>
-                <span class="intro-word" style="--w-idx:3;">agenda?</span>
+        <div class="hero-copy">
+          <p class="hero-wordmark">Stock<span>Pulse</span></p>
+          <h1 class="hero-headline">What happened to your stocks?</h1>
+        </div>
+
+        <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
+          <div class="search-wrapper" id="heroSearchWrapper">
+            <div class="search-box" id="globalSearchBox">
+              <span class="search-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               </span>
-            </h1>
-            <p class="hero-subtext intro-fade-2">Review overnight SEC filings, corporate announcements, forthcoming milestones, and FRED macroeconomic sensitivities.</p>
-          </div>
+              <input type="text" id="globalSearchInput" class="search-input" aria-label="Search companies, stories and tickers" placeholder="Search a company or ticker" autocomplete="off" spellcheck="false">
+              <span class="search-shortcut">⌘K</span>
+            </div>
 
-          <!-- 3D Orbital Stage & Centered Search Centerpiece -->
-          <div class="hero-orbit-stage" id="heroOrbitStage">
-            <!-- Centerpiece: Search Command Bar -->
-            <div class="orbit-centerpiece">
-              <div class="search-wrapper" id="heroSearchWrapper">
-                <div class="search-box" id="globalSearchBox">
-                  <span class="search-icon-wrap">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  </span>
-                  <input type="text" id="globalSearchInput" class="search-input" placeholder="Search disclosures, tickers, calendar events, FRED..." onfocus="openSearchDropdown()" oninput="handleSearchType(this.value)">
-                  <span class="search-shortcut">⌘ K</span>
-                </div>
-
-                <!-- Interactive Live Suggestions / Autocomplete Dropdown -->
-                <div class="search-dropdown" id="searchDropdown">
-                  <div id="defaultDropdownContent">
-                    <div class="dropdown-section-title">Suggested Pages &amp; Views</div>
-                    <div class="dropdown-tabs-grid">
-                      <a href="news.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Intelligence Feed</div>
-                          <div class="dropdown-tab-sub">{{ stats.total }} Scored Disclosures</div>
-                        </div>
-                      </a>
-                      <a href="calendar.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Corporate Calendar</div>
-                          <div class="dropdown-tab-sub">{{ calendar_events|length }} Upcoming Events</div>
-                        </div>
-                      </a>
-                      <a href="economic.html" class="dropdown-tab-card">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Economic Snapshot</div>
-                          <div class="dropdown-tab-sub">{{ economic_indicators|length }} FRED Indicators</div>
-                        </div>
-                      </a>
-                      <a href="analytics.html" class="dropdown-tab-card" onclick="closeSearchDropdown()">
-                        <div class="dropdown-tab-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        </div>
-                        <div class="dropdown-tab-info">
-                          <div class="dropdown-tab-title">Analytics &amp; Trends</div>
-                          <div class="dropdown-tab-sub">Velocity &amp; Benchmarks</div>
-                        </div>
-                      </a>
-                    </div>
-
-                    <div style="padding-top:0.75rem; border-top:1px solid var(--border-card); text-align:center;">
-                      <a href="company.html" class="action-link" style="font-size:0.8rem; font-weight:700; color:var(--accent-blue); text-decoration:none;">Browse All {{ watchlist_companies|length }} Companies in Directory ↗</a>
-                    </div>
-                  </div>
-
-                  <!-- Dynamic Live Search Results Container -->
-                  <div id="liveSearchResults" style="display:none;"></div>
+            <div class="search-dropdown" id="searchDropdown">
+              <div id="defaultDropdownContent">
+                <div class="dropdown-tabs-grid">
+                  <a href="news.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Feed</span><span class="dropdown-tab-sub">{{ stats.total }} stories</span></a>
+                  <a href="calendar.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Calendar</span><span class="dropdown-tab-sub">{{ calendar_events|length }} events</span></a>
+                  <a href="economic.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Economy</span><span class="dropdown-tab-sub">{{ economic_indicators|length }} indicators</span></a>
+                  <a href="company.html" class="dropdown-tab-card"><span class="dropdown-tab-title">Companies</span><span class="dropdown-tab-sub">{{ watchlist_companies|length }} on the watchlist</span></a>
                 </div>
               </div>
-            </div>
-
-            <!-- 3D Floating Orbital Suggestion Cards (4 Dynamic Nodes) -->
-            <div class="orbit-track" id="orbitTrack" aria-label="Quick Watchlist Highlights">
-              <!-- Node 0 (Top-Left) -->
-              <a href="company.html?ticker=NVDA" class="orbit-card orbit-card-0" id="orbitCard0" data-orbit-slot="0">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-NVDA">NVDA</span>
-                  <span class="orbit-card-score">Score 9.0</span>
-                </div>
-                <div class="orbit-card-name">NVIDIA Corporation</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Semiconductors</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 1 (Top-Right) -->
-              <a href="company.html?ticker=AAPL" class="orbit-card orbit-card-1" id="orbitCard1" data-orbit-slot="1">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-AAPL">AAPL</span>
-                  <span class="orbit-card-score">Score 8.5</span>
-                </div>
-                <div class="orbit-card-name">Apple Inc.</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Consumer Tech</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 2 (Bottom-Left) -->
-              <a href="company.html?ticker=MSFT" class="orbit-card orbit-card-2" id="orbitCard2" data-orbit-slot="2">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-MSFT">MSFT</span>
-                  <span class="orbit-card-score">Score 8.0</span>
-                </div>
-                <div class="orbit-card-name">Microsoft Corp.</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Cloud &amp; Copilot</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
-
-              <!-- Node 3 (Bottom-Right) -->
-              <a href="company.html?ticker=AMD" class="orbit-card orbit-card-3" id="orbitCard3" data-orbit-slot="3">
-                <div class="orbit-card-glow"></div>
-                <div class="orbit-card-header">
-                  <span class="ticker-badge ticker-AMD">AMD</span>
-                  <span class="orbit-card-score">Score 7.8</span>
-                </div>
-                <div class="orbit-card-name">Advanced Micro Devices</div>
-                <div class="orbit-card-meta">
-                  <span class="orbit-pill-catalyst">Data Center</span>
-                  <span class="orbit-arrow">↗</span>
-                </div>
-              </a>
+              <div id="liveSearchResults" hidden></div>
             </div>
           </div>
 
-          <!-- Watchlist Holdings Ribbon -->
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-top:0.85rem; margin-bottom:0.35rem; width:100%; max-width:920px;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.4rem;">
-              <span>Watchlist Holdings ({{ watchlist_companies|length }})</span>
-            </div>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#f8fafc; border:1px solid var(--border-card); font-size:0.74rem; font-weight:700; color:var(--accent-blue); display:flex; align-items:center; gap:0.35rem;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-              Company Directory ↗
-            </a>
-          </div>
-
-          <div class="watchlist-ticker-strip">
-            {% for co in watchlist_companies %}
-            <a href="company.html?ticker={{ co.symbol }}" class="ticker-strip-pill" title="{{ co.name }} &bull; {{ co.macro_sector }}">
-              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem;">{{ co.symbol }}</span>
-            </a>
+          <ul class="orbit-ring" id="orbitRing" aria-label="Companies with the biggest stories">
+            {% for co in orbit_companies %}
+            <li class="orbit-slot" data-symbol="{{ co.symbol }}" data-name="{{ co.name }}"{% if loop.index > 12 %} hidden{% endif %}>
+              <a class="orbit-chip" href="company.html?ticker={{ co.symbol|urlencode }}" draggable="false">
+                <span class="orbit-ticker">{{ co.symbol }}</span>
+                <span class="orbit-name">{{ co.name }}</span>
+                <span class="orbit-fact">{% if co.top_score is not none %}<span class="orbit-dot{% if co.top_score >= 7 %} is-high{% endif %}" title="Top story score {{ co.top_score }}"></span>{% if co.new_count %}{{ co.new_count }} new {{ 'story' if co.new_count == 1 else 'stories' }}{% else %}Top story {{ co.top_score }}{% endif %}{% else %}No stories yet{% endif %}</span>
+              </a>
+            </li>
             {% endfor %}
-          </div>
+          </ul>
         </div>
+
+        <a class="orbit-browse" href="company.html">Browse all {{ watchlist_companies|length }} companies</a>
       </section>
 
-      <!-- Top 2 Focus Bento Widgets Below Hero -->
-      <div class="hero-bento-deck">
-        <!-- Widget 1: Featured Priority Intelligence Card -->
-        <a href="news.html" class="bento-card bento-card-primary">
-          <div class="bento-badge-top">
-            <span class="bento-pill-accent">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              FEATURED INTELLIGENCE
-            </span>
-            <span class="bento-arrow">Explore Feed ›</span>
-          </div>
-          <div>
-            <div class="bento-score-hero">
-              <span class="bento-count">{{ priority_items|length }}</span>
-              <span class="bento-sublabel">High-Impact Disclosures Monitored</span>
-            </div>
-            {% if priority_items %}
-            <div class="bento-headline-preview">
-              <span class="ticker-badge ticker-{{ priority_items[0].ticker }}" style="margin-right:0.35rem;">{{ priority_items[0].ticker }}</span>
-              {{ priority_items[0].clean_headline }}
-            </div>
-            {% endif %}
-          </div>
-          <div class="bento-footer-pill">
-            <span>High-Impact Score ≥ 7.0 &bull; Transparent Scoring</span>
-            <span>→</span>
-          </div>
-        </a>
+      <div class="home-below">
+        <nav class="home-doors" aria-label="Sections">
+          <a class="door" href="news.html">
+            <span class="door-title">Today's news</span>
+            <span class="door-line">{{ stats.high_priority_count }} to read first, out of {{ stats.total }} stories</span>
+          </a>
+          <a class="door" href="calendar.html">
+            <span class="door-title">Calendar</span>
+            <span class="door-line">{% if next_earnings %}Next earnings: {{ next_earnings.ticker }}, {{ short_date(next_earnings.event_date) }}{% elif calendar_events %}Next: {{ calendar_events[0].ticker }}, {{ short_date(calendar_events[0].event_date) }}{% else %}Nothing scheduled{% endif %}</span>
+          </a>
+          <a class="door" href="economic.html">
+            <span class="door-title">Economy</span>
+            <span class="door-line">{% if economic_indicators %}{{ economic_indicators[0].name }}: {{ economic_indicators[0].formatted_value.split(' (')[0] }}{% else %}No indicators available{% endif %}</span>
+          </a>
+          <a class="door" href="company.html">
+            <span class="door-title">All companies</span>
+            <span class="door-line">{{ watchlist_companies|length }} on the watchlist, {{ orbit_companies|selectattr('top_score', 'ne', none)|list|length }} with stories</span>
+          </a>
+        </nav>
 
-        <!-- Widget 2: Next Corporate Catalyst Milestone Focus -->
-        <a href="calendar.html" class="bento-card" style="background: linear-gradient(135deg, rgba(240, 253, 244, 0.95), rgba(255, 255, 255, 0.95)); border: 1px solid rgba(187, 247, 208, 0.8);">
-          <div class="bento-badge-top">
-            <span class="bento-pill-cal">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              NEXT EVENT
-            </span>
-            <span class="bento-arrow">Calendar ›</span>
-          </div>
-          <div>
-            {% if calendar_events %}
-            <div style="display:flex; align-items:center; gap:0.9rem; margin:0.6rem 0;">
-              <div class="calendar-date-box" style="width:52px; min-width:52px; padding:0.35rem 0.45rem; border-radius:var(--radius-md); box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-                <div class="calendar-date-month" style="font-size:0.72rem; font-weight:800;">{{ calendar_events[0].event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                <div class="calendar-date-day" style="font-size:1.25rem; font-weight:800;">{{ calendar_events[0].event_date[8:10] }}</div>
-              </div>
-              <div style="flex:1; min-width:0;">
-                <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.2rem;">
-                  <span class="ticker-badge ticker-{{ calendar_events[0].ticker }}">{{ calendar_events[0].ticker }}</span>
-                  <span class="category-badge" style="font-size:0.68rem; padding:0.1rem 0.45rem;">{{ calendar_events[0].event_type }}</span>
-                </div>
-                <div style="font-size:0.88rem; font-weight:700; color:var(--text-primary); line-height:1.35; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
-                  {{ calendar_events[0].headline }}
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
-                  {{ calendar_events[0].relative_badge }}
-                </div>
-              </div>
-            </div>
-            {% else %}
-            <div style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0.5rem 0;">Corporate Calendar Active</div>
-            <div style="font-size:0.8rem; color:var(--text-muted);">Tracking upcoming earnings releases, FDA decisions, and shareholder votes.</div>
-            {% endif %}
-          </div>
-          <div class="bento-footer-pill" style="border-top:1px solid rgba(220, 252, 231, 0.8);">
-            <span>{{ calendar_events|length }} Upcoming Milestones</span>
-            <span>→</span>
-          </div>
-        </a>
-      </div>
+        <section class="home-stories" aria-labelledby="homeStoriesHeading">
+          <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
+          {% if priority_items %}
+          <ol class="top-list">
+            {% for it in priority_items[:5] %}
+            <li class="top-row">
+              <span class="top-score{% if it.score >= 7 %} is-high{% endif %}" title="{{ it.score_breakdown }}">{{ it.score }}</span>
+              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
+              <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+              <span class="top-date">{{ short_date(it.published_date) }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
+          {% endif %}
+          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
+        </section>
 
-      <!-- Recently Viewed Companies Quick Access Deck -->
-      <div class="recently-viewed-section" id="recentlyViewedSection">
-        <div class="section-header-row" style="margin-bottom:0.85rem; padding-top:0.25rem;">
-          <div style="display:flex; align-items:center; gap:0.55rem;">
-            <div style="background:rgba(59, 130, 246, 0.1); color:#3b82f6; width:28px; height:28px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <h2 class="section-heading" style="margin:0; font-size:1.15rem;">Recently Viewed Companies</h2>
-            <span class="badge" id="recentlyViewedCountBadge" style="font-size:0.7rem; background:var(--bg-surface-elevated); color:var(--text-muted); padding:0.15rem 0.5rem; border-radius:var(--radius-full);"></span>
+        <section id="recentlyViewedSection" aria-labelledby="homeRecentHeading" hidden>
+          <div class="home-heading-row">
+            <h2 class="home-heading" id="homeRecentHeading">Recently viewed</h2>
+            <button class="home-clear" id="clearRecentlyViewedBtn" type="button" data-click="clearRecentlyViewed">Clear</button>
           </div>
-          <div style="display:flex; align-items:center; gap:0.65rem;">
-            <button id="clearRecentlyViewedBtn" onclick="clearRecentlyViewed()" title="Clear your recently viewed history" style="background:none; border:none; font-size:0.75rem; color:var(--text-muted); cursor:pointer; padding:0.25rem 0.5rem; border-radius:4px; transition:color 0.15s;">
-              Clear History
-            </button>
-            <a href="company.html" class="bento-arrow" style="font-size:0.8rem; text-decoration:none;">All {{ watchlist_companies|length }} Companies ›</a>
-          </div>
-        </div>
-
-        <div class="recently-viewed-grid" id="recentlyViewedGrid">
-          <!-- Populated dynamically via localStorage -->
-        </div>
+          <ul class="recent-list" id="recentlyViewedGrid"></ul>
+        </section>
       </div>
     </main>
   </div>
@@ -4552,94 +1708,465 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     const econIndicators = {{ economic_indicators|tojson|safe }};
     const watchlistCompanies = {{ watchlist_companies|tojson|safe }};
 
-    function renderRecentlyViewed() {
-      const grid = document.getElementById('recentlyViewedGrid');
-      const badge = document.getElementById('recentlyViewedCountBadge');
-      const clearBtn = document.getElementById('clearRecentlyViewedBtn');
-      if (!grid) return;
-
-      const companyLookup = {};
-      (watchlistCompanies || []).forEach(c => {
-        companyLookup[c.symbol] = c;
-      });
-
-      const tickerCounts = {};
-      (allItems || []).forEach(it => {
-        if (it.ticker) {
-          tickerCounts[it.ticker] = (tickerCounts[it.ticker] || 0) + 1;
-        }
-      });
-
+    // Recently viewed comes from localStorage, so anything not on the watchlist is thrown away.
+    function readRecentlyViewed() {
       let stored = [];
-      let isDefault = false;
       try {
-        const raw = localStorage.getItem('stockpulse_recently_viewed');
-        if (raw) {
-          stored = JSON.parse(raw);
-        }
+        stored = JSON.parse(localStorage.getItem('stockpulse_recently_viewed') || '[]');
       } catch (e) {
-        stored = [];
+        return [];
+      }
+      if (!Array.isArray(stored)) return [];
+      const known = new Set((watchlistCompanies || []).map(c => c.symbol));
+      const seen = new Set();
+      const clean = [];
+      stored.forEach(item => {
+        const symbol = String(item && typeof item === 'object' ? item.symbol : item).toUpperCase();
+        if (!known.has(symbol) || seen.has(symbol)) return;
+        seen.add(symbol);
+        const visitedAt = item && Number.isFinite(item.visitedAt) ? item.visitedAt : null;
+        clean.push({ symbol, visitedAt });
+      });
+      return clean;
+    }
+
+    function renderRecentlyViewed() {
+      const section = document.getElementById('recentlyViewedSection');
+      const grid = document.getElementById('recentlyViewedGrid');
+      if (!grid || !section) return;
+
+      const stored = readRecentlyViewed();
+      if (stored.length === 0) {
+        section.hidden = true;
+        grid.innerHTML = '';
+        return;
       }
 
-      if (!Array.isArray(stored) || stored.length === 0) {
-        isDefault = true;
-        // Suggested starter companies for quick launchpad
-        stored = [
-          { symbol: 'NVDA', visitedAt: null },
-          { symbol: 'AAPL', visitedAt: null },
-          { symbol: 'TSLA', visitedAt: null },
-          { symbol: 'MSFT', visitedAt: null },
-          { symbol: 'AMZN', visitedAt: null },
-          { symbol: 'GOOGL', visitedAt: null },
-        ];
-        if (clearBtn) clearBtn.style.display = 'none';
-        if (badge) badge.textContent = 'Suggested';
-      } else {
-        if (clearBtn) clearBtn.style.display = 'inline-block';
-        if (badge) badge.textContent = `${stored.length} viewed`;
-      }
+      const companies = {};
+      (watchlistCompanies || []).forEach(c => { companies[c.symbol] = c; });
 
-      const itemsToRender = stored.slice(0, 8);
-      let html = '';
-
-      itemsToRender.forEach(item => {
-        const sym = (typeof item === 'string' ? item : item.symbol).toUpperCase();
-        const co = companyLookup[sym] || { name: sym, sector: 'Watchlist Company' };
-        const count = tickerCounts[sym] || 0;
-
-        let timeLabel = 'Quick Access';
+      section.hidden = false;
+      grid.innerHTML = stored.slice(0, 8).map(item => {
+        let when = '';
         if (item.visitedAt) {
           const diffSec = Math.floor((Date.now() - item.visitedAt) / 1000);
-          if (diffSec < 60) timeLabel = 'Just now';
-          else if (diffSec < 3600) timeLabel = `${Math.floor(diffSec / 60)}m ago`;
-          else if (diffSec < 86400) timeLabel = `${Math.floor(diffSec / 3600)}h ago`;
-          else timeLabel = `${Math.floor(diffSec / 86400)}d ago`;
+          if (diffSec < 60) when = 'Just now';
+          else if (diffSec < 3600) when = `${Math.floor(diffSec / 60)}m ago`;
+          else if (diffSec < 86400) when = `${Math.floor(diffSec / 3600)}h ago`;
+          else when = `${Math.floor(diffSec / 86400)}d ago`;
         }
-
-        html += `
-          <a href="company.html?ticker=${sym}" class="recent-card" title="View ${co.name} (${sym}) deep dive">
-            <div class="recent-card-top">
-              <span class="ticker-badge ticker-${sym}">${sym}</span>
-              <span class="recent-card-time">${timeLabel}</span>
-            </div>
-            <div class="recent-card-body">
-              <div class="recent-card-name">${co.name}</div>
-              <div class="recent-card-sector">${co.sector || 'Equities'}</div>
-            </div>
-            <div class="recent-card-footer">
-              <span class="recent-card-pill">${count} disclosures</span>
-              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-blue);">Explore ›</span>
-            </div>
-          </a>
-        `;
-      });
-
-      grid.innerHTML = html;
+        return `
+          <li>
+            <a href="company.html?ticker=${encodeURIComponent(item.symbol)}">
+              <span class="recent-ticker">${escapeHtml(item.symbol)}</span>
+              <span class="recent-name">${escapeHtml(companies[item.symbol].name)}</span>
+              <span class="recent-when">${escapeHtml(when)}</span>
+            </a>
+          </li>`;
+      }).join('');
     }
 
     function clearRecentlyViewed() {
-      localStorage.removeItem('stockpulse_recently_viewed');
+      try {
+        localStorage.removeItem('stockpulse_recently_viewed');
+      } catch (e) { /* storage may be blocked */ }
       renderRecentlyViewed();
+      orbit.refresh();
+    }
+
+    // A ring of real company links orbiting the search bar. The chips are ordinary links in an
+    // ordinary list: this script only positions them, and without it they stay a static grid.
+    const orbit = (function createOrbit() {
+      const stage = document.getElementById('heroOrbitStage');
+      const hero = document.getElementById('orbitHero');
+      const ring = document.getElementById('orbitRing');
+      const canvas = document.getElementById('orbitDust');
+      const dropdown = document.getElementById('searchDropdown');
+      const bar = document.getElementById('globalSearchBox');
+      const input = document.getElementById('globalSearchInput');
+      const TWO_PI = Math.PI * 2;
+      const AUTO_SPEED = 0.11;
+      const all = [...ring.querySelectorAll('.orbit-slot')].map(el => ({
+        el,
+        symbol: el.dataset.symbol,
+        name: (el.dataset.name || '').toLowerCase(),
+        angle: 0,
+        target: 0,
+        dim: 0,
+        blur: -1,
+      }));
+      const bySymbol = new Map(all.map(c => [c.symbol, c]));
+
+      let visible = [];
+      let matches = [];
+      let query = '';
+      let live = false;
+      let running = false;
+      let rotation = 0;
+      let rotationTarget = null;
+      let velocity = 0;
+      let lastFrame = 0;
+      let hovered = false;
+      let ringFocused = false;
+      let searchFocused = false;
+      let onScreen = true;
+      let ringShift = 0;
+      let drag = null;
+      let suppressClick = false;
+      let barLifted = false;
+      const geo = { width: 0, cx: 0, cy: 0, radius: 0, sinTilt: 0, cosTilt: 1, focal: 1, barW: 0, barH: 0, chipW: 0, chipH: 0 };
+      const dust = { ctx: null, list: [], w: 0, h: 0, px: 0, py: 0, tx: 0, ty: 0, color: '', strength: 1 };
+
+      function slotCount() {
+        return stage.clientWidth < 640 ? 6 : (stage.clientWidth < 1025 ? 10 : 12);
+      }
+
+      // Recently viewed companies join the ring first, then the biggest stories fill it up.
+      function chooseVisible() {
+        const count = slotCount();
+        const chosen = [];
+        const add = c => { if (c && !chosen.includes(c) && chosen.length < count) chosen.push(c); };
+        matches.forEach(add);
+        readRecentlyViewed().slice(0, 4).forEach(item => add(bySymbol.get(item.symbol)));
+        all.forEach(add);
+        all.forEach(c => { c.el.hidden = !chosen.includes(c); });
+        return chosen;
+      }
+
+      // Matches take the front slots, spreading out left and right from the centre.
+      function assignSlots() {
+        const previous = visible;
+        visible = chooseVisible();
+        const n = visible.length;
+        if (!n) return;
+        const ordered = [...visible];
+        const order = [];
+        for (let i = 0; i < n; i += 1) order.push(i % 2 ? (i + 1) / 2 : (n - i / 2) % n);
+        const slots = new Array(n);
+        ordered.forEach((chip, i) => { slots[i] = order[i]; });
+        ordered.forEach((chip, i) => {
+          chip.target = (slots[i] * TWO_PI) / n;
+          if (!previous.includes(chip)) chip.angle = chip.target + Math.PI;
+          chip.dim = query && !matches.includes(chip) ? 1 : 0;
+          chip.el.classList.toggle('is-dim', chip.dim === 1);
+        });
+      }
+
+      function measure() {
+        const stageBox = stage.getBoundingClientRect();
+        const barBox = bar.getBoundingClientRect();
+        const narrow = stageBox.width < 640;
+        geo.width = stageBox.width;
+        geo.cx = stageBox.width / 2;
+        geo.cy = barBox.top - stageBox.top + barBox.height / 2 + ringShift;
+        geo.barW = barBox.width;
+        geo.barH = barBox.height;
+        geo.radius = narrow ? Math.max(100, stageBox.width / 2 - 62) : Math.min(stageBox.width * 0.4, 600);
+        // A phone-width bar spans the whole ring, so a shallow tilt would flatten the chips into
+        // one row under it. Tipping it further keeps a visible front and back.
+        const tilt = (narrow ? 58 : 17) * Math.PI / 180;
+        geo.sinTilt = Math.sin(tilt);
+        geo.cosTilt = Math.cos(tilt);
+        geo.focal = geo.radius * 3.4;
+        const sample = visible[0] && visible[0].el.firstElementChild;
+        geo.chipW = sample ? sample.offsetWidth : 150;
+        geo.chipH = sample ? sample.offsetHeight : 72;
+      }
+
+      function smoothstep(a, b, v) {
+        const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      }
+
+      function place(chip) {
+        const theta = chip.angle + rotation;
+        const sin = Math.sin(theta);
+        const cos = Math.cos(theta);
+        const near = (cos + 1) / 2;
+        const depth = geo.radius * cos * geo.cosTilt;
+        const perspective = geo.focal / (geo.focal - depth);
+        const scale = 0.55 + 0.7 * near;
+        const x = geo.radius * sin * perspective;
+        let y = geo.radius * cos * geo.sinTilt * perspective;
+
+        // Front chips never cross the bar: anything overlapping it sideways slides out from
+        // behind and below it before it comes forward in z-order.
+        const halfW = geo.chipW * scale / 2;
+        const halfH = geo.chipH * scale / 2;
+        const clearY = geo.barH / 2 + halfH + 12;
+        let front = cos > 0;
+        if (Math.abs(x) < geo.barW / 2 + halfW + 8) {
+          const blend = smoothstep(-0.45, -0.02, cos);
+          y = y + Math.max(0, clearY - y) * blend;
+          front = y >= clearY - 0.5;
+        }
+
+        const ease = chip.dim ? 0.2 : 1;
+        const opacity = (0.42 + 0.58 * Math.min(1, near * 1.5)) * ease;
+        const blur = near < 0.45 ? Math.round((0.45 - near) * 8) / 2 : 0;
+        const el = chip.el;
+        el.style.transform = `translate3d(${(geo.cx + x - geo.chipW / 2).toFixed(1)}px, ${(geo.cy + y - geo.chipH / 2).toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
+        el.style.opacity = opacity.toFixed(3);
+        el.style.zIndex = front ? String(100 + Math.round(near * 100)) : String(1 + Math.round(near * 40));
+        if (blur !== chip.blur) {
+          el.style.filter = blur ? `blur(${blur}px)` : 'none';
+          chip.blur = blur;
+        }
+      }
+
+      function shortest(from, to) {
+        let d = (to - from) % TWO_PI;
+        if (d > Math.PI) d -= TWO_PI;
+        if (d < -Math.PI) d += TWO_PI;
+        return d;
+      }
+
+      function frontOf(chip) {
+        rotationTarget = rotation + shortest(rotation, -chip.target);
+      }
+
+      function step(now) {
+        if (!running) return;
+        const dt = Math.min(0.05, (now - lastFrame) / 1000 || 0.016);
+        lastFrame = now;
+
+        const paused = hovered || ringFocused || searchFocused;
+        if (drag) {
+          velocity *= Math.exp(-dt * 12);
+        } else if (rotationTarget !== null) {
+          const gap = rotationTarget - rotation;
+          rotation += gap * (1 - Math.exp(-dt * 5));
+          velocity = 0;
+        } else {
+          rotation += velocity * dt;
+          velocity *= Math.exp(-dt * 1.8);
+          if (!paused) rotation += AUTO_SPEED * dt;
+        }
+
+        const settle = 1 - Math.exp(-dt * 6);
+        visible.forEach(chip => { chip.angle += shortest(chip.angle, chip.target) * settle; });
+
+        // An open results panel pushes the ring down, so what swung to the front stays in view.
+        let wantShift = 0;
+        if (dropdown.classList.contains('active')) {
+          const frontY = geo.radius * geo.sinTilt * (geo.focal / (geo.focal - geo.radius * geo.cosTilt));
+          wantShift = Math.max(0, geo.barH / 2 + dropdown.offsetHeight + 6 + geo.chipH * 0.625 + 12 - frontY);
+        }
+        ringShift += (wantShift - ringShift) * (1 - Math.exp(-dt * 7));
+        geo.cy = bar.getBoundingClientRect().top - stage.getBoundingClientRect().top + geo.barH / 2 + ringShift;
+        updateLift();
+
+        visible.forEach(place);
+        drawDust(dt, paused && !drag && rotationTarget === null ? velocity : velocity + AUTO_SPEED);
+        requestAnimationFrame(step);
+      }
+
+      // An open results panel needs the room, so the bar rises to just under the headline.
+      function updateLift() {
+        const open = dropdown.classList.contains('active');
+        if (open === barLifted) return;
+        barLifted = open;
+        if (!open) {
+          stage.style.removeProperty('--bar-lift');
+          return;
+        }
+        const rest = stage.getBoundingClientRect().top + stage.clientHeight * 0.36;
+        const roof = hero.querySelector('.hero-copy').getBoundingClientRect().bottom + geo.barH / 2 + 18;
+        stage.style.setProperty('--bar-lift', `${Math.max(0, rest - roof)}px`);
+      }
+
+      function setUpDust() {
+        dust.ctx = canvas.getContext('2d');
+        if (!dust.ctx) return false;
+        const count = hero.clientWidth < 640 ? 40 : 120;
+        dust.list = Array.from({ length: count }, () => {
+          const depth = 0.25 + Math.random() * 0.75;
+          return {
+            x: Math.random(),
+            y: Math.random(),
+            depth,
+            size: 0.5 + depth * 1.1,
+            alpha: 0.1 + depth * 0.32,
+          };
+        });
+        sizeDust();
+        return true;
+      }
+
+      function sizeDust() {
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        dust.w = hero.clientWidth;
+        dust.h = hero.clientHeight;
+        canvas.width = Math.round(dust.w * ratio);
+        canvas.height = Math.round(dust.h * ratio);
+        dust.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        dust.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+        dust.strength = document.documentElement.dataset.theme === 'light' ? 0.45 : 1;
+      }
+
+      function drawDust(dt, spin) {
+        const ctx = dust.ctx;
+        ctx.clearRect(0, 0, dust.w, dust.h);
+        dust.px += (dust.tx - dust.px) * (1 - Math.exp(-dt * 3));
+        dust.py += (dust.ty - dust.py) * (1 - Math.exp(-dt * 3));
+        ctx.fillStyle = dust.color;
+        dust.list.forEach(p => {
+          p.x = (p.x + spin * dt * 0.05 * p.depth + 1) % 1;
+          p.y = (p.y + dt * 0.002 * p.depth) % 1;
+          const x = ((p.x * dust.w + dust.px * 26 * p.depth) % dust.w + dust.w) % dust.w;
+          const y = ((p.y * dust.h + dust.py * 18 * p.depth) % dust.h + dust.h) % dust.h;
+          ctx.globalAlpha = p.alpha * dust.strength;
+          ctx.beginPath();
+          ctx.arc(x, y, p.size, 0, TWO_PI);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      function start() {
+        if (running || !live || !onScreen || document.hidden) return;
+        running = true;
+        lastFrame = performance.now();
+        requestAnimationFrame(step);
+      }
+
+      function stop() {
+        running = false;
+      }
+
+      function bindPointer() {
+        stage.addEventListener('pointerdown', e => {
+          if (e.button !== 0 || e.target.closest('.search-wrapper')) return;
+          drag = { id: e.pointerId, x: e.clientX, moved: 0, time: e.timeStamp };
+          rotationTarget = null;
+        });
+        stage.addEventListener('pointermove', e => {
+          if (!drag || e.pointerId !== drag.id) return;
+          const dx = e.clientX - drag.x;
+          drag.x = e.clientX;
+          drag.moved += Math.abs(dx);
+          if (drag.moved > 6) {
+            stage.classList.add('is-dragging');
+            if (!stage.hasPointerCapture(e.pointerId)) stage.setPointerCapture(e.pointerId);
+          }
+          const delta = dx / geo.radius;
+          rotation += delta;
+          const elapsed = Math.max(1, e.timeStamp - drag.time) / 1000;
+          velocity = velocity * 0.7 + (delta / elapsed) * 0.3;
+          drag.time = e.timeStamp;
+        });
+        const release = e => {
+          if (!drag || e.pointerId !== drag.id) return;
+          suppressClick = drag.moved > 6;
+          drag = null;
+          stage.classList.remove('is-dragging');
+          velocity = Math.max(-5, Math.min(5, velocity));
+        };
+        stage.addEventListener('pointerup', release);
+        // pointercancel means the browser took over for a vertical scroll, which is what we want.
+        stage.addEventListener('pointercancel', release);
+        // A drag that ends on a chip is a spin, not a click.
+        ring.addEventListener('click', e => {
+          if (suppressClick) e.preventDefault();
+          suppressClick = false;
+        });
+        ring.addEventListener('dragstart', e => e.preventDefault());
+        ring.addEventListener('pointerover', e => { if (e.pointerType === 'mouse' && e.target.closest('.orbit-slot')) hovered = true; });
+        ring.addEventListener('pointerout', e => { if (e.target.closest('.orbit-slot')) hovered = false; });
+        hero.addEventListener('pointermove', e => {
+          dust.tx = (e.clientX / window.innerWidth) * 2 - 1;
+          dust.ty = (e.clientY / window.innerHeight) * 2 - 1;
+        }, { passive: true });
+      }
+
+      function bindKeyboard() {
+        ring.addEventListener('focusin', e => {
+          ringFocused = true;
+          const chip = all.find(c => c.el.contains(e.target));
+          if (chip) frontOf(chip);
+        });
+        ring.addEventListener('focusout', e => {
+          if (ring.contains(e.relatedTarget)) return;
+          ringFocused = false;
+          if (!query) rotationTarget = null;
+        });
+        ring.addEventListener('keydown', e => {
+          if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+          const index = visible.findIndex(c => c.el.contains(document.activeElement));
+          if (index < 0) return;
+          e.preventDefault();
+          const bySlot = [...visible].sort((a, b) => a.target - b.target);
+          const at = bySlot.indexOf(visible[index]);
+          const next = bySlot[(at + (e.key === 'ArrowRight' ? -1 : 1) + bySlot.length) % bySlot.length];
+          next.el.querySelector('a').focus({ preventScroll: true });
+        });
+        input.addEventListener('focus', () => { searchFocused = true; });
+        input.addEventListener('blur', () => { searchFocused = false; });
+      }
+
+      function search(raw) {
+        query = (raw || '').trim().toLowerCase();
+        matches = query
+          ? all.filter(c => c.symbol.toLowerCase().includes(query) || c.name.includes(query))
+              .sort((a, b) => Number(b.symbol.toLowerCase().startsWith(query)) - Number(a.symbol.toLowerCase().startsWith(query)))
+          : [];
+        assignSlots();
+        if (live) {
+          measure();
+          if (query) rotationTarget = rotation + shortest(rotation, 0);
+          else if (!ringFocused) rotationTarget = null;
+        }
+      }
+
+      function refresh() {
+        assignSlots();
+        if (live) measure();
+      }
+
+      function init() {
+        visible = chooseVisible();
+        assignSlots();
+        const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (calm || !window.CSS || !CSS.supports('transform', 'translate3d(0, 0, 0)')) return;
+
+        try {
+          stage.classList.remove('orbit-static');
+          if (!setUpDust()) throw new Error('canvas unavailable');
+          measure();
+          visible.forEach(chip => { chip.angle = chip.target; place(chip); });
+          live = true;
+          bindPointer();
+          bindKeyboard();
+          window.addEventListener('resize', () => {
+            sizeDust();
+            assignSlots();
+            measure();
+          });
+          document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
+          document.addEventListener('themechange', sizeDust);
+          if (window.IntersectionObserver) {
+            new IntersectionObserver(entries => {
+              onScreen = entries[0].isIntersecting;
+              if (onScreen) start(); else stop();
+            }).observe(hero);
+          }
+          start();
+        } catch (err) {
+          // Anything unsupported falls back to the plain grid, which works without any of this.
+          live = false;
+          stop();
+          stage.classList.add('orbit-static');
+          all.forEach(c => { c.el.removeAttribute('style'); });
+        }
+      }
+
+      return { init, search, refresh };
+    })();
+
+    // Enter opens the first thing the dropdown is offering.
+    function openFirstSearchResult() {
+      const first = document.querySelector('#liveSearchResults a.search-result-item');
+      if (first) window.location.href = first.getAttribute('href');
     }
 
     function openSearchDropdown() {
@@ -4666,7 +2193,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     let lookupDebounceTimer = null;
 
     function handleSearchType(rawVal) {
-      console.log('[StockPulse Search] Keystroke input event received:', rawVal);
       const dropdown = document.getElementById('searchDropdown');
       if (dropdown) dropdown.classList.add('active');
       const val = (rawVal || '').toLowerCase().trim();
@@ -4686,6 +2212,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (defaultContent) defaultContent.style.display = 'none';
+      if (liveResults) liveResults.style.display = 'block';
       // 1. Match Companies & Tickers
       const matchedCompanies = watchlistCompanies.filter(c => 
         (c.symbol || '').toLowerCase().includes(val) ||
@@ -4713,7 +2240,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const matchedEcon = econIndicators.filter(ind =>
         (ind.name || '').toLowerCase().includes(val) ||
         (ind.series_id || '').toLowerCase().includes(val) ||
-        (ind.relevant_tickers || '').toLowerCase().includes(val) ||
+        String(ind.relevant_tickers || '').toLowerCase().includes(val) ||
         (ind.category || '').toLowerCase().includes(val)
       );
 
@@ -4722,7 +2249,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         (c.symbol || '').toUpperCase() === rawUpper || 
         (c.name || '').toLowerCase() === val
       );
-      const isSearchTermEligible = val.length >= 2 && /^[a-zA-Z0-9\s.\-]{2,40}$/.test(rawVal.trim());
+      const isSearchTermEligible = val.length >= 2 && /^[a-zA-Z0-9\\s.\\-]{2,40}$/.test(rawVal.trim());
       const isOutsideWatchlist = isSearchTermEligible && !isExactWatchlist && (matchedCompanies.length === 0);
 
       const totalMatches = matchedCompanies.length + matchedNews.length + matchedCal.length + matchedEcon.length;
@@ -4737,13 +2264,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <div id="quickLookupCard" class="quick-lookup-card loading">
             <div class="quick-lookup-header">
               <div class="quick-lookup-title-group" id="quickLookupTitleGroup">
-                <span class="ticker-badge" id="quickLookupBadge">${rawUpper}</span>
-                <span class="quick-lookup-badge">⚡ Live Quick Lookup &bull; Outside Watchlist</span>
+                <span class="ticker-badge" id="quickLookupBadge">${escapeHtml(rawUpper)}</span>
+                <span class="quick-lookup-badge">Outside your watchlist</span>
               </div>
-              <span class="quick-lookup-meta" id="quickLookupStatus"><span class="pulse-dot" style="background:#3b82f6;"></span> Querying Finnhub...</span>
+              <span class="quick-lookup-meta" id="quickLookupStatus">Checking Finnhub</span>
             </div>
-            <div id="quickLookupBody" style="font-size:0.8rem; color:var(--text-muted); padding:0.25rem 0;">
-              Fetching live real-time price &amp; recent headlines for <strong>${rawVal.trim()}</strong>...
+            <div id="quickLookupBody" class="lookup-note lookup-body">
+              Fetching the latest price and headlines for <strong>${escapeHtml(rawVal.trim())}</strong>...
             </div>
           </div>
         `;
@@ -4754,7 +2281,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         liveResults.innerHTML = `
           <div class="search-no-results">
             <div class="no-results-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
-            <div class="no-results-title">Sorry, what you are searching for cannot be found, try being less specific.</div>
+            <div class="no-results-title">No matches. Try something less specific.</div>
             <div class="no-results-sub">Try searching by company ticker (e.g. <em>NVDA</em>, <em>AAPL</em>, <em>NFLX</em>, <em>PLTR</em>), company name (<em>Netflix</em>, <em>Spotify</em>), or form type (<em>8-K</em>).</div>
           </div>
         `;
@@ -4765,18 +2292,18 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Company matches
       if (matchedCompanies.length > 0) {
-        html += '<div class="dropdown-section-title">Matching Watchlist Companies</div>';
+        html += '<div class="dropdown-section-title">Companies</div>';
         matchedCompanies.slice(0, 3).forEach(c => {
           html += `
-            <a href="company.html?ticker=${c.symbol}" class="search-result-item">
+            <a href="company.html?ticker=${escapeHtml(c.symbol)}" class="search-result-item">
               <div class="search-result-left">
-                <span class="ticker-badge ticker-${c.symbol}">${c.symbol}</span>
+                <span class="ticker-badge ticker-${escapeHtml(c.symbol)}">${escapeHtml(c.symbol)}</span>
                 <div class="search-result-info">
-                  <div class="search-result-title">${c.name}</div>
-                  <div class="search-result-sub">${c.sector}</div>
+                  <div class="search-result-title">${escapeHtml(c.name)}</div>
+                  <div class="search-result-sub">${escapeHtml(c.macro_sector || '')}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Company View ↗</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -4784,18 +2311,18 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Calendar matches
       if (matchedCal.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Upcoming Corporate Events</div>';
+        html += '<div class="dropdown-section-title is-spaced">Calendar</div>';
         matchedCal.slice(0, 2).forEach(ev => {
           html += `
             <a href="calendar.html" class="search-result-item">
               <div class="search-result-left">
-                <span class="ticker-badge ticker-${ev.ticker}">${ev.ticker}</span>
+                <span class="ticker-badge ticker-${escapeHtml(ev.ticker)}">${escapeHtml(ev.ticker)}</span>
                 <div class="search-result-info">
-                  <div class="search-result-title">${ev.headline}</div>
-                  <div class="search-result-sub">${ev.display_date} &bull; ${ev.event_type}</div>
+                  <div class="search-result-title">${escapeHtml(ev.headline)}</div>
+                  <div class="search-result-sub">${escapeHtml(ev.display_date)} &bull; ${escapeHtml(ev.event_type)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Calendar ↗</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -4803,18 +2330,18 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render Macroeconomic matches
       if (matchedEcon.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Macroeconomic Indicators</div>';
+        html += '<div class="dropdown-section-title is-spaced">Economy</div>';
         matchedEcon.slice(0, 2).forEach(ind => {
           html += `
             <a href="economic.html" class="search-result-item">
               <div class="search-result-left">
                 <div class="search-result-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
                 <div class="search-result-info">
-                  <div class="search-result-title">${ind.name}: ${ind.formatted_value}</div>
-                  <div class="search-result-sub">${ind.category} &bull; Relevant: ${ind.relevant_tickers}</div>
+                  <div class="search-result-title">${escapeHtml(ind.name)}: ${escapeHtml(ind.formatted_value)}</div>
+                  <div class="search-result-sub">${escapeHtml(ind.category)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Macro ↗</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -4822,18 +2349,18 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render News matches
       if (matchedNews.length > 0) {
-        html += '<div class="dropdown-section-title" style="margin-top:0.6rem;">Disclosures &amp; Intelligence (' + matchedNews.length + ')</div>';
+        html += '<div class="dropdown-section-title is-spaced">Stories (' + matchedNews.length + ')</div>';
         matchedNews.slice(0, 4).forEach(it => {
           html += `
             <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
               <div class="search-result-left">
-                <span class="ticker-badge ticker-${it.ticker}">${it.ticker}</span>
+                <span class="ticker-badge ticker-${escapeHtml(it.ticker)}">${escapeHtml(it.ticker)}</span>
                 <div class="search-result-info">
-                  <div class="search-result-title">${it.clean_headline}</div>
-                  <div class="search-result-sub">${it.category} &bull; ${it.published_date} &bull; Score: ${it.score}</div>
+                  <div class="search-result-title">${escapeHtml(it.clean_headline)}</div>
+                  <div class="search-result-sub">${escapeHtml(it.category)} &bull; ${escapeHtml(it.published_date)} &bull; Score: ${escapeHtml(it.score)}</div>
                 </div>
               </div>
-              <span class="action-link" style="font-size:0.75rem;">Feed ↗</span>
+              <span class="action-link action-small">Open</span>
             </a>
           `;
         });
@@ -4863,11 +2390,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           const contentType = res.headers.get('content-type') || '';
           if (!contentType.includes('application/json')) {
             card.classList.remove('loading');
-            if (status) status.innerHTML = '<span style="color:var(--text-muted);">Endpoint Pending</span>';
+            if (status) status.innerHTML = '<span class="tone-flat">Endpoint Pending</span>';
             body.innerHTML = `
-              <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
-                Live quick-lookup endpoint for "<strong>${query}</strong>" is currently offline or pending Cloudflare deployment.
-                <div style="margin-top:0.35rem; font-size:0.72rem;">Run local dev server or configure FINNHUB_API_KEY on Cloudflare Pages.</div>
+              <div class="lookup-note">
+                Live quick-lookup endpoint for "<strong>${escapeHtml(query)}</strong>" is currently offline or pending Cloudflare deployment.
+                <div class="lookup-hint">Run local dev server or configure FINNHUB_API_KEY on Cloudflare Pages.</div>
               </div>
             `;
             return;
@@ -4880,11 +2407,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               return;
             }
             card.classList.remove('loading');
-            if (status) status.innerHTML = '<span style="color:var(--text-muted);">Unlisted Ticker</span>';
+            if (status) status.innerHTML = '<span class="tone-flat">Unlisted Ticker</span>';
             body.innerHTML = `
-              <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
-                ${errData.message || errData.error || `No live quote or news found on Finnhub for "<strong>${query}</strong>".`}
-                <div style="margin-top:0.35rem; font-size:0.72rem;">Try checking the company or ticker spelling or searching for general keywords.</div>
+              <div class="lookup-note">
+                ${errData.message || errData.error ? escapeHtml(errData.message || errData.error) : `No live quote or news found on Finnhub for "<strong>${escapeHtml(query)}</strong>".`}
+                <div class="lookup-hint">Try checking the company or ticker spelling or searching for general keywords.</div>
               </div>
             `;
             return;
@@ -4897,10 +2424,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               return;
             }
             card.classList.remove('loading');
-            if (status) status.innerHTML = '<span style="color:var(--text-muted);">No Data</span>';
+            if (status) status.innerHTML = '<span class="tone-flat">No Data</span>';
             body.innerHTML = `
-              <div style="font-size:0.8rem; color:var(--text-muted);">
-                ${data.message || `No quote or news records found for <strong>${query}</strong>.`}
+              <div class="lookup-note">
+                ${data.message ? escapeHtml(data.message) : `No quote or news records found for <strong>${escapeHtml(query)}</strong>.`}
               </div>
             `;
             return;
@@ -4908,19 +2435,19 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           card.classList.remove('loading');
           if (headerGroup && data.symbol) {
-            const coName = data.company_name ? `<span style="font-weight:700; color:var(--text-primary); font-size:0.88rem; margin-left:0.4rem;">${data.company_name}</span>` : '';
-            const resFrom = data.resolved_from ? `<span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.3rem;">(resolved from "${data.resolved_from}")</span>` : '';
+            const coName = data.company_name ? `<span class="lookup-name">${escapeHtml(data.company_name)}</span>` : '';
+            const resFrom = data.resolved_from ? `<span class="lookup-from">(resolved from "${escapeHtml(data.resolved_from)}")</span>` : '';
             headerGroup.innerHTML = `
-              <span class="ticker-badge ticker-${data.symbol}">${data.symbol}</span>
+              <span class="ticker-badge ticker-${escapeHtml(data.symbol)}">${escapeHtml(data.symbol)}</span>
               ${coName}
               ${resFrom}
-              <span class="quick-lookup-badge" style="margin-left:0.35rem;">⚡ Live Quick Lookup</span>
+              <span class="quick-lookup-badge lookup-badge-gap">Outside your watchlist</span>
             `;
           }
 
           if (status) {
             const timeStr = data.queried_at ? new Date(data.queried_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Live';
-            status.innerHTML = `<span class="pulse-dot" style="background:#10b981;"></span> Live &bull; ${timeStr}`;
+            status.innerHTML = `As of ${escapeHtml(timeStr)}`;
           }
 
           let bodyHtml = '';
@@ -4947,15 +2474,15 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
           if (data.headlines && data.headlines.length > 0) {
             bodyHtml += `
-              <div class="quick-lookup-headlines-title">Recent Headlines (Live Media)</div>
+              <div class="quick-lookup-headlines-title">Recent headlines</div>
               <div class="quick-lookup-headlines-list">
                 ${data.headlines.map(h => `
-                  <a href="${h.url}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
-                    <div class="quick-lookup-news-headline">${h.headline}</div>
+                  <a href="${safeHref(h.url)}" target="_blank" rel="noopener noreferrer" class="quick-lookup-news-item">
+                    <div class="quick-lookup-news-headline">${escapeHtml(h.headline)}</div>
                     <div class="quick-lookup-news-meta">
-                      <span style="font-weight:600; color:var(--text-secondary);">${h.source}</span>
-                      ${h.time_ago ? `<span>&bull;</span><span>${h.time_ago}</span>` : ''}
-                      <span style="margin-left:auto; color:var(--accent-blue); font-weight:700;">Read ↗</span>
+                      <span class="lookup-source">${escapeHtml(h.source)}</span>
+                      ${h.time_ago ? `<span>&bull;</span><span>${escapeHtml(h.time_ago)}</span>` : ''}
+                      <span class="lookup-read">Read</span>
                     </div>
                   </a>
                 `).join('')}
@@ -4963,14 +2490,14 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             `;
           } else {
             bodyHtml += `
-              <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.25rem;">No news headlines published in the past 7 days.</div>
+              <div class="lookup-note lookup-gap">No news headlines published in the past 7 days.</div>
             `;
           }
 
           bodyHtml += `
             <div class="quick-lookup-action-bar">
-              <span style="color:var(--text-muted);">Non-watchlist holding &bull; Live Finnhub quote</span>
-              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link" style="font-size:0.75rem;">Search In Feed ↗</a>
+              <span class="tone-flat">Quote from Finnhub</span>
+              <a href="news.html?q=${encodeURIComponent(data.symbol)}" class="action-link action-small">Search the feed</a>
             </div>
           `;
 
@@ -4982,10 +2509,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             return;
           }
           card.classList.remove('loading');
-          if (status) status.innerHTML = '<span style="color:var(--text-muted);">Lookup Error</span>';
+          if (status) status.innerHTML = '<span class="tone-flat">Lookup Error</span>';
           body.innerHTML = `
-            <div style="font-size:0.8rem; color:var(--text-muted);">
-              Unable to query live quick-lookup. <span style="font-size:0.72rem;">(Endpoint active on Cloudflare Pages deployment)</span>
+            <div class="lookup-note">
+              Unable to query live quick-lookup. <span class="lookup-small">(Endpoint active on Cloudflare Pages deployment)</span>
             </div>
           `;
         }
@@ -5007,114 +2534,21 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
     });
 
-    // =========================================================================
-    // 3D ORBITAL COMPANY SUGGESTION CYCLING ENGINE
-    // =========================================================================
-    let currentOrbitOffset = 0;
-    let orbitInterval = null;
-    let isOrbitPaused = false;
-
-    function getWatchlistForOrbit() {
-      if (Array.isArray(watchlistCompanies) && watchlistCompanies.length >= 4) {
-        return watchlistCompanies;
-      }
-      return [
-        { symbol: 'NVDA', name: 'NVIDIA Corporation', sector: 'Semiconductors' },
-        { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Consumer Electronics' },
-        { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Software & Cloud' },
-        { symbol: 'AMD', name: 'Advanced Micro Devices', sector: 'Semiconductors' },
-        { symbol: 'TSLA', name: 'Tesla, Inc.', sector: 'Automotive & Energy' },
-        { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Search & Cloud' },
-        { symbol: 'AMZN', name: 'Amazon.com, Inc.', sector: 'E-Commerce & Cloud' },
-        { symbol: 'BA', name: 'The Boeing Company', sector: 'Aerospace & Defense' },
-      ];
-    }
-
-    function initOrbitCards() {
-      const stage = document.getElementById('heroOrbitStage');
-      if (!stage) return;
-
-      const list = getWatchlistForOrbit();
-      if (list.length < 4) return;
-
-      updateOrbitCards(0);
-
-      stage.addEventListener('mouseenter', () => { isOrbitPaused = true; });
-      stage.addEventListener('mouseleave', () => { isOrbitPaused = false; });
-
-      // Periodically cycle the 4 cards smoothly every 7 seconds
-      if (orbitInterval) clearInterval(orbitInterval);
-      orbitInterval = setInterval(() => {
-        if (isOrbitPaused) return;
-        const searchInput = document.getElementById('globalSearchInput');
-        if (document.activeElement === searchInput) return;
-
-        currentOrbitOffset = (currentOrbitOffset + 4) % list.length;
-        transitionOrbitCards(currentOrbitOffset);
-      }, 7000);
-    }
-
-    function transitionOrbitCards(offset) {
-      const cards = document.querySelectorAll('.orbit-card');
-      cards.forEach(card => card.classList.add('card-fading'));
-
-      setTimeout(() => {
-        updateOrbitCards(offset);
-        cards.forEach(card => card.classList.remove('card-fading'));
-      }, 350);
-    }
-
-    function updateOrbitCards(offset) {
-      const list = getWatchlistForOrbit();
-      for (let i = 0; i < 4; i++) {
-        const card = document.getElementById(`orbitCard${i}`);
-        if (!card) continue;
-        const item = list[(offset + i) % list.length];
-        if (!item) continue;
-
-        const sym = item.symbol;
-        const name = item.name || sym;
-        const sector = item.sector ? item.sector.replace(/_/g, ' ') : 'Equities';
-
-        let catalystLabel = sector;
-        if (item.macro_sensitivities && item.macro_sensitivities.length > 0) {
-          catalystLabel = item.macro_sensitivities[0].replace(/_/g, ' ');
-        }
-
-        card.href = `company.html?ticker=${encodeURIComponent(sym)}`;
-        card.title = `View ${name} (${sym}) Research Hub`;
-
-        const tickerBadge = card.querySelector('.ticker-badge');
-        if (tickerBadge) {
-          tickerBadge.className = `ticker-badge ticker-${sym}`;
-          tickerBadge.textContent = sym;
-        }
-
-        const scoreEl = card.querySelector('.orbit-card-score');
-        if (scoreEl) {
-          const sampleScores = ['Score 9.0', 'Score 8.6', 'Score 8.2', 'Score 7.8', 'Score 8.4', 'Score 8.9'];
-          scoreEl.textContent = sampleScores[(offset + i) % sampleScores.length];
-        }
-
-        const nameEl = card.querySelector('.orbit-card-name');
-        if (nameEl) {
-          nameEl.textContent = name;
-        }
-
-        const catalystEl = card.querySelector('.orbit-pill-catalyst');
-        if (catalystEl) {
-          catalystEl.textContent = catalystLabel;
-        }
-      }
-    }
-
     function initHomePage() {
-      initOrbitCards();
       renderRecentlyViewed();
+      orbit.init();
       const searchInput = document.getElementById('globalSearchInput');
       if (searchInput) {
+        searchInput.addEventListener('focus', openSearchDropdown);
         searchInput.addEventListener('input', (e) => {
           handleSearchType(e.target.value);
+          orbit.search(e.target.value);
+        });
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            openFirstSearchResult();
+          }
         });
       }
     }
@@ -5139,12 +2573,11 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Dedicated Analytics Hub for StockPulse: filing velocity trends, disclosure category breakdowns, peer comparative performance, and automated pipeline telemetry.">
-  <title>StockPulse — Analytics &amp; Performance Trends</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <meta name="description" content="Coverage by company and category, peer performance, and pipeline health.">
+  <title>StockPulse — Analytics</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a17'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23f6f4ee' stroke-width='2'/%3E%3C/svg%3E">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -5154,199 +2587,110 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <!-- Analytics Header Hero Banner -->
-      <div class="page-header" style="margin-bottom:1.75rem;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
-              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem; font-weight:800;">INTELLIGENCE ANALYTICS</span>
-              <span class="section-time-pill" style="font-size:0.75rem; padding:0.2rem 0.65rem;">
-                <span class="pulse-dot" style="background:#10b981;"></span> Live Telemetry
-              </span>
-            </div>
-            <h1 style="font-size:1.85rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.02em; margin:0 0 0.35rem 0;">Analytics &amp; Performance Trends</h1>
-            <p style="font-size:0.9rem; color:var(--text-muted); margin:0; max-width:720px;">
-              Multi-dimensional analysis of disclosure velocity, thematic category allocations, 3-month peer stock returns vs. S&amp;P 500, and data pipeline safeguards.
-            </p>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.6rem;">
-            <button class="section-time-pill" onclick="window.location.reload()" style="cursor:pointer; border:1px solid var(--border-card); background:var(--bg-surface-elevated); padding:0.45rem 0.85rem; font-weight:600;" title="Refresh live telemetry">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-              Refresh Data
-            </button>
-          </div>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">Analytics</h1>
+        <p class="page-standfirst">What the pipeline has collected, how a holding compares with its peers, and whether collection is healthy.</p>
+      </header>
 
-        <!-- Quick Summary Stat Cards -->
-        <div class="analytics-stat-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:1rem; margin-top:1.5rem;">
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Disclosures</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:var(--text-primary); margin:0.25rem 0;">{{ stats.total }}</div>
-            <div style="font-size:0.72rem; color:#15803d; font-weight:600;">Indexed &amp; Scored</div>
-          </div>
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">High Priority (≥ 7.0)</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:#b45309; margin:0.25rem 0;">{{ stats.high_priority_count }}</div>
-            <div style="font-size:0.72rem; color:var(--text-muted);">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0) | round(1) }}% of total volume</div>
-          </div>
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Monitored Companies</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:var(--accent-blue); margin:0.25rem 0;">{{ watchlist_companies|length }}</div>
-            <div style="font-size:0.72rem; color:var(--text-muted);">EDGAR, IR &amp; News</div>
-          </div>
-          <div class="bento-card" style="padding:1.15rem;">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Categories Classified</div>
-            <div style="font-family:'JetBrains Mono'; font-size:1.6rem; font-weight:800; color:#7c3aed; margin:0.25rem 0;">{{ stats.by_category|length }}</div>
-            <div style="font-size:0.72rem; color:var(--text-muted);">AI classification rules</div>
-          </div>
+      <dl class="company-kpi-ribbon analytics-stat-row">
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Stories</dt>
+          <dd class="company-kpi-val">{{ stats.total }}</dd>
+          <dd class="company-kpi-sub">Scored and stored</dd>
         </div>
-      </div>
-
-      <!-- Section 1: Velocity & Category Breakdown -->
-      <div class="section-header-row" style="padding-top:0.5rem; margin-bottom:0.85rem;">
-        <h2 class="section-heading" style="font-size:1.25rem;">Velocity &amp; Category Breakdown</h2>
-        <span class="section-time-pill">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-          Multi-Day Lookback
-        </span>
-      </div>
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Scored 7 or higher</dt>
+          <dd class="company-kpi-val">{{ stats.high_priority_count }}</dd>
+          <dd class="company-kpi-sub">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0)|round(1) }}% of stories</dd>
+        </div>
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Companies</dt>
+          <dd class="company-kpi-val">{{ watchlist_companies|length }}</dd>
+          <dd class="company-kpi-sub">On the watchlist</dd>
+        </div>
+        <div class="company-kpi-card">
+          <dt class="company-kpi-title">Categories</dt>
+          <dd class="company-kpi-val">{{ stats.by_category|length }}</dd>
+          <dd class="company-kpi-sub">In use across stories</dd>
+        </div>
+      </dl>
 
       <div class="analytics-grid">
-        <!-- Metric Card 1: Rich Disclosure Trend Graph with Gradients -->
-        <div class="analytics-card">
-          <div>
-            <div class="analytics-card-header">
-              <div>
-                <div class="analytics-card-title">Daily Filing &amp; Intelligence Velocity</div>
-                <div class="analytics-metric-val">
-                  {{ stats.total }} <span class="analytics-delta-pill">↗ Active Trend</span>
-                </div>
-              </div>
-              <span class="section-time-pill" style="font-size:0.75rem;">Top Tickers</span>
-            </div>
-            <div class="chart-canvas-container">
-              <canvas id="timelineChart"></canvas>
-            </div>
+        <figure class="analytics-card">
+          <h2 class="fp-heading">Stories per day</h2>
+          <figcaption class="econ-note">The five most-covered companies, over the last 14 days with stories.</figcaption>
+          <div class="chart-canvas-container">
+            <canvas id="timelineChart" role="img" aria-label="Line chart of stories per day for the five most-covered companies."></canvas>
           </div>
-        </div>
+        </figure>
 
-        <!-- Metric Card 2: Category Breakdown Donut with Data Callout Badges -->
-        <div class="analytics-card">
-          <div>
-            <div class="analytics-card-header">
-              <div>
-                <div class="analytics-card-title">Intelligence by Category</div>
-                <div class="analytics-metric-val" style="font-size:1.5rem;">
-                  {{ stats.by_category|length }} Categories
-                </div>
-              </div>
-              <span class="section-time-pill" style="font-size:0.75rem;">Slices &amp; Callouts</span>
+        <figure class="analytics-card">
+          <h2 class="fp-heading">Stories by category</h2>
+          <figcaption class="econ-note">Share of all {{ stats.total }} stories, across {{ stats.by_category|length }} categories.</figcaption>
+          <div class="analytics-donut-layout">
+            <div class="chart-canvas-container chart-canvas-donut">
+              <canvas id="categoryChart" role="img" aria-label="Donut chart of stories by category. The list beside it has every figure."></canvas>
             </div>
-            <div class="chart-canvas-container" style="height: 220px;">
-              <canvas id="categoryChart"></canvas>
-            </div>
+            <div class="category-legend-list" id="categoryLegendList"></div>
           </div>
-          
-          <div class="category-legend-list" id="categoryLegendList">
-            <!-- Dynamically populated legend badges with counts & percentages -->
-          </div>
-        </div>
+        </figure>
       </div>
 
-      <!-- Section 2: 3-Month Comparative Performance vs Peers & S&P 500 -->
-      <div class="comparative-perf-card" style="margin-top:2rem;">
-        <div class="comparative-perf-header">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-              <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
-              <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h3>
-            </div>
-            <p style="font-size:0.835rem; color:var(--text-muted); margin:0.35rem 0 0 0;">
-              Contextual move analysis: Normalized % return (Day 0 = 0.0%) against top 3 competitors and the S&amp;P 500 (SPY) benchmark.
-            </p>
-          </div>
-
-          <!-- Watchlist Company Selector Dropdown -->
-          <div style="display:flex; align-items:center; gap:0.6rem; width:100%; max-width:320px;">
-            <label for="perfCompanySelect" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Stock:</label>
-            <select id="perfCompanySelect" class="comparative-select" style="flex:1;" onchange="renderComparativePerformanceChart(this.value)">
+      <section class="comparative-perf-card" aria-labelledby="analyticsPerfHeading">
+        <h2 class="fp-heading" id="analyticsPerfHeading">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h2>
+        <div class="analytics-perf-tools">
+          <p class="econ-note">Percent change since the start of the period, against up to three competitors and the S&amp;P 500.</p>
+          <label class="analytics-perf-picker"><span class="filter-label">Company</span>
+            <select id="perfCompanySelect" class="econ-select comparative-select" data-change="renderComparativePerformanceChart">
               {% for sec in sector_directory %}
-              <optgroup label="{{ sec.name }} ({{ sec.count }})">
+              <optgroup label="{{ sec.name }}">
                 {% for co in sec.companies %}
-                <option value="{{ co.symbol }}">{{ co.symbol }} — {{ co.name }}</option>
+                <option value="{{ co.symbol }}">{{ co.symbol }} · {{ co.name }}</option>
                 {% endfor %}
               </optgroup>
               {% endfor %}
             </select>
-          </div>
+          </label>
         </div>
-
-        <!-- Mobile Segmented View Toggle (Chart vs Table) -->
-        <div class="perf-mobile-toggle">
-          <button class="perf-toggle-btn active" id="perfToggleChartBtn" onclick="switchPerfView('chart')">Chart View</button>
-          <button class="perf-toggle-btn" id="perfToggleTableBtn" onclick="switchPerfView('table')">Comparison Table</button>
+        <div class="perf-kpi-grid" id="perfKpiGrid"></div>
+        <div class="perf-chart-box" id="perfChartContainer">
+          <canvas id="comparativeChartCanvas" role="img" aria-label="Line chart of the selected company, its peers, and the S&amp;P 500. The table below has the figures."></canvas>
         </div>
-
-        <!-- Real-time Alpha & Return Metrics Ribbon -->
-        <div class="perf-kpi-grid" id="perfKpiGrid">
-          <!-- Dynamically populated via JS based on selected company -->
-        </div>
-
-        <!-- Interactive Chart Canvas Container -->
-        <div id="perfChartContainer" style="position:relative; height:280px; width:100%;">
-          <canvas id="comparativeChartCanvas"></canvas>
-        </div>
-
-        <!-- Competitor Breakdown Table Container -->
         <div class="perf-table-wrap" id="perfTableContainer">
-          <table class="perf-table" id="perfBreakdownTable">
-            <!-- Dynamically populated table -->
-          </table>
+          <table class="perf-table" id="perfBreakdownTable"></table>
         </div>
-      </div>
+      </section>
 
-      <!-- Section 3: Health & Pipeline Safeguards -->
-      <section class="health-section" id="health" style="margin-top:2rem;">
-        <div class="health-header">
-          <div class="health-title-group">
-            <h3 class="health-title">Pipeline Health &amp; Safeguards</h3>
-            <span class="health-status-badge health-badge-healthy">
-              <span class="pulse-dot" style="background:#10b981;"></span>
-              HEALTHY &bull; OPERATIONAL
-            </span>
+      <section class="health-section" id="health" aria-labelledby="analyticsHealthHeading">
+        <h2 class="fp-heading" id="analyticsHealthHeading">Pipeline Health &amp; Safeguards</h2>
+        {% if latest_run %}
+        <p class="health-status{% if latest_run.status != 'HEALTHY' %} is-alert{% endif %}">Latest run: {{ latest_run.status|lower }}. {{ latest_run.health_message }}</p>
+        <p class="econ-note">Run at {{ latest_run.run_timestamp|replace('T', ' ') }}. Typical volume: {{ latest_run.moving_avg_raw }} items per run.</p>
+        {% else %}
+        <p class="health-status">No pipeline runs recorded yet.</p>
+        {% endif %}
+        <dl class="company-kpi-ribbon health-grid">
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">SEC EDGAR Filings</dt>
+            <dd class="company-kpi-val">{{ latest_run.edgar_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">
-            Moving Avg Baseline: {{ latest_run.moving_avg_raw if latest_run else 570 }} items/run
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">Company Releases</dt>
+            <dd class="company-kpi-val">{{ latest_run.company_ir_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-        </div>
-
-        <div class="health-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
-          <div class="health-metric-card">
-            <div class="health-metric-title">SEC EDGAR Filings</div>
-            <div class="health-metric-val" style="color:#15803d;">{{ latest_run.edgar_count if latest_run else 450 }}</div>
-            <div class="health-metric-sub">{{ watchlist_companies|length }} companies queried</div>
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">News Stories</dt>
+            <dd class="company-kpi-val">{{ latest_run.news_media_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">Company Releases</div>
-            <div class="health-metric-val" style="color:var(--accent-blue);">{{ latest_run.company_ir_count if latest_run else 100 }}</div>
-            <div class="health-metric-sub">Official press room feeds</div>
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">Unique After Deduplication</dt>
+            <dd class="company-kpi-val">{{ latest_run.total_unique if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">News Media Coverage</div>
-            <div class="health-metric-val" style="color:#047857;">{{ latest_run.news_media_count if latest_run and latest_run.news_media_count is defined else stats.by_source.get('News Media', 0) }}</div>
-            <div class="health-metric-sub">Finnhub 3rd-party journalism</div>
+          <div class="company-kpi-card">
+            <dt class="company-kpi-title">Scored 7 or Higher</dt>
+            <dd class="company-kpi-val">{{ latest_run.high_impact_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">Total Unique Yield</div>
-            <div class="health-metric-val" style="color:#7c3aed;">{{ latest_run.total_unique if latest_run else stats.total }}</div>
-            <div class="health-metric-sub">After deduplication</div>
-          </div>
-          <div class="health-metric-card">
-            <div class="health-metric-title">High Priority Stories</div>
-            <div class="health-metric-val" style="color:#b45309;">{{ latest_run.high_impact_count if latest_run else stats.high_priority_count }}</div>
-            <div class="health-metric-sub">Score ≥ 7.0 / 10.0</div>
-          </div>
-        </div>
+        </dl>
       </section>
     </main>
   </div>
@@ -5368,14 +2712,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       // 1. Per-Ticker Timeline Line Chart with Interactive Legend
       const ctxTimeline = document.getElementById('timelineChart')?.getContext('2d');
       if (ctxTimeline && rawChartData && rawChartData.timeline_dates && rawChartData.timeline_series) {
-        const linePalette = [
-          { stroke: '#2563eb', fillTop: 'rgba(37, 99, 235, 0.20)', fillBot: 'rgba(37, 99, 235, 0.0)' },
-          { stroke: '#10b981', fillTop: 'rgba(16, 185, 129, 0.18)', fillBot: 'rgba(16, 185, 129, 0.0)' },
-          { stroke: '#7c3aed', fillTop: 'rgba(124, 58, 237, 0.18)', fillBot: 'rgba(124, 58, 237, 0.0)' },
-          { stroke: '#f59e0b', fillTop: 'rgba(245, 158, 11, 0.18)', fillBot: 'rgba(245, 158, 11, 0.0)' },
-          { stroke: '#0284c7', fillTop: 'rgba(2, 132, 199, 0.18)', fillBot: 'rgba(2, 132, 199, 0.0)' },
-          { stroke: '#e11d48', fillTop: 'rgba(225, 29, 72, 0.18)', fillBot: 'rgba(225, 29, 72, 0.0)' },
-        ];
+        const linePalette = ['--series-1', '--series-2', '--series-3', '--series-4', '--series-5', '--series-6'].map(cssColor);
 
         const sortedTickers = Object.keys(rawChartData.timeline_series).sort((a, b) => {
           const sumA = (rawChartData.timeline_series[a] || []).reduce((s, v) => s + v, 0);
@@ -5383,31 +2720,23 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           return sumB - sumA;
         });
 
-        // On mobile phones, focus on top 3-4 series to avoid cramped line clutter
-        const displayTickers = sortedTickers.slice(0, isPhone ? 3 : 5);
+        const displayTickers = sortedTickers.slice(0, 5);
 
         const datasets = displayTickers.map((ticker, idx) => {
-          const theme = linePalette[idx % linePalette.length];
-          const grad = ctxTimeline.createLinearGradient(0, 0, 0, 220);
-          grad.addColorStop(0, theme.fillTop);
-          grad.addColorStop(1, theme.fillBot);
-
+          const stroke = linePalette[idx];
           return {
             label: ticker,
             data: rawChartData.timeline_series[ticker] || [],
-            borderColor: theme.stroke,
-            backgroundColor: grad,
-            borderWidth: isPhone ? 1.8 : (isNarrow ? 2.0 : 2.5),
-            fill: true,
-            tension: 0.38,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: theme.stroke,
-            pointBorderWidth: 1.5,
-            pointRadius: isPhone ? 2 : (isNarrow ? 2.5 : 3.5),
+            borderColor: stroke,
+            backgroundColor: stroke,
+            borderWidth: 2,
+            fill: false,
+            tension: 0,
+            pointBackgroundColor: stroke,
+            pointBorderColor: cssColor('--bg-base'),
+            pointBorderWidth: 2,
+            pointRadius: isPhone ? 3 : 4,
             pointHoverRadius: 5,
-            pointHoverBackgroundColor: theme.stroke,
-            pointHoverBorderColor: '#ffffff',
-            pointHoverBorderWidth: 2,
           };
         });
 
@@ -5434,19 +2763,19 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                   boxHeight: 8,
                   usePointStyle: true,
                   pointStyle: 'circle',
-                  font: { family: 'Inter', size: isPhone ? 10 : (isNarrow ? 10 : 11), weight: '600' },
-                  color: '#475569',
+                  font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                  color: cssColor('--text-secondary'),
                   padding: isPhone ? 6 : (isNarrow ? 8 : 14)
                 }
               },
               tooltip: {
-                backgroundColor: '#0f172a',
-                titleColor: '#f8fafc',
-                bodyColor: '#e2e8f0',
-                titleFont: { family: 'Inter', size: 11, weight: 'bold' },
-                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                backgroundColor: cssColor('--text-primary'),
+                titleColor: cssColor('--bg-base'),
+                bodyColor: cssColor('--bg-base'),
+                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
+                bodyFont: { family: 'Hanken Grotesk', size: 11 },
                 padding: 10,
-                cornerRadius: 8,
+                cornerRadius: 2,
                 displayColors: true,
                 boxWidth: 8,
                 boxHeight: 8,
@@ -5457,8 +2786,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               x: {
                 grid: { display: false, drawBorder: false },
                 ticks: { 
-                  font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
-                  color: '#64748b',
+                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  color: cssColor('--text-muted'),
                   maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
                   autoSkip: true,
                   maxRotation: 0
@@ -5466,11 +2795,11 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               },
               y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
+                grid: { color: cssColor('--border-subtle'), drawBorder: false },
                 ticks: { 
                   precision: 0, 
-                  font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
-                  color: '#64748b', 
+                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  color: cssColor('--text-muted'), 
                   maxTicksLimit: isPhone ? 4 : 6,
                   stepSize: 1 
                 }
@@ -5486,10 +2815,17 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       const catCounts = (rawChartData && rawChartData.category_counts) || [];
 
       if (ctxCat && catLabels.length > 0) {
-        const sliceColors = [
-          '#2563eb', '#10b981', '#7c3aed', '#f59e0b', '#0284c7', 
-          '#e11d48', '#8b5cf6', '#ec4899', '#059669', '#d97706', '#64748b', '#0ea5e9'
-        ];
+        // Color follows the category, not its rank. Beyond the six series colors, categories
+        // share a neutral, and the list below names every one.
+        const categoryColors = {
+          'Earnings & Financials': '--series-1',
+          'M&A & Strategic Deals': '--series-2',
+          'Regulation & Policy / Litigation': '--series-3',
+          'Leadership & Governance': '--series-4',
+          'Insider Transactions': '--series-5',
+          'Capital Structure & Offerings': '--series-6',
+        };
+        const sliceColors = catLabels.map(label => cssColor(categoryColors[label] || '--text-muted'));
 
         const totalCount = catCounts.reduce((a, b) => a + b, 0) || 1;
 
@@ -5532,14 +2868,14 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               ctx.moveTo(sx, sy);
               ctx.lineTo(ex, ey);
               ctx.lineTo(endHorizontalX, ey);
-              ctx.strokeStyle = '#94a3b8';
-              ctx.lineWidth = 1.2;
+              ctx.strokeStyle = cssColor('--text-muted');
+              ctx.lineWidth = 1;
               ctx.stroke();
 
               ctx.textAlign = isRight ? 'left' : 'right';
               ctx.textBaseline = 'middle';
-              ctx.font = '600 10px Inter, sans-serif';
-              ctx.fillStyle = '#0f172a';
+              ctx.font = "11px 'Hanken Grotesk', sans-serif";
+              ctx.fillStyle = cssColor('--text-primary');
               ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
             });
             ctx.restore();
@@ -5552,9 +2888,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             labels: catLabels,
             datasets: [{
               data: catCounts,
-              backgroundColor: sliceColors.slice(0, catLabels.length),
+              backgroundColor: sliceColors,
               borderWidth: 2,
-              borderColor: '#ffffff',
+              borderColor: cssColor('--bg-base'),
               hoverOffset: 4
             }]
           },
@@ -5569,13 +2905,13 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: '#0f172a',
-                titleColor: '#f8fafc',
-                bodyColor: '#e2e8f0',
-                titleFont: { family: 'Inter', size: 11, weight: 'bold' },
-                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                backgroundColor: cssColor('--text-primary'),
+                titleColor: cssColor('--bg-base'),
+                bodyColor: cssColor('--bg-base'),
+                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
+                bodyFont: { family: 'Hanken Grotesk', size: 11 },
                 padding: 8,
-                cornerRadius: 8,
+                cornerRadius: 2,
                 callbacks: {
                   label: function(context) {
                     const val = context.parsed || 0;
@@ -5594,12 +2930,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           catLabels.forEach((label, idx) => {
             const count = catCounts[idx] || 0;
             const pct = Math.round((count / totalCount) * 100);
-            const color = sliceColors[idx % sliceColors.length];
+            const color = sliceColors[idx];
             legHtml += `
-              <div class="category-stat-row" title="${label}: ${count} (${pct}%)">
+              <div class="category-stat-row" title="${escapeHtml(label)}: ${count} (${pct}%)">
                 <div class="cat-stat-left">
-                  <span class="category-legend-dot" style="background:${color};"></span>
-                  <span class="cat-stat-name">${label}</span>
+                  <span class="category-legend-dot" data-color="${escapeHtml(color)}"></span>
+                  <span class="cat-stat-name">${escapeHtml(label)}</span>
                 </div>
                 <div class="cat-stat-right">
                   <span class="cat-stat-count">${count}</span>
@@ -5609,6 +2945,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             `;
           });
           legList.innerHTML = legHtml;
+          legList.querySelectorAll('[data-color]').forEach(dot => { dot.style.background = dot.dataset.color; });
         }
       }
     }
@@ -5618,26 +2955,6 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     // =========================================================================
     const perfData = {{ performance_data_json|safe }};
     let comparativeChartInstance = null;
-
-    function switchPerfView(view) {
-      const chartContainer = document.getElementById('perfChartContainer');
-      const tableContainer = document.getElementById('perfTableContainer');
-      const chartBtn = document.getElementById('perfToggleChartBtn');
-      const tableBtn = document.getElementById('perfToggleTableBtn');
-
-      if (view === 'table') {
-        if (chartContainer) chartContainer.style.display = 'none';
-        if (tableContainer) tableContainer.style.display = 'block';
-        chartBtn?.classList.remove('active');
-        tableBtn?.classList.add('active');
-      } else {
-        if (chartContainer) chartContainer.style.display = 'block';
-        if (tableContainer) tableContainer.style.display = 'none';
-        tableBtn?.classList.remove('active');
-        chartBtn?.classList.add('active');
-        if (comparativeChartInstance) comparativeChartInstance.resize();
-      }
-    }
 
     function renderComparativePerformanceChart(symbol) {
       if (!perfData || !perfData.companies) return;
@@ -5656,42 +2973,39 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       const comps = coData.competitors || [];
       const spy = coData.benchmark;
 
-      const targetColor = '#2563eb';
-      const compColors = ['#ea580c', '#0284c7', '#9333ea'];
-      const spyColor = '#64748b';
+      const targetColor = cssColor('--text-primary');
+      const compColors = [cssColor('--series-1'), cssColor('--series-2'), cssColor('--series-3')];
+      const spyColor = cssColor('--text-muted');
 
       // 1. Populate KPI Ribbon
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
-        const tgtColor = tgtPct >= 0 ? '#15803d' : '#b91c1c';
-        const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
 
         const alphaPeers = coData.alpha_vs_peers;
-        const alphaPeersColor = alphaPeers >= 0 ? '#15803d' : '#b91c1c';
 
         const spyPct = spy ? spy.total_pct_change : 0;
         const avgPeerPct = coData.avg_competitor_pct;
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${symbol} 3M Return</div>
-            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
+            <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
-            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? '#15803d' : '#b91c1c'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">${comps.map(c => c.symbol).join(', ') || 'None'}</div>
+            <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
-            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? '#15803d' : '#b91c1c'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Broad Market Benchmark</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Peer Relative Alpha</div>
-            <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? '#15803d' : (coData.assessment_type === 'negative' ? '#b91c1c' : '#475569')};">${coData.assessment}</div>
+            <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
           </div>
         `;
       }
@@ -5701,22 +3015,22 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         let rowsHtml = `
           <thead>
             <tr>
-              <th>Ticker / Entity</th>
+              <th>Name</th>
               <th>Role</th>
-              <th>Base (3M)</th>
+              <th>Start</th>
               <th>Latest</th>
-              <th>3M % Change</th>
-              <th>Alpha</th>
+              <th>Change</th>
+              <th>Against this company</th>
             </tr>
           </thead>
           <tbody>
-            <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
-              <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
-              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target</span></td>
-              <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:var(--text-muted);">&mdash;</td>
+            <tr class="perf-row-target">
+              <td><span class="ticker-badge ticker-${escapeHtml(symbol)}">${escapeHtml(symbol)}</span> ${escapeHtml(coData.name)}</td>
+              <td>This company</td>
+              <td class="perf-num">$${target.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${target.latest_price.toFixed(2)}</td>
+              <td class="perf-num ${target.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num">&mdash;</td>
             </tr>
         `;
 
@@ -5724,12 +3038,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td><a href="company.html?ticker=${c.symbol}" class="ticker-badge" style="font-size:0.75rem;">${c.symbol}</a></td>
-              <td><span class="form-type-pill">Peer #${idx+1}</span></td>
-              <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${delta >= 0 ? '#15803d' : '#b91c1c'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" class="ticker-badge action-small">${escapeHtml(c.symbol)}</a></td>
+              <td>Peer</td>
+              <td class="perf-num">$${c.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
+              <td class="perf-num ${c.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${delta >= 0 ? 'tone-up' : 'tone-down'}\">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -5737,13 +3051,13 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         if (spy) {
           const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
-            <tr style="border-top:2px dashed var(--border-card);">
-              <td><span class="form-type-pill" style="background:#f1f5f9; color:#334155; font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
-              <td><span class="form-type-pill">Benchmark</span></td>
-              <td style="font-family:'JetBrains Mono';">$${spy.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${spy.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${spy.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${spyDelta >= 0 ? '#15803d' : '#b91c1c'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+            <tr>
+              <td><span class="ticker-badge">SPY</span> S&amp;P 500 ETF</td>
+              <td>Benchmark</td>
+              <td class="perf-num">$${spy.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${spy.latest_price.toFixed(2)}</td>
+              <td class="perf-num ${spy.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${spyDelta >= 0 ? 'tone-up' : 'tone-down'}\">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -5762,13 +3076,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
       const datasets = [
         {
-          label: `${symbol} (Target)`,
+          label: symbol,
           data: target.series.map(pt => pt.pct_change),
           borderColor: targetColor,
-          backgroundColor: 'rgba(37, 99, 235, 0.08)',
-          borderWidth: isPhone ? 2.2 : 3,
-          fill: true,
-          tension: 0.25,
+          borderWidth: 2.5,
+          fill: false,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 5,
         }
@@ -5777,12 +3090,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       comps.forEach((c, idx) => {
         const color = compColors[idx % compColors.length];
         datasets.push({
-          label: `${c.symbol} (Peer)`,
+          label: c.symbol,
           data: c.series.map(pt => pt.pct_change),
           borderColor: color,
-          borderWidth: isPhone ? 1.5 : 2,
+          borderWidth: 1.5,
           fill: false,
-          tension: 0.25,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 4,
         });
@@ -5817,17 +3130,19 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Inter', size: isPhone ? 10 : 11, weight: '600' },
-                color: '#475569',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                color: cssColor('--text-secondary'),
                 padding: isPhone ? 6 : 10
               }
             },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleFont: { family: 'Inter', size: 12, weight: '700' },
-              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              backgroundColor: cssColor('--text-primary'),
+              titleColor: cssColor('--bg-base'),
+              bodyColor: cssColor('--bg-base'),
+              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
+              bodyFont: { family: 'Hanken Grotesk', size: 11 },
               padding: 10,
-              cornerRadius: 8,
+              cornerRadius: 2,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -5840,17 +3155,17 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                color: cssColor('--text-muted'),
                 maxRotation: 0
               }
             },
             y: {
-              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
             }
@@ -5862,7 +3177,18 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     function initAnalyticsPage() {
       initCharts();
       renderComparativePerformanceChart('NVDA');
+      whenChartFontsReady(redrawAnalyticsCharts);
     }
+
+    function redrawAnalyticsCharts() {
+      if (typeof Chart === 'undefined') return;
+      Object.values(Chart.instances).forEach(chart => chart.destroy());
+      comparativeChartInstance = null;
+      initCharts();
+      renderComparativePerformanceChart(document.getElementById('perfCompanySelect')?.value || 'NVDA');
+    }
+
+    document.addEventListener('themechange', redrawAnalyticsCharts);
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initAnalyticsPage);
@@ -5882,11 +3208,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Full intelligence feed of scored stock news and SEC filings with interactive filtering and AI takeaways.">
-  <title>StockPulse — Full Intelligence Feed</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and takeaways.">
+  <title>StockPulse — The feed</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -5896,244 +3221,55 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Full Intelligence Feed</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Curated news, regulatory filings, and corporate disclosures with transparent scoring and supply-chain cross-references</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill">
-            <span class="pulse-dot" style="background:#10b981;"></span> {{ items|length }} Total Items
-          </span>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">The feed</h1>
+        <p class="page-standfirst">{{ items|length }} stories, ranked by how much they deserve your time.</p>
       </header>
 
-      <!-- Priority Panel with Editorial Suite Layout -->
-      {% if priority_items %}
-      <section class="priority-section">
-        <div class="priority-header">
-          <div class="priority-title-wrap">
-            <span class="priority-badge-icon" title="High Priority">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            </span>
-            <div>
-              <h2 style="font-size:1.25rem; font-weight:800; color:var(--text-primary);">Top Impact Disclosures</h2>
-              <p style="font-size:0.82rem; color:var(--text-muted);">Curated high-scoring stories with investor takeaways and supply-chain cross-references</p>
-            </div>
+      <div class="feed-toolbar">
+        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and takeaways" data-input="filterItems">
+        <div class="feed-toolbar-row">
+          <div class="feed-sort" role="group" aria-label="Order">
+            <button class="feed-sort-btn active" id="sortScoreBtn" type="button" data-click="sortRows" data-sort="score">By importance</button>
+            <button class="feed-sort-btn" id="sortDateBtn" type="button" data-click="sortRows" data-sort="date">By date</button>
           </div>
-          <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:#15803d; font-weight:700; background:#dcfce7; padding:0.35rem 0.85rem; border-radius:var(--radius-full); border:1px solid #86efac; width:fit-content;">
-            SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
-          </div>
+          <span class="feed-count" id="feedResultCount" aria-live="polite"></span>
+          <button class="feed-clear" id="feedClearFilters" type="button" data-click="clearFeedFilters" hidden>Clear filters</button>
         </div>
+      </div>
 
-        <div class="priority-editorial-layout">
-          <!-- #1 Lead Editorial Card -->
-          {% set lead = priority_items[0] %}
-          <div class="priority-card priority-lead-card">
-            <div>
-              <div class="priority-card-top">
-                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                  <span class="priority-rank-pill">#1</span>
-                  <a href="company.html?ticker={{ lead.ticker }}" class="ticker-badge ticker-{{ lead.ticker }}" style="font-size:0.88rem; padding:0.25rem 0.65rem;">{{ lead.ticker }}</a>
-                  {% if lead.form_or_type %}
-                  <span class="form-type-pill">{{ lead.form_or_type }}</span>
-                  {% endif %}
-                  <span class="category-badge">{{ lead.category }}</span>
-                  <span class="source-badge {% if lead.source == 'sec_edgar' %}source-badge-edgar{% elif lead.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">{{ lead.source_label }}</span>
-                </div>
-                <span class="priority-score-pill score-pill-lead" title="{{ lead.score_breakdown }}">
-                  Score {{ lead.score }} / 10.0
-                </span>
-              </div>
-
-              <h3 class="priority-lead-headline">{{ lead.clean_headline }}</h3>
-
-              {% if lead.cross_references_list %}
-                {% if lead.cross_references_list|length == 1 %}
-                  {% set ref = lead.cross_references_list[0] %}
-                  <div class="crossref-badges-wrap">
-                    <span class="crossref-badge" title="{{ ref.impact_note }}">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                      <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                      <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                      ({{ ref.matched_entity }})
-                    </span>
-                  </div>
-                {% else %}
-                  <div class="crossref-badges-wrap">
-                    <details class="crossref-accordion">
-                      <summary class="crossref-summary-pill">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        Also relevant to {{ lead.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                      </summary>
-                      <div class="crossref-dropdown-content">
-                        {% for ref in lead.cross_references_list %}
-                        <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                          <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                          <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                          <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                        </div>
-                        {% endfor %}
-                      </div>
-                    </details>
-                  </div>
-                {% endif %}
-              {% endif %}
-
-              {% if lead.llm_summary %}
-              <div class="why-matters-box lead-why-box">
-                <span class="why-tag">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                  Executive Takeaway:
-                </span>
-                {{ lead.llm_summary }}
-              </div>
-              {% endif %}
-
-              <p class="priority-card-summary" style="font-size:0.85rem; margin-top:0.6rem; color:var(--text-secondary);">{{ lead.summary[:220] }}{% if lead.summary|length > 220 %}...{% endif %}</p>
-            </div>
-
-            <div class="priority-card-footer">
-              <span class="date-cell">{{ lead.published_date }}</span>
-              <a href="{{ lead.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                {% if lead.source == 'sec_edgar' %}View Official Filing ↗{% elif lead.source == 'company_ir' %}View Press Release ↗{% else %}Read Article ↗{% endif %}
-              </a>
-            </div>
-          </div>
-
-          <!-- Secondary Priority Cards Subgrid -->
-          {% if priority_items|length > 1 %}
-          <div class="priority-subgrid">
-            {% for item in priority_items[1:] %}
-            <div class="priority-card priority-subcard">
-              <div>
-                <div class="priority-card-top">
-                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-                    <span class="priority-rank-pill">#{{ loop.index + 1 }}</span>
-                    <a href="company.html?ticker={{ item.ticker }}" class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</a>
-                    {% if item.form_or_type %}
-                    <span class="form-type-pill">{{ item.form_or_type }}</span>
-                    {% endif %}
-                  </div>
-                  <span class="priority-score-pill" title="{{ item.score_breakdown }}">
-                    Score {{ item.score }}
-                  </span>
-                </div>
-
-                <div style="margin-top:0.4rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
-                  <span class="category-badge">{{ item.category }}</span>
-                  <span class="source-badge {% if item.source == 'sec_edgar' %}source-badge-edgar{% elif item.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">{{ item.source_label }}</span>
-                </div>
-
-                <h3 class="priority-card-headline">{{ item.clean_headline }}</h3>
-
-                {% if item.cross_references_list %}
-                  {% if item.cross_references_list|length == 1 %}
-                    {% set ref = item.cross_references_list[0] %}
-                    <div class="crossref-badges-wrap">
-                      <span class="crossref-badge" title="{{ ref.impact_note }}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                        ({{ ref.matched_entity }})
-                      </span>
-                    </div>
-                  {% else %}
-                    <div class="crossref-badges-wrap">
-                      <details class="crossref-accordion">
-                        <summary class="crossref-summary-pill">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                        </summary>
-                        <div class="crossref-dropdown-content">
-                          {% for ref in item.cross_references_list %}
-                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                          </div>
-                          {% endfor %}
-                        </div>
-                      </details>
-                    </div>
-                  {% endif %}
-                {% endif %}
-
-                {% if item.llm_summary %}
-                <div class="why-matters-box">
-                  <span class="why-tag">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    Takeaway:
-                  </span>
-                  {{ item.llm_summary }}
-                </div>
-                {% endif %}
-
-                <p class="priority-card-summary">{{ item.summary[:140] }}{% if item.summary|length > 140 %}...{% endif %}</p>
-              </div>
-
-              <div class="priority-card-footer">
-                <span class="date-cell">{{ item.published_date }}</span>
-                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  {% if item.source == 'sec_edgar' %}View Filing ↗{% elif item.source == 'company_ir' %}View Press Release ↗{% else %}Read Article ↗{% endif %}
-                </a>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-        </div>
-      </section>
-      {% endif %}
-
-      <!-- Controls & Filters Panel -->
-      <div class="controls-panel">
-        <!-- 1. Sector Filter Tabs Bar -->
-        <div style="margin-bottom:0.75rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
-            <span class="filter-label" style="margin-bottom:0;">Browse by Sector:</span>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
-          </div>
+      <details class="controls-panel" id="feedFilters">
+        <summary class="feed-filters-toggle">Filters</summary>
+        <div class="filter-row">
+          <span class="filter-label">Sector</span>
           <div class="feed-sector-bar">
-            <button class="feed-sector-btn active" data-sector="ALL" onclick="setFeedSectorFilter('ALL', this)">
-              All Sectors <span class="pill-count">{{ items|length }}</span>
-            </button>
+            <button class="feed-sector-btn filter-btn active" type="button" data-sector="ALL" data-click="setFeedSectorFilter">All</button>
             {% for sec in sector_directory %}
-            <button class="feed-sector-btn" data-sector="{{ sec.name }}" onclick="setFeedSectorFilter('{{ sec.name }}', this)">
-              {{ sec.name }} <span class="pill-count">{{ sec.count }}</span>
-            </button>
+            <button class="feed-sector-btn filter-btn" type="button" data-sector="{{ sec.name }}" data-click="setFeedSectorFilter">{{ sec.name }}</button>
             {% endfor %}
           </div>
         </div>
 
-        <!-- 2. Company / Ticker Selector Row with Search Popover & Quick Chips -->
-        <div class="filter-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span class="filter-label">Company:</span>
-          
+        <div class="filter-row">
+          <span class="filter-label">Company</span>
           <div class="feed-ticker-picker-wrap" id="feedTickerPickerWrap">
-            <button class="feed-ticker-picker-btn" id="feedTickerPickerBtn" onclick="toggleFeedTickerDropdown()" type="button">
-              <span id="selectedTickerLabel">All Monitored Holdings</span>
-              <span style="font-size:0.7rem; color:var(--text-muted);">▾</span>
+            <button class="feed-ticker-picker-btn" id="feedTickerPickerBtn" data-click="toggleFeedTickerDropdown" type="button">
+              <span id="selectedTickerLabel">All companies</span> <span aria-hidden="true">▾</span>
             </button>
             <div class="feed-ticker-dropdown-menu" id="feedTickerDropdownMenu">
               <div class="feed-ticker-dropdown-search">
-                <input type="text" id="feedTickerSearchInput" placeholder="Search ticker, name, or sector..." oninput="filterFeedTickerDropdown(this.value)">
+                <input type="text" id="feedTickerSearchInput" aria-label="Find a company" placeholder="Find a company" data-input="filterFeedTickerDropdown">
               </div>
               <div class="feed-ticker-dropdown-list" id="feedTickerDropdownList">
-                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" onclick="selectFeedTicker('ALL', 'All Monitored Holdings')">
-                  <span><strong>All Monitored Holdings</strong></span>
+                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" data-click="selectFeedTicker">
+                  <span>All companies</span>
                   <span class="pill-count">{{ items|length }}</span>
                 </div>
                 {% for sec in sector_directory %}
-                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}" style="padding:0.35rem 0.85rem; font-size:0.68rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-card);">
-                  {{ sec.name }}
-                </div>
+                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}">{{ sec.name }}</div>
                 {% for co in sec.companies %}
-                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" onclick="selectFeedTicker('{{ co.symbol }}', '{{ co.symbol }} — {{ co.name }}')">
-                  <div style="display:flex; align-items:center; gap:0.45rem;">
-                    <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.72rem; padding:0.1rem 0.35rem;">{{ co.symbol }}</span>
-                    <span style="font-size:0.78rem;">{{ co.name }}</span>
-                  </div>
+                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" data-click="selectFeedTicker">
+                  <span><span class="ticker-badge">{{ co.symbol }}</span> {{ co.name }}</span>
                   <span class="pill-count">{{ co.story_count }}</span>
                 </div>
                 {% endfor %}
@@ -6141,169 +3277,67 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Quick Selector Pills for Active Sector -->
-          <div id="feedQuickTickerPills" style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:center;">
-            <button class="filter-btn active" data-filter-type="ticker" data-val="ALL" onclick="setTickerFilter('ALL', this)">
-              All
-            </button>
-            {% for co in watchlist_companies %}
-            <button class="filter-btn" data-filter-type="ticker" data-val="{{ co.symbol }}" data-sector="{{ co.macro_sector }}" onclick="setTickerFilter('{{ co.symbol }}', this)" title="{{ co.name }}">
-              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.05rem 0.3rem;">{{ co.symbol }}</span>
-              <span class="pill-count">{{ stats.by_ticker.get(co.symbol, 0) }}</span>
-            </button>
+        <div class="filter-row">
+          <span class="filter-label">Category</span>
+          <div class="filter-options">
+            <button class="filter-btn active" type="button" data-filter-type="category" data-val="ALL" data-click="setCategoryFilter">All</button>
+            {% for cat, count in stats.by_category.items() %}
+            <button class="filter-btn" type="button" data-filter-type="category" data-val="{{ cat }}" data-click="setCategoryFilter">{{ cat }} <span class="pill-count">{{ count }}</span></button>
             {% endfor %}
           </div>
         </div>
 
         <div class="filter-row">
-          <span class="filter-label">Category:</span>
-          <button class="filter-btn active" data-filter-type="category" data-val="ALL" onclick="setCategoryFilter('ALL', this)">
-            All Categories
-          </button>
-          {% for cat, count in stats.by_category.items() %}
-          <button class="filter-btn" data-filter-type="category" data-val="{{ cat }}" onclick="setCategoryFilter('{{ cat }}', this)">
-            {{ cat }} <span class="pill-count">{{ count }}</span>
-          </button>
-          {% endfor %}
-        </div>
-
-        <div class="filter-row">
-          <span class="filter-label">Source:</span>
-          <button class="filter-btn active" data-filter-type="source" data-val="ALL" onclick="setSourceFilter('ALL', this)">
-            All Sources
-          </button>
-          <button class="filter-btn" data-filter-type="source" data-val="news_media" onclick="setSourceFilter('news_media', this)">
-            News Media
-          </button>
-          <button class="filter-btn" data-filter-type="source" data-val="sec_edgar" onclick="setSourceFilter('sec_edgar', this)">
-            SEC EDGAR
-          </button>
-          <button class="filter-btn" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">
-            Company Releases
-          </button>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border-card);">
-          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <span class="filter-label">Sort:</span>
-            <button class="filter-btn active" id="sortScoreBtn" onclick="sortRows('score')">Highest Score</button>
-            <button class="filter-btn" id="sortDateBtn" onclick="sortRows('date')">Newest Date</button>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.5rem; width:100%; max-width:300px;">
-            <input type="text" id="searchInput" placeholder="Search headlines, takeaways..." oninput="filterItems()" 
-                   style="background:var(--bg-base); border:1px solid var(--border-card); color:var(--text-primary); padding:0.5rem 0.95rem; border-radius:var(--radius-full); font-size:0.85rem; width:100%; outline:none;">
+          <span class="filter-label">Source</span>
+          <div class="filter-options">
+            <button class="filter-btn active" type="button" data-filter-type="source" data-val="ALL" data-click="setSourceFilter">All</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="news_media" data-click="setSourceFilter">News Media</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="sec_edgar" data-click="setSourceFilter">SEC EDGAR</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="company_ir" data-click="setSourceFilter">Company Releases</button>
           </div>
         </div>
-      </div>
+      </details>
 
-      <!-- News Feed Table -->
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 75px;">Score</th>
-              <th>Company</th>
-              <th>Category &amp; Source</th>
-              <th>Date</th>
-              <th>Headline, Cross-References &amp; Takeaways</th>
-              <th>Link</th>
-            </tr>
-          </thead>
-          <tbody id="newsBody">
-            {% for item in items %}
-            <tr class="news-row" 
-                data-score="{{ item.score }}"
-                data-date="{{ item.published_date }}"
-                data-ticker="{{ item.ticker }}"
-                data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
-                data-sector="{{ item.macro_sector }}"
-                data-source="{{ item.source }}" 
-                data-category="{{ item.category }}"
-                data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
-              <td>
-                <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
-                  {{ item.score }}
-                </span>
-              </td>
-              <td>
-                <div>
-                  <a href="company.html?ticker={{ item.ticker }}" class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</a>
-                  <div class="summary-text" style="margin-top: 0.25rem;">{{ item.company_name }}</div>
-                </div>
-              </td>
-              <td>
-                <div>
-                  <span class="category-badge">{{ item.category }}</span>
-                  <div style="margin-top: 0.35rem;">
-                    <span class="source-badge {% if item.source == 'sec_edgar' %}source-badge-edgar{% elif item.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">
-                      {{ item.source_label }}
-                    </span>
-                  </div>
-                </div>
-              </td>
-              <td class="date-cell">
-                {{ item.published_date }}
-              </td>
-              <td>
-                <div class="headline-text">{{ item.clean_headline }}</div>
-                
-                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem; margin-top:0.25rem;">
-                  {% if item.form_or_type %}
-                  <span class="form-type-pill">{{ item.form_or_type }}</span>
-                  {% endif %}
-                  
-                  {% if item.cross_references_list %}
-                    {% if item.cross_references_list|length == 1 %}
-                      {% set ref = item.cross_references_list[0] %}
-                      <span class="crossref-badge" title="{{ ref.impact_note }}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                        ({{ ref.matched_entity }})
-                      </span>
-                    {% else %}
-                      <details class="crossref-accordion">
-                        <summary class="crossref-summary-pill">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                        </summary>
-                        <div class="crossref-dropdown-content">
-                          {% for ref in item.cross_references_list %}
-                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                          </div>
-                          {% endfor %}
-                        </div>
-                      </details>
-                    {% endif %}
-                  {% endif %}
-                </div>
-
-                {% if item.llm_summary %}
-                <div class="why-matters-box">
-                  <span class="why-tag">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    Takeaway:
-                  </span>
-                  {{ item.llm_summary }}
-                </div>
+      <div class="feed-list" id="newsBody">
+        {% for item in items %}
+        <article class="news-row{% if item.score >= 7.0 %} is-high{% endif %}"
+            data-score="{{ item.score }}"
+            data-date="{{ item.published_date }}"
+            data-ticker="{{ item.ticker }}"
+            data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
+            data-sector="{{ item.macro_sector }}"
+            data-source="{{ item.source }}"
+            data-category="{{ item.category }}"
+            data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
+          <span class="feed-score" title="{{ item.score_breakdown }}">{{ item.score }}</span>
+          <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
+          <div class="feed-body">
+            <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
+            {% if item.llm_summary and item.score >= 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
+            <details class="feed-details">
+              <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
+              <div class="feed-details-body">
+                {% if item.llm_summary and item.score < 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
+                {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
+                {% if item.cross_references_list %}
+                <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
+                <ul class="feed-refs">
+                  {% for ref in item.cross_references_list %}
+                  <li><a href="company.html?ticker={{ ref.related_ticker|urlencode }}" class="ticker-badge">{{ ref.related_ticker }}</a> {{ ref.impact_note }}</li>
+                  {% endfor %}
+                </ul>
                 {% endif %}
-
-                <p class="summary-text">{{ item.summary }}</p>
-              </td>
-              <td>
-                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  {% if item.source == 'sec_edgar' %}Filing{% elif item.source == 'company_ir' %}Press Release{% else %}Article{% endif %}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                <a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
+              </div>
+            </details>
+          </div>
+          <span class="date-cell">{{ short_date(item.published_date) }}</span>
+        </article>
+        {% endfor %}
+        <p class="home-empty" id="feedEmpty" hidden>No stories match these filters.</p>
       </div>
     </main>
   </div>
@@ -6315,30 +3349,28 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     let currentTicker = 'ALL';
     let currentCategory = 'ALL';
     let currentSource = 'ALL';
+    let currentOrder = 'score';
+    let onFileOpen = false;
+
+    const BANDS = [
+      { key: 'high', label: 'Read first', note: 'Score 7 and above', min: 7 },
+      { key: 'mid', label: 'Worth knowing', note: 'Score 4 to 7', min: 4 },
+      { key: 'low', label: 'On file', note: 'Below 4, mostly routine', min: -Infinity },
+    ];
+
+    function bandFor(score) {
+      return BANDS.find(b => score >= b.min);
+    }
 
     function setFeedSectorFilter(secName, btn) {
       currentSector = secName;
       document.querySelectorAll('.feed-sector-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      const pills = document.querySelectorAll('#feedQuickTickerPills button[data-filter-type="ticker"]');
-      pills.forEach(pill => {
-        const pSec = pill.getAttribute('data-sector');
-        const pVal = pill.getAttribute('data-val');
-        if (pVal === 'ALL') {
-          pill.style.display = 'inline-flex';
-        } else if (secName === 'ALL' || pSec === secName) {
-          pill.style.display = 'inline-flex';
-        } else {
-          pill.style.display = 'none';
-        }
-      });
-
-      if (currentTicker !== 'ALL') {
-        const activePill = document.querySelector(`#feedQuickTickerPills button[data-val="${currentTicker}"]`);
-        if (activePill && activePill.style.display === 'none') {
-          setTickerFilter('ALL', document.querySelector('#feedQuickTickerPills button[data-val="ALL"]'));
-        }
+      // A company outside the new sector can't stay selected.
+      if (currentTicker !== 'ALL' && secName !== 'ALL') {
+        const item = document.querySelector(`#feedTickerDropdownList .feed-ticker-item[data-ticker="${CSS.escape(currentTicker)}"]`);
+        if (item && item.dataset.sector !== secName) setTickerFilter('ALL');
       }
 
       filterItems();
@@ -6380,19 +3412,16 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    function selectFeedTicker(ticker, label) {
-      const lbl = document.getElementById('selectedTickerLabel');
-      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All Monitored Holdings' : ticker;
-      
+    function selectFeedTicker(ticker) {
       const menu = document.getElementById('feedTickerDropdownMenu');
       if (menu) menu.classList.remove('active');
 
-      document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
-        it.classList.toggle('active', it.getAttribute('data-ticker') === ticker);
-      });
-
-      const quickBtn = document.querySelector(`#feedQuickTickerPills button[data-val="${ticker}"]`);
-      setTickerFilter(ticker, quickBtn);
+      // Picking a company outside the current sector should show that company, not an empty list.
+      const item = document.querySelector(`#feedTickerDropdownList .feed-ticker-item[data-ticker="${CSS.escape(ticker)}"]`);
+      if (item && ticker !== 'ALL' && currentSector !== 'ALL' && item.dataset.sector !== currentSector) {
+        setFeedSectorFilter('ALL', document.querySelector('.feed-sector-btn[data-sector="ALL"]'));
+      }
+      setTickerFilter(ticker);
     }
 
     document.addEventListener('click', (e) => {
@@ -6403,13 +3432,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       }
     });
 
-    function setTickerFilter(ticker, btn) {
+    function setTickerFilter(ticker) {
       currentTicker = ticker;
-      document.querySelectorAll('[data-filter-type="ticker"]').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
 
       const lbl = document.getElementById('selectedTickerLabel');
-      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All Monitored Holdings' : ticker;
+      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All companies' : ticker;
 
       document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
         it.classList.toggle('active', it.getAttribute('data-ticker') === ticker);
@@ -6450,17 +3477,106 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         let matchSrc = (currentSource === 'ALL') || (rowSource === currentSource);
         let matchQuery = !q || rowText.includes(q);
 
-        if (matchSector && matchTicker && matchCat && matchSrc && matchQuery) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
+        row.dataset.match = (matchSector && matchTicker && matchCat && matchSrc && matchQuery) ? '1' : '0';
       });
+
+      renderGroups();
+    }
+
+    function filtersActive() {
+      const q = (document.getElementById('searchInput')?.value || '').trim();
+      return Boolean(q) || currentSector !== 'ALL' || currentTicker !== 'ALL' || currentCategory !== 'ALL' || currentSource !== 'ALL';
+    }
+
+    function clearFeedFilters() {
+      const box = document.getElementById('searchInput');
+      if (box) box.value = '';
+      currentCategory = 'ALL';
+      currentSource = 'ALL';
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.val === 'ALL' || b.dataset.sector === 'ALL');
+      });
+      currentSector = 'ALL';
+      setTickerFilter('ALL');
+    }
+
+    function groupHeader(key, label, note, count, toggle) {
+      const head = document.createElement('div');
+      head.className = 'feed-group';
+      head.dataset.key = key;
+      const title = document.createElement('h2');
+      title.className = 'feed-group-title';
+      title.textContent = label;
+      const meta = document.createElement('span');
+      meta.className = 'feed-group-note';
+      meta.textContent = note ? `${count} · ${note}` : String(count);
+      head.append(title, meta);
+      if (toggle) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'feed-group-toggle';
+        btn.textContent = onFileOpen ? 'Hide' : 'Show';
+        btn.setAttribute('aria-expanded', String(onFileOpen));
+        btn.addEventListener('click', () => {
+          onFileOpen = !onFileOpen;
+          renderGroups();
+        });
+        head.append(btn);
+      }
+      return head;
+    }
+
+    // Draws the group headings, and collapses "On file" until it is asked for or filtered into.
+    function renderGroups() {
+      const body = document.getElementById('newsBody');
+      body.querySelectorAll('.feed-group').forEach(h => h.remove());
+      const rows = Array.from(body.querySelectorAll('.news-row'));
+      const active = filtersActive();
+      const groups = new Map();
+
+      rows.forEach(row => {
+        const matched = row.dataset.match !== '0';
+        let key;
+        if (currentOrder === 'score') {
+          key = bandFor(parseFloat(row.dataset.score)).key;
+        } else {
+          key = row.dataset.date;
+        }
+        if (matched) {
+          if (!groups.has(key)) groups.set(key, { first: row, count: 0 });
+          groups.get(key).count += 1;
+        }
+        const collapsed = currentOrder === 'score' && key === 'low' && !onFileOpen && !active;
+        row.hidden = !matched || collapsed;
+      });
+
+      groups.forEach((group, key) => {
+        let head;
+        if (currentOrder === 'score') {
+          const band = BANDS.find(b => b.key === key);
+          head = groupHeader(key, band.label, band.note, group.count, key === 'low' && !active);
+        } else {
+          const parts = key.split('-').map(Number);
+          const label = new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          head = groupHeader(key, label, '', group.count, false);
+        }
+        body.insertBefore(head, group.first);
+      });
+
+      const shown = Array.from(groups.values()).reduce((sum, g) => sum + g.count, 0);
+      const countEl = document.getElementById('feedResultCount');
+      if (countEl) countEl.textContent = active ? `${shown} of ${rows.length} stories` : '';
+      const clearBtn = document.getElementById('feedClearFilters');
+      if (clearBtn) clearBtn.hidden = !active;
+      const empty = document.getElementById('feedEmpty');
+      if (empty) empty.hidden = shown !== 0;
     }
 
     function sortRows(criterion) {
-      const tbody = document.getElementById('newsBody');
-      const rows = Array.from(tbody.querySelectorAll('.news-row'));
+      currentOrder = criterion;
+      const body = document.getElementById('newsBody');
+      const empty = document.getElementById('feedEmpty');
+      const rows = Array.from(body.querySelectorAll('.news-row'));
 
       document.getElementById('sortScoreBtn')?.classList.toggle('active', criterion === 'score');
       document.getElementById('sortDateBtn')?.classList.toggle('active', criterion === 'date');
@@ -6468,12 +3584,12 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       rows.sort((a, b) => {
         if (criterion === 'score') {
           return parseFloat(b.getAttribute('data-score')) - parseFloat(a.getAttribute('data-score'));
-        } else {
-          return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
         }
+        return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
       });
 
-      rows.forEach(r => tbody.appendChild(r));
+      rows.forEach(r => body.insertBefore(r, empty));
+      renderGroups();
     }
 
     // URL parameter auto-filter (?ticker=NVDA or ?q=keyword)
@@ -6482,17 +3598,20 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const urlTicker = params.get('ticker');
       const urlQ = params.get('q');
 
-      if (urlTicker) {
-        const btn = document.querySelector(`[data-filter-type="ticker"][data-val="${urlTicker}"]`);
-        setTickerFilter(urlTicker, btn);
+      // Only a ticker that appears in the picker can filter; anything else from the URL is ignored.
+      const pickable = urlTicker && [...document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item')]
+        .some(it => it.dataset.ticker === urlTicker.toUpperCase());
+      if (pickable) {
+        setTickerFilter(urlTicker.toUpperCase());
       }
       if (urlQ) {
         const searchBox = document.getElementById('searchInput');
         if (searchBox) {
           searchBox.value = urlQ;
-          filterItems();
         }
       }
+      sortRows('score');
+      filterItems();
     });
   </script>
 </body>
@@ -6507,11 +3626,10 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Forthcoming corporate calendar showing upcoming earnings dates, dividend ex-dates, and statutory SEC filing deadlines.">
-  <title>StockPulse — Forthcoming Corporate Calendar</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="description" content="Upcoming earnings calls, dividends, conferences, and SEC deadlines for your watchlist.">
+  <title>StockPulse — Calendar</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -6521,134 +3639,65 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Corporate Calendar</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Upcoming earnings calls, dividend dates, conferences &amp; statutory SEC Form 10-Q/10-K deadlines</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span class="calendar-origin-badge origin-sourced">Confirmed</span>
-          <span class="calendar-origin-badge origin-estimated">Estimated</span>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">Calendar</h1>
+        <p class="page-standfirst">
+          {% if calendar_events %}{{ calendar_events|length }} events ahead. Next: {{ calendar_events[0].headline }}, {{ calendar_events[0].relative_badge|lower }}.
+          {% else %}Nothing scheduled yet.{% endif %}
+        </p>
       </header>
 
-      <!-- Spotlight Banner for Earliest Upcoming Event -->
-      {% if calendar_events %}
-      {% set spot = calendar_events[0] %}
-      <div class="calendar-spotlight-card {% if spot.source_type == 'ESTIMATED_RULE' %}calendar-card-estimated{% endif %}">
-        <div class="spotlight-badge-row">
-          <span class="spotlight-beacon-pill">NEXT UPCOMING EVENT</span>
-          <span class="relative-badge" style="font-weight:700; color:var(--accent-blue);">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {{ spot.relative_badge }} ({{ spot.display_date }})
-          </span>
+      {% if calendar_view.marks %}
+      <figure class="cal-timeline" aria-label="Events on a timeline">
+        <div class="cal-track">
+          <span class="cal-month cal-today" data-left="{{ calendar_view.today_pos }}">Today</span>
+          {% for m in calendar_view.months %}
+          <span class="cal-month" data-left="{{ m.pos }}">{{ m.label }}</span>
+          {% endfor %}
+          {% for mark in calendar_view.marks %}
+          <a class="cal-mark{% if mark.estimated %} is-estimated{% endif %}" href="#{{ mark.anchor }}" data-event-type="{{ mark.event_type }}" data-left="{{ mark.pos }}" data-bottom="{{ mark.lane * 12 }}" title="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}{% if mark.estimated %} (estimated){% endif %}" aria-label="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}"></a>
+          {% endfor %}
         </div>
-        <div class="spotlight-content-row">
-          <div class="calendar-date-box spotlight-date-box">
-            <div class="calendar-date-month">{{ spot.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-            <div class="calendar-date-day" style="font-size:1.6rem;">{{ spot.event_date[8:10] }}</div>
-          </div>
-          <div style="flex:1; min-width:0;">
-            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.35rem;">
-              <a href="company.html?ticker={{ spot.ticker }}" class="ticker-badge ticker-{{ spot.ticker }}" style="font-size:0.88rem; padding:0.22rem 0.65rem;">{{ spot.ticker }}</a>
-              <span class="calendar-type-pill {% if 'Earnings' in spot.event_type %}cal-type-earnings{% elif 'Dividend' in spot.event_type %}cal-type-dividend{% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
-                {% if 'Earnings' in spot.event_type %}Earnings Call
-                {% elif 'Dividend' in spot.event_type %}Dividend
-                {% elif 'SEC' in spot.event_type or 'Statutory' in spot.event_type %}SEC Deadline
-                {% else %}Conference{% endif %}
-              </span>
-              {% if spot.source_type == 'ESTIMATED_RULE' %}
-              <span class="calendar-origin-badge origin-estimated">Estimated</span>
-              {% else %}
-              <span class="calendar-origin-badge origin-sourced">Confirmed</span>
-              {% endif %}
-            </div>
-            <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">{{ spot.headline }}</h3>
-            <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.45;">{{ spot.details }}</p>
-          </div>
-          {% if spot.source_url %}
-          <div>
-            <a href="{{ spot.source_url }}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="font-size:0.82rem; padding:0.5rem 1.1rem;">
-              {% if spot.source_type == 'ESTIMATED_RULE' %}SEC Filings ↗{% else %}Event Source ↗{% endif %}
-            </a>
-          </div>
-          {% endif %}
-        </div>
-      </div>
+        <figcaption class="cal-legend">
+          <span><i class="cal-key"></i>Confirmed</span>
+          <span><i class="cal-key is-estimated"></i>Estimated from filing rules</span>
+        </figcaption>
+      </figure>
       {% endif %}
 
-      <!-- Calendar Controls -->
-      <div class="controls-panel">
-        <div class="filter-row">
-          <span class="filter-label">Filter:</span>
-          <button class="filter-btn active cal-filter-btn" data-val="ALL" onclick="filterCalendar('ALL', this)">All Events ({{ calendar_events|length }})</button>
-          <button class="filter-btn cal-filter-btn" data-val="Earnings" onclick="filterCalendar('Earnings', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-            Earnings Calls
-          </button>
-          <button class="filter-btn cal-filter-btn" data-val="Dividend" onclick="filterCalendar('Dividend', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
-            Dividend Dates
-          </button>
-          <button class="filter-btn cal-filter-btn" data-val="SEC" onclick="filterCalendar('SEC', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
-            SEC Filing Deadlines
-          </button>
-          <button class="filter-btn cal-filter-btn" data-val="Conference" onclick="filterCalendar('Conference', this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-            Conferences
-          </button>
+      <div class="controls-panel cal-filters">
+        <div class="filter-options" role="group" aria-label="Filter events">
+          <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" data-click="filterCalendar">All <span class="pill-count">{{ calendar_events|length }}</span></button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings Calls</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividend Dates</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC Filing Deadlines</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" data-click="filterCalendar">Conferences</button>
         </div>
       </div>
 
-      <!-- Calendar Grid -->
-      <div class="calendar-grid" id="calendarGrid">
-        {% for ev in calendar_events %}
-        <div class="calendar-card {% if ev.source_type == 'ESTIMATED_RULE' %}calendar-card-estimated{% endif %}"
-             data-event-type="{{ ev.event_type }}"
-             data-source-type="{{ ev.source_type }}">
-          <div>
-            <div class="calendar-card-header">
-              <div class="calendar-card-identity">
-                <a href="company.html?ticker={{ ev.ticker }}" class="ticker-badge ticker-{{ ev.ticker }}">{{ ev.ticker }}</a>
-                {% if ev.source_type == 'ESTIMATED_RULE' %}
-                <span class="calendar-origin-badge origin-estimated">Estimated</span>
-                {% else %}
-                <span class="calendar-origin-badge origin-sourced">Confirmed</span>
-                {% endif %}
-              </div>
-              <div class="calendar-date-box">
-                <div class="calendar-date-month">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                <div class="calendar-date-day">{{ ev.event_date[8:10] }}</div>
-              </div>
+      <div id="calendarGrid">
+        {% for week in calendar_view.weeks %}
+        <section class="cal-week">
+          <h2 class="cal-week-title">{{ week.label }}</h2>
+          {% for ev in week.events %}
+          <article class="calendar-card" id="{{ ev.anchor }}" data-event-type="{{ ev.event_type }}" data-source-type="{{ ev.source_type }}">
+            <div class="cal-when">
+              <span class="cal-date">{{ short_date(ev.event_date) }}</span>
+              <span class="cal-relative">{{ ev.relative_badge }}</span>
             </div>
-
-            <div style="margin: 0.25rem 0 0.5rem 0;">
-              <span class="calendar-type-pill {% if 'Earnings' in ev.event_type %}cal-type-earnings{% elif 'Dividend' in ev.event_type %}cal-type-dividend{% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}cal-type-sec{% else %}cal-type-conference{% endif %}">
-                {% if 'Earnings' in ev.event_type %}Earnings Call
-                {% elif 'Dividend' in ev.event_type %}Dividend
-                {% elif 'SEC' in ev.event_type or 'Statutory' in ev.event_type %}SEC Deadline
-                {% else %}Conference{% endif %}
-              </span>
+            <a href="company.html?ticker={{ ev.ticker|urlencode }}" class="ticker-badge" title="{{ ev.company_name }}">{{ ev.ticker }}</a>
+            <div class="cal-body">
+              <h3 class="cal-headline">{{ ev.headline }}</h3>
+              <p class="cal-details">{{ ev.kind }}{% if ev.source_type == 'ESTIMATED_RULE' %} · <span class="cal-estimated">Estimated</span>{% endif %}{% if ev.details %} · {{ ev.details }}{% endif %}</p>
             </div>
-
-            <h4 class="calendar-card-headline">{{ ev.headline }}</h4>
-            <p class="calendar-card-details">{{ ev.details }}</p>
-          </div>
-
-          <div class="calendar-card-bottom">
-            <span class="relative-badge">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <strong>{{ ev.relative_badge }}</strong> ({{ ev.display_date }})
-            </span>
-            {% if ev.source_url %}
-            <a href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.75rem;">
-              {% if ev.source_type == 'ESTIMATED_RULE' %}SEC Filings{% else %}Source{% endif %}
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-            </a>
+            {% if ev.source_url and ev.source_url.startswith('http') %}
+            <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer" class="cal-source">{% if ev.source_type == 'ESTIMATED_RULE' %}SEC filings{% else %}Source{% endif %}</a>
             {% endif %}
-          </div>
-        </div>
+          </article>
+          {% endfor %}
+        </section>
+        {% else %}
+        <p class="home-empty">No upcoming events. They appear here after the next pipeline run.</p>
         {% endfor %}
       </div>
     </main>
@@ -6657,26 +3706,30 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
+    function matchesCalendarFilter(evType, type) {
+      if (type === 'ALL') return true;
+      if (type === 'SEC') return evType.includes('SEC') || evType.includes('Statutory');
+      return evType.includes(type);
+    }
+
+    // Positions come from the data, and the CSP allows them to be set from script but not inline.
+    document.querySelectorAll('.cal-track [data-left]').forEach(el => {
+      el.style.left = `${Number(el.dataset.left)}%`;
+      if (el.dataset.bottom) el.style.bottom = `${Number(el.dataset.bottom)}px`;
+    });
+
     function filterCalendar(type, btn) {
       document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      const cards = document.querySelectorAll('.calendar-card');
-      cards.forEach(card => {
-        const evType = card.getAttribute('data-event-type') || '';
-        if (type === 'ALL') {
-          card.style.display = 'flex';
-        } else if (type === 'Earnings' && evType.includes('Earnings')) {
-          card.style.display = 'flex';
-        } else if (type === 'Dividend' && evType.includes('Dividend')) {
-          card.style.display = 'flex';
-        } else if (type === 'SEC' && (evType.includes('SEC') || evType.includes('Statutory'))) {
-          card.style.display = 'flex';
-        } else if (type === 'Conference' && evType.includes('Conference')) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
+      document.querySelectorAll('.calendar-card').forEach(card => {
+        card.hidden = !matchesCalendarFilter(card.getAttribute('data-event-type') || '', type);
+      });
+      document.querySelectorAll('.cal-mark').forEach(mark => {
+        mark.classList.toggle('is-dimmed', !matchesCalendarFilter(mark.getAttribute('data-event-type') || '', type));
+      });
+      document.querySelectorAll('.cal-week').forEach(week => {
+        week.hidden = !week.querySelector('.calendar-card:not([hidden])');
       });
     }
   </script>
@@ -6692,11 +3745,10 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Macroeconomic intelligence panel mapping Federal Reserve (FRED) interest rates, 10Y Treasuries, CPI inflation, WTI Crude, and unemployment to company sensitivities.">
-  <title>StockPulse — Macroeconomic Snapshot &amp; Sensitivities</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="description" content="Economic indicators and the watchlist holdings each one touches.">
+  <title>StockPulse — Economy</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -6706,183 +3758,125 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.75rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Macroeconomic Intelligence</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Federal Reserve Bank of St. Louis (FRED) live benchmark indicators mapped to portfolio sensitivities with AI impact analysis</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill" style="color:var(--accent-blue); font-weight:700;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-            St. Louis Fed (FRED) Feed
-          </span>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">Economy</h1>
+        <p class="page-standfirst">{{ economic_indicators|length }} indicators, and the holdings each one touches.</p>
       </header>
 
-      <!-- Upcoming High-Impact Macroeconomic Events Strip -->
-      <section style="margin-bottom: 2rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem;">
-          <div style="display:flex; align-items:center; gap:0.5rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--accent-blue);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <h2 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Upcoming Macroeconomic Releases &amp; Decisions</h2>
-          </div>
-          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Federal Reserve &amp; Agency Schedule</span>
-        </div>
-
-        <div class="macro-events-strip">
-          {% for ev in upcoming_economic_events %}
-          <div class="macro-event-card">
-            <div>
-              <div class="macro-event-top">
-                <span class="macro-event-authority">{{ ev.authority }}</span>
-                <span class="macro-event-countdown">{{ ev.relative_badge }}</span>
-              </div>
-              <h3 class="macro-event-title">{{ ev.title }}</h3>
-            </div>
-            <div>
-              <div class="macro-event-date-row" style="margin-bottom:0.45rem;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span>{{ ev.display_date }}</span>
-              </div>
-              <div class="macro-event-consensus">
-                <strong>Expectation:</strong> {{ ev.consensus }}
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </section>
-
-      <!-- Sector & Ticker Filter for Sensitivities -->
-      <div class="controls-panel">
-        <div style="margin-bottom:0.75rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
-            <span class="filter-label" style="margin-bottom:0;">Filter by Sector:</span>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
-          </div>
+      <details class="controls-panel" id="econFilters">
+        <summary class="feed-filters-toggle">Filters</summary>
+        <div class="filter-row">
+          <span class="filter-label">Sector</span>
           <div class="feed-sector-bar">
-            <button class="feed-sector-btn active econ-sec-btn" data-sector="ALL" onclick="filterEconomicBySector('ALL', this)">
-              All Sectors <span class="pill-count">{{ watchlist_companies|length }}</span>
-            </button>
+            <button class="filter-btn active econ-sec-btn" type="button" data-sector="ALL" data-click="filterEconomicBySector">All</button>
             {% for sec in sector_directory %}
-            <button class="feed-sector-btn econ-sec-btn" data-sector="{{ sec.name }}" onclick="filterEconomicBySector('{{ sec.name }}', this)">
-              {{ sec.name }} <span class="pill-count">{{ sec.count }}</span>
-            </button>
+            <button class="filter-btn econ-sec-btn" type="button" data-sector="{{ sec.name }}" data-click="filterEconomicBySector">{{ sec.name }}</button>
             {% endfor %}
           </div>
         </div>
-
-        <div class="filter-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span class="filter-label">Filter Company:</span>
-          <button class="filter-btn active econ-filter-btn" data-val="ALL" data-sector="ALL" onclick="filterEconomicByTicker('ALL', this)">All Watchlist Tickers</button>
-          {% for co in watchlist_companies %}
-          <button class="filter-btn econ-filter-btn" data-val="{{ co.symbol }}" data-sector="{{ co.macro_sector }}" onclick="filterEconomicByTicker('{{ co.symbol }}', this)" title="{{ co.name }}">
-            <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.05rem 0.3rem;">{{ co.symbol }}</span>
-          </button>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- Economic Indicator Cards (Featuring Anchored Focal Cards) -->
-      <div class="economic-grid" id="economicCardsGrid" style="margin-bottom:3rem;">
-        {% for ind in economic_indicators %}
-        <div class="economic-card {% if loop.index <= 2 %}economic-card-anchor{% endif %}" 
-             data-indicator-id="{{ ind.indicator_id }}"
-             data-relevant-tickers="{{ ind.relevant_tickers }}">
-          <div>
-            <div class="economic-card-top">
-              <span class="economic-category-badge">{{ ind.category }} &bull; {{ ind.series_id }}</span>
-              <span class="economic-trend-badge {% if ind.change_direction == 'up' %}trend-up{% elif ind.change_direction == 'down' %}trend-down{% else %}trend-flat{% endif %}">
-                {% if ind.change_direction == 'up' %}▲ +{{ ind.change_value }}
-                {% elif ind.change_direction == 'down' %}▼ {{ ind.change_value }}
-                {% else %}■ Steady{% endif %}
-              </span>
-            </div>
-
-            <div class="economic-val {% if loop.index <= 2 %}economic-val-anchor{% endif %}">{{ ind.formatted_value }}</div>
-            <h4 class="economic-series-name">{{ ind.name }}</h4>
-
-            <!-- Sparkline Mini-Chart (12-24 Month Historical Trend) -->
-            <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
-              <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" preserveAspectRatio="none">
-                <!-- Dynamically rendered by renderEconSparklines() -->
-              </svg>
-              <div class="sparkline-labels">
-                <span class="spark-start">12M Trend</span>
-                <span class="spark-end">{{ ind.observation_date }}</span>
-              </div>
-            </div>
-
-            <!-- AI-Generated Synthesis Box -->
-            {% if ind.ai_synthesis %}
-            <div class="ai-synthesis-card">
-              <div class="ai-synthesis-head">
-                <span class="ai-synthesis-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  AI Macro Takeaway
-                </span>
-                <span class="ai-synthesis-meta">Observed {{ ind.observation_date }}</span>
-              </div>
-              <div class="ai-synthesis-content">
-                {{ ind.ai_synthesis }}
-              </div>
-            </div>
-            {% endif %}
-
-            <p class="economic-context">{{ ind.context_note }}</p>
-          </div>
-
-          <div class="economic-tickers-wrap">
-            <div class="economic-tickers-label">Direct Watchlist Sensitivities ({{ ind.tickers_list|length }} Companies):</div>
-            <div class="economic-tickers-list">
-              {% for sym in ind.tickers_list %}
-              <a href="company.html?ticker={{ sym }}" class="ticker-badge ticker-{{ sym }}">{{ sym }}</a>
+        <div class="filter-row">
+          <label class="filter-label" for="econTickerSelect">Company</label>
+          <select class="econ-select" id="econTickerSelect" data-change="filterEconomicByTicker">
+            <option value="ALL">All companies</option>
+            {% for sec in sector_directory %}
+            <optgroup label="{{ sec.name }}" data-sector="{{ sec.name }}">
+              {% for co in sec.companies %}
+              <option value="{{ co.symbol }}">{{ co.symbol }} · {{ co.name }}</option>
               {% endfor %}
+            </optgroup>
+            {% endfor %}
+          </select>
+        </div>
+      </details>
+
+      <div class="econ-ledger" id="economicCardsGrid">
+        {% for ind in economic_indicators %}
+        <article class="economic-card" data-indicator-id="{{ ind.indicator_id }}" data-relevant-tickers="{{ ind.relevant_tickers }}">
+          <div class="econ-name">
+            <h2 class="economic-series-name">{{ ind.name }}</h2>
+            <p class="econ-sub">{{ ind.category }} · {{ ind.series_id }} · Observed {{ short_date(ind.observation_date) }}</p>
+          </div>
+          <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
+            <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" aria-hidden="true"></svg>
+            <div class="sparkline-labels">
+              <span class="spark-start"></span>
+              <span class="spark-end"></span>
             </div>
           </div>
-        </div>
+          <div class="econ-figure">
+            <div class="economic-val">{{ ind.formatted_value.split(' (')[0] }}</div>
+            {% if ' (' in ind.formatted_value %}<div class="econ-sub">({{ ind.formatted_value.split(' (', 1)[1] }}</div>{% endif %}
+            <div class="econ-change">
+              {% if ind.change_direction == 'up' %}▲ +{{ ind.change_value }}
+              {% elif ind.change_direction == 'down' %}▼ {{ ind.change_value }}
+              {% else %}Steady{% endif %}
+            </div>
+          </div>
+          <details class="feed-details econ-details">
+            <summary><span class="feed-meta">Why it matters, and {{ ind.tickers_list|length }} holdings it touches</span></summary>
+            <div class="feed-details-body">
+              {% if ind.ai_synthesis %}
+              <p class="feed-detail-label">AI Macro Takeaway</p>
+              <p class="feed-takeaway">{{ ind.ai_synthesis }}</p>
+              {% endif %}
+              {% if ind.context_note %}<p class="feed-detail-label">What it measures</p><p>{{ ind.context_note }}</p>{% endif %}
+              <p class="feed-detail-label">Holdings</p>
+              <p class="econ-holdings">{% for sym in ind.tickers_list %}<a href="company.html?ticker={{ sym|urlencode }}" class="ticker-badge">{{ sym }}</a> {% endfor %}</p>
+            </div>
+          </details>
+        </article>
         {% endfor %}
       </div>
 
-      <!-- Watchlist Sensitivity Matrix Table -->
-      <section style="background:var(--bg-surface-glass); backdrop-filter:blur(16px); border:1px solid var(--border-glass); border-radius:var(--radius-xl); padding:2rem; box-shadow:var(--shadow-card);">
-        <h3 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">Watchlist Sensitivity Matrix</h3>
-        <p style="font-size:0.88rem; color:var(--text-secondary); margin-bottom:1.5rem;">Documented sensitivities driving company-specific macroeconomic exposure</p>
-
+      {% set short_names = {'interest_rates': 'Rates', 'treasury_10y': '10Y', 'inflation': 'CPI', 'crude_oil': 'Oil', 'unemployment': 'Jobs'} %}
+      <section class="econ-section" aria-labelledby="econMatrixHeading">
+        <h2 class="fp-heading" id="econMatrixHeading">Who feels what</h2>
+        <p class="econ-note">A mark means the watchlist records that company as sensitive to the indicator.</p>
         <div class="table-container">
-          <table>
+          <table class="econ-matrix">
             <thead>
               <tr>
-                <th style="width: 110px;">Ticker</th>
-                <th>Company Name</th>
-                <th>Sector</th>
-                <th>Key Macro Sensitivities</th>
+                <th scope="col">Company</th>
+                {% for ind in economic_indicators %}
+                <th scope="col" class="mx-col" title="{{ ind.name }}">{{ short_names.get(ind.indicator_id, ind.name) }}</th>
+                {% endfor %}
+                <th scope="col" class="mx-factors">Other factors</th>
               </tr>
             </thead>
             <tbody id="matrixTableBody">
-              {% for co in watchlist_companies %}
+              {% for sec in sector_directory %}
+              <tr class="matrix-sector" data-sector="{{ sec.name }}"><th scope="rowgroup" colspan="{{ economic_indicators|length + 2 }}">{{ sec.name }}</th></tr>
+              {% for co in sec.companies %}
               <tr class="matrix-row" data-ticker="{{ co.symbol }}" data-sector="{{ co.macro_sector }}">
-                <td>
-                  <a href="company.html?ticker={{ co.symbol }}" class="ticker-badge ticker-{{ co.symbol }}">{{ co.symbol }}</a>
-                </td>
-                <td style="font-weight:700; color:var(--text-primary);">
-                  {{ co.name }}
-                </td>
-                <td>
-                  <span class="category-badge">{{ co.sector | replace('_', ' ') | title }}</span>
-                </td>
-                <td style="font-size:0.835rem; color:var(--text-secondary); line-height:1.45;">
-                  {% if co.sensitivities %}
-                    {{ co.sensitivities|join(', ') }}
-                  {% else %}
-                    General macroeconomic interest rate, inflation, and consumer spending sensitivity.
-                  {% endif %}
-                </td>
+                <th scope="row"><a href="company.html?ticker={{ co.symbol|urlencode }}" class="ticker-badge" title="{{ co.name }}">{{ co.symbol }}</a> <span class="mx-name">{{ co.name }}</span></th>
+                {% for ind in economic_indicators %}
+                <td class="mx-col">{% if co.symbol in ind.tickers_list %}<span class="mx-dot" role="img" aria-label="{{ co.symbol }} is sensitive to {{ ind.name }}"></span>{% endif %}</td>
+                {% endfor %}
+                <td class="mx-factors">{{ (co.macro_sensitivities or [])|join(', ')|replace('_', ' ') }}</td>
               </tr>
+              {% endfor %}
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section class="econ-section" aria-labelledby="econScheduleHeading">
+        <h2 class="fp-heading" id="econScheduleHeading">Upcoming Macroeconomic Releases</h2>
+        {% if economic_schedule and economic_schedule|selectattr('passed')|list|length == economic_schedule|length %}
+        <p class="econ-note econ-stale">Every date on this schedule has passed. It is a fixed list and needs updating.</p>
+        {% endif %}
+        <ul class="econ-schedule">
+          {% for ev in economic_schedule %}
+          <li class="econ-release{% if ev.passed %} is-passed{% endif %}">
+            <span class="cal-when"><span class="cal-date">{{ short_date(ev.date) }}</span><span class="cal-relative">{{ ev.timing }}</span></span>
+            <div>
+              <h3 class="cal-headline">{{ ev.title }}</h3>
+              <p class="cal-details">{{ ev.authority }} · Expected: {{ ev.consensus }}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
       </section>
     </main>
   </div>
@@ -6928,30 +3922,20 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         });
 
         const pathD = points.map((p, i) => (i === 0 ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)).join(' ');
-        const areaD = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
-
-        const gradId = 'grad-' + Math.random().toString(36).substr(2, 9);
         const lastPt = points[points.length - 1];
 
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         svg.innerHTML = `
-          <defs>
-            <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.32" />
-              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
-            </linearGradient>
-          </defs>
-          <path d="${areaD}" fill="url(#${gradId})" />
-          <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4.5" fill="#1d4ed8" stroke="#ffffff" stroke-width="2" />
-          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="#0f172a" stroke="#ffffff" stroke-width="2" style="display:none;" />
+          <path d="${pathD}" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="var(--text-primary)" />
+          <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--accent)" display="none" />
         `;
 
         // Update labels
         const startLabel = wrap.querySelector('.spark-start');
         const endLabel = wrap.querySelector('.spark-end');
         if (startLabel) startLabel.textContent = `${history[0].date.substring(0, 7)}: ${history[0].value}${unit.includes('%') ? '%' : ''}`;
-        if (endLabel) endLabel.textContent = `Latest: ${history[history.length - 1].value}${unit.includes('%') ? '%' : ''}`;
+        if (endLabel) endLabel.textContent = `${history[history.length - 1].value}${unit.includes('%') ? '%' : ''}`;
 
         // Create tooltip
         let tooltip = wrap.querySelector('.sparkline-tooltip');
@@ -6994,61 +3978,44 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       document.querySelectorAll('.econ-sec-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      const pills = document.querySelectorAll('.econ-filter-btn');
-      pills.forEach(pill => {
-        const pSec = pill.getAttribute('data-sector');
-        const pVal = pill.getAttribute('data-val');
-        if (pVal === 'ALL') {
-          pill.style.display = 'inline-flex';
-        } else if (sector === 'ALL' || pSec === sector) {
-          pill.style.display = 'inline-flex';
-        } else {
-          pill.style.display = 'none';
-        }
-      });
-
-      // If current ticker is hidden, reset to ALL
-      if (currentEconTicker !== 'ALL') {
-        const activePill = document.querySelector(`.econ-filter-btn[data-val="${currentEconTicker}"]`);
-        if (activePill && activePill.style.display === 'none') {
-          filterEconomicByTicker('ALL', document.querySelector('.econ-filter-btn[data-val="ALL"]'));
+      // The company list only offers companies in the chosen sector.
+      const select = document.getElementById('econTickerSelect');
+      if (select) {
+        select.querySelectorAll('optgroup').forEach(group => {
+          const inSector = sector === 'ALL' || group.dataset.sector === sector;
+          group.hidden = !inSector;
+          group.disabled = !inSector;
+        });
+        const chosen = select.options[select.selectedIndex];
+        if (chosen && chosen.parentElement.disabled) {
+          select.value = 'ALL';
+          currentEconTicker = 'ALL';
         }
       }
 
       applyEconomicFilters();
     }
 
-    function filterEconomicByTicker(ticker, btn) {
+    function filterEconomicByTicker(ticker) {
       currentEconTicker = ticker;
-      document.querySelectorAll('.econ-filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
       applyEconomicFilters();
     }
 
     function applyEconomicFilters() {
-      const cards = document.querySelectorAll('.economic-card');
-      cards.forEach(card => {
-        const relevant = (card.getAttribute('data-relevant-tickers') || '').split(',').map(s => s.trim());
-        if (currentEconTicker === 'ALL') {
-          card.style.display = 'flex';
-        } else if (relevant.includes(currentEconTicker)) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
+      document.querySelectorAll('.economic-card').forEach(card => {
+        const relevant = (card.getAttribute('data-relevant-tickers') || '').split(',').map(v => v.trim());
+        card.hidden = currentEconTicker !== 'ALL' && !relevant.includes(currentEconTicker);
       });
 
-      const matrixRows = document.querySelectorAll('.matrix-row');
-      matrixRows.forEach(row => {
-        const rTicker = row.getAttribute('data-ticker');
-        const rSector = row.getAttribute('data-sector');
-        const secMatch = (currentEconSector === 'ALL' || rSector === currentEconSector);
-        const tickMatch = (currentEconTicker === 'ALL' || rTicker === currentEconTicker);
-        if (secMatch && tickMatch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
+      document.querySelectorAll('.matrix-row').forEach(row => {
+        const secMatch = currentEconSector === 'ALL' || row.getAttribute('data-sector') === currentEconSector;
+        const tickMatch = currentEconTicker === 'ALL' || row.getAttribute('data-ticker') === currentEconTicker;
+        row.hidden = !(secMatch && tickMatch);
+      });
+
+      document.querySelectorAll('.matrix-sector').forEach(head => {
+        const visible = Array.from(document.querySelectorAll('.matrix-row')).some(row => !row.hidden && row.getAttribute('data-sector') === head.dataset.sector);
+        head.hidden = !visible;
       });
     }
 
@@ -7068,12 +4035,11 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Dedicated single-stock company profile with multi-source news (SEC filings, Company Releases, News Media), upcoming calendar milestones, macroeconomic sensitivities, and supply chain ecosystem.">
-  <title>StockPulse — Company Directory</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <meta name="description" content="Your watchlist by sector, with a file on each company: performance, stories, events, and relationships.">
+  <title>StockPulse — Companies</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+  <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
@@ -7083,77 +4049,46 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:1.5rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Company Directory</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Browse all {{ watchlist_companies|length }} monitored holdings, search by ticker or sector, and inspect 360° deep-dive intelligence profiles</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill">
-            <span class="pulse-dot" style="background:#10b981;"></span> {{ watchlist_companies|length }} Monitored Holdings
-          </span>
-        </div>
+      {% set watchlist_symbols = watchlist_companies|map(attribute='symbol')|list %}
+      <header class="page-header">
+        <h1 class="page-title">Companies</h1>
+        <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to read its file.</p>
       </header>
 
-      <!-- Unified Company Directory & Sector Browser Component -->
-      <section class="company-directory-browser">
-        <div class="company-browser-top">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.45rem;">
-              <span style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">Browse Holdings</span>
-              <span class="category-badge" style="font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem;">{{ watchlist_companies|length }} Companies</span>
-            </div>
-            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem;">Select any company to load its interactive deep-dive research profile below</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <div style="position:relative; width:100%; max-width:280px;">
-              <input type="text" id="companyStripFilter" placeholder="Search ticker, company, or sector..." oninput="filterCompanyStrip(this.value)" style="width:100%; background:var(--bg-base); border:1.5px solid var(--border-card); border-radius:var(--radius-full); padding:0.42rem 0.95rem; font-size:0.82rem; color:var(--text-primary); outline:none;">
-            </div>
-          </div>
-        </div>
-
-        <!-- Sector Category Filter Tabs -->
-        <div class="company-browser-sectors">
-          <button class="company-browser-sec-btn active" data-sector="ALL" onclick="filterCompanySector('ALL', this)">
-            All Sectors <span class="tab-count" style="font-family:'JetBrains Mono'; font-size:0.68rem; margin-left:0.2rem;">{{ watchlist_companies|length }}</span>
-          </button>
+      <details class="company-directory-browser" id="companyDirectory" open>
+        <summary class="feed-filters-toggle">All companies</summary>
+        <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
+        <p class="econ-note">Percentages show 3-month return against the S&amp;P 500.</p>
+        <div class="company-browser-grid company-strip" id="companyStripContainer">
           {% for sec in sector_directory %}
-          <button class="company-browser-sec-btn" data-sector="{{ sec.name }}" onclick="filterCompanySector('{{ sec.name }}', this)">
-            {{ sec.name }} <span class="tab-count" style="font-family:'JetBrains Mono'; font-size:0.68rem; margin-left:0.2rem;">{{ sec.count }}</span>
-          </button>
-          {% endfor %}
-        </div>
-
-        <!-- 30 Holdings Grid (Retains .company-strip & .company-strip-pill for tests and styles) -->
-        <div class="company-strip-wrap" style="overflow:visible;">
-          <div class="company-browser-grid company-strip" id="companyStripContainer">
-            {% for co in watchlist_companies %}
-            <button class="company-browser-card company-strip-pill {% if loop.first %}active{% endif %}" 
-                    data-ticker="{{ co.symbol }}" 
+          <section class="company-browser-sector">
+            <h2 class="company-browser-sector-name">{{ sec.name }}</h2>
+            {% for co in sec.companies %}
+            <button class="company-browser-card company-strip-pill" type="button"
+                    data-ticker="{{ co.symbol }}"
                     data-name="{{ co.name|lower }}"
-                    data-sector="{{ co.macro_sector|lower }}"
-                    onclick="switchCompany('{{ co.symbol }}')"
-                    title="{{ co.name }} ({{ co.symbol }}) — {{ co.macro_sector }}">
-              <div class="company-browser-card-left">
-                <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.75rem; padding:0.12rem 0.45rem; flex-shrink:0;">{{ co.symbol }}</span>
-                <div class="company-browser-card-info">
-                  <div class="company-browser-card-name">{{ co.name }}</div>
-                  <div class="company-browser-card-sec">{{ co.sector | replace('_', ' ') | title }}</div>
-                </div>
-              </div>
-              <div class="company-browser-card-stats">
-                <div class="company-browser-card-alpha" style="color:{% if co.alpha_vs_spy > 0 %}#15803d{% elif co.alpha_vs_spy < 0 %}#b91c1c{% else %}var(--text-muted){% endif %};">
-                  {% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%
-                </div>
-                <div class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</div>
-              </div>
+                    data-sector="{{ co.macro_sector|lower }} {{ co.sector|replace('_', ' ')|lower }}"
+                    data-click="switchCompany">
+              <span class="company-browser-card-left">
+                <span class="ticker-badge">{{ co.symbol }}</span>
+                <span class="company-browser-card-info">
+                  <span class="company-browser-card-name">{{ co.name }}</span>
+                  <span class="company-browser-card-sec">{{ co.sector|replace('_', ' ')|title }}</span>
+                </span>
+              </span>
+              <span class="company-browser-card-stats">
+                {% if performance_data and co.symbol in (performance_data.companies or {}) %}
+                <span class="company-browser-card-alpha {% if co.alpha_vs_spy > 0 %}tone-up{% elif co.alpha_vs_spy < 0 %}tone-down{% else %}tone-flat{% endif %}">{% if co.alpha_vs_spy > 0 %}+{% endif %}{{ co.alpha_vs_spy }}%</span>
+                {% endif %}
+                <span class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</span>
+              </span>
             </button>
             {% endfor %}
-          </div>
+          </section>
+          {% endfor %}
         </div>
-      </section>
+      </details>
 
-      <!-- Container for each company (one shown at a time) -->
       {% for co in watchlist_companies %}
       {% set co_news = [] %}
       {% for it in items %}
@@ -7177,353 +4112,141 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         {% if it.source == 'news_media' %}{% set ns.news_count = ns.news_count + 1 %}{% endif %}
       {% endfor %}
 
-      <div class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}" style="{% if not loop.first %}display:none;{% endif %}">
-        
-        <!-- Company Hero Header Box -->
-        <div class="company-hero-box">
-          <div class="company-hero-header">
-            <div class="company-hero-left">
-              <div class="company-hero-symbol ticker-{{ co.symbol }}">{{ co.symbol }}</div>
-              <div>
-                <h2 class="company-hero-name">{{ co.name }}</h2>
-                <div class="company-meta-pills">
-                  <span class="category-badge" style="font-size:0.75rem;">{{ co.sector | replace('_', ' ') | title }}</span>
-                  {% if co.cik %}
-                  <a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View SEC EDGAR Submissions">
-                    CIK: {{ co.cik }} ↗
-                  </a>
-                  {% endif %}
-                  {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}
-                  <a href="{{ co.newsroom_url or co.ir_page_url or co.ir_feed_url }}" target="_blank" rel="noopener noreferrer" class="form-type-pill" style="text-decoration:none;" title="View {{ co.name }} Official Newsroom &amp; Press Releases">
-                    Newsroom ↗
-                  </a>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
+      <article class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}"{% if not loop.first %} hidden{% endif %}>
+        <header class="company-hero-box">
+          <p class="company-hero-symbol">{{ co.symbol }} · {{ co.sector|replace('_', ' ')|title }}</p>
+          <h2 class="company-hero-name">{{ co.name }}</h2>
+          {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
+          <p class="company-links">
+            {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">CIK {{ co.cik }} ↗</a>{% endif %}
+            {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ safe_url(co.newsroom_url or co.ir_page_url or co.ir_feed_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
+            <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
+          </p>
 
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem;">
-              <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Key Regulators</div>
-              <div style="display:flex; gap:0.35rem; flex-wrap:wrap; justify-content:flex-end;">
-                {% if co.regulators %}
-                  {% for reg in co.regulators %}
-                  <span class="form-type-pill" style="background:#f8fafc; color:#334155; border-color:#cbd5e1;">{{ reg }}</span>
-                  {% endfor %}
-                {% else %}
-                  <span class="form-type-pill">SEC</span>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-
-          {% if co.notes %}
-          <div class="company-notes-card">
-            <strong style="color:var(--text-primary);">Analyst Strategic Focus:</strong> {{ co.notes }}
-          </div>
-          {% endif %}
-
-          <!-- Company Vital Metrics Ribbon -->
-          <div class="company-kpi-ribbon">
+          <dl class="company-kpi-ribbon">
             <div class="company-kpi-card">
-              <div class="company-kpi-title">Intelligence Disclosures</div>
-              <div class="company-kpi-val">{{ co_news|length }}</div>
-              <div class="company-kpi-sub">
-                {{ ns.news_count }} News &bull; {{ ns.edgar_count }} SEC &bull; {{ ns.ir_count }} IR
-              </div>
+              <dt class="company-kpi-title">Stories</dt>
+              <dd class="company-kpi-val">{{ co_news|length }}</dd>
+              <dd class="company-kpi-sub">{{ ns.news_count }} news, {{ ns.edgar_count }} SEC, {{ ns.ir_count }} releases</dd>
             </div>
-
             <div class="company-kpi-card">
-              <div class="company-kpi-title">High-Impact Signals</div>
-              <div class="company-kpi-val" style="color:{% if ns.high_count > 0 %}#dc2626{% else %}#15803d{% endif %};">
-                {{ ns.high_count }}
-              </div>
-              <div class="company-kpi-sub">Materiality Score &ge; 7.0</div>
+              <dt class="company-kpi-title">Scored 7 or higher</dt>
+              <dd class="company-kpi-val">{{ ns.high_count }}</dd>
             </div>
-
             <div class="company-kpi-card">
-              <div class="company-kpi-title">Next Event</div>
-              <div class="company-kpi-val" style="font-size:1.02rem;">
-                {% if co_events %}
-                  {{ co_events[0].display_date }}
-                {% else %}
-                  None Scheduled
-                {% endif %}
-              </div>
-              <div class="company-kpi-sub" title="{% if co_events %}{{ co_events[0].headline }}{% endif %}">
-                {% if co_events %}{{ co_events[0].headline }}{% else %}Next 60 days clear{% endif %}
-              </div>
+              <dt class="company-kpi-title">Next event</dt>
+              <dd class="company-kpi-val">{% if co_events %}{{ short_date(co_events[0].event_date) }}{% else %}None{% endif %}</dd>
+              <dd class="company-kpi-sub">{% if co_events %}{{ event_kind(co_events[0].event_type or '') }}{% else %}Nothing scheduled{% endif %}</dd>
             </div>
-
             <div class="company-kpi-card">
-              <div class="company-kpi-title">Ecosystem Network</div>
-              <div class="company-kpi-val">
-                {{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}
-              </div>
-              <div class="company-kpi-sub">
-                {{ co.key_customers|length if co.key_customers else 0 }} Customers &bull; {{ co.key_suppliers|length if co.key_suppliers else 0 }} Suppliers &bull; {{ co.competitors|length if co.competitors else 0 }} Competitors
-              </div>
+              <dt class="company-kpi-title">Relationships</dt>
+              <dd class="company-kpi-val">{{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}</dd>
+              <dd class="company-kpi-sub">{{ co.key_customers|length if co.key_customers else 0 }} customers, {{ co.key_suppliers|length if co.key_suppliers else 0 }} suppliers, {{ co.competitors|length if co.competitors else 0 }} competitors</dd>
             </div>
-          </div>
-        </div>
+          </dl>
+        </header>
 
-        <!-- 3-Month Comparative Performance Card for this stock -->
-        <div class="comparative-perf-card" style="margin-bottom:1.5rem;">
-          <div class="comparative-perf-header">
-            <div>
-              <div style="display:flex; align-items:center; gap:0.6rem;">
-                <span class="category-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe; font-size:0.72rem;">MARKET CONTEXT</span>
-                <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0;">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
-              </div>
-              <p style="font-size:0.82rem; color:var(--text-muted); margin:0.3rem 0 0 0;">
-                Is {{ co.symbol }}'s move normal or unusual? Normalized % change since Day 0 relative to top 3 competitors and the S&amp;P 500 (SPY).
-              </p>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.4rem;">
-              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.85rem; padding:0.25rem 0.6rem;">{{ co.symbol }}</span>
-            </div>
-          </div>
-
-          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}">
-            <!-- Dynamically populated via JS -->
-          </div>
-
-          <div style="position:relative; height:280px; width:100%;">
-            <canvas id="compPerfCanvas-{{ co.symbol }}"></canvas>
-          </div>
-
+        <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
+          <h3 class="fp-heading">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
+          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the period.</p>
+          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
+          <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
           <div class="perf-table-wrap">
-            <table class="perf-table" id="compPerfTable-{{ co.symbol }}">
-              <!-- Dynamically populated via JS -->
-            </table>
+            <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
           </div>
-        </div>
+        </section>
 
-        <!-- 2-Column Main Deck -->
         <div class="company-grid-layout">
-          
-          <!-- Left Main Column: Intelligence Feed across all 3 sources -->
-          <div class="company-card-deck">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; background:var(--bg-surface); padding:1rem 1.25rem; border:1px solid var(--border-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">
-              <div>
-                <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">Intelligence Feed</h3>
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">News Media &bull; SEC EDGAR &bull; Company Releases ({{ co_news|length }} Total)</div>
+          <section class="company-card-deck" aria-label="Stories">
+            <h3 class="fp-heading">Stories</h3>
+            <div class="company-feed-tools">
+              <div class="filter-options" role="group" aria-label="Filter by source">
+                <button class="filter-btn active company-source-filter-btn" type="button" data-source="ALL" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">All <span class="pill-count">{{ co_news|length }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="news_media" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">News <span class="pill-count">{{ ns.news_count }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="sec_edgar" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">SEC <span class="pill-count">{{ ns.edgar_count }}</span></button>
+                <button class="filter-btn company-source-filter-btn" type="button" data-source="company_ir" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">Releases <span class="pill-count">{{ ns.ir_count }}</span></button>
               </div>
-
-              <!-- In-Page Source Filters -->
-              <div style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:center;">
-                <button class="filter-btn active company-source-filter-btn" data-source="ALL" onclick="filterCompanyNews('{{ co.symbol }}', 'ALL', this)">All ({{ co_news|length }})</button>
-                <button class="filter-btn company-source-filter-btn" data-source="news_media" onclick="filterCompanyNews('{{ co.symbol }}', 'news_media', this)">News Media ({{ ns.news_count }})</button>
-                <button class="filter-btn company-source-filter-btn" data-source="sec_edgar" onclick="filterCompanyNews('{{ co.symbol }}', 'sec_edgar', this)">SEC EDGAR ({{ ns.edgar_count }})</button>
-                <button class="filter-btn company-source-filter-btn" data-source="company_ir" onclick="filterCompanyNews('{{ co.symbol }}', 'company_ir', this)">Company Releases ({{ ns.ir_count }})</button>
-              </div>
+              <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
             </div>
 
-            <!-- In-Page Keyword Search Bar -->
-            <div style="background:var(--bg-surface); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:0.6rem 0.95rem; display:flex; align-items:center; gap:0.6rem;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" class="company-feed-search-input" id="search-{{ co.symbol }}" placeholder="Search within {{ co.symbol }} disclosures (e.g. revenue, CEO, lawsuit, chip, contract)..." oninput="searchCompanyFeed('{{ co.symbol }}', this.value)" style="border:none; background:transparent; width:100%; outline:none; font-size:0.84rem; color:var(--text-primary);">
-            </div>
-
-            <!-- Feed Items List -->
             {% if co_news %}
               {% for it in co_news %}
-              <div class="company-feed-item company-news-item" data-source="{{ it.source }}">
-                <div class="company-feed-top">
-                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-                    <span class="score-badge {% if it.score >= 7.0 %}score-high{% elif it.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ it.score_breakdown }}">
-                      {{ it.score }}
-                    </span>
-                    <span class="source-badge {% if it.source == 'sec_edgar' %}source-badge-edgar{% elif it.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">
-                      {{ it.source_label }}
-                    </span>
-                    {% if it.form_or_type %}
-                    <span class="form-type-pill">{{ it.form_or_type }}</span>
-                    {% endif %}
-                    <span class="category-badge">{{ it.category }}</span>
-                  </div>
-                  <span class="date-cell">{{ it.published_date }}</span>
-                </div>
-
-                <div class="company-feed-title">{{ it.clean_headline }}</div>
-
-                {% if it.cross_references_list %}
-                  {% if it.cross_references_list|length == 1 %}
-                    {% set ref = it.cross_references_list[0] %}
-                    <div class="crossref-badges-wrap" style="margin-bottom:0.45rem;">
-                      <span class="crossref-badge" title="{{ ref.impact_note }}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <a href="company.html?ticker={{ ref.related_ticker }}" onclick="event.preventDefault(); switchCompany('{{ ref.related_ticker }}')" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                        ({{ ref.matched_entity }})
-                      </span>
+              <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}">
+                <span class="feed-score" title="{{ it.score_breakdown }}">{{ it.score }}</span>
+                <div class="feed-body">
+                  <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
+                  {% if it.llm_summary and it.score >= 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
+                  <details class="feed-details">
+                    <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
+                    <div class="feed-details-body">
+                      {% if it.llm_summary and it.score < 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
+                      {% if it.summary %}<p>{{ it.summary }}</p>{% endif %}
+                      {% if it.cross_references_list %}
+                      <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
+                      <ul class="feed-refs">
+                        {% for ref in it.cross_references_list %}
+                        <li>{% if ref.related_ticker in watchlist_symbols %}<a href="company.html?ticker={{ ref.related_ticker|urlencode }}" data-ticker="{{ ref.related_ticker }}" data-click="openCompany" class="ticker-badge">{{ ref.related_ticker }}</a>{% else %}<span class="company-outside">{{ ref.related_ticker }}</span>{% endif %} {{ ref.impact_note }}</li>
+                        {% endfor %}
+                      </ul>
+                      {% endif %}
+                      {% if it.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                      <a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
                     </div>
-                  {% else %}
-                    <div class="crossref-badges-wrap" style="margin-bottom:0.45rem;">
-                      <details class="crossref-accordion">
-                        <summary class="crossref-summary-pill">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          Also relevant to {{ it.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                        </summary>
-                        <div class="crossref-dropdown-content">
-                          {% for ref in it.cross_references_list %}
-                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <a href="company.html?ticker={{ ref.related_ticker }}" onclick="event.preventDefault(); switchCompany('{{ ref.related_ticker }}')" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                          </div>
-                          {% endfor %}
-                        </div>
-                      </details>
-                    </div>
-                  {% endif %}
-                {% endif %}
-
-                {% if it.llm_summary %}
-                <div class="why-matters-box" style="margin-top:0.4rem; margin-bottom:0.5rem;">
-                  <span class="why-tag">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    Takeaway:
-                  </span>
-                  {{ it.llm_summary }}
+                  </details>
                 </div>
-                {% endif %}
-
-                <p class="summary-text" style="font-size:0.835rem; margin-bottom:0.65rem;">{{ it.summary }}</p>
-
-                <div style="display:flex; justify-content:flex-end;">
-                  <a href="{{ it.url }}" target="_blank" rel="noopener noreferrer" class="action-link" style="font-size:0.78rem;">
-                    {% if it.source == 'sec_edgar' %}View SEC Filing ↗{% elif it.source == 'company_ir' %}View Press Release ↗{% else %}Read Full Article ↗{% endif %}
-                  </a>
-                </div>
-              </div>
+                <span class="date-cell">{{ short_date(it.published_date) }}</span>
+              </article>
               {% endfor %}
+              <p class="fp-empty company-feed-empty" hidden>No stories match.</p>
             {% else %}
-              <div class="company-feed-item" style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
-                <div style="margin-bottom:0.5rem; color:var(--text-muted);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg></div>
-                <div style="font-weight:700; color:var(--text-primary);">No Recent Disclosures Found</div>
-                <div style="font-size:0.82rem; margin-top:0.25rem;">No filings, company releases, or news media recorded in this period for {{ co.symbol }}.</div>
-              </div>
+              <p class="home-empty">No stories recorded for {{ co.symbol }} in this period.</p>
             {% endif %}
-          </div>
+          </section>
 
-          <!-- Right Sidebar Column: Calendar, Sensitivities, Supply Chain -->
-          <div class="company-side-deck">
-            
-            <!-- Box 1: Upcoming Corporate Calendar -->
-            <div class="company-side-box">
-              <div class="company-side-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                Forthcoming Calendar ({{ co_events|length }})
-              </div>
-
+          <aside class="company-side-deck">
+            <section class="company-side-box">
+              <h3 class="fp-heading">Forthcoming Calendar</h3>
               {% if co_events %}
-                <div style="display:flex; flex-direction:column; gap:0.65rem;">
-                  {% for ev in co_events %}
-                  <div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.6rem 0.75rem; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-card);">
-                    <div class="calendar-date-box" style="width:42px; min-width:42px; padding:0.18rem 0.35rem;">
-                      <div class="calendar-date-month" style="font-size:0.6rem;">{{ ev.event_date[5:7] | replace('01','JAN') | replace('02','FEB') | replace('03','MAR') | replace('04','APR') | replace('05','MAY') | replace('06','JUN') | replace('07','JUL') | replace('08','AUG') | replace('09','SEP') | replace('10','OCT') | replace('11','NOV') | replace('12','DEC') }}</div>
-                      <div class="calendar-date-day" style="font-size:1.05rem;">{{ ev.event_date[8:10] }}</div>
-                    </div>
-                    <div style="flex:1; min-width:0;">
-                      <div style="font-size:0.835rem; font-weight:700; color:var(--text-primary); line-height:1.3;">{{ ev.headline }}</div>
-                      <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem;">{{ ev.relative_badge }} &bull; {{ ev.event_type }}</div>
-                    </div>
-                  </div>
-                  {% endfor %}
-                </div>
-              {% else %}
-                <div style="font-size:0.82rem; color:var(--text-muted); text-align:center; padding:1rem 0;">
-                  No scheduled earnings or dividend dates in next 60 days.
-                </div>
-              {% endif %}
-            </div>
-
-            <!-- Box 2: Macroeconomic Sensitivities (FRED) -->
-            <div class="company-side-box">
-              <div class="company-side-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-                Macroeconomic Sensitivities
-              </div>
-
-              <div style="display:flex; flex-direction:column; gap:0.65rem;">
-                {% for ind in economic_indicators %}
-                  {% if ind.tickers_list and co.symbol in ind.tickers_list %}
-                  <div style="padding:0.65rem 0.85rem; background:var(--bg-base); border:1px solid var(--border-card); border-radius:var(--radius-md);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
-                      <span style="font-size:0.82rem; font-weight:700; color:var(--text-primary);">{{ ind.name }}</span>
-                      <span style="font-family:'JetBrains Mono', monospace; font-size:0.88rem; font-weight:800; color:var(--accent-blue);">{{ ind.formatted_value }}</span>
-                    </div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">{{ ind.context_note }}</div>
-                  </div>
-                  {% endif %}
+              <ul class="fp-side-list">
+                {% for ev in co_events %}
+                <li class="fp-event">
+                  <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
+                  <span class="fp-event-text">{{ ev.headline }}<span class="company-side-sub">{{ ev.relative_badge }} · {{ event_kind(ev.event_type or '') }}</span></span>
+                </li>
                 {% endfor %}
-                
-                {% if co.macro_sensitivities %}
-                <div style="margin-top:0.4rem; padding-top:0.65rem; border-top:1px solid var(--border-card);">
-                  <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; text-transform:uppercase;">Specific Macro Factors</div>
-                  <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                    {% for m in co.macro_sensitivities %}
-                    <span class="category-badge" style="font-size:0.7rem;">{{ m | replace('_', ' ') | title }}</span>
-                    {% endfor %}
-                  </div>
-                </div>
+              </ul>
+              {% else %}
+              <p class="home-empty">Nothing scheduled.</p>
+              {% endif %}
+            </section>
+
+            <section class="company-side-box">
+              <h3 class="fp-heading">Macroeconomic Sensitivities</h3>
+              <ul class="fp-side-list">
+                {% for ind in economic_indicators %}
+                {% if ind.tickers_list and co.symbol in ind.tickers_list %}
+                <li class="fp-indicator" title="{{ ind.context_note }}">
+                  <span>{{ ind.name }}</span>
+                  <span class="fp-indicator-value">{{ ind.formatted_value.split(' (')[0] }}</span>
+                </li>
                 {% endif %}
-              </div>
-            </div>
+                {% endfor %}
+              </ul>
+              {% if co.macro_sensitivities %}<p class="company-side-note">Also watching: {{ co.macro_sensitivities|join(', ')|replace('_', ' ') }}</p>{% endif %}
+            </section>
 
-            <!-- Box 3: Supply Chain & Corporate Ecosystem -->
-            <div class="company-side-box">
-              <div class="company-side-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                Corporate Ecosystem
-              </div>
-
-              <!-- Key Customers -->
-              {% if co.key_customers %}
-              <div style="margin-bottom:0.85rem;">
-                <div style="font-size:0.72rem; font-weight:700; color:#15803d; text-transform:uppercase; margin-bottom:0.35rem;">Key Customers</div>
-                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                  {% for cust in co.key_customers %}
-                  <a href="company.html?ticker={{ cust }}" onclick="event.preventDefault(); switchCompany('{{ cust }}')" class="crossref-badge" style="text-decoration:none; cursor:pointer;">
-                    <span class="crossref-rel-pill crossref-customer">Customer</span>
-                    <strong>{{ cust }}</strong>
-                  </a>
-                  {% endfor %}
-                </div>
-              </div>
+            <section class="company-side-box">
+              <h3 class="fp-heading">Corporate Ecosystem</h3>
+              {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
+              {% if names %}
+              <p class="feed-detail-label">{{ label }}</p>
+              <p class="company-names">{% for name in names %}{% if name in watchlist_symbols %}<a href="company.html?ticker={{ name|urlencode }}" data-ticker="{{ name }}" data-click="openCompany" class="ticker-badge">{{ name }}</a>{% else %}<span class="company-outside">{{ name }}</span>{% endif %}{% if not loop.last %}<span class="company-sep">, </span>{% endif %}{% endfor %}</p>
               {% endif %}
-
-              <!-- Key Suppliers -->
-              {% if co.key_suppliers %}
-              <div style="margin-bottom:0.85rem;">
-                <div style="font-size:0.72rem; font-weight:700; color:#4338ca; text-transform:uppercase; margin-bottom:0.35rem;">Key Suppliers</div>
-                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                  {% for supp in co.key_suppliers %}
-                  <a href="company.html?ticker={{ supp }}" onclick="event.preventDefault(); switchCompany('{{ supp }}')" class="crossref-badge" style="text-decoration:none; cursor:pointer;">
-                    <span class="crossref-rel-pill crossref-supplier">Supplier</span>
-                    <strong>{{ supp }}</strong>
-                  </a>
-                  {% endfor %}
-                </div>
-              </div>
-              {% endif %}
-
-              <!-- Competitors -->
-              {% if co.competitors %}
-              <div>
-                <div style="font-size:0.72rem; font-weight:700; color:#b45309; text-transform:uppercase; margin-bottom:0.35rem;">Competitors</div>
-                <div style="display:flex; flex-wrap:wrap; gap:0.35rem;">
-                  {% for comp in co.competitors %}
-                  <a href="company.html?ticker={{ comp }}" onclick="event.preventDefault(); switchCompany('{{ comp }}')" class="ticker-badge ticker-{{ comp }}" style="font-size:0.72rem; text-decoration:none; cursor:pointer;">{{ comp }}</a>
-                  {% endfor %}
-                </div>
-              </div>
-              {% endif %}
-            </div>
-
-          </div>
+              {% endfor %}
+            </section>
+          </aside>
         </div>
-      </div>
+      </article>
       {% endfor %}
     </main>
   </div>
@@ -7571,42 +4294,39 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       const comps = coData.competitors || [];
       const spy = coData.benchmark;
 
-      const targetColor = '#2563eb';
-      const compColors = ['#ea580c', '#0284c7', '#9333ea'];
-      const spyColor = '#64748b';
+      const targetColor = cssColor('--text-primary');
+      const compColors = [cssColor('--series-1'), cssColor('--series-2'), cssColor('--series-3')];
+      const spyColor = cssColor('--text-muted');
 
       // 1. KPI Ribbon
       if (kpiGrid && target) {
         const tgtPct = target.total_pct_change;
-        const tgtColor = tgtPct >= 0 ? '#15803d' : '#b91c1c';
-        const tgtArrow = tgtPct >= 0 ? '↗' : '↘';
 
         const alphaPeers = coData.alpha_vs_peers;
-        const alphaPeersColor = alphaPeers >= 0 ? '#15803d' : '#b91c1c';
 
         const spyPct = spy ? spy.total_pct_change : 0;
         const avgPeerPct = coData.avg_competitor_pct;
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${symbol} 3M Return</div>
-            <div class="perf-kpi-val" style="color:${tgtColor};">${tgtArrow} ${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
+            <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Top Peers Avg</div>
-            <div class="perf-kpi-val" style="color:${avgPeerPct >= 0 ? '#15803d' : '#b91c1c'};">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">${comps.map(c => c.symbol).join(', ') || 'None'}</div>
+            <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
+            <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
-            <div class="perf-kpi-val" style="color:${spyPct >= 0 ? '#15803d' : '#b91c1c'};">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
+            <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Broad Market Benchmark</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">Peer Relative Alpha</div>
-            <div class="perf-kpi-val" style="color:${alphaPeersColor};">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub" style="font-weight:700; color:${coData.assessment_type === 'positive' ? '#15803d' : (coData.assessment_type === 'negative' ? '#b91c1c' : '#475569')};">${coData.assessment}</div>
+            <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
           </div>
         `;
       }
@@ -7616,22 +4336,22 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         let rowsHtml = `
           <thead>
             <tr>
-              <th>Ticker / Entity</th>
+              <th>Name</th>
               <th>Role</th>
-              <th>Base (3M)</th>
+              <th>Start</th>
               <th>Latest</th>
-              <th>3M % Change</th>
-              <th>Alpha</th>
+              <th>Change</th>
+              <th>Against this company</th>
             </tr>
           </thead>
           <tbody>
-            <tr style="background:rgba(37, 99, 235, 0.05); font-weight:700;">
-              <td><span class="ticker-badge ticker-${symbol}">${symbol}</span> ${coData.name}</td>
-              <td><span class="form-type-pill" style="background:#dbeafe; color:#1e40af;">Target</span></td>
-              <td style="font-family:'JetBrains Mono';">$${target.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${target.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${target.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:var(--text-muted);">&mdash;</td>
+            <tr class="perf-row-target">
+              <td><span class="ticker-badge ticker-${escapeHtml(symbol)}">${escapeHtml(symbol)}</span> ${escapeHtml(coData.name)}</td>
+              <td>This company</td>
+              <td class="perf-num">$${target.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${target.latest_price.toFixed(2)}</td>
+              <td class="perf-num ${target.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${target.total_pct_change >= 0 ? '+' : ''}${target.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num">&mdash;</td>
             </tr>
         `;
 
@@ -7639,12 +4359,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td><a href="company.html?ticker=${c.symbol}" onclick="event.preventDefault(); switchCompany('${c.symbol}')" class="ticker-badge" style="font-size:0.75rem; cursor:pointer;">${c.symbol}</a></td>
-              <td><span class="form-type-pill">Peer #${idx+1}</span></td>
-              <td style="font-family:'JetBrains Mono';">$${c.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${c.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${c.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${delta >= 0 ? '#15803d' : '#b91c1c'};">${delta >= 0 ? '+' : ''}${delta}%</td>
+              <td>${document.getElementById('profile-' + c.symbol) ? `<a href="company.html?ticker=${encodeURIComponent(c.symbol)}" data-ticker="${escapeHtml(c.symbol)}" data-click="openCompany" class="ticker-badge">${escapeHtml(c.symbol)}</a>` : `<span class="ticker-badge">${escapeHtml(c.symbol)}</span>`}</td>
+              <td>Peer</td>
+              <td class="perf-num">$${c.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
+              <td class="perf-num ${c.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${c.total_pct_change >= 0 ? '+' : ''}${c.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${delta >= 0 ? 'tone-up' : 'tone-down'}\">${delta >= 0 ? '+' : ''}${delta}%</td>
             </tr>
           `;
         });
@@ -7652,13 +4372,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         if (spy) {
           const spyDelta = (spy.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
-            <tr style="border-top:2px dashed var(--border-card);">
-              <td><span class="form-type-pill" style="background:#f1f5f9; color:#334155; font-weight:700;">SPY</span> S&amp;P 500 ETF</td>
-              <td><span class="form-type-pill">Benchmark</span></td>
-              <td style="font-family:'JetBrains Mono';">$${spy.base_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono';">$${spy.latest_price.toFixed(2)}</td>
-              <td style="font-family:'JetBrains Mono'; color:${spy.total_pct_change >= 0 ? '#15803d' : '#b91c1c'};">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
-              <td style="font-family:'JetBrains Mono'; color:${spyDelta >= 0 ? '#15803d' : '#b91c1c'};">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
+            <tr>
+              <td><span class="ticker-badge">SPY</span> S&amp;P 500 ETF</td>
+              <td>Benchmark</td>
+              <td class="perf-num">$${spy.base_price.toFixed(2)}</td>
+              <td class="perf-num">$${spy.latest_price.toFixed(2)}</td>
+              <td class="perf-num ${spy.total_pct_change >= 0 ? 'tone-up' : 'tone-down'}\">${spy.total_pct_change >= 0 ? '+' : ''}${spy.total_pct_change.toFixed(2)}%</td>
+              <td class="perf-num ${spyDelta >= 0 ? 'tone-up' : 'tone-down'}\">${spyDelta >= 0 ? '+' : ''}${spyDelta}%</td>
             </tr>
           `;
         }
@@ -7677,13 +4397,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
       const datasets = [
         {
-          label: `${symbol} (Target)`,
+          label: symbol,
           data: target.series.map(pt => pt.pct_change),
           borderColor: targetColor,
-          backgroundColor: 'rgba(37, 99, 235, 0.08)',
-          borderWidth: isPhone ? 2.2 : 3,
-          fill: true,
-          tension: 0.25,
+          borderWidth: 2.5,
+          fill: false,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 5,
         }
@@ -7692,12 +4411,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       comps.forEach((c, idx) => {
         const color = compColors[idx % compColors.length];
         datasets.push({
-          label: `${c.symbol} (Peer)`,
+          label: c.symbol,
           data: c.series.map(pt => pt.pct_change),
           borderColor: color,
-          borderWidth: isPhone ? 1.5 : 2,
+          borderWidth: 1.5,
           fill: false,
-          tension: 0.25,
+          tension: 0.15,
           pointRadius: 0,
           pointHoverRadius: 4,
         });
@@ -7732,17 +4451,19 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Inter', size: isPhone ? 10 : 11, weight: '600' },
-                color: '#475569',
-                padding: isPhone ? 6 : 10
+                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                color: cssColor('--text-secondary'),
+                padding: isPhone ? 8 : 12
               }
             },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleFont: { family: 'Inter', size: 12, weight: '700' },
-              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              backgroundColor: cssColor('--text-primary'),
+              titleColor: cssColor('--bg-base'),
+              bodyColor: cssColor('--bg-base'),
+              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
+              bodyFont: { family: 'Hanken Grotesk', size: 11 },
               padding: 10,
-              cornerRadius: 8,
+              cornerRadius: 2,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -7755,17 +4476,17 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                color: cssColor('--text-muted'),
                 maxRotation: 0
               }
             },
             y: {
-              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'JetBrains Mono', size: isPhone ? 8.5 : 10 },
-                color: '#94a3b8',
+                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
             }
@@ -7774,92 +4495,63 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    let currentCompanySector = 'ALL';
-
-    function filterCompanySector(secName, btn) {
-      currentCompanySector = secName;
-      document.querySelectorAll('.company-browser-sec-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      const q = (document.getElementById('companyStripFilter')?.value || '').toLowerCase().trim();
-      applyCompanyCardFilters(q);
-    }
-
     function filterCompanyStrip(rawVal) {
       const q = (rawVal || '').toLowerCase().trim();
-      applyCompanyCardFilters(q);
+      document.querySelectorAll('.company-strip-pill').forEach(pill => {
+        const haystack = [pill.dataset.ticker, pill.dataset.name, pill.dataset.sector].join(' ').toLowerCase();
+        pill.hidden = Boolean(q) && !haystack.includes(q);
+      });
+      document.querySelectorAll('.company-browser-sector').forEach(group => {
+        group.hidden = !group.querySelector('.company-strip-pill:not([hidden])');
+      });
     }
 
-    function applyCompanyCardFilters(q) {
-      const pills = document.querySelectorAll('.company-strip-pill');
-      pills.forEach(pill => {
-        const sym = (pill.getAttribute('data-ticker') || '').toLowerCase();
-        const name = (pill.getAttribute('data-name') || '').toLowerCase();
-        const sec = (pill.getAttribute('data-sector') || '').toLowerCase();
-
-        const sectorMatch = (currentCompanySector === 'ALL' || sec === currentCompanySector.toLowerCase());
-        const textMatch = (!q || sym.includes(q) || name.includes(q) || sec.includes(q));
-
-        if (sectorMatch && textMatch) {
-          pill.style.display = 'flex';
-        } else {
-          pill.style.display = 'none';
-        }
+    function applyCompanyFeedFilter(container, source, query) {
+      let shown = 0;
+      container.querySelectorAll('.company-news-item').forEach(row => {
+        const sourceMatch = source === 'ALL' || row.getAttribute('data-source') === source;
+        const textMatch = !query || (row.textContent || '').toLowerCase().includes(query);
+        row.hidden = !(sourceMatch && textMatch);
+        if (!row.hidden) shown += 1;
       });
+      const empty = container.querySelector('.company-feed-empty');
+      if (empty) empty.hidden = shown !== 0;
     }
 
     function searchCompanyFeed(ticker, rawVal) {
       const container = document.getElementById('profile-' + ticker);
       if (!container) return;
 
-      const q = (rawVal || '').toLowerCase().trim();
       const activeSourceBtn = container.querySelector('.company-source-filter-btn.active');
       const activeSource = activeSourceBtn ? activeSourceBtn.getAttribute('data-source') || 'ALL' : 'ALL';
-
-      const rows = container.querySelectorAll('.company-news-item');
-      rows.forEach(row => {
-        const rowSource = row.getAttribute('data-source');
-        const sourceMatch = (activeSource === 'ALL' || rowSource === activeSource);
-        const text = (row.textContent || '').toLowerCase();
-        const textMatch = (!q || text.includes(q));
-
-        if (sourceMatch && textMatch) {
-          row.style.display = 'block';
-        } else {
-          row.style.display = 'none';
-        }
-      });
+      applyCompanyFeedFilter(container, activeSource, (rawVal || '').toLowerCase().trim());
     }
 
-    function switchCompany(ticker, pushState = true) {
+    let currentCompany = null;
+
+    // showOnly: load a company without counting it as viewed, as on a bare visit to the directory.
+    function switchCompany(ticker, pushState = true, showOnly = false) {
       const allProfiles = document.querySelectorAll('.company-profile-container');
-      allProfiles.forEach(el => el.style.display = 'none');
-      
-      const target = document.getElementById('profile-' + ticker);
-      if (target) {
-        target.style.display = 'block';
-      } else if (allProfiles.length > 0) {
-        allProfiles[0].style.display = 'block';
-        ticker = allProfiles[0].getAttribute('data-ticker');
+      let target = document.getElementById('profile-' + ticker);
+      const found = Boolean(target);
+      if (!target) {
+        target = allProfiles[0];
+        if (!target) return;
+        ticker = target.getAttribute('data-ticker');
       }
+      allProfiles.forEach(el => { el.hidden = el !== target; });
+      currentCompany = ticker;
 
-      // Track visit in localStorage for Home page quick access
-      trackRecentlyViewedCompany(ticker);
+      const directory = document.getElementById('companyDirectory');
+      if (directory) directory.open = showOnly;
+      if (found && !showOnly) trackRecentlyViewedCompany(ticker);
 
-      // Render comparative chart for this company
       renderCompanyComparativeChart(ticker);
 
-      // Update switcher pills
       document.querySelectorAll('.company-strip-pill').forEach(pill => {
-        if (pill.getAttribute('data-ticker') === ticker) {
-          pill.classList.add('active');
-          pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        } else {
-          pill.classList.remove('active');
-        }
+        pill.classList.toggle('active', pill.getAttribute('data-ticker') === ticker);
       });
 
-      // Scroll window to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       if (pushState) {
@@ -7877,33 +4569,34 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       if (btn) btn.classList.add('active');
 
       const searchInput = document.getElementById('search-' + ticker);
-      const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
-
-      const rows = container.querySelectorAll('.company-news-item');
-      rows.forEach(row => {
-        const rowSource = row.getAttribute('data-source');
-        const sourceMatch = (source === 'ALL' || rowSource === source);
-        const text = (row.textContent || '').toLowerCase();
-        const textMatch = (!query || text.includes(query));
-
-        if (sourceMatch && textMatch) {
-          row.style.display = 'block';
-        } else {
-          row.style.display = 'none';
-        }
-      });
+      applyCompanyFeedFilter(container, source, (searchInput ? searchInput.value : '').toLowerCase().trim());
     }
 
-    window.addEventListener('popstate', (e) => {
-      const params = new URLSearchParams(window.location.search);
-      const ticker = params.get('ticker') || 'NVDA';
-      switchCompany(ticker, false);
+    window.addEventListener('popstate', () => {
+      const ticker = new URLSearchParams(window.location.search).get('ticker');
+      const safe = ticker && /^[A-Za-z0-9.\\-]{1,10}$/.test(ticker) ? ticker.toUpperCase() : '';
+      switchCompany(safe || 'NVDA', false, !ticker);
+    });
+
+    document.addEventListener('themechange', () => {
+      if (currentCompany) renderCompanyComparativeChart(currentCompany);
     });
 
     window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const ticker = (params.get('ticker') || 'NVDA').toUpperCase();
-      switchCompany(ticker, false);
+      const requested = new URLSearchParams(window.location.search).get('ticker');
+      const known = requested && /^[A-Za-z0-9.\\-]{1,10}$/.test(requested) &&
+        document.getElementById('profile-' + requested.toUpperCase());
+      if (known) {
+        switchCompany(requested.toUpperCase(), false);
+      } else if (requested) {
+        // Anything else, hostile or just unknown, is treated as a ticker we don't cover.
+        switchCompany('', false);
+      } else {
+        switchCompany('NVDA', false, true);
+      }
+      whenChartFontsReady(() => {
+        if (currentCompany) renderCompanyComparativeChart(currentCompany);
+      });
     });
   </script>
 </body>
@@ -7914,6 +4607,212 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 # ==============================================================================
 # MASTER RENDER ENGINE
 # ==============================================================================
+def _short_date(value: Optional[str]) -> str:
+    """Turn '2026-11-04' into 'Nov 4'. Anything unparseable is returned unchanged."""
+    try:
+        parsed = datetime.strptime(str(value), "%Y-%m-%d")
+    except ValueError:
+        return str(value or "")
+    return f"{parsed.strftime('%b')} {parsed.day}"
+
+
+def _event_kind(event_type: str) -> str:
+    """Short label for a calendar event type, matching the page's filter groups."""
+    if "Earnings" in event_type:
+        return "Earnings call"
+    if "Dividend" in event_type:
+        return "Dividend"
+    if "SEC" in event_type or "Statutory" in event_type:
+        return "SEC deadline"
+    return "Conference"
+
+
+def _calendar_view(events: List[Dict[str, Any]], today: Optional[date] = None) -> Dict[str, Any]:
+    """Lay calendar events out for the timeline strip and the week-by-week agenda."""
+    today = today or date.today()
+    dated = []
+    for index, event in enumerate(events):
+        try:
+            when = date.fromisoformat(str(event.get("event_date")))
+        except ValueError:
+            continue
+        dated.append((when, dict(event, kind=_event_kind(event.get("event_type") or ""), anchor=f"event-{index}")))
+    if not dated:
+        return {"marks": [], "months": [], "weeks": [], "today_pos": 0}
+
+    start = min(today, dated[0][0])
+    end = max(start + timedelta(days=28), max(when for when, _ in dated))
+    span = max((end - start).days, 1)
+
+    def position(when: date) -> float:
+        return round((when - start).days / span * 100, 2)
+
+    months = []
+    cursor = date(start.year, start.month, 1)
+    while cursor <= end:
+        # Skip a month label that would collide with the "Today" label.
+        if cursor >= start and position(cursor) - position(today) > 7:
+            months.append({"label": cursor.strftime("%b"), "pos": position(cursor)})
+        cursor = date(cursor.year + cursor.month // 12, cursor.month % 12 + 1, 1)
+
+    marks = []
+    lanes: Dict[date, int] = {}
+    weeks: Dict[date, Dict[str, Any]] = {}
+    this_monday = today - timedelta(days=today.weekday())
+    for when, event in dated:
+        lane = lanes.get(when, 0)
+        lanes[when] = lane + 1
+        marks.append({
+            "pos": position(when),
+            "lane": min(lane, 3),
+            "anchor": event["anchor"],
+            "ticker": event.get("ticker"),
+            "kind": event["kind"],
+            "event_type": event.get("event_type"),
+            "estimated": event.get("source_type") == "ESTIMATED_RULE",
+            "date": _short_date(event.get("event_date")),
+        })
+        monday = when - timedelta(days=when.weekday())
+        if monday == this_monday:
+            label = "This week"
+        elif monday == this_monday + timedelta(days=7):
+            label = "Next week"
+        elif monday < this_monday:
+            label = "Past"
+        else:
+            label = f"Week of {_short_date(monday.isoformat())}"
+        weeks.setdefault(monday, {"label": label, "events": []})["events"].append(event)
+
+    return {"marks": marks, "months": months, "weeks": [weeks[k] for k in sorted(weeks)], "today_pos": position(today)}
+
+
+def _economic_schedule(events: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
+    """Sort releases by date and work out timing now, since the stored labels can be stale."""
+    today = today or date.today()
+    rows = []
+    for event in events:
+        row = dict(event, passed=False, timing="")
+        try:
+            when = date.fromisoformat(str(event.get("date")))
+        except ValueError:
+            rows.append(row)
+            continue
+        row["passed"] = when < today
+        row["timing"] = "Date passed" if row["passed"] else calculate_relative_badge(when.isoformat(), today)
+        rows.append(row)
+    return sorted(rows, key=lambda r: str(r.get("date")))
+
+
+def _orbit_companies(
+    items: List[Dict[str, Any]], companies: List[Dict[str, Any]], today: Optional[date] = None
+) -> List[Dict[str, Any]]:
+    """Watchlist companies for the Home ring, biggest recent story first; no stories go last.
+
+    "New" means published in the last 7 days, the same window the live lookup uses for news.
+    """
+    today = today or date.today()
+    top_scores: Dict[str, float] = {}
+    new_counts: Dict[str, int] = {}
+    for item in items:
+        ticker, score = item.get("ticker"), item.get("score")
+        if not ticker or score is None:
+            continue
+        top_scores[ticker] = max(score, top_scores.get(ticker, score))
+        try:
+            age = (today - date.fromisoformat(str(item.get("published_date"))[:10])).days
+        except ValueError:
+            continue
+        if 0 <= age <= 7:
+            new_counts[ticker] = new_counts.get(ticker, 0) + 1
+    ranked = [
+        {
+            "symbol": co.get("symbol", ""),
+            "name": co.get("name", ""),
+            "top_score": top_scores.get(co.get("symbol")),
+            "new_count": new_counts.get(co.get("symbol"), 0),
+        }
+        for co in companies
+    ]
+    ranked.sort(key=lambda co: (co["top_score"] is None, -(co["top_score"] or 0), -co["new_count"], co["symbol"]))
+    return ranked
+
+
+def _next_earnings(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """The first earnings event in an already date-sorted calendar, if any."""
+    for event in events:
+        if "earning" in f"{event.get('event_type', '')} {event.get('headline', '')}".lower():
+            return event
+    return None
+
+
+def _script_json(value: Any) -> str:
+    """Serialize for a <script> block: no scraped text can end the block or open an HTML comment in it."""
+    return (
+        json.dumps(value)
+        .replace("</", "<\\/")
+        .replace("<!--", "\\u003c!--")
+        .replace("<script", "\\u003cscript")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+
+def _safe_url(value: Any, fallback: str = "#") -> str:
+    """Only absolute http(s) links reach an href, so a javascript: link in the data goes nowhere."""
+    text = str(value or "").strip()
+    return text if SAFE_URL_PATTERN.fullmatch(text) else fallback
+
+
+def _inline_hashes(html: str) -> Dict[str, List[str]]:
+    """SHA-256 source expressions for each inline script and style block in a rendered page."""
+    def digest(block: str) -> str:
+        return "'sha256-" + base64.b64encode(hashlib.sha256(block.encode("utf-8")).digest()).decode("ascii") + "'"
+
+    return {
+        "script": sorted({digest(b) for b in INLINE_SCRIPT_PATTERN.findall(html)}),
+        "style": sorted({digest(b) for b in INLINE_STYLE_PATTERN.findall(html)}),
+    }
+
+
+def _content_security_policy(html: str) -> str:
+    """The policy for one rendered page. Inline code runs only if it matches this exact render."""
+    hashes = _inline_hashes(html)
+    script_sources = list(hashes["script"])
+    if CHART_JS_URL in html:
+        script_sources.append(CHART_JS_URL)
+    return "; ".join([
+        "default-src 'none'",
+        "script-src " + " ".join(script_sources),
+        "style-src " + " ".join(hashes["style"]),
+        "font-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "base-uri 'none'",
+        "form-action 'none'",
+        "frame-ancestors 'none'",
+    ])
+
+
+def _headers_file(policies: Dict[str, str]) -> str:
+    """Cloudflare Pages _headers: shared headers for everything, plus each page's own CSP."""
+    lines = [
+        "# Generated by pipeline/render.py. The hashes change on every render, so do not edit by hand.",
+        "/*",
+        "  X-Content-Type-Options: nosniff",
+        "  X-Frame-Options: DENY",
+        "  Referrer-Policy: strict-origin-when-cross-origin",
+        "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+        "",
+    ]
+    for fname, policy in policies.items():
+        stem = fname[: -len(".html")]
+        # Pages serves /news.html at /news, and index.html at /.
+        paths = ["/", "/index", "/index.html"] if stem == "index" else [f"/{stem}", f"/{fname}"]
+        for path in paths:
+            lines += [path, f"  Content-Security-Policy: {policy}", ""]
+    return "\n".join(lines)
+
+
 def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
@@ -8026,10 +4925,17 @@ def render_dashboard(
             })
 
     common_context = {
+        "short_date": _short_date,
+        "safe_url": _safe_url,
+        "economic_schedule": _economic_schedule(upcoming_economic_events),
+        "event_kind": _event_kind,
+        "calendar_view": _calendar_view(calendar_events),
+        "orbit_companies": _orbit_companies(items, enriched_watchlist),
+        "next_earnings": _next_earnings(calendar_events),
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,
-        "chart_data_json": json.dumps(chart_data),
+        "chart_data_json": _script_json(chart_data),
         "economic_indicators": economic_indicators,
         "upcoming_economic_events": upcoming_economic_events,
         "calendar_events": calendar_events,
@@ -8038,7 +4944,7 @@ def render_dashboard(
         "generated_at": now_str,
         "watchlist_companies": enriched_watchlist,
         "sector_directory": sector_directory,
-        "sector_directory_json": json.dumps([
+        "sector_directory_json": _script_json([
             {
                 "name": s["name"],
                 "icon": s["icon"],
@@ -8057,7 +4963,7 @@ def render_dashboard(
             } for s in sector_directory
         ]),
         "performance_data": performance_data,
-        "performance_data_json": json.dumps(performance_data or {}),
+        "performance_data_json": _script_json(performance_data or {}),
     }
 
     # 4. Render and save all 6 pages
@@ -8070,15 +4976,25 @@ def render_dashboard(
         ("analytics.html", ANALYTICS_TEMPLATE, "analytics"),
     ]
 
+    policies: Dict[str, str] = {}
     for fname, tmpl_str, active_page in pages:
         tmpl = Template(tmpl_str, autoescape=True)
         ctx = dict(common_context)
         ctx["active_page"] = active_page
         rendered = tmpl.render(**ctx)
+        policies[fname] = _content_security_policy(rendered)
 
         out_file = os.path.join(site_dir, fname)
         with open(out_file, "w", encoding="utf-8") as f:
             f.write(rendered)
         logger.info("Rendered page: %s", out_file)
+
+    with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
+        f.write(_headers_file(policies))
+
+    fonts_dir = os.path.join(site_dir, "assets", "fonts")
+    os.makedirs(fonts_dir, exist_ok=True)
+    for font in ("fredoka.woff2", "hanken-grotesk.woff2"):
+        shutil.copy(os.path.join(ASSETS_DIR, "fonts", font), fonts_dir)
 
     return primary_output
