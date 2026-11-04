@@ -549,7 +549,7 @@ SHARED_CSS = """
         gap: 1.25rem !important;
       }
 
-      .priority-section, .controls-panel, .health-section {
+      .priority-section, .health-section {
         padding: 1.25rem !important;
       }
     }
@@ -568,37 +568,6 @@ SHARED_CSS = """
       .bento-card {
         padding: 1.15rem !important;
         border-radius: var(--radius-lg) !important;
-      }
-
-      .priority-section {
-        padding: 1rem !important;
-        border-radius: var(--radius-lg) !important;
-      }
-
-      .priority-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.65rem !important;
-        margin-bottom: 1rem !important;
-      }
-
-      .priority-card {
-        padding: 1rem !important;
-        border-radius: var(--radius-md) !important;
-      }
-
-      .priority-lead-card {
-        padding: 1.15rem !important;
-      }
-
-      .priority-lead-headline {
-        font-size: 1.1rem !important;
-        line-height: 1.35 !important;
-      }
-
-      .priority-subgrid {
-        grid-template-columns: 1fr !important;
-        gap: 1rem !important;
       }
 
       .calendar-grid {
@@ -888,6 +857,87 @@ SHARED_CSS = """
     .quick-lookup-news-headline { font-size: 0.9rem; overflow-wrap: anywhere; }
     .quick-lookup-news-meta { display: flex; gap: 0.4rem; font-size: 0.74rem; color: var(--text-muted); }
     .quick-lookup-action-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-size: 0.76rem; padding-top: 0.6rem; }
+
+    .table-container { width: 100%; overflow-x: auto; }
+
+    /* Shared page header */
+    .page-header { margin-bottom: 2.25rem; max-width: 46rem; }
+    .page-title { font-size: clamp(2.1rem, 4.5vw, 3rem); line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 0.6rem; }
+    .page-standfirst { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.45; color: var(--text-secondary); }
+
+    /* Feed */
+    .feed-toolbar { margin-bottom: 0.25rem; }
+    .feed-search { width: 100%; border: none; border-bottom: 1px solid var(--text-primary); background: transparent; color: var(--text-primary); font-size: 1rem; padding: 0.7rem 0; outline: none; }
+    .feed-search::placeholder { color: var(--text-muted); }
+    .feed-toolbar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.25rem; padding-top: 0.5rem; }
+    .feed-sort { display: flex; gap: 1rem; }
+    .feed-sort-btn, .feed-clear, .feed-group-toggle { background: none; border: none; padding: 0; min-height: 36px; font-size: 0.84rem; color: var(--text-muted); cursor: pointer; }
+    .feed-sort-btn:hover, .feed-clear:hover, .feed-group-toggle:hover { color: var(--text-primary); }
+    .feed-sort-btn.active { color: var(--text-primary); font-weight: 600; }
+    .feed-count { font-size: 0.84rem; color: var(--text-muted); }
+    .feed-clear, .feed-group-toggle { color: var(--accent); }
+
+    .controls-panel { background: none; border: none; padding: 0; margin: 0 0 1.75rem; box-shadow: none; }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    .feed-filters-toggle::after, .feed-details summary .feed-meta::after { content: ' +'; color: var(--text-muted); }
+    details[open] > .feed-filters-toggle::after, .feed-details[open] summary .feed-meta::after { content: ' \\2212'; }
+    .feed-filters-toggle { display: inline-flex; white-space: pre; align-items: center; min-height: 36px; font-size: 0.84rem; color: var(--text-secondary); cursor: pointer; }
+    .feed-filters-toggle:hover { color: var(--text-primary); }
+    .controls-panel[open] { padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); }
+
+    .filter-row { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.4rem 0; margin: 0; }
+    .filter-label { font-size: 0.8rem; color: var(--text-muted); text-transform: none; letter-spacing: 0; font-weight: 400; margin: 0; }
+    .filter-options, .feed-sector-bar { display: flex; flex-wrap: wrap; gap: 0 1rem; overflow: visible; padding: 0; margin: 0; }
+    .filter-btn { background: none; border: none; padding: 0; min-height: 32px; font-size: 0.84rem; font-weight: 400; color: var(--text-secondary); cursor: pointer; border-radius: 0; display: inline-flex; align-items: baseline; gap: 0.3rem; }
+    .filter-btn:hover { color: var(--text-primary); background: none; }
+    .filter-btn.active { color: var(--text-primary); font-weight: 600; background: none; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+    .pill-count { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); background: none; padding: 0; font-weight: 400; }
+
+    .feed-ticker-picker-wrap { position: relative; display: inline-block; max-width: 100%; }
+    .feed-ticker-picker-btn { background: none; border: none; padding: 0; min-height: 32px; font-size: 0.84rem; color: var(--text-primary); cursor: pointer; }
+    .feed-ticker-dropdown-menu { display: none; position: absolute; top: 100%; left: 0; width: 22rem; max-width: calc(100vw - 8.5rem); background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--shadow-dropdown); z-index: 200; }
+    .feed-ticker-dropdown-menu.active { display: block; }
+    .feed-ticker-dropdown-search input { width: 100%; border: none; border-bottom: 1px solid var(--border-card); background: transparent; color: var(--text-primary); padding: 0.6rem 0.75rem; font-size: 0.86rem; outline: none; }
+    .feed-ticker-dropdown-list { max-height: 300px; overflow-y: auto; }
+    .feed-ticker-item { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 0.45rem 0.75rem; font-size: 0.84rem; cursor: pointer; }
+    .feed-ticker-item:hover, .feed-ticker-item.active { background: var(--bg-hover); }
+    .feed-dropdown-sec-header { padding: 0.6rem 0.75rem 0.15rem; font-size: 0.74rem; color: var(--text-muted); }
+
+    .feed-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; padding: 2.25rem 0 0.5rem; border-bottom: 1px solid var(--text-primary); }
+    .feed-group:first-child { padding-top: 0.5rem; }
+    .feed-group-title { font-size: 1.3rem; }
+    .feed-group-note { font-size: 0.8rem; color: var(--text-muted); }
+    .feed-group-toggle { margin-left: auto; }
+
+    .news-row { display: grid; grid-template-columns: 2.5rem 3.75rem minmax(0, 1fr) 3.5rem; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .feed-score { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); cursor: help; }
+    .news-row.is-high .feed-score { color: var(--text-primary); }
+    .feed-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
+    .news-row.is-high .feed-headline { font-weight: 500; }
+    .feed-headline a { color: inherit; text-decoration: none; }
+    .feed-headline a:hover { color: var(--accent); }
+    .feed-takeaway { font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin-top: 0.25rem; max-width: 40rem; overflow-wrap: anywhere; }
+    .feed-details summary { cursor: pointer; margin-top: 0.15rem; min-height: 24px; }
+    .feed-details summary:hover .feed-meta { color: var(--text-primary); }
+    .feed-meta { font-size: 0.76rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .feed-details-body { padding: 0.35rem 0 0.5rem; font-size: 0.86rem; line-height: 1.5; color: var(--text-secondary); max-width: 40rem; overflow-wrap: anywhere; }
+    .feed-details-body > .feed-takeaway { margin-top: 0; margin-bottom: 0.35rem; }
+    .feed-detail-label { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.6rem; }
+    .feed-refs { list-style: none; }
+    .feed-refs li { padding: 0.1rem 0; }
+    .feed-breakdown { font-family: var(--font-mono); font-size: 0.74rem; }
+    .date-cell { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted); text-align: right; white-space: nowrap; }
+
+    @media (max-width: 620px) {
+      .news-row { grid-template-columns: 2.25rem minmax(0, 1fr) auto; gap: 0.15rem 0.5rem; }
+      .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
+      .filter-row { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; padding: 0.55rem 0; }
+      .filter-options, .feed-sector-bar { gap: 0 1.1rem; }
+      .filter-btn, .feed-ticker-picker-btn { min-height: 40px; }
+      .feed-ticker-dropdown-menu { max-width: calc(100vw - 2rem); }
+      .feed-details summary { min-height: 32px; }
+    }
 
     /* Home: search bar orbited by the watchlist. The sidebar becomes a top bar here only. */
     .page-home .app-layout { display: block; }
@@ -1854,83 +1904,7 @@ SHARED_CSS = """
     }
 
     /* Filter Controls Panel */
-    .controls-panel {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      padding: 1.65rem;
-      margin-bottom: 2.25rem;
-      box-shadow: var(--shadow-card);
-      min-width: 0;
-    }
-
-    .filter-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.95rem;
-    }
-
-    .filter-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .filter-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      min-width: 65px;
-    }
-
-    .filter-btn {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 0.38rem 0.8rem;
-      border-radius: var(--radius-full);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      white-space: nowrap;
-    }
-
-    .filter-btn:hover {
-      background: var(--border-card);
-      color: var(--text-primary);
-      transform: translateY(-1px);
-    }
-
-    .filter-btn.active {
-      background: var(--accent-blue);
-      color: var(--on-accent);
-      border-color: var(--accent-blue);
-      box-shadow: 0 2px 8px var(--accent-soft);
-    }
-
-    .pill-count {
-      font-size: 0.7rem;
-      opacity: 0.85;
-      font-family: var(--font-mono);
-    }
-
     /* Table Styles */
-    .table-container {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      box-shadow: var(--shadow-card);
-      width: 100%;
-    }
-
     table {
       width: 100%;
       min-width: 680px;
@@ -1961,188 +1935,11 @@ SHARED_CSS = """
       background: var(--bg-surface);
     }
 
-    .headline-text {
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 0.35rem;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-
     .summary-text {
       color: var(--text-secondary);
       font-size: 0.825rem;
       line-height: 1.45;
       margin-top: 0.35rem;
-    }
-
-    .date-cell {
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    /* Priority Section & Editorial Suite Layout */
-    .priority-section {
-      background: var(--bg-surface-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-xl);
-      padding: 2rem;
-      margin-bottom: 3rem;
-      box-shadow: var(--shadow-card);
-      min-width: 0;
-    }
-
-    .priority-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1.75rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border-card);
-    }
-
-    .priority-title-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-    }
-
-    .priority-badge-icon {
-      background: var(--warn-soft);
-      color: var(--warn);
-      border: 1px solid var(--warn-soft);
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .priority-editorial-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 1.35rem;
-    }
-
-    .priority-card {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all var(--transition-fast);
-      min-width: 0;
-    }
-
-    .priority-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-card);
-      box-shadow: var(--shadow-card);
-      background: var(--bg-surface);
-    }
-
-    /* #1 Lead Editorial Card */
-    .priority-lead-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--accent-soft);
-      padding: 2rem;
-      box-shadow: var(--shadow-hover);
-    }
-
-    .score-pill-lead {
-      font-size: 0.92rem !important;
-      padding: 0.25rem 0.75rem !important;
-    }
-
-    .priority-lead-headline {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin: 0.75rem 0 0.5rem 0;
-      line-height: 1.35;
-    }
-
-    .lead-why-box {
-      margin-top: 0.85rem;
-      padding: 0.85rem 1.15rem;
-      font-size: 0.9rem;
-    }
-
-    .priority-subgrid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .priority-subcard {
-      padding: 1.35rem;
-    }
-
-    .priority-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .priority-rank-pill {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      background: var(--bg-surface);
-      padding: 0.18rem 0.5rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-card);
-    }
-
-    .priority-score-pill {
-      font-family: var(--font-mono);
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--pos);
-      background: var(--pos-soft);
-      border: 1px solid var(--pos-soft);
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-full);
-      flex-shrink: 0;
-    }
-
-    .priority-card-headline {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0.55rem 0;
-      line-height: 1.35;
-    }
-
-    .priority-card-summary {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-    }
-
-    .priority-card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 0.95rem;
-      border-top: 1px solid var(--border-card);
-      margin-top: 1.15rem;
-      gap: 0.5rem;
-      flex-wrap: wrap;
     }
 
     /* Corporate Calendar Spotlight & Organic Grid */
@@ -2974,120 +2771,6 @@ SHARED_CSS = """
     }
 
     /* Feed Sector Filter Bar & Ticker Popover */
-    .feed-sector-bar {
-      display: flex;
-      gap: 0.4rem;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding-bottom: 0.35rem;
-      margin-bottom: 0.75rem;
-    }
-    .feed-sector-bar::-webkit-scrollbar {
-      display: none;
-    }
-    .feed-sector-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all var(--transition-fast);
-    }
-    .feed-sector-btn:hover {
-      border-color: var(--accent-blue);
-      color: var(--text-primary);
-    }
-    .feed-sector-btn.active {
-      background: var(--accent-blue);
-      color: var(--on-accent);
-      border-color: var(--accent-blue);
-      box-shadow: 0 2px 8px var(--accent-soft);
-    }
-    .feed-ticker-picker-wrap {
-      position: relative;
-      display: inline-block;
-    }
-    .feed-ticker-picker-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.95rem;
-      border-radius: var(--radius-full);
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-card);
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
-      transition: all var(--transition-fast);
-    }
-    .feed-ticker-picker-btn:hover {
-      border-color: var(--accent-blue);
-    }
-    .feed-ticker-dropdown-menu {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      width: 290px;
-      max-height: 340px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-dropdown);
-      z-index: 1000;
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .feed-ticker-dropdown-menu.active {
-      display: flex;
-    }
-    .feed-ticker-dropdown-search {
-      padding: 0.6rem;
-      border-bottom: 1px solid var(--border-card);
-      background: var(--bg-base);
-    }
-    .feed-ticker-dropdown-search input {
-      width: 100%;
-      padding: 0.38rem 0.65rem;
-      font-size: 0.82rem;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      outline: none;
-    }
-    .feed-ticker-dropdown-list {
-      overflow-y: auto;
-      max-height: 270px;
-      padding: 0.35rem 0;
-    }
-    .feed-ticker-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.45rem 0.85rem;
-      cursor: pointer;
-      font-size: 0.78rem;
-      color: var(--text-primary);
-      transition: background 0.15s ease;
-    }
-    .feed-ticker-item:hover {
-      background: var(--bg-surface-elevated);
-    }
-    .feed-ticker-item.active {
-      background: var(--accent-blue-soft);
-      color: var(--accent-blue);
-      font-weight: 700;
-    }
 """
 
 # ==============================================================================
@@ -3205,7 +2888,7 @@ function closeMobileNav() {
 }
 
 function focusMobileSearch() {
-  const input = document.getElementById('globalSearchInput') || document.getElementById('companyStripFilter') || document.getElementById('feedSearchInput');
+  const input = document.getElementById('globalSearchInput') || document.getElementById('companyStripFilter') || document.getElementById('searchInput');
   if (input) {
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => {
@@ -3223,7 +2906,7 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     const globalSearch = document.getElementById('globalSearchInput');
     const companySearch = document.getElementById('companyStripFilter');
-    const feedSearch = document.getElementById('feedSearchInput');
+    const feedSearch = document.getElementById('searchInput');
     if (globalSearch) {
       globalSearch.focus();
       if (typeof openSearchDropdown === 'function') openSearchDropdown();
@@ -4981,8 +4664,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Full intelligence feed of scored stock news and SEC filings with interactive filtering and AI takeaways.">
-  <title>StockPulse — Full Intelligence Feed</title>
+  <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and takeaways.">
+  <title>StockPulse — The feed</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4997,244 +4680,55 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      <header class="section-header-row" style="padding-bottom:1.25rem; border-bottom:1px solid var(--border-card); margin-bottom:2rem;">
-        <div>
-          <h1 class="hero-title" style="font-size:2rem; text-align:left; margin-bottom:0.25rem;">Full Intelligence Feed</h1>
-          <p style="font-size:0.92rem; color:var(--text-muted);">Curated news, regulatory filings, and corporate disclosures with transparent scoring and supply-chain cross-references</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span class="section-time-pill">
-            <span class="pulse-dot" style="background:var(--pos);"></span> {{ items|length }} Total Items
-          </span>
-        </div>
+      <header class="page-header">
+        <h1 class="page-title">The feed</h1>
+        <p class="page-standfirst">{{ items|length }} stories, ranked by how much they deserve your time.</p>
       </header>
 
-      <!-- Priority Panel with Editorial Suite Layout -->
-      {% if priority_items %}
-      <section class="priority-section">
-        <div class="priority-header">
-          <div class="priority-title-wrap">
-            <span class="priority-badge-icon" title="High Priority">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            </span>
-            <div>
-              <h2 style="font-size:1.25rem; font-weight: 600; color:var(--text-primary);">Top Impact Disclosures</h2>
-              <p style="font-size:0.82rem; color:var(--text-muted);">Curated high-scoring stories with investor takeaways and supply-chain cross-references</p>
-            </div>
+      <div class="feed-toolbar">
+        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and takeaways" oninput="filterItems()">
+        <div class="feed-toolbar-row">
+          <div class="feed-sort" role="group" aria-label="Order">
+            <button class="feed-sort-btn active" id="sortScoreBtn" type="button" onclick="sortRows('score')">By importance</button>
+            <button class="feed-sort-btn" id="sortDateBtn" type="button" onclick="sortRows('date')">By date</button>
           </div>
-          <div style="font-family: var(--font-mono); font-size:0.8rem; color:var(--pos); font-weight:700; background:var(--pos-soft); padding:0.35rem 0.85rem; border-radius:var(--radius-full); border:1px solid var(--pos-soft); width:fit-content;">
-            SCORES: {{ priority_items[0].score }} &ndash; {{ priority_items[-1].score }} / 10.0
-          </div>
+          <span class="feed-count" id="feedResultCount" aria-live="polite"></span>
+          <button class="feed-clear" id="feedClearFilters" type="button" onclick="clearFeedFilters()" hidden>Clear filters</button>
         </div>
+      </div>
 
-        <div class="priority-editorial-layout">
-          <!-- #1 Lead Editorial Card -->
-          {% set lead = priority_items[0] %}
-          <div class="priority-card priority-lead-card">
-            <div>
-              <div class="priority-card-top">
-                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                  <span class="priority-rank-pill">#1</span>
-                  <a href="company.html?ticker={{ lead.ticker }}" class="ticker-badge ticker-{{ lead.ticker }}" style="font-size:0.88rem; padding:0.25rem 0.65rem;">{{ lead.ticker }}</a>
-                  {% if lead.form_or_type %}
-                  <span class="form-type-pill">{{ lead.form_or_type }}</span>
-                  {% endif %}
-                  <span class="category-badge">{{ lead.category }}</span>
-                  <span class="source-badge {% if lead.source == 'sec_edgar' %}source-badge-edgar{% elif lead.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">{{ lead.source_label }}</span>
-                </div>
-                <span class="priority-score-pill score-pill-lead" title="{{ lead.score_breakdown }}">
-                  Score {{ lead.score }} / 10.0
-                </span>
-              </div>
-
-              <h3 class="priority-lead-headline">{{ lead.clean_headline }}</h3>
-
-              {% if lead.cross_references_list %}
-                {% if lead.cross_references_list|length == 1 %}
-                  {% set ref = lead.cross_references_list[0] %}
-                  <div class="crossref-badges-wrap">
-                    <span class="crossref-badge" title="{{ ref.impact_note }}">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                      <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                      <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                      ({{ ref.matched_entity }})
-                    </span>
-                  </div>
-                {% else %}
-                  <div class="crossref-badges-wrap">
-                    <details class="crossref-accordion">
-                      <summary class="crossref-summary-pill">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        Also relevant to {{ lead.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                      </summary>
-                      <div class="crossref-dropdown-content">
-                        {% for ref in lead.cross_references_list %}
-                        <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                          <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                          <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                          <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                        </div>
-                        {% endfor %}
-                      </div>
-                    </details>
-                  </div>
-                {% endif %}
-              {% endif %}
-
-              {% if lead.llm_summary %}
-              <div class="why-matters-box lead-why-box">
-                <span class="why-tag">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                  Executive Takeaway:
-                </span>
-                {{ lead.llm_summary }}
-              </div>
-              {% endif %}
-
-              <p class="priority-card-summary" style="font-size:0.85rem; margin-top:0.6rem; color:var(--text-secondary);">{{ lead.summary[:220] }}{% if lead.summary|length > 220 %}...{% endif %}</p>
-            </div>
-
-            <div class="priority-card-footer">
-              <span class="date-cell">{{ lead.published_date }}</span>
-              <a href="{{ lead.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                {% if lead.source == 'sec_edgar' %}View Official Filing ↗{% elif lead.source == 'company_ir' %}View Press Release ↗{% else %}Read Article ↗{% endif %}
-              </a>
-            </div>
-          </div>
-
-          <!-- Secondary Priority Cards Subgrid -->
-          {% if priority_items|length > 1 %}
-          <div class="priority-subgrid">
-            {% for item in priority_items[1:] %}
-            <div class="priority-card priority-subcard">
-              <div>
-                <div class="priority-card-top">
-                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-                    <span class="priority-rank-pill">#{{ loop.index + 1 }}</span>
-                    <a href="company.html?ticker={{ item.ticker }}" class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</a>
-                    {% if item.form_or_type %}
-                    <span class="form-type-pill">{{ item.form_or_type }}</span>
-                    {% endif %}
-                  </div>
-                  <span class="priority-score-pill" title="{{ item.score_breakdown }}">
-                    Score {{ item.score }}
-                  </span>
-                </div>
-
-                <div style="margin-top:0.4rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
-                  <span class="category-badge">{{ item.category }}</span>
-                  <span class="source-badge {% if item.source == 'sec_edgar' %}source-badge-edgar{% elif item.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">{{ item.source_label }}</span>
-                </div>
-
-                <h3 class="priority-card-headline">{{ item.clean_headline }}</h3>
-
-                {% if item.cross_references_list %}
-                  {% if item.cross_references_list|length == 1 %}
-                    {% set ref = item.cross_references_list[0] %}
-                    <div class="crossref-badges-wrap">
-                      <span class="crossref-badge" title="{{ ref.impact_note }}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                        ({{ ref.matched_entity }})
-                      </span>
-                    </div>
-                  {% else %}
-                    <div class="crossref-badges-wrap">
-                      <details class="crossref-accordion">
-                        <summary class="crossref-summary-pill">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                        </summary>
-                        <div class="crossref-dropdown-content">
-                          {% for ref in item.cross_references_list %}
-                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                          </div>
-                          {% endfor %}
-                        </div>
-                      </details>
-                    </div>
-                  {% endif %}
-                {% endif %}
-
-                {% if item.llm_summary %}
-                <div class="why-matters-box">
-                  <span class="why-tag">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    Takeaway:
-                  </span>
-                  {{ item.llm_summary }}
-                </div>
-                {% endif %}
-
-                <p class="priority-card-summary">{{ item.summary[:140] }}{% if item.summary|length > 140 %}...{% endif %}</p>
-              </div>
-
-              <div class="priority-card-footer">
-                <span class="date-cell">{{ item.published_date }}</span>
-                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  {% if item.source == 'sec_edgar' %}View Filing ↗{% elif item.source == 'company_ir' %}View Press Release ↗{% else %}Read Article ↗{% endif %}
-                </a>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-        </div>
-      </section>
-      {% endif %}
-
-      <!-- Controls & Filters Panel -->
-      <div class="controls-panel">
-        <!-- 1. Sector Filter Tabs Bar -->
-        <div style="margin-bottom:0.75rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
-            <span class="filter-label" style="margin-bottom:0;">Browse by Sector:</span>
-            <a href="company.html" class="form-type-pill" style="text-decoration:none; background:var(--accent-soft); color:var(--accent); border-color:var(--accent-soft); font-size:0.72rem; font-weight:700;">Company Directory ↗</a>
-          </div>
+      <details class="controls-panel" id="feedFilters">
+        <summary class="feed-filters-toggle">Filters</summary>
+        <div class="filter-row">
+          <span class="filter-label">Sector</span>
           <div class="feed-sector-bar">
-            <button class="feed-sector-btn active" data-sector="ALL" onclick="setFeedSectorFilter('ALL', this)">
-              All Sectors <span class="pill-count">{{ items|length }}</span>
-            </button>
+            <button class="feed-sector-btn filter-btn active" type="button" data-sector="ALL" onclick="setFeedSectorFilter('ALL', this)">All</button>
             {% for sec in sector_directory %}
-            <button class="feed-sector-btn" data-sector="{{ sec.name }}" onclick="setFeedSectorFilter('{{ sec.name }}', this)">
-              {{ sec.name }} <span class="pill-count">{{ sec.count }}</span>
-            </button>
+            <button class="feed-sector-btn filter-btn" type="button" data-sector="{{ sec.name }}" onclick="setFeedSectorFilter(this.dataset.sector, this)">{{ sec.name }}</button>
             {% endfor %}
           </div>
         </div>
 
-        <!-- 2. Company / Ticker Selector Row with Search Popover & Quick Chips -->
-        <div class="filter-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span class="filter-label">Company:</span>
-          
+        <div class="filter-row">
+          <span class="filter-label">Company</span>
           <div class="feed-ticker-picker-wrap" id="feedTickerPickerWrap">
             <button class="feed-ticker-picker-btn" id="feedTickerPickerBtn" onclick="toggleFeedTickerDropdown()" type="button">
-              <span id="selectedTickerLabel">All Monitored Holdings</span>
-              <span style="font-size:0.7rem; color:var(--text-muted);">▾</span>
+              <span id="selectedTickerLabel">All companies</span> <span aria-hidden="true">▾</span>
             </button>
             <div class="feed-ticker-dropdown-menu" id="feedTickerDropdownMenu">
               <div class="feed-ticker-dropdown-search">
-                <input type="text" id="feedTickerSearchInput" placeholder="Search ticker, name, or sector..." oninput="filterFeedTickerDropdown(this.value)">
+                <input type="text" id="feedTickerSearchInput" aria-label="Find a company" placeholder="Find a company" oninput="filterFeedTickerDropdown(this.value)">
               </div>
               <div class="feed-ticker-dropdown-list" id="feedTickerDropdownList">
-                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" onclick="selectFeedTicker('ALL', 'All Monitored Holdings')">
-                  <span><strong>All Monitored Holdings</strong></span>
+                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" onclick="selectFeedTicker('ALL')">
+                  <span>All companies</span>
                   <span class="pill-count">{{ items|length }}</span>
                 </div>
                 {% for sec in sector_directory %}
-                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}" style="padding:0.35rem 0.85rem; font-size:0.68rem; font-weight: 600; text-transform:uppercase; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-card);">
-                  {{ sec.name }}
-                </div>
+                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}">{{ sec.name }}</div>
                 {% for co in sec.companies %}
-                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" onclick="selectFeedTicker('{{ co.symbol }}', '{{ co.symbol }} — {{ co.name }}')">
-                  <div style="display:flex; align-items:center; gap:0.45rem;">
-                    <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.72rem; padding:0.1rem 0.35rem;">{{ co.symbol }}</span>
-                    <span style="font-size:0.78rem;">{{ co.name }}</span>
-                  </div>
+                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" onclick="selectFeedTicker(this.dataset.ticker)">
+                  <span><span class="ticker-badge">{{ co.symbol }}</span> {{ co.name }}</span>
                   <span class="pill-count">{{ co.story_count }}</span>
                 </div>
                 {% endfor %}
@@ -5242,169 +4736,67 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Quick Selector Pills for Active Sector -->
-          <div id="feedQuickTickerPills" style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:center;">
-            <button class="filter-btn active" data-filter-type="ticker" data-val="ALL" onclick="setTickerFilter('ALL', this)">
-              All
-            </button>
-            {% for co in watchlist_companies %}
-            <button class="filter-btn" data-filter-type="ticker" data-val="{{ co.symbol }}" data-sector="{{ co.macro_sector }}" onclick="setTickerFilter('{{ co.symbol }}', this)" title="{{ co.name }}">
-              <span class="ticker-badge ticker-{{ co.symbol }}" style="font-size:0.68rem; padding:0.05rem 0.3rem;">{{ co.symbol }}</span>
-              <span class="pill-count">{{ stats.by_ticker.get(co.symbol, 0) }}</span>
-            </button>
+        <div class="filter-row">
+          <span class="filter-label">Category</span>
+          <div class="filter-options">
+            <button class="filter-btn active" type="button" data-filter-type="category" data-val="ALL" onclick="setCategoryFilter('ALL', this)">All</button>
+            {% for cat, count in stats.by_category.items() %}
+            <button class="filter-btn" type="button" data-filter-type="category" data-val="{{ cat }}" onclick="setCategoryFilter(this.dataset.val, this)">{{ cat }} <span class="pill-count">{{ count }}</span></button>
             {% endfor %}
           </div>
         </div>
 
         <div class="filter-row">
-          <span class="filter-label">Category:</span>
-          <button class="filter-btn active" data-filter-type="category" data-val="ALL" onclick="setCategoryFilter('ALL', this)">
-            All Categories
-          </button>
-          {% for cat, count in stats.by_category.items() %}
-          <button class="filter-btn" data-filter-type="category" data-val="{{ cat }}" onclick="setCategoryFilter('{{ cat }}', this)">
-            {{ cat }} <span class="pill-count">{{ count }}</span>
-          </button>
-          {% endfor %}
-        </div>
-
-        <div class="filter-row">
-          <span class="filter-label">Source:</span>
-          <button class="filter-btn active" data-filter-type="source" data-val="ALL" onclick="setSourceFilter('ALL', this)">
-            All Sources
-          </button>
-          <button class="filter-btn" data-filter-type="source" data-val="news_media" onclick="setSourceFilter('news_media', this)">
-            News Media
-          </button>
-          <button class="filter-btn" data-filter-type="source" data-val="sec_edgar" onclick="setSourceFilter('sec_edgar', this)">
-            SEC EDGAR
-          </button>
-          <button class="filter-btn" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">
-            Company Releases
-          </button>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border-card);">
-          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <span class="filter-label">Sort:</span>
-            <button class="filter-btn active" id="sortScoreBtn" onclick="sortRows('score')">Highest Score</button>
-            <button class="filter-btn" id="sortDateBtn" onclick="sortRows('date')">Newest Date</button>
-          </div>
-          <div style="display:flex; align-items:center; gap:0.5rem; width:100%; max-width:300px;">
-            <input type="text" id="searchInput" placeholder="Search headlines, takeaways..." oninput="filterItems()" 
-                   style="background:var(--bg-base); border:1px solid var(--border-card); color:var(--text-primary); padding:0.5rem 0.95rem; border-radius:var(--radius-full); font-size:0.85rem; width:100%; outline:none;">
+          <span class="filter-label">Source</span>
+          <div class="filter-options">
+            <button class="filter-btn active" type="button" data-filter-type="source" data-val="ALL" onclick="setSourceFilter('ALL', this)">All</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="news_media" onclick="setSourceFilter('news_media', this)">News Media</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="sec_edgar" onclick="setSourceFilter('sec_edgar', this)">SEC EDGAR</button>
+            <button class="filter-btn" type="button" data-filter-type="source" data-val="company_ir" onclick="setSourceFilter('company_ir', this)">Company Releases</button>
           </div>
         </div>
-      </div>
+      </details>
 
-      <!-- News Feed Table -->
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 75px;">Score</th>
-              <th>Company</th>
-              <th>Category &amp; Source</th>
-              <th>Date</th>
-              <th>Headline, Cross-References &amp; Takeaways</th>
-              <th>Link</th>
-            </tr>
-          </thead>
-          <tbody id="newsBody">
-            {% for item in items %}
-            <tr class="news-row" 
-                data-score="{{ item.score }}"
-                data-date="{{ item.published_date }}"
-                data-ticker="{{ item.ticker }}"
-                data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
-                data-sector="{{ item.macro_sector }}"
-                data-source="{{ item.source }}" 
-                data-category="{{ item.category }}"
-                data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
-              <td>
-                <span class="score-badge {% if item.score >= 7.0 %}score-high{% elif item.score >= 4.0 %}score-med{% else %}score-low{% endif %}" title="{{ item.score_breakdown }}">
-                  {{ item.score }}
-                </span>
-              </td>
-              <td>
-                <div>
-                  <a href="company.html?ticker={{ item.ticker }}" class="ticker-badge ticker-{{ item.ticker }}">{{ item.ticker }}</a>
-                  <div class="summary-text" style="margin-top: 0.25rem;">{{ item.company_name }}</div>
-                </div>
-              </td>
-              <td>
-                <div>
-                  <span class="category-badge">{{ item.category }}</span>
-                  <div style="margin-top: 0.35rem;">
-                    <span class="source-badge {% if item.source == 'sec_edgar' %}source-badge-edgar{% elif item.source == 'company_ir' %}source-badge-ir{% else %}source-badge-news{% endif %}">
-                      {{ item.source_label }}
-                    </span>
-                  </div>
-                </div>
-              </td>
-              <td class="date-cell">
-                {{ item.published_date }}
-              </td>
-              <td>
-                <div class="headline-text">{{ item.clean_headline }}</div>
-                
-                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem; margin-top:0.25rem;">
-                  {% if item.form_or_type %}
-                  <span class="form-type-pill">{{ item.form_or_type }}</span>
-                  {% endif %}
-                  
-                  {% if item.cross_references_list %}
-                    {% if item.cross_references_list|length == 1 %}
-                      {% set ref = item.cross_references_list[0] %}
-                      <span class="crossref-badge" title="{{ ref.impact_note }}">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                        <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                        ({{ ref.matched_entity }})
-                      </span>
-                    {% else %}
-                      <details class="crossref-accordion">
-                        <summary class="crossref-summary-pill">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                          Also relevant to {{ item.cross_references_list|length }} companies <span class="accordion-arrow">▾</span>
-                        </summary>
-                        <div class="crossref-dropdown-content">
-                          {% for ref in item.cross_references_list %}
-                          <div class="crossref-dropdown-item" title="{{ ref.impact_note }}">
-                            <span class="crossref-rel-pill {% if ref.relation_type == 'Customer' %}crossref-customer{% else %}crossref-supplier{% endif %}">{{ ref.relation_type }}</span>
-                            <a href="company.html?ticker={{ ref.related_ticker }}" class="ticker-badge" style="font-size:0.65rem; padding:0.05rem 0.35rem;">{{ ref.related_ticker }}</a>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">{{ ref.impact_note }}</span>
-                          </div>
-                          {% endfor %}
-                        </div>
-                      </details>
-                    {% endif %}
-                  {% endif %}
-                </div>
-
-                {% if item.llm_summary %}
-                <div class="why-matters-box">
-                  <span class="why-tag">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    Takeaway:
-                  </span>
-                  {{ item.llm_summary }}
-                </div>
+      <div class="feed-list" id="newsBody">
+        {% for item in items %}
+        <article class="news-row{% if item.score >= 7.0 %} is-high{% endif %}"
+            data-score="{{ item.score }}"
+            data-date="{{ item.published_date }}"
+            data-ticker="{{ item.ticker }}"
+            data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
+            data-sector="{{ item.macro_sector }}"
+            data-source="{{ item.source }}"
+            data-category="{{ item.category }}"
+            data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
+          <span class="feed-score" title="{{ item.score_breakdown }}">{{ item.score }}</span>
+          <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
+          <div class="feed-body">
+            <h3 class="feed-headline"><a href="{{ item.url if item.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
+            {% if item.llm_summary and item.score >= 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
+            <details class="feed-details">
+              <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
+              <div class="feed-details-body">
+                {% if item.llm_summary and item.score < 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
+                {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
+                {% if item.cross_references_list %}
+                <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
+                <ul class="feed-refs">
+                  {% for ref in item.cross_references_list %}
+                  <li><a href="company.html?ticker={{ ref.related_ticker|urlencode }}" class="ticker-badge">{{ ref.related_ticker }}</a> {{ ref.impact_note }}</li>
+                  {% endfor %}
+                </ul>
                 {% endif %}
-
-                <p class="summary-text">{{ item.summary }}</p>
-              </td>
-              <td>
-                <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="action-link">
-                  {% if item.source == 'sec_edgar' %}Filing{% elif item.source == 'company_ir' %}Press Release{% else %}Article{% endif %}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                <a href="{{ item.url if item.url.startswith('http') else '#' }}" target="_blank" rel="noopener noreferrer" class="fp-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
+              </div>
+            </details>
+          </div>
+          <span class="date-cell">{{ short_date(item.published_date) }}</span>
+        </article>
+        {% endfor %}
+        <p class="home-empty" id="feedEmpty" hidden>No stories match these filters.</p>
       </div>
     </main>
   </div>
@@ -5416,30 +4808,28 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     let currentTicker = 'ALL';
     let currentCategory = 'ALL';
     let currentSource = 'ALL';
+    let currentOrder = 'score';
+    let onFileOpen = false;
+
+    const BANDS = [
+      { key: 'high', label: 'Read first', note: 'Score 7 and above', min: 7 },
+      { key: 'mid', label: 'Worth knowing', note: 'Score 4 to 7', min: 4 },
+      { key: 'low', label: 'On file', note: 'Below 4, mostly routine', min: -Infinity },
+    ];
+
+    function bandFor(score) {
+      return BANDS.find(b => score >= b.min);
+    }
 
     function setFeedSectorFilter(secName, btn) {
       currentSector = secName;
       document.querySelectorAll('.feed-sector-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
-      const pills = document.querySelectorAll('#feedQuickTickerPills button[data-filter-type="ticker"]');
-      pills.forEach(pill => {
-        const pSec = pill.getAttribute('data-sector');
-        const pVal = pill.getAttribute('data-val');
-        if (pVal === 'ALL') {
-          pill.style.display = 'inline-flex';
-        } else if (secName === 'ALL' || pSec === secName) {
-          pill.style.display = 'inline-flex';
-        } else {
-          pill.style.display = 'none';
-        }
-      });
-
-      if (currentTicker !== 'ALL') {
-        const activePill = document.querySelector(`#feedQuickTickerPills button[data-val="${currentTicker}"]`);
-        if (activePill && activePill.style.display === 'none') {
-          setTickerFilter('ALL', document.querySelector('#feedQuickTickerPills button[data-val="ALL"]'));
-        }
+      // A company outside the new sector can't stay selected.
+      if (currentTicker !== 'ALL' && secName !== 'ALL') {
+        const item = document.querySelector(`#feedTickerDropdownList .feed-ticker-item[data-ticker="${CSS.escape(currentTicker)}"]`);
+        if (item && item.dataset.sector !== secName) setTickerFilter('ALL');
       }
 
       filterItems();
@@ -5481,19 +4871,16 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    function selectFeedTicker(ticker, label) {
-      const lbl = document.getElementById('selectedTickerLabel');
-      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All Monitored Holdings' : ticker;
-      
+    function selectFeedTicker(ticker) {
       const menu = document.getElementById('feedTickerDropdownMenu');
       if (menu) menu.classList.remove('active');
 
-      document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
-        it.classList.toggle('active', it.getAttribute('data-ticker') === ticker);
-      });
-
-      const quickBtn = document.querySelector(`#feedQuickTickerPills button[data-val="${ticker}"]`);
-      setTickerFilter(ticker, quickBtn);
+      // Picking a company outside the current sector should show that company, not an empty list.
+      const item = document.querySelector(`#feedTickerDropdownList .feed-ticker-item[data-ticker="${CSS.escape(ticker)}"]`);
+      if (item && ticker !== 'ALL' && currentSector !== 'ALL' && item.dataset.sector !== currentSector) {
+        setFeedSectorFilter('ALL', document.querySelector('.feed-sector-btn[data-sector="ALL"]'));
+      }
+      setTickerFilter(ticker);
     }
 
     document.addEventListener('click', (e) => {
@@ -5504,13 +4891,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       }
     });
 
-    function setTickerFilter(ticker, btn) {
+    function setTickerFilter(ticker) {
       currentTicker = ticker;
-      document.querySelectorAll('[data-filter-type="ticker"]').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
 
       const lbl = document.getElementById('selectedTickerLabel');
-      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All Monitored Holdings' : ticker;
+      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All companies' : ticker;
 
       document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
         it.classList.toggle('active', it.getAttribute('data-ticker') === ticker);
@@ -5551,17 +4936,106 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         let matchSrc = (currentSource === 'ALL') || (rowSource === currentSource);
         let matchQuery = !q || rowText.includes(q);
 
-        if (matchSector && matchTicker && matchCat && matchSrc && matchQuery) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
+        row.dataset.match = (matchSector && matchTicker && matchCat && matchSrc && matchQuery) ? '1' : '0';
       });
+
+      renderGroups();
+    }
+
+    function filtersActive() {
+      const q = (document.getElementById('searchInput')?.value || '').trim();
+      return Boolean(q) || currentSector !== 'ALL' || currentTicker !== 'ALL' || currentCategory !== 'ALL' || currentSource !== 'ALL';
+    }
+
+    function clearFeedFilters() {
+      const box = document.getElementById('searchInput');
+      if (box) box.value = '';
+      currentCategory = 'ALL';
+      currentSource = 'ALL';
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.val === 'ALL' || b.dataset.sector === 'ALL');
+      });
+      currentSector = 'ALL';
+      setTickerFilter('ALL');
+    }
+
+    function groupHeader(key, label, note, count, toggle) {
+      const head = document.createElement('div');
+      head.className = 'feed-group';
+      head.dataset.key = key;
+      const title = document.createElement('h2');
+      title.className = 'feed-group-title';
+      title.textContent = label;
+      const meta = document.createElement('span');
+      meta.className = 'feed-group-note';
+      meta.textContent = note ? `${count} · ${note}` : String(count);
+      head.append(title, meta);
+      if (toggle) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'feed-group-toggle';
+        btn.textContent = onFileOpen ? 'Hide' : 'Show';
+        btn.setAttribute('aria-expanded', String(onFileOpen));
+        btn.addEventListener('click', () => {
+          onFileOpen = !onFileOpen;
+          renderGroups();
+        });
+        head.append(btn);
+      }
+      return head;
+    }
+
+    // Draws the group headings, and collapses "On file" until it is asked for or filtered into.
+    function renderGroups() {
+      const body = document.getElementById('newsBody');
+      body.querySelectorAll('.feed-group').forEach(h => h.remove());
+      const rows = Array.from(body.querySelectorAll('.news-row'));
+      const active = filtersActive();
+      const groups = new Map();
+
+      rows.forEach(row => {
+        const matched = row.dataset.match !== '0';
+        let key;
+        if (currentOrder === 'score') {
+          key = bandFor(parseFloat(row.dataset.score)).key;
+        } else {
+          key = row.dataset.date;
+        }
+        if (matched) {
+          if (!groups.has(key)) groups.set(key, { first: row, count: 0 });
+          groups.get(key).count += 1;
+        }
+        const collapsed = currentOrder === 'score' && key === 'low' && !onFileOpen && !active;
+        row.hidden = !matched || collapsed;
+      });
+
+      groups.forEach((group, key) => {
+        let head;
+        if (currentOrder === 'score') {
+          const band = BANDS.find(b => b.key === key);
+          head = groupHeader(key, band.label, band.note, group.count, key === 'low' && !active);
+        } else {
+          const parts = key.split('-').map(Number);
+          const label = new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          head = groupHeader(key, label, '', group.count, false);
+        }
+        body.insertBefore(head, group.first);
+      });
+
+      const shown = Array.from(groups.values()).reduce((sum, g) => sum + g.count, 0);
+      const countEl = document.getElementById('feedResultCount');
+      if (countEl) countEl.textContent = active ? `${shown} of ${rows.length} stories` : '';
+      const clearBtn = document.getElementById('feedClearFilters');
+      if (clearBtn) clearBtn.hidden = !active;
+      const empty = document.getElementById('feedEmpty');
+      if (empty) empty.hidden = shown !== 0;
     }
 
     function sortRows(criterion) {
-      const tbody = document.getElementById('newsBody');
-      const rows = Array.from(tbody.querySelectorAll('.news-row'));
+      currentOrder = criterion;
+      const body = document.getElementById('newsBody');
+      const empty = document.getElementById('feedEmpty');
+      const rows = Array.from(body.querySelectorAll('.news-row'));
 
       document.getElementById('sortScoreBtn')?.classList.toggle('active', criterion === 'score');
       document.getElementById('sortDateBtn')?.classList.toggle('active', criterion === 'date');
@@ -5569,12 +5043,12 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       rows.sort((a, b) => {
         if (criterion === 'score') {
           return parseFloat(b.getAttribute('data-score')) - parseFloat(a.getAttribute('data-score'));
-        } else {
-          return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
         }
+        return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
       });
 
-      rows.forEach(r => tbody.appendChild(r));
+      rows.forEach(r => body.insertBefore(r, empty));
+      renderGroups();
     }
 
     // URL parameter auto-filter (?ticker=NVDA or ?q=keyword)
@@ -5584,16 +5058,16 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const urlQ = params.get('q');
 
       if (urlTicker) {
-        const btn = document.querySelector(`[data-filter-type="ticker"][data-val="${urlTicker}"]`);
-        setTickerFilter(urlTicker, btn);
+        setTickerFilter(urlTicker);
       }
       if (urlQ) {
         const searchBox = document.getElementById('searchInput');
         if (searchBox) {
           searchBox.value = urlQ;
-          filterItems();
         }
       }
+      sortRows('score');
+      filterItems();
     });
   </script>
 </body>
