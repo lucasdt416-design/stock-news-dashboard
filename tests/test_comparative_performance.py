@@ -142,7 +142,7 @@ def test_rendered_comparative_performance_markup(tmp_path):
         analytics_content = f.read()
     assert "comparativeChartCanvas" in analytics_content
     assert "perfCompanySelect" in analytics_content
-    assert "3-Month Comparative Performance vs. Peers &amp; S&amp;P 500" in analytics_content
+    assert "3 months against peers and the S&amp;P 500" in analytics_content
 
     # Check index.html is simplified (recently viewed present, heavy comparative chart removed)
     with open(out_index, "r", encoding="utf-8") as f:
@@ -156,4 +156,4 @@ def test_rendered_comparative_performance_markup(tmp_path):
     with open(comp_file, "r", encoding="utf-8") as f:
         comp_content = f.read()
     assert "compPerfCanvas-NVDA" in comp_content
-    assert "3-Month Performance vs. Competitors &amp; S&amp;P 500" in comp_content
+    assert "3 months against peers and the S&amp;P 500" in comp_content

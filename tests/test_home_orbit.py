@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from pipeline.db import init_db
-from pipeline.render import INDEX_TEMPLATE, _heat_class, _next_earnings, _orbit_companies, _sparkline_points, render_dashboard
+from pipeline.render import INDEX_TEMPLATE, _heat_class, _next_earnings, _orbit_companies, _sparkline_points, render_dashboard, _figures_html, _story_text
 
 REQUIRED_IDS = ("globalSearchInput", "searchDropdown", "defaultDropdownContent", "liveSearchResults",
                 "recentlyViewedSection", "recentlyViewedGrid", "heroOrbitStage")
@@ -156,3 +156,49 @@ def test_heat_steps():
              -2: "heat-d1", -8: "heat-d2", -42.6: "heat-d3"}
     for pct, expected in cases.items():
         assert _heat_class(pct) == expected, pct
+
+
+def test_story_text_is_the_sources_own_words():
+    item = {"summary": "Nxera gets US$100 million upfront.", "llm_summary": "Antitrust regulatory scrutiny."}
+    assert _story_text(item) == "Nxera gets US$100 million upfront."
+
+
+def test_filings_with_only_a_reference_show_nothing_rather_than_filler():
+    assert _story_text({"summary": "Official SEC submission (8-K). Accession: 1 | Report Period: 2026-11-04"}) == ""
+    assert _story_text({"summary": None}) == ""
+
+
+def test_cut_off_text_ends_cleanly_without_losing_figures():
+    whole = "McDonald's posted a third-quarter beat that lifted its shares."
+    assert _story_text({"summary": f"{whole} Tokyo, Ja..."}) == whole
+    kept = _story_text({"summary": f"{whole} It also raised its dividend to $1.9..."})
+    assert kept.endswith("$1.9…")
+    assert _story_text({"summary": "Too short to trim. Rest of it..."}) == "Too short to trim. Rest of it…"
+    assert _story_text({"summary": "plus royalties.NXE0033744 is a candidate"}).startswith("plus royalties. NXE")
+
+
+def test_figures_are_marked_and_everything_else_stays_escaped():
+    html = str(_figures_html('Up 12.5% on $1.37 billion, 3 million units. <img src=x onerror="a()"> 39 items'))
+    for figure in ("12.5%", "$1.37 billion", "3 million"):
+        assert f'<strong class="fig">{figure}</strong>' in html
+    assert "<img" not in html and "&lt;img" in html
+    assert html.count("<strong") == 3, "HTML entities and plain counts are not figures"
+
+
+def test_stories_render_their_figures_and_never_the_template_takeaway(tmp_path):
+    from pipeline.db import get_db_connection
+    from pipeline.persist import save_news_items
+    db = str(tmp_path / "t.db")
+    init_db(db)
+    save_news_items([{"item_uid": "u1", "ticker": "NVDA", "company_name": "NVIDIA", "source": "news_media",
+                      "source_type": "news", "source_label": "Yahoo", "category": "Other", "score": 9.0,
+                      "headline": "Big deal", "summary": "Nvidia pays $5 billion.", "llm_summary": "Antitrust scrutiny.",
+                      "url": "https://example.com/a", "published_date": "2026-11-01"}], db_path=db)
+    get_db_connection(db).close()
+    out = tmp_path / "site" / "index.html"
+    render_dashboard(output_path=str(out), db_path=db, performance_data={})
+    for page in ("index", "news", "company"):
+        html = (tmp_path / "site" / f"{page}.html").read_text(encoding="utf-8")
+        body = html[:html.rindex("<script>")]
+        assert '<strong class="fig">$5 billion</strong>' in body, page
+        assert "Antitrust scrutiny." not in body, page

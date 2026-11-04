@@ -2,7 +2,17 @@
 
 import re
 
-from pipeline.render import COMPANY_TEMPLATE, INDEX_TEMPLATE, NAVIGATION_LAYOUT_HTML, NEWS_TEMPLATE, SHARED_CSS
+from pipeline.render import (
+    ANALYTICS_TEMPLATE,
+    CALENDAR_TEMPLATE,
+    COMPANY_TEMPLATE,
+    ECONOMIC_TEMPLATE,
+    INDEX_TEMPLATE,
+    NAVIGATION_LAYOUT_HTML,
+    NEWS_TEMPLATE,
+    SHARED_CSS,
+    SHARED_MOBILE_JS,
+)
 
 
 def _block(selector):
@@ -85,9 +95,18 @@ def test_scores_and_counts_do_not_clutter_home_feed_or_nav():
     assert "Pipeline:" not in NAVIGATION_LAYOUT_HTML
 
 
-def test_home_and_feed_stick_to_plain_words():
-    for phrase in ("Today's news", "On file", "deserve your time", "Switch to"):
-        assert phrase not in INDEX_TEMPLATE + NEWS_TEMPLATE, phrase
+def test_every_page_sticks_to_plain_words():
+    pages = INDEX_TEMPLATE + NEWS_TEMPLATE + CALENDAR_TEMPLATE + ECONOMIC_TEMPLATE + COMPANY_TEMPLATE + ANALYTICS_TEMPLATE
+    for phrase in ("Today's news", "On file", "deserve your time", "Switch to", "Peer Relative Alpha",
+                   "Corporate Ecosystem", "Macroeconomic", "Forthcoming", "Pipeline Health", "Top Peers Avg",
+                   "3M Return", "AI Macro", "read its file", "Deduplication"):
+        assert phrase not in pages, phrase
+    assert "Lagging Peer Group" in SHARED_MOBILE_JS, "the collector's label is translated, not shown"
+
+
+def test_scores_are_gone_from_every_story_list():
+    for template in (INDEX_TEMPLATE, NEWS_TEMPLATE, COMPANY_TEMPLATE):
+        assert 'class="feed-score"' not in template
 
 
 def test_stylesheet_has_no_control_characters():

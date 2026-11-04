@@ -149,7 +149,7 @@ def test_render_economic_page(tmp_path):
         content = f.read()
 
     # Check for upcoming events strip
-    assert "Upcoming Macroeconomic Releases" in content
+    assert "Coming up" in content
     assert "FOMC Interest Rate Decision" in content
     assert "EIA Weekly Petroleum Status Report" in content
     assert "Employment Situation (Nonfarm Payrolls)" in content
@@ -165,7 +165,7 @@ def test_render_economic_page(tmp_path):
     # Check for sparklines & AI synthesis
     assert "sparkline-wrapper" in content
     assert "renderEconSparklines" in content
-    assert "AI Macro Takeaway" in content
+    assert "Why it matters" in content
 
     # Check for sensitive holdings mapped
     assert "JPM" in content

@@ -15,6 +15,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import yaml
 from jinja2 import Template
+from markupsafe import Markup, escape
 from pipeline.calendar import calculate_relative_badge
 from pipeline.normalize import clean_text
 from pipeline.persist import (
@@ -1429,7 +1430,8 @@ SHARED_CSS = """
     .top-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1rem 0 2rem; }
     .top-row.is-lead .top-body { grid-column: 1 / -1; grid-row: 2; }
     .top-row.is-lead .top-title { font-size: clamp(1.75rem, 4vw, 2.6rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.024em; }
-    .top-summary { margin-top: 0.8rem; max-width: 38rem; font-size: 1.1rem; line-height: 1.5; color: var(--text-secondary); }
+    .top-summary { margin-top: 0.25rem; max-width: 38rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-secondary); }
+    .top-row.is-lead .top-summary { margin-top: 0.8rem; font-size: 1.1rem; }
 
     .home-doors { display: block; margin-bottom: 4rem; border-top: 1px solid var(--border-card); }
     .door { flex-direction: row; align-items: baseline; gap: 1.5rem; min-height: 0; padding: 1.15rem 0; background: none; border: 0; border-bottom: 1px solid var(--border-subtle); border-radius: 0; }
@@ -1455,7 +1457,8 @@ SHARED_CSS = """
     .ticker-badge { font-weight: 600; color: var(--text-muted); }
     .feed-headline, .news-row.is-high .feed-headline { font-size: 1.04rem; font-weight: 500; line-height: 1.35; letter-spacing: -0.005em; }
     .news-row[hidden] { display: none; }
-    .feed-lead-takeaway { display: none; }
+    .feed-summary { margin-top: 0.3rem; max-width: 44rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-secondary); overflow-wrap: anywhere; }
+    .fig { font-weight: 600; color: var(--text-primary); }
     .feed-meta { font-size: 0.78rem; }
     .feed-details summary .feed-meta::after { content: ' · More'; }
     .feed-details[open] summary .feed-meta::after { content: ' · Less'; }
@@ -1463,10 +1466,52 @@ SHARED_CSS = """
     .news-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1.25rem 0 1.75rem; }
     .news-row.is-lead .feed-body { grid-column: 1 / -1; grid-row: 2; }
     .news-row.is-lead .feed-headline { font-size: clamp(1.45rem, 3vw, 2rem); font-weight: 600; line-height: 1.14; letter-spacing: -0.02em; }
-    .news-row.is-lead .feed-lead-takeaway { display: block; margin-top: 0.6rem; font-size: 1.04rem; color: var(--text-secondary); }
-    .news-row.is-lead .feed-more-takeaway { display: none; }
+    .news-row.is-lead .feed-summary { margin-top: 0.6rem; font-size: 1.06rem; }
     .news-row.is-lead .feed-details { margin-top: 0.35rem; }
     .feed-more { display: block; margin-top: 0.9rem; min-height: 36px; background: none; border: 0; color: var(--accent); font-size: 0.95rem; cursor: pointer; }
+
+    /* Companies */
+    .company-news-item { grid-template-columns: minmax(0, 1fr) 3.25rem; }
+    .company-profile-container, .company-browser-sector-name, .econ-ledger, .fp-list { border-color: var(--border-card); }
+    .company-hero-symbol { font-weight: 500; }
+    .company-hero-name { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 600; letter-spacing: -0.028em; }
+    .company-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.7rem; margin-bottom: 1rem; }
+    .company-price-val { font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 500; letter-spacing: -0.02em; }
+    .company-price-move { font-size: 1.25rem; font-weight: 600; }
+    .company-price-span { font-size: 0.95rem; color: var(--text-muted); }
+    .company-links a { color: var(--accent); }
+    .company-kpi-val, .perf-kpi-val { font-weight: 500; }
+    .fp-heading { font-weight: 600; font-size: 1.25rem; border-bottom-color: var(--border-subtle); }
+
+    /* Calendar: colour says what kind of event it is, a hollow mark says it's estimated */
+    .cal-track { height: 84px; border-bottom-color: var(--border-card); }
+    .cal-mark, .cal-key { width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: var(--text-muted); }
+    .cal-key { display: inline-block; margin: 0 0.4rem 0 0; }
+    .cal-mark[data-event-type*="Earnings"], .cal-key.is-earnings { background: var(--series-1); }
+    .cal-mark[data-event-type*="Dividend"], .cal-key.is-dividend { background: var(--series-4); }
+    .cal-mark[data-event-type*="SEC"], .cal-key.is-sec { background: var(--series-5); }
+    .cal-mark[data-event-type*="Conference"], .cal-key.is-conference { background: var(--series-6); }
+    .cal-mark:hover { background: var(--text-primary); }
+    .cal-mark.is-estimated, .cal-mark.is-estimated:hover { background: var(--bg-base); box-shadow: inset 0 0 0 2px var(--series-5); }
+    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 2px var(--text-muted); }
+    .cal-today { font-weight: 600; border-left-color: var(--accent); color: var(--accent); }
+    .cal-week-title { border-bottom-color: var(--border-card); font-size: 1.25rem; font-weight: 600; }
+    .calendar-card[data-event-type*="Earnings"] .cal-details::before,
+    .calendar-card[data-event-type*="Dividend"] .cal-details::before,
+    .calendar-card[data-event-type*="SEC"] .cal-details::before,
+    .calendar-card[data-event-type*="Conference"] .cal-details::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 0.4rem; border-radius: 50%; vertical-align: 0.06em; }
+    .calendar-card[data-event-type*="Earnings"] .cal-details::before { background: var(--series-1); }
+    .calendar-card[data-event-type*="Dividend"] .cal-details::before { background: var(--series-4); }
+    .calendar-card[data-event-type*="SEC"] .cal-details::before { background: var(--series-5); }
+    .calendar-card[data-event-type*="Conference"] .cal-details::before { background: var(--series-6); }
+    .cal-source { color: var(--accent); }
+
+    /* Economy */
+    .economic-series-name { font-weight: 600; letter-spacing: -0.015em; }
+    .economic-val { font-size: 1.6rem; font-weight: 500; }
+    .mx-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+    .econ-select { background: var(--bg-surface-elevated); border: 0; border-radius: 8px; padding: 0.35rem 0.6rem; }
+    .sparkline-tooltip { border-radius: 6px; padding: 0.2rem 0.5rem; }
 
     @media (min-width: 641px) and (max-width: 1024px) {
       .heat-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
@@ -1617,6 +1662,26 @@ function cssColor(name) {
 
 // Canvas charts can't inherit the page font either.
 const CHART_FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+// The collector's labels are written for analysts; these say the same thing plainly.
+const ASSESSMENT_WORDS = {
+  'Strong Outperformance vs Peers': 'Well ahead of peers',
+  'Moderate Outperformance': 'Slightly ahead of peers',
+  'In-Line with Competitors': 'In line with peers',
+  'Moderate Underperformance': 'Slightly behind peers',
+  'Lagging Peer Group': 'Well behind peers',
+};
+
+function plainAssessment(label) {
+  return ASSESSMENT_WORDS[label] || label;
+}
+
+// "2026-09-01" or "09-01" becomes "Sep 1".
+function shortDay(value) {
+  const m = /(\\d{2})-(\\d{2})$/.exec(String(value || ''));
+  if (!m) return String(value || '');
+  return new Date(2000, Number(m[1]) - 1, Number(m[2])).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 function currentTheme() {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
@@ -1801,7 +1866,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
               <div class="top-body">
                 <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
-                {% if loop.first and it.llm_summary %}<p class="top-summary">{{ it.llm_summary }}</p>{% endif %}
+                {% if it.story_text %}<p class="top-summary">{{ figures(it.story_text) }}</p>{% endif %}
               </div>
               <span class="top-date">{{ short_date(it.published_date) }}</span>
             </li>
@@ -2371,7 +2436,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         (it.ticker || '').toLowerCase().includes(val) ||
         (it.form_or_type || '').toLowerCase().includes(val) ||
         (it.category || '').toLowerCase().includes(val) ||
-        (it.llm_summary || '').toLowerCase().includes(val)
+        (it.summary || '').toLowerCase().includes(val)
       );
 
       // 3. Match Calendar Events
@@ -2473,7 +2538,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         });
       }
 
-      // Render Macroeconomic matches
+      // Render economy matches
       if (matchedEcon.length > 0) {
         html += '<div class="dropdown-section-title is-spaced">Economy</div>';
         matchedEcon.slice(0, 2).forEach(ind => {
@@ -2734,7 +2799,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">Analytics</h1>
-        <p class="page-standfirst">What the pipeline has collected, how a holding compares with its peers, and whether collection is healthy.</p>
+        <p class="page-standfirst">What we've collected, how a stock compares with its peers, and whether updates are running.</p>
       </header>
 
       <dl class="company-kpi-ribbon analytics-stat-row">
@@ -2744,7 +2809,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           <dd class="company-kpi-sub">Scored and stored</dd>
         </div>
         <div class="company-kpi-card">
-          <dt class="company-kpi-title">Scored 7 or higher</dt>
+          <dt class="company-kpi-title">To read first</dt>
           <dd class="company-kpi-val">{{ stats.high_priority_count }}</dd>
           <dd class="company-kpi-sub">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0)|round(1) }}% of stories</dd>
         </div>
@@ -2782,9 +2847,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       </div>
 
       <section class="comparative-perf-card" aria-labelledby="analyticsPerfHeading">
-        <h2 class="fp-heading" id="analyticsPerfHeading">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h2>
+        <h2 class="fp-heading" id="analyticsPerfHeading">3 months against peers and the S&amp;P 500</h2>
         <div class="analytics-perf-tools">
-          <p class="econ-note">Percent change since the start of the period, against up to three competitors and the S&amp;P 500.</p>
+          <p class="econ-note">Percent change since the start of the 3 months, against up to three competitors and the S&amp;P 500.</p>
           <label class="analytics-perf-picker"><span class="filter-label">Company</span>
             <select id="perfCompanySelect" class="econ-select comparative-select" data-change="renderComparativePerformanceChart">
               {% for sec in sector_directory %}
@@ -2807,32 +2872,32 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       </section>
 
       <section class="health-section" id="health" aria-labelledby="analyticsHealthHeading">
-        <h2 class="fp-heading" id="analyticsHealthHeading">Pipeline Health &amp; Safeguards</h2>
+        <h2 class="fp-heading" id="analyticsHealthHeading">Data status</h2>
         {% if latest_run %}
-        <p class="health-status{% if latest_run.status != 'HEALTHY' %} is-alert{% endif %}">Latest run: {{ latest_run.status|lower }}. {{ latest_run.health_message }}</p>
-        <p class="econ-note">Run at {{ latest_run.run_timestamp|replace('T', ' ') }}. Typical volume: {{ latest_run.moving_avg_raw }} items per run.</p>
+        <p class="health-status{% if latest_run.status != 'HEALTHY' %} is-alert{% endif %}">Last update: {{ latest_run.status|lower }}. {{ latest_run.health_message }}</p>
+        <p class="econ-note">Updated {{ latest_run.run_timestamp|replace('T', ' ') }}. A typical update brings in {{ latest_run.moving_avg_raw|round|int }} items.</p>
         {% else %}
         <p class="health-status">No pipeline runs recorded yet.</p>
         {% endif %}
         <dl class="company-kpi-ribbon health-grid">
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">SEC EDGAR Filings</dt>
+            <dt class="company-kpi-title">SEC filings</dt>
             <dd class="company-kpi-val">{{ latest_run.edgar_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">Company Releases</dt>
+            <dt class="company-kpi-title">Company releases</dt>
             <dd class="company-kpi-val">{{ latest_run.company_ir_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">News Stories</dt>
+            <dt class="company-kpi-title">News stories</dt>
             <dd class="company-kpi-val">{{ latest_run.news_media_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">Unique After Deduplication</dt>
+            <dt class="company-kpi-title">After removing duplicates</dt>
             <dd class="company-kpi-val">{{ latest_run.total_unique if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">Scored 7 or Higher</dt>
+            <dt class="company-kpi-title">To read first</dt>
             <dd class="company-kpi-val">{{ latest_run.high_impact_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
         </dl>
@@ -2872,23 +2937,18 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           return {
             label: ticker,
             data: rawChartData.timeline_series[ticker] || [],
-            borderColor: stroke,
             backgroundColor: stroke,
-            borderWidth: 2,
-            fill: false,
-            tension: 0,
-            pointBackgroundColor: stroke,
-            pointBorderColor: cssColor('--bg-base'),
-            pointBorderWidth: 2,
-            pointRadius: isPhone ? 3 : 4,
-            pointHoverRadius: 5,
+            borderWidth: 0,
+            borderRadius: 2,
+            barPercentage: 0.7,
+            categoryPercentage: 0.85,
           };
         });
 
         new Chart(ctxTimeline, {
-          type: 'line',
+          type: 'bar',
           data: {
-            labels: rawChartData.timeline_dates,
+            labels: rawChartData.timeline_dates.map(shortDay),
             datasets: datasets
           },
           options: {
@@ -2920,7 +2980,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 titleFont: { family: CHART_FONT, size: 11, weight: '500' },
                 bodyFont: { family: CHART_FONT, size: 11 },
                 padding: 10,
-                cornerRadius: 2,
+                cornerRadius: 8,
                 displayColors: true,
                 boxWidth: 8,
                 boxHeight: 8,
@@ -2929,6 +2989,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             },
             scales: {
               x: {
+                stacked: true,
                 grid: { display: false, drawBorder: false },
                 ticks: { 
                   font: { family: CHART_FONT, size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
@@ -2939,6 +3000,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 }
               },
               y: {
+                stacked: true,
                 beginAtZero: true,
                 grid: { color: cssColor('--border-subtle'), drawBorder: false },
                 ticks: { 
@@ -3056,7 +3118,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 titleFont: { family: CHART_FONT, size: 11, weight: '500' },
                 bodyFont: { family: CHART_FONT, size: 11 },
                 padding: 8,
-                cornerRadius: 2,
+                cornerRadius: 8,
                 callbacks: {
                   label: function(context) {
                     const val = context.parsed || 0;
@@ -3133,24 +3195,24 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} over 3 months</div>
             <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Top Peers Avg</div>
+            <div class="perf-kpi-label">Peers on average</div>
             <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
             <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">Broad Market Benchmark</div>
+            <div class="perf-kpi-sub">The wider market</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Peer Relative Alpha</div>
+            <div class="perf-kpi-label">Compared with peers</div>
             <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(plainAssessment(coData.assessment))}</div>
           </div>
         `;
       }
@@ -3165,7 +3227,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               <th>Start</th>
               <th>Latest</th>
               <th>Change</th>
-              <th>Against this company</th>
+              <th>Against ${escapeHtml(symbol)}</th>
             </tr>
           </thead>
           <tbody>
@@ -3217,7 +3279,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (!target || !target.series) return;
-      const labels = target.series.map(pt => pt.date);
+      const labels = target.series.map(pt => shortDay(pt.date));
 
       const datasets = [
         {
@@ -3287,7 +3349,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               titleFont: { family: CHART_FONT, size: 12, weight: '500' },
               bodyFont: { family: CHART_FONT, size: 11 },
               padding: 10,
-              cornerRadius: 2,
+              cornerRadius: 8,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -3352,7 +3414,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and takeaways.">
+  <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and summaries.">
   <title>StockPulse — The feed</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
@@ -3371,7 +3433,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       </header>
 
       <div class="feed-toolbar">
-        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and takeaways" data-input="filterItems">
+        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and summaries" data-input="filterItems">
         <div class="feed-toolbar-row">
           <div class="feed-sort" role="group" aria-label="Order">
             <button class="feed-sort-btn active" id="sortScoreBtn" type="button" data-click="sortRows" data-sort="score">By importance</button>
@@ -3454,16 +3516,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             data-sector="{{ item.macro_sector }}"
             data-source="{{ item.source }}"
             data-category="{{ item.category }}"
-            data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
+            data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.summary or '' }}">
           <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
           <div class="feed-body">
             <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
-            {% if item.llm_summary %}<p class="feed-takeaway feed-lead-takeaway">{{ item.llm_summary }}</p>{% endif %}
+            {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}
             <details class="feed-details">
               <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
               <div class="feed-details-body">
-                {% if item.llm_summary %}<p class="feed-takeaway feed-more-takeaway">{{ item.llm_summary }}</p>{% endif %}
-                {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
                 {% if item.cross_references_list %}
                 <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
                 <ul class="feed-refs">
@@ -3815,8 +3875,11 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
           {% endfor %}
         </div>
         <figcaption class="cal-legend">
-          <span><i class="cal-key"></i>Confirmed</span>
-          <span><i class="cal-key is-estimated"></i>Estimated from filing rules</span>
+          <span><i class="cal-key is-earnings"></i>Earnings</span>
+          <span><i class="cal-key is-dividend"></i>Dividend</span>
+          <span><i class="cal-key is-sec"></i>SEC deadline</span>
+          <span><i class="cal-key is-conference"></i>Conference</span>
+          <span><i class="cal-key is-estimated"></i>Hollow means estimated from filing rules</span>
         </figcaption>
       </figure>
       {% endif %}
@@ -3824,9 +3887,9 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       <div class="controls-panel cal-filters">
         <div class="filter-options" role="group" aria-label="Filter events">
           <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" data-click="filterCalendar">All <span class="pill-count">{{ calendar_events|length }}</span></button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings Calls</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividend Dates</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC Filing Deadlines</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividends</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC deadlines</button>
           <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" data-click="filterCalendar">Conferences</button>
         </div>
       </div>
@@ -3916,7 +3979,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">Economy</h1>
-        <p class="page-standfirst">{{ economic_indicators|length }} indicators, and the holdings each one touches.</p>
+        <p class="page-standfirst">{{ economic_indicators|length }} indicators, and the companies each one affects.</p>
       </header>
 
       <details class="controls-panel" id="econFilters">
@@ -3950,7 +4013,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         <article class="economic-card" data-indicator-id="{{ ind.indicator_id }}" data-relevant-tickers="{{ ind.relevant_tickers }}">
           <div class="econ-name">
             <h2 class="economic-series-name">{{ ind.name }}</h2>
-            <p class="econ-sub">{{ ind.category }} · {{ ind.series_id }} · Observed {{ short_date(ind.observation_date) }}</p>
+            <p class="econ-sub">{{ ind.category }} · As of {{ short_date(ind.observation_date) }}</p>
           </div>
           <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
             <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" aria-hidden="true"></svg>
@@ -3969,14 +4032,14 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
             </div>
           </div>
           <details class="feed-details econ-details">
-            <summary><span class="feed-meta">Why it matters, and {{ ind.tickers_list|length }} holdings it touches</span></summary>
+            <summary><span class="feed-meta">Why it matters, and the {{ ind.tickers_list|length }} companies it affects</span></summary>
             <div class="feed-details-body">
               {% if ind.ai_synthesis %}
-              <p class="feed-detail-label">AI Macro Takeaway</p>
+              <p class="feed-detail-label">Why it matters</p>
               <p class="feed-takeaway">{{ ind.ai_synthesis }}</p>
               {% endif %}
               {% if ind.context_note %}<p class="feed-detail-label">What it measures</p><p>{{ ind.context_note }}</p>{% endif %}
-              <p class="feed-detail-label">Holdings</p>
+              <p class="feed-detail-label">Companies</p>
               <p class="econ-holdings">{% for sym in ind.tickers_list %}<a href="company.html?ticker={{ sym|urlencode }}" class="ticker-badge">{{ sym }}</a> {% endfor %}</p>
             </div>
           </details>
@@ -3987,7 +4050,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       {% set short_names = {'interest_rates': 'Rates', 'treasury_10y': '10Y', 'inflation': 'CPI', 'crude_oil': 'Oil', 'unemployment': 'Jobs'} %}
       <section class="econ-section" aria-labelledby="econMatrixHeading">
         <h2 class="fp-heading" id="econMatrixHeading">Who feels what</h2>
-        <p class="econ-note">A mark means the watchlist records that company as sensitive to the indicator.</p>
+        <p class="econ-note">A dot means that indicator affects the company.</p>
         <div class="table-container">
           <table class="econ-matrix">
             <thead>
@@ -4018,7 +4081,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       </section>
 
       <section class="econ-section" aria-labelledby="econScheduleHeading">
-        <h2 class="fp-heading" id="econScheduleHeading">Upcoming Macroeconomic Releases</h2>
+        <h2 class="fp-heading" id="econScheduleHeading">Coming up</h2>
         {% if economic_schedule and economic_schedule|selectattr('passed')|list|length == economic_schedule|length %}
         <p class="econ-note econ-stale">Every date on this schedule has passed. It is a fixed list and needs updating.</p>
         {% endif %}
@@ -4082,15 +4145,15 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         svg.innerHTML = `
-          <path d="${pathD}" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="var(--text-primary)" />
+          <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="var(--accent)" />
           <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--accent)" display="none" />
         `;
 
         // Update labels
         const startLabel = wrap.querySelector('.spark-start');
         const endLabel = wrap.querySelector('.spark-end');
-        if (startLabel) startLabel.textContent = `${history[0].date.substring(0, 7)}: ${history[0].value}${unit.includes('%') ? '%' : ''}`;
+        if (startLabel) startLabel.textContent = `${new Date(history[0].date.substring(0, 7) + '-15').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}: ${history[0].value}${unit.includes('%') ? '%' : ''}`;
         if (endLabel) endLabel.textContent = `${history[history.length - 1].value}${unit.includes('%') ? '%' : ''}`;
 
         // Create tooltip
@@ -4208,13 +4271,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       {% set watchlist_symbols = watchlist_companies|map(attribute='symbol')|list %}
       <header class="page-header">
         <h1 class="page-title">Companies</h1>
-        <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to read its file.</p>
+        <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to see its news and price.</p>
       </header>
 
       <details class="company-directory-browser" id="companyDirectory" open>
         <summary class="feed-filters-toggle">All companies</summary>
         <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
-        <p class="econ-note">Percentages show 3-month return against the S&amp;P 500.</p>
+        <p class="econ-note">Percentages show how far each stock is ahead of or behind the S&amp;P 500 over 3 months.</p>
         <div class="company-browser-grid company-strip" id="companyStripContainer">
           {% for sec in sector_directory %}
           <section class="company-browser-sector">
@@ -4272,9 +4335,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         <header class="company-hero-box">
           <p class="company-hero-symbol">{{ co.symbol }} · {{ co.sector|replace('_', ' ')|title }}</p>
           <h2 class="company-hero-name">{{ co.name }}</h2>
+          {% set price = ((performance_data or {}).get('companies') or {}).get(co.symbol, {}).get('target', {}).get('latest_price') %}
+          {% if co.move_pct is not none and price is number %}
+          <p class="company-price"><span class="company-price-val">${{ "%.2f"|format(price) }}</span> <span class="company-price-move {{ 'tone-up' if co.move_pct >= 0 else 'tone-down' }}">{{ "%+.2f"|format(co.move_pct) }}%</span> <span class="company-price-span">over 3 months</span></p>
+          {% endif %}
           {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
           <p class="company-links">
-            {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">CIK {{ co.cik }} ↗</a>{% endif %}
+            {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">SEC filings ↗</a>{% endif %}
             {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ safe_url(co.newsroom_url or co.ir_page_url or co.ir_feed_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
             <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
           </p>
@@ -4286,7 +4353,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <dd class="company-kpi-sub">{{ ns.news_count }} news, {{ ns.edgar_count }} SEC, {{ ns.ir_count }} releases</dd>
             </div>
             <div class="company-kpi-card">
-              <dt class="company-kpi-title">Scored 7 or higher</dt>
+              <dt class="company-kpi-title">To read first</dt>
               <dd class="company-kpi-val">{{ ns.high_count }}</dd>
             </div>
             <div class="company-kpi-card">
@@ -4295,7 +4362,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <dd class="company-kpi-sub">{% if co_events %}{{ event_kind(co_events[0].event_type or '') }}{% else %}Nothing scheduled{% endif %}</dd>
             </div>
             <div class="company-kpi-card">
-              <dt class="company-kpi-title">Relationships</dt>
+              <dt class="company-kpi-title">Connections</dt>
               <dd class="company-kpi-val">{{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}</dd>
               <dd class="company-kpi-sub">{{ co.key_customers|length if co.key_customers else 0 }} customers, {{ co.key_suppliers|length if co.key_suppliers else 0 }} suppliers, {{ co.competitors|length if co.competitors else 0 }} competitors</dd>
             </div>
@@ -4303,8 +4370,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         </header>
 
         <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
-          <h3 class="fp-heading">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
-          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the period.</p>
+          <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
+          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
           <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
           <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
           <div class="perf-table-wrap">
@@ -4328,15 +4395,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             {% if co_news %}
               {% for it in co_news %}
               <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}">
-                <span class="feed-score" title="{{ it.score_breakdown }}">{{ it.score }}</span>
                 <div class="feed-body">
                   <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
-                  {% if it.llm_summary and it.score >= 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
+                  {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
                   <details class="feed-details">
                     <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
                     <div class="feed-details-body">
-                      {% if it.llm_summary and it.score < 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
-                      {% if it.summary %}<p>{{ it.summary }}</p>{% endif %}
                       {% if it.cross_references_list %}
                       <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
                       <ul class="feed-refs">
@@ -4345,7 +4409,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                         {% endfor %}
                       </ul>
                       {% endif %}
-                      {% if it.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                      {% if it.score_breakdown %}<p class="feed-detail-label">How it scored: {{ it.score }}</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
                       <a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
                     </div>
                   </details>
@@ -4361,7 +4425,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
           <aside class="company-side-deck">
             <section class="company-side-box">
-              <h3 class="fp-heading">Forthcoming Calendar</h3>
+              <h3 class="fp-heading">Coming up</h3>
               {% if co_events %}
               <ul class="fp-side-list">
                 {% for ev in co_events %}
@@ -4377,7 +4441,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </section>
 
             <section class="company-side-box">
-              <h3 class="fp-heading">Macroeconomic Sensitivities</h3>
+              <h3 class="fp-heading">What in the economy affects it</h3>
               <ul class="fp-side-list">
                 {% for ind in economic_indicators %}
                 {% if ind.tickers_list and co.symbol in ind.tickers_list %}
@@ -4392,7 +4456,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </section>
 
             <section class="company-side-box">
-              <h3 class="fp-heading">Corporate Ecosystem</h3>
+              <h3 class="fp-heading">Customers, suppliers and competitors</h3>
               {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
               {% if names %}
               <p class="feed-detail-label">{{ label }}</p>
@@ -4465,24 +4529,24 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} over 3 months</div>
             <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Top Peers Avg</div>
+            <div class="perf-kpi-label">Peers on average</div>
             <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
             <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">Broad Market Benchmark</div>
+            <div class="perf-kpi-sub">The wider market</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Peer Relative Alpha</div>
+            <div class="perf-kpi-label">Compared with peers</div>
             <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(plainAssessment(coData.assessment))}</div>
           </div>
         `;
       }
@@ -4497,7 +4561,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <th>Start</th>
               <th>Latest</th>
               <th>Change</th>
-              <th>Against this company</th>
+              <th>Against ${escapeHtml(symbol)}</th>
             </tr>
           </thead>
           <tbody>
@@ -4549,7 +4613,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (!target || !target.series) return;
-      const labels = target.series.map(pt => pt.date);
+      const labels = target.series.map(pt => shortDay(pt.date));
 
       const datasets = [
         {
@@ -4619,7 +4683,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               titleFont: { family: CHART_FONT, size: 12, weight: '500' },
               bodyFont: { family: CHART_FONT, size: 11 },
               padding: 10,
-              cornerRadius: 2,
+              cornerRadius: 8,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -4917,6 +4981,39 @@ def _heat_class(pct: float) -> str:
     return f"heat-{'u' if pct > 0 else 'd'}{level}"
 
 
+SEC_BOILERPLATE = "Official SEC submission"
+FIGURE_PATTERN = re.compile(
+    r"(?:US)?[$€£]\s?\d[\d,.]*\d?(?:\s?(?:million|billion|trillion|bn)\b)?"
+    r"|[+\-−]?\d[\d,.]*\s?%"
+    r"|\b\d[\d,.]*\s(?:million|billion|trillion)\b",
+    re.IGNORECASE,
+)
+
+
+def _story_text(item: Dict[str, Any]) -> str:
+    """What the source itself said, which is where the real numbers are.
+
+    SEC items only carry a filing reference, so they get nothing rather than filler. Sources cut
+    long text off; a trailing fragment is dropped unless it has a figure in it.
+    """
+    text = clean_text(item.get("summary", "") or "")
+    if not text or text.startswith(SEC_BOILERPLATE):
+        return ""
+    text = re.sub(r"(?<=[a-z%)])\.(?=[A-Z])", ". ", text)
+    if text.endswith(("...", "…")):
+        body = text.rstrip(".… ")
+        ends = [m.end() for m in re.finditer(r"[.!?][\"”’]?\s", body)]
+        if ends and ends[-1] >= 60 and not re.search(r"\d", body[ends[-1]:]):
+            return body[:ends[-1]].strip()
+        return body + "…"
+    return text
+
+
+def _figures_html(text: str) -> Markup:
+    """Escape the text, then pick out money and percentages so they can be scanned."""
+    return Markup(FIGURE_PATTERN.sub(lambda m: f'<strong class="fig">{m.group(0)}</strong>', str(escape(text or ""))))
+
+
 def _next_earnings(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """The first earnings event in an already date-sorted calendar, if any."""
     for event in events:
@@ -5037,6 +5134,7 @@ def render_dashboard(
     for it in raw_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["story_text"] = _story_text(it_copy)
         it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         items.append(it_copy)
 
@@ -5044,6 +5142,7 @@ def render_dashboard(
     for it in priority_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["story_text"] = _story_text(it_copy)
         it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         enriched_priority.append(it_copy)
 
@@ -5118,6 +5217,7 @@ def render_dashboard(
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
         "next_earnings": _next_earnings(calendar_events),
         "heat_class": _heat_class,
+        "figures": _figures_html,
         "watchlist_moves": sorted(
             (c for c in enriched_watchlist if c["move_pct"] is not None),
             key=lambda c: c["move_pct"],
