@@ -191,40 +191,42 @@ SHARED_CSS = """
       font-display: swap;
     }
 
-    /* Ink stage with one amber accent. Dark is the default; light is opt-in via data-theme.
+    /* White by default, ink when asked. Text and links are ink; bright amber is only for marks
+       such as the wordmark and important-story dots, because on white it can't be read as text.
        Green and red only ever mean up and down. */
     :root {
-      color-scheme: dark;
-      --bg-base: #0b0d12;
-      --bg-surface: #12151c;
-      --bg-surface-elevated: #1a1e27;
+      color-scheme: light;
+      --bg-base: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f4f4f3;
       --bg-surface-glass: var(--bg-surface);
-      --bg-surface-highlight: #232834;
-      --bg-hover: #171b23;
-      --border-subtle: #1e222c;
-      --border-card: #2b303c;
-      --text-primary: #f4efe6;
-      --text-secondary: #c6c1b6;
-      --text-muted: #98948b;
-      --accent: #ffb020;
-      --accent-soft: #2b2211;
-      --on-accent: #0b0d12;
-      --pos: #3dd68c;
-      --pos-soft: #10271c;
-      --neg: #ff6b5e;
-      --neg-soft: #2e1614;
-      --warn: #f2c661;
-      --warn-soft: #2a2412;
-      --scrim: rgba(0, 0, 0, 0.6);
+      --bg-surface-highlight: #e9e9e7;
+      --bg-hover: #f7f7f6;
+      --border-subtle: #ececea;
+      --border-card: #d9d9d6;
+      --text-primary: #15161a;
+      --text-secondary: #45474d;
+      --text-muted: #6a6c70;
+      --accent: #15161a;
+      --accent-soft: #fdf1d8;
+      --on-accent: #ffffff;
+      --mark: #f5a300;
+      --pos: #0f7a4a;
+      --pos-soft: #dff1e6;
+      --neg: #b3321f;
+      --neg-soft: #f8e2dd;
+      --warn: #7a5c00;
+      --warn-soft: #f4ecd2;
+      --scrim: rgba(18, 20, 26, 0.45);
       /* Chart series, validated for colour-blind separation on this surface. No greens or reds. */
-      --series-1: #3f92d0;
-      --series-2: #d05f94;
-      --series-3: #b28b28;
-      --series-4: #16a2ae;
-      --series-5: #d9642b;
-      --series-6: #9b78d0;
-      --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
-      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
+      --series-1: #1f6fb2;
+      --series-2: #be4a86;
+      --series-3: #8f7312;
+      --series-4: #00899f;
+      --series-5: #bc5a1e;
+      --series-6: #7a4fbf;
+      --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
+      --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
 
       /* Older names kept so existing components inherit the new palette. */
       --border-glass: var(--border-card);
@@ -263,36 +265,37 @@ SHARED_CSS = """
       --transition-normal: 0.18s ease-out;
     }
 
-    :root[data-theme="light"] {
-      color-scheme: light;
-      --bg-base: #fbf8f1;
-      --bg-surface: #fffdf8;
-      --bg-surface-elevated: #f3efe5;
-      --bg-surface-highlight: #eae5d8;
-      --bg-hover: #f5f1e7;
-      --border-subtle: #ece7db;
-      --border-card: #dad4c5;
-      --text-primary: #12141a;
-      --text-secondary: #3e4049;
-      --text-muted: #62645f;
-      --accent: #955800;
-      --accent-soft: #f8ebd2;
-      --on-accent: #fffdf8;
-      --pos: #0f7a4a;
-      --pos-soft: #dff1e6;
-      --neg: #b3321f;
-      --neg-soft: #f8e2dd;
-      --warn: #7a5c00;
-      --warn-soft: #f4ecd2;
-      --scrim: rgba(18, 20, 26, 0.45);
-      --series-1: #1f6fb2;
-      --series-2: #be4a86;
-      --series-3: #8f7312;
-      --series-4: #00899f;
-      --series-5: #bc5a1e;
-      --series-6: #7a4fbf;
-      --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
-      --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-base: #0b0d12;
+      --bg-surface: #0b0d12;
+      --bg-surface-elevated: #191c23;
+      --bg-surface-highlight: #232834;
+      --bg-hover: #14171d;
+      --border-subtle: #1e222c;
+      --border-card: #2b303c;
+      --text-primary: #f3f2ef;
+      --text-secondary: #c4c3bf;
+      --text-muted: #989794;
+      --accent: #ffb020;
+      --accent-soft: #2b2211;
+      --on-accent: #0b0d12;
+      --mark: #ffb020;
+      --pos: #3dd68c;
+      --pos-soft: #10271c;
+      --neg: #ff6b5e;
+      --neg-soft: #2e1614;
+      --warn: #f2c661;
+      --warn-soft: #2a2412;
+      --scrim: rgba(0, 0, 0, 0.6);
+      --series-1: #3f92d0;
+      --series-2: #d05f94;
+      --series-3: #b28b28;
+      --series-4: #16a2ae;
+      --series-5: #d9642b;
+      --series-6: #9b78d0;
+      --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
+      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
     }
 
     button, input, select, textarea {
@@ -569,12 +572,6 @@ SHARED_CSS = """
     .nav-link.active {
       color: var(--text-primary);
       font-weight: 600;
-    }
-
-    .nav-count {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      color: var(--text-muted);
     }
 
     .sidebar-footer {
@@ -1293,8 +1290,6 @@ SHARED_CSS = """
       border-bottom: 1px solid var(--border-subtle);
     }
 
-    .top-score { font-size: 1.3rem; font-weight: 700; color: var(--text-muted); }
-    .top-score.is-high { color: var(--accent); }
     .top-ticker { font-weight: 700; color: var(--text-primary); text-decoration: none; }
     .top-ticker:hover, .top-title:hover { color: var(--accent); }
     .top-title { font-size: 1.05rem; font-weight: 500; color: var(--text-primary); text-decoration: none; overflow-wrap: anywhere; }
@@ -1368,7 +1363,117 @@ SHARED_CSS = """
     tr.news-row:hover td {
       background: var(--bg-surface);
     }
-    /* Feed Sector Filter Bar & Ticker Popover */
+
+    /* Restraint: type, spacing and rules do the structuring. No boxes around content, no shadows
+       on anything that isn't floating, no decoration. Later rules here deliberately win. */
+    @media (prefers-reduced-motion: no-preference) {
+      @view-transition { navigation: auto; }
+      a, button { transition: opacity 0.16s ease-out; }
+    }
+
+    body { font-size: 1rem; -webkit-font-smoothing: antialiased; }
+    main a:hover { opacity: 0.62; }
+    main a:active, .nav-link:active, .mobile-tab-link:active, button:active { opacity: 0.45; }
+
+    .app-sidebar { padding: 1.75rem 1.5rem; }
+    .nav-link { padding: 0.4rem 0; font-size: 0.95rem; color: var(--text-muted); }
+    .nav-link:hover { color: var(--text-primary); }
+    .nav-link.active { color: var(--text-primary); font-weight: 600; }
+    .brand-title { letter-spacing: 0; }
+    .sidebar-footer { font-size: 0.78rem; }
+    .theme-toggle { text-decoration: none; color: var(--text-muted); font-size: 0.78rem; }
+    .mobile-tab-link { font-size: 0.76rem; border-top: 0; margin-top: 0; }
+    .mobile-tab-link.active { font-weight: 650; }
+    .mobile-bottom-nav { border-top-color: var(--border-subtle); }
+
+    /* Search */
+    .search-box { height: 60px; background: var(--bg-surface-elevated); border: 1px solid transparent; border-radius: 16px; }
+    .search-box:hover { border-color: transparent; }
+    .search-box:focus-within { background: var(--bg-base); border-color: var(--text-primary); }
+    .search-input { font-size: 1.08rem; font-weight: 400; }
+    .search-shortcut { border: 0; font-weight: 500; padding: 0; }
+    .search-dropdown { border-radius: 16px; border-color: var(--border-subtle); padding: 0.5rem 1.25rem 1rem; }
+
+    /* Home: the ring is type floating in space, not a set of cards */
+    .hero-orbit-stage .search-wrapper { width: min(560px, calc(100% - 2rem)); }
+    .orbit-chip { background: none; border: 0; border-radius: 10px; padding: 0.35rem 0.5rem; text-align: center; }
+    .orbit-ticker { font-size: 1.7rem; font-weight: 650; letter-spacing: -0.02em; }
+    .orbit-name { font-size: 0.76rem; color: var(--text-muted); }
+    .orbit-fact { justify-content: center; font-size: 0.76rem; margin-top: 0.15rem; }
+    .orbit-dot { width: 6px; height: 6px; background: var(--border-card); }
+    .orbit-dot.is-high { background: var(--mark); }
+    .hero-wordmark span { color: var(--mark); }
+    .orbit-browse, .home-more, .fp-more { color: var(--text-primary); font-weight: 500; font-size: 0.95rem; text-decoration: underline; text-decoration-color: var(--border-card); text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    .orbit-static .orbit-ring { gap: 1.25rem 0.5rem; }
+    .orbit-static .orbit-chip { text-align: left; }
+    .orbit-static .orbit-fact { justify-content: flex-start; }
+
+    .home-below { max-width: 52rem; padding: 5rem 1.5rem 7rem; }
+    .home-heading { font-size: 0.95rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0; margin-bottom: 0.25rem; }
+    .home-stories { margin-bottom: 5rem; }
+    .top-list { border-top: 0; }
+    .top-row { grid-template-columns: 4.5rem minmax(0, 1fr) auto; gap: 0.5rem; padding: 0.85rem 0; }
+    .top-row:last-child { border-bottom: 0; }
+    .top-ticker { font-size: 0.86rem; font-weight: 600; color: var(--text-muted); }
+    .top-title { font-size: 1.1rem; font-weight: 500; line-height: 1.35; letter-spacing: -0.005em; }
+    .top-date { font-size: 0.84rem; }
+    .top-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1rem 0 2rem; }
+    .top-row.is-lead .top-body { grid-column: 1 / -1; grid-row: 2; }
+    .top-row.is-lead .top-title { font-size: clamp(1.75rem, 4vw, 2.6rem); font-weight: 650; line-height: 1.1; letter-spacing: -0.024em; }
+    .top-summary { margin-top: 0.8rem; max-width: 38rem; font-size: 1.1rem; line-height: 1.5; color: var(--text-secondary); }
+
+    .home-doors { display: block; margin-bottom: 4rem; border-top: 1px solid var(--border-card); }
+    .door { flex-direction: row; align-items: baseline; gap: 1.5rem; min-height: 0; padding: 1.15rem 0; background: none; border: 0; border-bottom: 1px solid var(--border-subtle); border-radius: 0; }
+    .door:hover .door-title { color: inherit; }
+    .door-title { font-size: 1.3rem; font-weight: 600; flex: none; width: 10rem; }
+    .door-line { font-size: 1rem; color: var(--text-muted); }
+
+    .recent-list { gap: 0.4rem 1.75rem; }
+    .recent-list a { padding: 0.25rem 0; background: none; border: 0; border-radius: 0; }
+    .home-clear { text-decoration: none; }
+
+    /* Feed: edited like a front page, dense below the fold */
+    .page-feed .app-main { max-width: 60rem; }
+    .page-feed .page-header { margin-bottom: 1.75rem; }
+    .feed-search { background: var(--bg-surface-elevated); border: 1px solid transparent; border-radius: 12px; padding: 0.7rem 1rem; }
+    .feed-search:focus { background: var(--bg-base); border-color: var(--text-primary); }
+    .company-feed-tools .feed-search { border: 1px solid transparent; padding: 0.55rem 0.9rem; }
+    .feed-sort-btn.active { color: var(--text-primary); }
+    .feed-group { padding: 3rem 0 0.4rem; border-bottom: 1px solid var(--border-card); justify-content: space-between; }
+    .feed-group-title { font-size: 0.95rem; font-weight: 600; letter-spacing: 0; }
+    .feed-group-note { font-size: 0.84rem; }
+    .news-row { grid-template-columns: 4rem minmax(0, 1fr) 3.5rem; gap: 0.5rem; padding: 0.7rem 0; }
+    .ticker-badge { font-weight: 600; color: var(--text-muted); }
+    .feed-headline, .news-row.is-high .feed-headline { font-size: 1.04rem; font-weight: 500; line-height: 1.35; letter-spacing: -0.005em; }
+    .news-row[hidden] { display: none; }
+    .feed-lead-takeaway { display: none; }
+    .feed-meta { font-size: 0.78rem; }
+    .feed-details summary .feed-meta::after { content: ' · More'; }
+    .feed-details[open] summary .feed-meta::after { content: ' · Less'; }
+    .date-cell { font-size: 0.8rem; }
+    .news-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1.25rem 0 1.75rem; }
+    .news-row.is-lead .feed-body { grid-column: 1 / -1; grid-row: 2; }
+    .news-row.is-lead .feed-headline { font-size: clamp(1.45rem, 3vw, 2rem); font-weight: 650; line-height: 1.14; letter-spacing: -0.02em; }
+    .news-row.is-lead .feed-lead-takeaway { display: block; margin-top: 0.6rem; font-size: 1.04rem; color: var(--text-secondary); }
+    .news-row.is-lead .feed-more-takeaway { display: none; }
+    .news-row.is-lead .feed-details { margin-top: 0.35rem; }
+    .feed-more { display: block; margin-top: 0.9rem; min-height: 36px; background: none; border: 0; color: var(--text-primary); font-size: 0.92rem; font-weight: 500; cursor: pointer; text-decoration: underline; text-decoration-color: var(--border-card); text-underline-offset: 4px; }
+
+    @media (max-width: 640px) {
+      .home-below { padding: 3.5rem 1.15rem calc(6rem + env(safe-area-inset-bottom)); }
+      .orbit-chip { width: 112px; padding: 0.2rem 0.25rem; }
+      .orbit-ticker { font-size: 1.3rem; }
+      .orbit-name { display: none; }
+      .orbit-fact { font-size: 0.68rem; margin-top: 0; }
+      .orbit-static .orbit-name { display: block; }
+      .search-box { height: 54px; }
+      .top-row { grid-template-columns: 3.6rem minmax(0, 1fr); }
+      .door { flex-direction: column; gap: 0.15rem; padding: 0.95rem 0; }
+      .door-title { width: auto; font-size: 1.15rem; }
+      .door-line { font-size: 0.92rem; }
+      .news-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.5rem; }
+      .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
+    }
 """
 
 # ==============================================================================
@@ -1397,21 +1502,21 @@ NAVIGATION_LAYOUT_HTML = """
 
   <nav class="sidebar-nav" aria-label="Pages">
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Home</span></a>
-    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span><span class="nav-count">{{ watchlist_companies|length }}</span></a>
-    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span><span class="nav-count">{{ stats.total }}</span></a>
-    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span><span class="nav-count">{{ calendar_events|length }}</span></a>
-    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Economy</span><span class="nav-count">{{ economic_indicators|length }}</span></a>
+    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span></a>
+    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span></a>
+    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span></a>
+    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Economy</span></a>
     <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Analytics</span></a>
   </nav>
 
   <div class="sidebar-footer">
-    {% if latest_run %}
-    <div{% if latest_run.status != 'HEALTHY' %} class="sidebar-status-alert"{% endif %}>Pipeline: {{ latest_run.status|lower }}</div>
-    {% else %}
-    <div>No pipeline runs recorded</div>
+    {% if not latest_run %}
+    <div>No updates yet</div>
+    {% elif latest_run.status != 'HEALTHY' %}
+    <div class="sidebar-status-alert">Last update had problems</div>
     {% endif %}
-    <div>Updated: {{ generated_at }}</div>
-    <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Switch to light</button>
+    <div>Updated {{ generated_at.rsplit(':', 1)[0] }}</div>
+    <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Dark mode</button>
   </div>
 </aside>
 
@@ -1498,17 +1603,17 @@ function whenChartFontsReady(callback) {
 }
 
 function currentTheme() {
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
 function labelThemeToggle() {
   const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = currentTheme() === 'light' ? 'Switch to dark' : 'Switch to light';
+  if (btn) btn.textContent = currentTheme() === 'light' ? 'Dark mode' : 'Light mode';
 }
 
 function cycleTheme() {
   const next = currentTheme() === 'light' ? 'dark' : 'light';
-  if (next === 'dark') delete document.documentElement.dataset.theme;
+  if (next === 'light') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = next;
   try {
     localStorage.setItem('stockpulse_theme', next);
@@ -1651,9 +1756,30 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       </section>
 
       <div class="home-below">
+        <section class="home-stories" aria-labelledby="homeStoriesHeading">
+          <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
+          {% if priority_items %}
+          <ol class="top-list">
+            {% for it in priority_items[:5] %}
+            <li class="top-row{% if loop.first %} is-lead{% endif %}">
+              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
+              <div class="top-body">
+                <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+                {% if loop.first and it.llm_summary %}<p class="top-summary">{{ it.llm_summary }}</p>{% endif %}
+              </div>
+              <span class="top-date">{{ short_date(it.published_date) }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
+          {% endif %}
+          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
+        </section>
+
         <nav class="home-doors" aria-label="Sections">
           <a class="door" href="news.html">
-            <span class="door-title">Today's news</span>
+            <span class="door-title">News</span>
             <span class="door-line">{{ stats.high_priority_count }} to read first, out of {{ stats.total }} stories</span>
           </a>
           <a class="door" href="calendar.html">
@@ -1670,24 +1796,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           </a>
         </nav>
 
-        <section class="home-stories" aria-labelledby="homeStoriesHeading">
-          <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
-          {% if priority_items %}
-          <ol class="top-list">
-            {% for it in priority_items[:5] %}
-            <li class="top-row">
-              <span class="top-score{% if it.score >= 7 %} is-high{% endif %}" title="{{ it.score_breakdown }}">{{ it.score }}</span>
-              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
-              <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
-              <span class="top-date">{{ short_date(it.published_date) }}</span>
-            </li>
-            {% endfor %}
-          </ol>
-          {% else %}
-          <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
-          {% endif %}
-          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
-        </section>
 
         <section id="recentlyViewedSection" aria-labelledby="homeRecentHeading" hidden>
           <div class="home-heading-row">
@@ -2001,7 +2109,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         canvas.height = Math.round(dust.h * ratio);
         dust.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         dust.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
-        dust.strength = document.documentElement.dataset.theme === 'light' ? 0.45 : 1;
+        dust.strength = document.documentElement.dataset.theme === 'dark' ? 0.6 : 0.22;
       }
 
       function drawDust(dt, spin) {
@@ -3216,14 +3324,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 """ + SHARED_CSS + """
   </style>
 </head>
-<body>
+<body class="page-feed">
   <div class="app-layout">
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">The feed</h1>
-        <p class="page-standfirst">{{ items|length }} stories, ranked by how much they deserve your time.</p>
+        <p class="page-standfirst">{{ items|length }} stories, most important first.</p>
       </header>
 
       <div class="feed-toolbar">
@@ -3302,7 +3410,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
       <div class="feed-list" id="newsBody">
         {% for item in items %}
-        <article class="news-row{% if item.score >= 7.0 %} is-high{% endif %}"
+        <article class="news-row{% if item.score >= 7.0 %} is-high{% if loop.index <= 3 %} is-lead{% endif %}{% endif %}"
             data-score="{{ item.score }}"
             data-date="{{ item.published_date }}"
             data-ticker="{{ item.ticker }}"
@@ -3311,15 +3419,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             data-source="{{ item.source }}"
             data-category="{{ item.category }}"
             data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
-          <span class="feed-score" title="{{ item.score_breakdown }}">{{ item.score }}</span>
           <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
           <div class="feed-body">
             <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
-            {% if item.llm_summary and item.score >= 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
+            {% if item.llm_summary %}<p class="feed-takeaway feed-lead-takeaway">{{ item.llm_summary }}</p>{% endif %}
             <details class="feed-details">
               <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
               <div class="feed-details-body">
-                {% if item.llm_summary and item.score < 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
+                {% if item.llm_summary %}<p class="feed-takeaway feed-more-takeaway">{{ item.llm_summary }}</p>{% endif %}
                 {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
                 {% if item.cross_references_list %}
                 <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
@@ -3329,7 +3436,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   {% endfor %}
                 </ul>
                 {% endif %}
-                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored: {{ item.score }}</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
                 <a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
               </div>
             </details>
@@ -3350,13 +3457,15 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     let currentCategory = 'ALL';
     let currentSource = 'ALL';
     let currentOrder = 'score';
-    let onFileOpen = false;
+    const expandedBands = new Set();
 
+    // Only the top of each band shows at first, so the page reads as edited rather than as a dump.
     const BANDS = [
-      { key: 'high', label: 'Read first', note: 'Score 7 and above', min: 7 },
-      { key: 'mid', label: 'Worth knowing', note: 'Score 4 to 7', min: 4 },
-      { key: 'low', label: 'On file', note: 'Below 4, mostly routine', min: -Infinity },
+      { key: 'high', label: 'Read first', min: 7, show: 10 },
+      { key: 'mid', label: 'Worth knowing', min: 4, show: 5 },
+      { key: 'low', label: 'Routine', min: -Infinity, show: 0 },
     ];
+    const LEAD_STORIES = 3;
 
     function bandFor(score) {
       return BANDS.find(b => score >= b.min);
@@ -3500,7 +3609,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       setTickerFilter('ALL');
     }
 
-    function groupHeader(key, label, note, count, toggle) {
+    function groupHeader(key, label, count) {
       const head = document.createElement('div');
       head.className = 'feed-group';
       head.dataset.key = key;
@@ -3509,58 +3618,69 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       title.textContent = label;
       const meta = document.createElement('span');
       meta.className = 'feed-group-note';
-      meta.textContent = note ? `${count} · ${note}` : String(count);
+      meta.textContent = `${count} ${count === 1 ? 'story' : 'stories'}`;
       head.append(title, meta);
-      if (toggle) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'feed-group-toggle';
-        btn.textContent = onFileOpen ? 'Hide' : 'Show';
-        btn.setAttribute('aria-expanded', String(onFileOpen));
-        btn.addEventListener('click', () => {
-          onFileOpen = !onFileOpen;
-          renderGroups();
-        });
-        head.append(btn);
-      }
       return head;
     }
 
-    // Draws the group headings, and collapses "On file" until it is asked for or filtered into.
+    function moreButton(key, hiddenCount) {
+      const btn = document.createElement('button');
+      const open = expandedBands.has(key);
+      btn.type = 'button';
+      btn.className = 'feed-more';
+      btn.dataset.key = key;
+      btn.textContent = open ? 'Show fewer' : `Show ${hiddenCount} more`;
+      btn.setAttribute('aria-expanded', String(open));
+      btn.addEventListener('click', () => {
+        if (open) expandedBands.delete(key);
+        else expandedBands.add(key);
+        renderGroups();
+        document.querySelector(`.feed-more[data-key="${key}"]`)?.focus({ preventScroll: true });
+      });
+      return btn;
+    }
+
+    // Draws the group headings, marks the lead stories, and shortens each band until it is asked
+    // for or filtered into.
     function renderGroups() {
       const body = document.getElementById('newsBody');
-      body.querySelectorAll('.feed-group').forEach(h => h.remove());
+      body.querySelectorAll('.feed-group, .feed-more').forEach(h => h.remove());
       const rows = Array.from(body.querySelectorAll('.news-row'));
       const active = filtersActive();
+      const edited = currentOrder === 'score' && !active;
       const groups = new Map();
+      let leads = 0;
 
       rows.forEach(row => {
         const matched = row.dataset.match !== '0';
-        let key;
-        if (currentOrder === 'score') {
-          key = bandFor(parseFloat(row.dataset.score)).key;
-        } else {
-          key = row.dataset.date;
-        }
+        const band = bandFor(parseFloat(row.dataset.score));
+        const key = currentOrder === 'score' ? band.key : row.dataset.date;
+        let collapsed = false;
         if (matched) {
-          if (!groups.has(key)) groups.set(key, { first: row, count: 0 });
-          groups.get(key).count += 1;
+          if (!groups.has(key)) groups.set(key, { first: row, last: null, count: 0, band, hidden: 0 });
+          const group = groups.get(key);
+          collapsed = edited && group.count >= band.show && !expandedBands.has(key);
+          group.count += 1;
+          if (collapsed) group.hidden += 1;
+          else group.last = row;
         }
-        const collapsed = currentOrder === 'score' && key === 'low' && !onFileOpen && !active;
         row.hidden = !matched || collapsed;
+        const lead = edited && matched && band.key === 'high' && leads < LEAD_STORIES;
+        row.classList.toggle('is-lead', lead);
+        if (lead) leads += 1;
       });
 
       groups.forEach((group, key) => {
-        let head;
-        if (currentOrder === 'score') {
-          const band = BANDS.find(b => b.key === key);
-          head = groupHeader(key, band.label, band.note, group.count, key === 'low' && !active);
-        } else {
-          const parts = key.split('-').map(Number);
-          const label = new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-          head = groupHeader(key, label, '', group.count, false);
+        const label = currentOrder === 'score'
+          ? group.band.label
+          : (() => {
+              const parts = key.split('-').map(Number);
+              return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            })();
+        body.insertBefore(groupHeader(key, label, group.count), group.first);
+        if (edited && (group.hidden || expandedBands.has(key)) && group.count > group.band.show) {
+          body.insertBefore(moreButton(key, group.hidden), group.last ? group.last.nextSibling : group.first);
         }
-        body.insertBefore(head, group.first);
       });
 
       const shown = Array.from(groups.values()).reduce((sum, g) => sum + g.count, 0);
