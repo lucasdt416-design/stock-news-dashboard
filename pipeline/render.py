@@ -11,7 +11,6 @@ import json
 import logging
 import os
 import re
-import shutil
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import yaml
@@ -30,7 +29,6 @@ from pipeline.persist import (
 
 logger = logging.getLogger(__name__)
 
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 CHART_JS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
 SAFE_URL_PATTERN = re.compile(r"https?://[^\s\x00-\x1f\x7f\"'<>`]+", re.IGNORECASE)
 INLINE_SCRIPT_PATTERN = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.DOTALL)
@@ -177,46 +175,30 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
 # SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
-    @font-face {
-      font-family: 'Fredoka';
-      src: url('assets/fonts/fredoka.woff2') format('woff2');
-      font-weight: 700;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'Hanken Grotesk';
-      src: url('assets/fonts/hanken-grotesk.woff2') format('woff2');
-      font-weight: 400 700;
-      font-display: swap;
-    }
-
-    /* White by default, ink when asked. Text and links are ink; bright amber is only for marks
-       such as the wordmark and important-story dots, because on white it can't be read as text.
+    /* Neutral greys with one blue for links and focus. White by default, black when asked.
        Green and red only ever mean up and down. */
     :root {
       color-scheme: light;
       --bg-base: #ffffff;
       --bg-surface: #ffffff;
-      --bg-surface-elevated: #f4f4f3;
+      --bg-surface-elevated: #f5f5f7;
       --bg-surface-glass: var(--bg-surface);
-      --bg-surface-highlight: #e9e9e7;
-      --bg-hover: #f7f7f6;
-      --border-subtle: #ececea;
-      --border-card: #d9d9d6;
-      --text-primary: #15161a;
-      --text-secondary: #45474d;
-      --text-muted: #6a6c70;
-      --accent: #15161a;
-      --accent-soft: #fdf1d8;
+      --bg-surface-highlight: #e8e8ed;
+      --bg-hover: #f5f5f7;
+      --border-subtle: #e8e8ed;
+      --border-card: #d2d2d7;
+      --text-primary: #1d1d1f;
+      --text-secondary: #424245;
+      --text-muted: #6e6e73;
+      --accent: #0066cc;
+      --accent-soft: #e8f1fb;
       --on-accent: #ffffff;
-      --mark: #f5a300;
-      --pos: #0f7a4a;
-      --pos-soft: #dff1e6;
-      --neg: #b3321f;
-      --neg-soft: #f8e2dd;
-      --warn: #7a5c00;
-      --warn-soft: #f4ecd2;
+      --pos: #1a7f37;
+      --pos-soft: #e3f3e7;
+      --neg: #d70015;
+      --neg-soft: #fbe6e7;
+      --warn: #8a5a00;
+      --warn-soft: #f7efdc;
       --scrim: rgba(18, 20, 26, 0.45);
       /* Chart series, validated for colour-blind separation on this surface. No greens or reds. */
       --series-1: #1f6fb2;
@@ -242,9 +224,9 @@ SHARED_CSS = """
       --accent-orange-dark: var(--warn);
       --accent-orange-main: var(--warn);
 
-      /* Fredoka is for the wordmark and the Home headline only. Everything else is one sans. */
-      --font-display: 'Fredoka', 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
-      --font-sans: 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      /* The device's own font: San Francisco on Apple, Segoe UI on Windows, Roboto on Android. */
+      --font-display: var(--font-sans);
+      --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       --font-serif: var(--font-sans);
       --font-mono: var(--font-sans);
 
@@ -267,26 +249,25 @@ SHARED_CSS = """
 
     :root[data-theme="dark"] {
       color-scheme: dark;
-      --bg-base: #0b0d12;
-      --bg-surface: #0b0d12;
-      --bg-surface-elevated: #191c23;
-      --bg-surface-highlight: #232834;
-      --bg-hover: #14171d;
-      --border-subtle: #1e222c;
-      --border-card: #2b303c;
-      --text-primary: #f3f2ef;
-      --text-secondary: #c4c3bf;
-      --text-muted: #989794;
-      --accent: #ffb020;
-      --accent-soft: #2b2211;
-      --on-accent: #0b0d12;
-      --mark: #ffb020;
-      --pos: #3dd68c;
-      --pos-soft: #10271c;
-      --neg: #ff6b5e;
-      --neg-soft: #2e1614;
-      --warn: #f2c661;
-      --warn-soft: #2a2412;
+      --bg-base: #000000;
+      --bg-surface: #000000;
+      --bg-surface-elevated: #1c1c1e;
+      --bg-surface-highlight: #2c2c2e;
+      --bg-hover: #1c1c1e;
+      --border-subtle: #2c2c2e;
+      --border-card: #3a3a3c;
+      --text-primary: #f5f5f7;
+      --text-secondary: #c7c7cc;
+      --text-muted: #98989d;
+      --accent: #2997ff;
+      --accent-soft: #0f2740;
+      --on-accent: #000000;
+      --pos: #30d158;
+      --pos-soft: #0d2a16;
+      --neg: #ff453a;
+      --neg-soft: #331210;
+      --warn: #ffd60a;
+      --warn-soft: #2e2806;
       --scrim: rgba(0, 0, 0, 0.6);
       --series-1: #3f92d0;
       --series-2: #d05f94;
@@ -304,7 +285,7 @@ SHARED_CSS = """
 
     h1, h2, h3 {
       font-family: var(--font-sans);
-      font-weight: 650;
+      font-weight: 600;
       letter-spacing: -0.015em;
     }
 
@@ -1077,8 +1058,7 @@ SHARED_CSS = """
         border: 0;
         overflow: visible;
       }
-      .page-home .app-sidebar .sidebar-brand { display: none; }
-      .page-home .app-sidebar > div:first-child:has(.sidebar-brand) { display: none; }
+      .page-home .sidebar-head { margin: 0; }
       .page-home .sidebar-nav { flex-direction: row; gap: 1.5rem; flex: 1; }
       .page-home .nav-link { gap: 0.4rem; }
       .page-home .sidebar-footer { display: flex; align-items: center; gap: 1.25rem; margin: 0; padding: 0; }
@@ -1086,7 +1066,6 @@ SHARED_CSS = """
     }
 
     @media (max-width: 1024px) {
-      .page-home .mobile-top-header .sidebar-brand { visibility: hidden; }
       .page-home .mobile-top-header { background: transparent; border: 0; position: absolute; width: 100%; }
     }
 
@@ -1116,16 +1095,6 @@ SHARED_CSS = """
       padding: clamp(4.25rem, 10vh, 6.5rem) 1rem 0;
       pointer-events: none;
     }
-
-    .hero-wordmark {
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: clamp(3.4rem, 8.5vw, 7rem);
-      line-height: 0.95;
-      letter-spacing: -0.015em;
-    }
-
-    .hero-wordmark span { color: var(--accent); }
 
     .hero-headline {
       font-family: var(--font-display);
@@ -1379,11 +1348,14 @@ SHARED_CSS = """
     .nav-link { padding: 0.4rem 0; font-size: 0.95rem; color: var(--text-muted); }
     .nav-link:hover { color: var(--text-primary); }
     .nav-link.active { color: var(--text-primary); font-weight: 600; }
-    .brand-title { letter-spacing: 0; }
+    .brand-title { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.015em; }
+    .orbit-dust { display: none; }
+    .hero-headline { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.025em; margin-top: 0; }
+    .hero-sub { margin-top: 0.9rem; font-size: clamp(1.05rem, 1.7vw, 1.4rem); line-height: 1.35; letter-spacing: -0.01em; color: var(--text-muted); }
     .sidebar-footer { font-size: 0.78rem; }
     .theme-toggle { text-decoration: none; color: var(--text-muted); font-size: 0.78rem; }
     .mobile-tab-link { font-size: 0.76rem; border-top: 0; margin-top: 0; }
-    .mobile-tab-link.active { font-weight: 650; }
+    .mobile-tab-link.active { font-weight: 600; }
     .mobile-bottom-nav { border-top-color: var(--border-subtle); }
 
     /* Search */
@@ -1397,13 +1369,12 @@ SHARED_CSS = """
     /* Home: the ring is type floating in space, not a set of cards */
     .hero-orbit-stage .search-wrapper { width: min(560px, calc(100% - 2rem)); }
     .orbit-chip { background: none; border: 0; border-radius: 10px; padding: 0.35rem 0.5rem; text-align: center; }
-    .orbit-ticker { font-size: 1.7rem; font-weight: 650; letter-spacing: -0.02em; }
+    .orbit-ticker { font-size: 1.7rem; font-weight: 600; letter-spacing: -0.02em; }
     .orbit-name { font-size: 0.76rem; color: var(--text-muted); }
     .orbit-fact { justify-content: center; font-size: 0.76rem; margin-top: 0.15rem; }
     .orbit-dot { width: 6px; height: 6px; background: var(--border-card); }
-    .orbit-dot.is-high { background: var(--mark); }
-    .hero-wordmark span { color: var(--mark); }
-    .orbit-browse, .home-more, .fp-more { color: var(--text-primary); font-weight: 500; font-size: 0.95rem; text-decoration: underline; text-decoration-color: var(--border-card); text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    .orbit-dot.is-high { background: var(--accent); }
+    .orbit-browse, .home-more, .fp-more { color: var(--accent); font-weight: 400; font-size: 1rem; text-decoration: none; }
     .orbit-static .orbit-ring { gap: 1.25rem 0.5rem; }
     .orbit-static .orbit-chip { text-align: left; }
     .orbit-static .orbit-fact { justify-content: flex-start; }
@@ -1419,7 +1390,7 @@ SHARED_CSS = """
     .top-date { font-size: 0.84rem; }
     .top-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1rem 0 2rem; }
     .top-row.is-lead .top-body { grid-column: 1 / -1; grid-row: 2; }
-    .top-row.is-lead .top-title { font-size: clamp(1.75rem, 4vw, 2.6rem); font-weight: 650; line-height: 1.1; letter-spacing: -0.024em; }
+    .top-row.is-lead .top-title { font-size: clamp(1.75rem, 4vw, 2.6rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.024em; }
     .top-summary { margin-top: 0.8rem; max-width: 38rem; font-size: 1.1rem; line-height: 1.5; color: var(--text-secondary); }
 
     .home-doors { display: block; margin-bottom: 4rem; border-top: 1px solid var(--border-card); }
@@ -1453,11 +1424,11 @@ SHARED_CSS = """
     .date-cell { font-size: 0.8rem; }
     .news-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1.25rem 0 1.75rem; }
     .news-row.is-lead .feed-body { grid-column: 1 / -1; grid-row: 2; }
-    .news-row.is-lead .feed-headline { font-size: clamp(1.45rem, 3vw, 2rem); font-weight: 650; line-height: 1.14; letter-spacing: -0.02em; }
+    .news-row.is-lead .feed-headline { font-size: clamp(1.45rem, 3vw, 2rem); font-weight: 600; line-height: 1.14; letter-spacing: -0.02em; }
     .news-row.is-lead .feed-lead-takeaway { display: block; margin-top: 0.6rem; font-size: 1.04rem; color: var(--text-secondary); }
     .news-row.is-lead .feed-more-takeaway { display: none; }
     .news-row.is-lead .feed-details { margin-top: 0.35rem; }
-    .feed-more { display: block; margin-top: 0.9rem; min-height: 36px; background: none; border: 0; color: var(--text-primary); font-size: 0.92rem; font-weight: 500; cursor: pointer; text-decoration: underline; text-decoration-color: var(--border-card); text-underline-offset: 4px; }
+    .feed-more { display: block; margin-top: 0.9rem; min-height: 36px; background: none; border: 0; color: var(--accent); font-size: 0.95rem; cursor: pointer; }
 
     @media (max-width: 640px) {
       .home-below { padding: 3.5rem 1.15rem calc(6rem + env(safe-area-inset-bottom)); }
@@ -1593,14 +1564,8 @@ function cssColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-// Charts measure their legends with the current font, so draw again once the web fonts arrive.
-function whenChartFontsReady(callback) {
-  if (!document.fonts || !document.fonts.load) return;
-  Promise.all([
-    document.fonts.load("11px 'Hanken Grotesk'"),
-    document.fonts.load("500 12px 'Hanken Grotesk'"),
-  ]).then(callback).catch(() => {});
-}
+// Canvas charts can't inherit the page font either.
+const CHART_FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 function currentTheme() {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
@@ -1697,7 +1662,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Search your watchlist and see the top stories, upcoming events and the economy.">
   <title>StockPulse: what happened to your stocks?</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -1712,8 +1677,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
 
         <div class="hero-copy">
-          <p class="hero-wordmark">Stock<span>Pulse</span></p>
           <h1 class="hero-headline">What happened to your stocks?</h1>
+          <p class="hero-sub">{{ stats.high_priority_count }} {{ 'story' if stats.high_priority_count == 1 else 'stories' }} to read first across {{ watchlist_companies|length }} companies.</p>
         </div>
 
         <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
@@ -2109,10 +2074,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         canvas.height = Math.round(dust.h * ratio);
         dust.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         dust.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
-        dust.strength = document.documentElement.dataset.theme === 'dark' ? 0.6 : 0.22;
+        dust.strength = 0;
       }
 
       function drawDust(dt, spin) {
+        if (!dust.strength) return;
         const ctx = dust.ctx;
         ctx.clearRect(0, 0, dust.w, dust.h);
         dust.px += (dust.tx - dust.px) * (1 - Math.exp(-dt * 3));
@@ -2871,7 +2837,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                   boxHeight: 8,
                   usePointStyle: true,
                   pointStyle: 'circle',
-                  font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                  font: { family: CHART_FONT, size: isPhone ? 10 : 11 },
                   color: cssColor('--text-secondary'),
                   padding: isPhone ? 6 : (isNarrow ? 8 : 14)
                 }
@@ -2880,8 +2846,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 backgroundColor: cssColor('--text-primary'),
                 titleColor: cssColor('--bg-base'),
                 bodyColor: cssColor('--bg-base'),
-                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
-                bodyFont: { family: 'Hanken Grotesk', size: 11 },
+                titleFont: { family: CHART_FONT, size: 11, weight: '500' },
+                bodyFont: { family: CHART_FONT, size: 11 },
                 padding: 10,
                 cornerRadius: 2,
                 displayColors: true,
@@ -2894,7 +2860,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               x: {
                 grid: { display: false, drawBorder: false },
                 ticks: { 
-                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  font: { family: CHART_FONT, size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
                   color: cssColor('--text-muted'),
                   maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
                   autoSkip: true,
@@ -2906,7 +2872,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 grid: { color: cssColor('--border-subtle'), drawBorder: false },
                 ticks: { 
                   precision: 0, 
-                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  font: { family: CHART_FONT, size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
                   color: cssColor('--text-muted'), 
                   maxTicksLimit: isPhone ? 4 : 6,
                   stepSize: 1 
@@ -2982,7 +2948,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
               ctx.textAlign = isRight ? 'left' : 'right';
               ctx.textBaseline = 'middle';
-              ctx.font = "11px 'Hanken Grotesk', sans-serif";
+              ctx.font = `11px ${CHART_FONT}`;
               ctx.fillStyle = cssColor('--text-primary');
               ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
             });
@@ -3016,8 +2982,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 backgroundColor: cssColor('--text-primary'),
                 titleColor: cssColor('--bg-base'),
                 bodyColor: cssColor('--bg-base'),
-                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
-                bodyFont: { family: 'Hanken Grotesk', size: 11 },
+                titleFont: { family: CHART_FONT, size: 11, weight: '500' },
+                bodyFont: { family: CHART_FONT, size: 11 },
                 padding: 8,
                 cornerRadius: 2,
                 callbacks: {
@@ -3238,7 +3204,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                font: { family: CHART_FONT, size: isPhone ? 10 : 11 },
                 color: cssColor('--text-secondary'),
                 padding: isPhone ? 6 : 10
               }
@@ -3247,8 +3213,8 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               backgroundColor: cssColor('--text-primary'),
               titleColor: cssColor('--bg-base'),
               bodyColor: cssColor('--bg-base'),
-              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
-              bodyFont: { family: 'Hanken Grotesk', size: 11 },
+              titleFont: { family: CHART_FONT, size: 12, weight: '500' },
+              bodyFont: { family: CHART_FONT, size: 11 },
               padding: 10,
               cornerRadius: 2,
               callbacks: {
@@ -3263,7 +3229,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxRotation: 0
               }
@@ -3272,7 +3238,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
@@ -3285,7 +3251,6 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     function initAnalyticsPage() {
       initCharts();
       renderComparativePerformanceChart('NVDA');
-      whenChartFontsReady(redrawAnalyticsCharts);
     }
 
     function redrawAnalyticsCharts() {
@@ -3318,7 +3283,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and takeaways.">
   <title>StockPulse — The feed</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3748,7 +3713,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Upcoming earnings calls, dividends, conferences, and SEC deadlines for your watchlist.">
   <title>StockPulse — Calendar</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3867,7 +3832,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Economic indicators and the watchlist holdings each one touches.">
   <title>StockPulse — Economy</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -4157,7 +4122,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Your watchlist by sector, with a file on each company: performance, stories, events, and relationships.">
   <title>StockPulse — Companies</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
@@ -4571,7 +4536,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                font: { family: CHART_FONT, size: isPhone ? 10 : 11 },
                 color: cssColor('--text-secondary'),
                 padding: isPhone ? 8 : 12
               }
@@ -4580,8 +4545,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               backgroundColor: cssColor('--text-primary'),
               titleColor: cssColor('--bg-base'),
               bodyColor: cssColor('--bg-base'),
-              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
-              bodyFont: { family: 'Hanken Grotesk', size: 11 },
+              titleFont: { family: CHART_FONT, size: 12, weight: '500' },
+              bodyFont: { family: CHART_FONT, size: 11 },
               padding: 10,
               cornerRadius: 2,
               callbacks: {
@@ -4596,7 +4561,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxRotation: 0
               }
@@ -4605,7 +4570,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
@@ -4714,9 +4679,6 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       } else {
         switchCompany('NVDA', false, true);
       }
-      whenChartFontsReady(() => {
-        if (currentCompany) renderCompanyComparativeChart(currentCompany);
-      });
     });
   </script>
 </body>
@@ -4904,7 +4866,6 @@ def _content_security_policy(html: str) -> str:
         "default-src 'none'",
         "script-src " + " ".join(script_sources),
         "style-src " + " ".join(hashes["style"]),
-        "font-src 'self'",
         "img-src 'self' data:",
         "connect-src 'self'",
         "base-uri 'none'",
@@ -5111,10 +5072,5 @@ def render_dashboard(
 
     with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
         f.write(_headers_file(policies))
-
-    fonts_dir = os.path.join(site_dir, "assets", "fonts")
-    os.makedirs(fonts_dir, exist_ok=True)
-    for font in ("fredoka.woff2", "hanken-grotesk.woff2"):
-        shutil.copy(os.path.join(ASSETS_DIR, "fonts", font), fonts_dir)
 
     return primary_output

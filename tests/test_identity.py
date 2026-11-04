@@ -1,4 +1,4 @@
-"""The visual identity is a contract: light by default, one amber mark, readable text, no clutter."""
+"""The visual identity is a contract: light by default, one blue accent, readable text, no clutter."""
 
 import re
 
@@ -29,7 +29,7 @@ def test_light_is_the_default_and_dark_is_opt_in():
     assert "color-scheme: light" in _block(":root")
     assert _tokens(":root")["bg-base"].lower() == "#ffffff"
     assert "color-scheme: dark" in _block(':root[data-theme="dark"]')
-    assert _tokens(':root[data-theme="dark"]')["bg-base"].lower() == "#0b0d12"
+    assert _tokens(':root[data-theme="dark"]')["bg-base"].lower() == "#000000"
     assert "prefers-color-scheme" not in SHARED_CSS
 
 
@@ -47,7 +47,8 @@ def test_serif_and_mono_pairing_is_gone():
     for template in (INDEX_TEMPLATE, COMPANY_TEMPLATE):
         assert "Newsreader" not in template
         assert "IBM+Plex" not in template
-    assert "Fredoka" in INDEX_TEMPLATE
+    assert "Fredoka" not in INDEX_TEMPLATE
+    assert "@font-face" not in SHARED_CSS, "the device's own font needs no download"
 
 
 def _last_rule(selector):
@@ -55,10 +56,11 @@ def _last_rule(selector):
     return SHARED_CSS[SHARED_CSS.rindex("\n    " + selector + " {"):].split("}", 1)[0]
 
 
-def test_bright_amber_is_a_mark_not_body_text():
-    assert _tokens(":root")["mark"].lower() == "#f5a300"
-    assert _tokens(':root[data-theme="dark"]')["mark"].lower() == "#ffb020"
-    assert "color: var(--mark)" in _last_rule(".hero-wordmark span")
+def test_amber_and_the_bubble_font_are_gone():
+    for leftover in ("#ffb020", "#f5a300", "--mark", "hero-wordmark", "Hanken"):
+        assert leftover not in SHARED_CSS, leftover
+    assert "hero-wordmark" not in INDEX_TEMPLATE
+    assert _tokens(":root")["accent"].lower() == "#0066cc"
 
 
 def test_ring_chips_and_section_rows_have_no_box():

@@ -187,8 +187,7 @@ the page. Now escaped, along with U+2028 and U+2029.
   writes `site/_headers`, one policy per page. `default-src 'none'`, and only the two chart pages may load
   from the CDN.
 - **Chart.js:** has Subresource Integrity and `crossorigin="anonymous"`.
-- **Fonts:** now self-hosted from `pipeline/assets/fonts/`. A Google Fonts stylesheet varies by browser, so
-  it cannot carry an integrity hash. This also stops sending visitor IPs to Google.
+- **Fonts:** the site uses each device's own font and downloads none, so no font is requested from Google or anyone else.
 - **Dependency pins:** `requirements-dev.txt` now pins `pytest` and `playwright`.
 
 ### 23. Search crash on first-run data (Low)
