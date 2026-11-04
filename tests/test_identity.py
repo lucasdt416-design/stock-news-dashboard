@@ -98,3 +98,11 @@ def test_stylesheet_has_no_control_characters():
 def test_hidden_feed_rows_stay_hidden():
     """Without this, display: grid beats the hidden attribute and filters appear to do nothing."""
     assert ".news-row[hidden] { display: none; }" in SHARED_CSS
+
+
+def test_map_text_is_readable_on_every_step_in_both_themes():
+    for selector in (":root", ':root[data-theme="dark"]'):
+        t = _tokens(selector)
+        for step in ("u1", "u2", "u3", "n", "d1", "d2", "d3"):
+            ratio = _contrast(t[f"heat-{step}-ink"], t[f"heat-{step}"])
+            assert ratio >= 4.5, f"{selector} {step}: {ratio:.2f}"

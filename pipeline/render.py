@@ -207,6 +207,14 @@ SHARED_CSS = """
       --series-4: #00899f;
       --series-5: #bc5a1e;
       --series-6: #7a4fbf;
+      /* The watchlist map: three strengths each way, with a grey middle. Ink is chosen per step. */
+      --heat-u1: #d9f2e0; --heat-u1-ink: #0d3b1c;
+      --heat-u2: #8fd6a4; --heat-u2-ink: #0d3b1c;
+      --heat-u3: #1a7f37; --heat-u3-ink: #ffffff;
+      --heat-n: #e8e8ed; --heat-n-ink: #1d1d1f;
+      --heat-d1: #fce0de; --heat-d1-ink: #5c0f0a;
+      --heat-d2: #f4a19b; --heat-d2-ink: #4a0b07;
+      --heat-d3: #c81e1e; --heat-d3-ink: #ffffff;
       --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
       --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
 
@@ -275,6 +283,13 @@ SHARED_CSS = """
       --series-4: #16a2ae;
       --series-5: #d9642b;
       --series-6: #9b78d0;
+      --heat-u1: #10331c; --heat-u1-ink: #d9f2e0;
+      --heat-u2: #17572b; --heat-u2-ink: #ffffff;
+      --heat-u3: #1e7f38; --heat-u3-ink: #ffffff;
+      --heat-n: #2c2c2e; --heat-n-ink: #f5f5f7;
+      --heat-d1: #3a1614; --heat-d1-ink: #fce0de;
+      --heat-d2: #7a1f19; --heat-d2-ink: #ffffff;
+      --heat-d3: #c9302a; --heat-d3-ink: #ffffff;
       --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
       --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
     }
@@ -1350,8 +1365,8 @@ SHARED_CSS = """
     .nav-link.active { color: var(--text-primary); font-weight: 600; }
     .brand-title { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.015em; }
     .orbit-dust { display: none; }
-    .hero-headline { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.025em; margin-top: 0; }
-    .hero-sub { margin-top: 0.9rem; font-size: clamp(1.05rem, 1.7vw, 1.4rem); line-height: 1.35; letter-spacing: -0.01em; color: var(--text-muted); }
+    .hero-headline { font-size: clamp(3.25rem, 8vw, 6.5rem); font-weight: 600; line-height: 1; letter-spacing: -0.03em; margin-top: 0; }
+    .hero-sub { margin-top: 0.9rem; font-size: clamp(1.1rem, 2vw, 1.6rem); line-height: 1.35; letter-spacing: -0.01em; color: var(--text-muted); }
     .sidebar-footer { font-size: 0.78rem; }
     .theme-toggle { text-decoration: none; color: var(--text-muted); font-size: 0.78rem; }
     .mobile-tab-link { font-size: 0.76rem; border-top: 0; margin-top: 0; }
@@ -1375,9 +1390,32 @@ SHARED_CSS = """
     .orbit-dot { width: 6px; height: 6px; background: var(--border-card); }
     .orbit-dot.is-high { background: var(--accent); }
     .orbit-browse, .home-more, .fp-more { color: var(--accent); font-weight: 400; font-size: 1rem; text-decoration: none; }
+    .orbit-spark { display: block; width: 66%; height: 20px; margin: 0.2rem auto 0.05rem; overflow: visible; }
+    .orbit-spark polyline { fill: none; stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .orbit-spark.is-up polyline { stroke: var(--pos); }
+    .orbit-spark.is-down polyline { stroke: var(--neg); }
+    .orbit-move { display: block; font-size: 0.86rem; font-weight: 600; white-space: nowrap; }
+    .orbit-note { position: absolute; left: 0; right: 0; bottom: 3.4rem; z-index: 70; text-align: center; font-size: 0.8rem; color: var(--text-muted); pointer-events: none; }
+    .orbit-static .orbit-spark { margin-left: 0; }
+    .orbit-hero:has(.orbit-static) .orbit-note { position: static; margin-top: 1.5rem; }
     .orbit-static .orbit-ring { gap: 1.25rem 0.5rem; }
     .orbit-static .orbit-chip { text-align: left; }
     .orbit-static .orbit-fact { justify-content: flex-start; }
+
+    .home-heat { max-width: 1180px; margin: 0 auto; padding: 5rem 1.5rem 0; }
+    .heat-heading { font-size: clamp(2rem, 4.5vw, 3.25rem); font-weight: 600; line-height: 1.08; letter-spacing: -0.025em; }
+    .heat-sub { margin-top: 0.5rem; font-size: 1.1rem; color: var(--text-muted); }
+    .heat-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; margin-top: 1.75rem; list-style: none; border-radius: 16px; overflow: hidden; }
+    .heat-tile { display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem; height: 100%; padding: 0.9rem 1rem; text-decoration: none; }
+    .heat-ticker { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.015em; }
+    .heat-move { font-size: 0.95rem; font-weight: 500; }
+    .heat-u1 { background: var(--heat-u1); color: var(--heat-u1-ink); }
+    .heat-u2 { background: var(--heat-u2); color: var(--heat-u2-ink); }
+    .heat-u3 { background: var(--heat-u3); color: var(--heat-u3-ink); }
+    .heat-n { background: var(--heat-n); color: var(--heat-n-ink); }
+    .heat-d1 { background: var(--heat-d1); color: var(--heat-d1-ink); }
+    .heat-d2 { background: var(--heat-d2); color: var(--heat-d2-ink); }
+    .heat-d3 { background: var(--heat-d3); color: var(--heat-d3-ink); }
 
     .home-below { max-width: 52rem; padding: 5rem 1.5rem 7rem; }
     .home-heading { font-size: 0.95rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0; margin-bottom: 0.25rem; }
@@ -1430,11 +1468,24 @@ SHARED_CSS = """
     .news-row.is-lead .feed-details { margin-top: 0.35rem; }
     .feed-more { display: block; margin-top: 0.9rem; min-height: 36px; background: none; border: 0; color: var(--accent); font-size: 0.95rem; cursor: pointer; }
 
+    @media (min-width: 641px) and (max-width: 1024px) {
+      .heat-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    }
+
     @media (max-width: 640px) {
       .home-below { padding: 3.5rem 1.15rem calc(6rem + env(safe-area-inset-bottom)); }
       .orbit-chip { width: 112px; padding: 0.2rem 0.25rem; }
       .orbit-ticker { font-size: 1.3rem; }
       .orbit-name { display: none; }
+      .orbit-spark { display: none; }
+      .orbit-static .orbit-spark { display: block; height: 20px; }
+      .orbit-move { font-size: 0.74rem; }
+      .orbit-note { bottom: calc(5.4rem + env(safe-area-inset-bottom)); font-size: 0.72rem; }
+      .home-heat { padding: 3.5rem 1.15rem 0; }
+      .heat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; }
+      .heat-tile { padding: 0.65rem 0.7rem; gap: 0.75rem; }
+      .heat-ticker { font-size: 1.02rem; }
+      .heat-move { font-size: 0.82rem; }
       .orbit-fact { font-size: 0.68rem; margin-top: 0; }
       .orbit-static .orbit-name { display: block; }
       .search-box { height: 54px; }
@@ -1661,7 +1712,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Search your watchlist and see the top stories, upcoming events and the economy.">
-  <title>StockPulse: what happened to your stocks?</title>
+  <title>StockPulse: keeping you informed</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
@@ -1677,8 +1728,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
 
         <div class="hero-copy">
-          <h1 class="hero-headline">What happened to your stocks?</h1>
-          <p class="hero-sub">{{ stats.high_priority_count }} {{ 'story' if stats.high_priority_count == 1 else 'stories' }} to read first across {{ watchlist_companies|length }} companies.</p>
+          <h1 class="hero-headline">Welcome!</h1>
+          <p class="hero-sub">We keep you informed about the stocks you follow.</p>
         </div>
 
         <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
@@ -1710,15 +1761,35 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <a class="orbit-chip" href="company.html?ticker={{ co.symbol|urlencode }}" draggable="false">
                 <span class="orbit-ticker">{{ co.symbol }}</span>
                 <span class="orbit-name">{{ co.name }}</span>
+                {% if co.move_pct is not none %}
+                <svg class="orbit-spark {{ 'is-up' if co.move_pct >= 0 else 'is-down' }}" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{ co.spark }}"/></svg>
+                <span class="orbit-move {{ 'tone-up' if co.move_pct >= 0 else 'tone-down' }}">{{ "%+.1f"|format(co.move_pct) }}%</span>
+                {% else %}
                 <span class="orbit-fact">{% if co.top_score is not none %}<span class="orbit-dot{% if co.top_score >= 7 %} is-high{% endif %}" title="Top story score {{ co.top_score }}"></span>{% if co.new_count %}{{ co.new_count }} new {{ 'story' if co.new_count == 1 else 'stories' }}{% else %}Top story {{ co.top_score }}{% endif %}{% else %}No stories yet{% endif %}</span>
+                {% endif %}
               </a>
             </li>
             {% endfor %}
           </ul>
         </div>
 
+        {% if watchlist_moves %}<p class="orbit-note">Price change over the last 3 months</p>{% endif %}
         <a class="orbit-browse" href="company.html">Browse all {{ watchlist_companies|length }} companies</a>
       </section>
+
+      {% if watchlist_moves %}
+      {% set risers = watchlist_moves|selectattr('move_pct', 'gt', 0)|list|length %}
+      {% set fallers = watchlist_moves|selectattr('move_pct', 'lt', 0)|list|length %}
+      <section class="home-heat" aria-labelledby="homeHeatHeading">
+        <h2 class="heat-heading" id="homeHeatHeading">{{ risers }} up, {{ fallers }} down</h2>
+        <p class="heat-sub">Your watchlist over the last 3 months, best to worst.</p>
+        <ul class="heat-grid">
+          {% for co in watchlist_moves %}
+          <li><a class="heat-tile {{ heat_class(co.move_pct) }}" href="company.html?ticker={{ co.symbol|urlencode }}" title="{{ co.name }}"><span class="heat-ticker">{{ co.symbol }}</span><span class="heat-move">{{ "%+.1f"|format(co.move_pct) }}%</span></a></li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
 
       <div class="home-below">
         <section class="home-stories" aria-labelledby="homeStoriesHeading">
@@ -4812,11 +4883,38 @@ def _orbit_companies(
             "name": co.get("name", ""),
             "top_score": top_scores.get(co.get("symbol")),
             "new_count": new_counts.get(co.get("symbol"), 0),
+            "move_pct": co.get("move_pct"),
+            "spark": co.get("spark", ""),
         }
         for co in companies
     ]
     ranked.sort(key=lambda co: (co["top_score"] is None, -(co["top_score"] or 0), -co["new_count"], co["symbol"]))
     return ranked
+
+
+def _sparkline_points(series: Any, width: int = 100, height: int = 28, samples: int = 24) -> str:
+    """SVG polyline points for a price series, thinned out so 30 chips stay small in the page."""
+    closes = [pt["close"] for pt in series or []
+              if isinstance(pt, dict) and isinstance(pt.get("close"), (int, float))]
+    if len(closes) < 2:
+        return ""
+    step = max(1, (len(closes) - 1) / (samples - 1))
+    picked = [closes[round(i * step)] for i in range(int((len(closes) - 1) / step) + 1)]
+    if picked[-1] != closes[-1]:
+        picked.append(closes[-1])
+    low, high = min(picked), max(picked)
+    spread = (high - low) or 1
+    last = len(picked) - 1
+    return " ".join(f"{i * width / last:.1f},{height - (v - low) / spread * height:.1f}" for i, v in enumerate(picked))
+
+
+def _heat_class(pct: float) -> str:
+    """The map's colour step. Under 2% either way reads as flat."""
+    size = abs(pct)
+    if size < 2:
+        return "heat-n"
+    level = 1 if size < 8 else (2 if size < 16 else 3)
+    return f"heat-{'u' if pct > 0 else 'd'}{level}"
 
 
 def _next_earnings(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -4983,6 +5081,12 @@ def render_dashboard(
         # Performance snippet
         co_perf = perf_companies.get(sym, {})
         co_copy["perf_total_pct"] = co_perf.get("target", {}).get("total_pct_change", 0.0)
+        # Unlike the 0.0 above, None means no price data, so nothing gets drawn as if it were flat.
+        move = co_perf.get("target", {}).get("total_pct_change")
+        spark = _sparkline_points(co_perf.get("target", {}).get("series"))
+        has_move = isinstance(move, (int, float)) and bool(spark)
+        co_copy["move_pct"] = move if has_move else None
+        co_copy["spark"] = spark if has_move else ""
         co_copy["alpha_vs_spy"] = co_perf.get("alpha_vs_spy", 0.0)
         co_copy["alpha_vs_peers"] = co_perf.get("alpha_vs_peers", 0.0)
         co_copy["assessment"] = co_perf.get("assessment", "In-Line")
@@ -5013,6 +5117,12 @@ def render_dashboard(
         "calendar_view": _calendar_view(calendar_events),
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
         "next_earnings": _next_earnings(calendar_events),
+        "heat_class": _heat_class,
+        "watchlist_moves": sorted(
+            (c for c in enriched_watchlist if c["move_pct"] is not None),
+            key=lambda c: c["move_pct"],
+            reverse=True,
+        ),
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,
