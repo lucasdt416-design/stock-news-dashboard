@@ -9,6 +9,7 @@ Usage:
 """
 
 import argparse
+import re
 import json
 import os
 import sys
@@ -106,7 +107,7 @@ def check_viewport(browser, base, out, width, height, scheme, touch, problems):
         problems.append(f"{tag} the matching chip is pushed below the screen (y={target['y']:.0f})")
     box.press("Enter")
     page.wait_for_load_state("domcontentloaded")
-    if "company.html" not in page.url:
+    if not re.search(r"/company-[a-z0-9-]+\.html$", page.url):
         problems.append(f"{tag} Enter did not open the first result: {page.url}")
     ctx.close()
 

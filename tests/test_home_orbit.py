@@ -202,3 +202,9 @@ def test_stories_render_their_figures_and_never_the_template_takeaway(tmp_path):
         body = html[:html.rindex("<script>")]
         assert '<strong class="fig">$5 billion</strong>' in body, page
         assert "Antitrust scrutiny." not in body, page
+
+
+def test_search_results_unhide_when_shown():
+    """Hidden always wins in the stylesheet, so showing the results has to drop the attribute too."""
+    assert "liveResults.hidden = false; liveResults.style.display = 'block';" in INDEX_TEMPLATE
+    assert '<div id="liveSearchResults" hidden></div>' in INDEX_TEMPLATE

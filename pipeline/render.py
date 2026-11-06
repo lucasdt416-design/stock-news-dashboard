@@ -7,6 +7,7 @@ SHARED_MOBILE_JS. Design rules are in docs/redesign-plan.md.
 
 import base64
 import glob
+from collections import Counter
 import hashlib
 import json
 import logging
@@ -313,6 +314,9 @@ SHARED_CSS = """
       margin: 0;
       padding: 0;
     }
+
+    /* Hidden means hidden, even for elements whose own rule sets a display. */
+    [hidden] { display: none !important; }
 
     html {
       scroll-behavior: smooth;
@@ -1786,6 +1790,12 @@ function safeHref(value) {
   return /^https?:\\/\\//i.test(url) ? escapeHtml(url) : '#';
 }
 
+// Same rule as figures() on the server: money and percentages in bold, after escaping.
+const FIGURES = /(?:US)?[$€£]\\s?\\d(?:[\\d,.]*\\d)?(?:\\s?(?:million|billion|trillion|bn)\\b)?|[+\\-−]?\\d[\\d,.]*\\s?(?:%|percent\\b)|\\b\\d[\\d,.]*\\s(?:million|billion|trillion)\\b/gi;
+function figuresHtml(text) {
+  return escapeHtml(text).replace(FIGURES, m => `<strong class="fig">${m}</strong>`);
+}
+
 // Canvas charts can't read CSS variables, so resolve them to real colors first.
 function cssColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -2381,10 +2391,14 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
-    const allItems = {{ items|tojson|safe }};
+    // Home carries each company's few most important recent stories, not the whole archive;
+    // the feed and the company pages have the rest.
+    const HOME_DATA = {{ home_data_json|safe }};
+    const allItems = HOME_DATA.items;
+    const storyArrivals = HOME_DATA.arrivals;
+    const watchlistCompanies = HOME_DATA.companies;
     const calendarEvents = {{ calendar_events|tojson|safe }};
     const econIndicators = {{ economic_indicators|tojson|safe }};
-    const watchlistCompanies = {{ watchlist_companies|tojson|safe }};
 
     // Recently viewed comes from localStorage, so anything not on the watchlist is thrown away.
     function readRecentlyViewed() {
@@ -2453,12 +2467,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     }
 
     // ---- For you / Everything on the home page ----
-    // Same rule as figures() on the server: money and percentages in bold, after escaping.
-    const FIGURES = /(?:US)?[$€£]\\s?\\d(?:[\\d,.]*\\d)?(?:\\s?(?:million|billion|trillion|bn)\\b)?|[+\\-−]?\\d[\\d,.]*\\s?(?:%|percent\\b)|\\b\\d[\\d,.]*\\s(?:million|billion|trillion)\\b/gi;
-    function figuresHtml(text) {
-      return escapeHtml(text).replace(FIGURES, m => `<strong class="fig">${m}</strong>`);
-    }
-
     function storiesFor(follows, limit) {
       const hidden = hiddenTypes();
       return (allItems || [])
@@ -2520,9 +2528,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         round += 1;
       }
       TRENDING.forEach(t => add(t.symbol, `Trending · ${t.reason}`));
-      const counts = {};
-      (allItems || []).forEach(it => { counts[it.ticker] = (counts[it.ticker] || 0) + 1; });
-      Object.keys(counts).sort((a, b) => counts[b] - counts[a]).forEach(sym => add(sym, `${counts[sym]} stories`));
+      [...watchlistCompanies].filter(c => c.story_count > 0).sort((a, b) => b.story_count - a.story_count)
+        .forEach(c => add(c.symbol, `${c.story_count} stories`));
       return picks;
     }
 
@@ -2568,8 +2575,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       });
       if (!line) return;
       if (!previousVisit) { line.hidden = true; return; }
-      const fresh = (allItems || []).filter(it => isNew(it.created_at)
-        && (!forYou || follows.has(it.ticker) || (it.related_tickers_list || []).some(t => follows.has(t))));
+      const fresh = (storyArrivals || []).filter(([created, tickers]) => isNew(created)
+        && (!forYou || tickers.some(t => follows.has(t))));
       const when = new Date(previousVisit.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       line.hidden = false;
       line.textContent = fresh.length
@@ -3095,7 +3102,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         if (res) res.style.display = 'none';
       } else {
         if (def) def.style.display = 'none';
-        if (res) res.style.display = 'block';
+        if (res) { res.hidden = false; res.style.display = 'block'; }
       }
     }
 
@@ -3127,7 +3134,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (defaultContent) defaultContent.style.display = 'none';
-      if (liveResults) liveResults.style.display = 'block';
+      if (liveResults) { liveResults.hidden = false; liveResults.style.display = 'block'; }
       // 1. Match Companies & Tickers
       const matchedCompanies = watchlistCompanies.filter(c => 
         (c.symbol || '').toLowerCase().includes(val) ||
@@ -3141,7 +3148,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         (it.ticker || '').toLowerCase().includes(val) ||
         (it.form_or_type || '').toLowerCase().includes(val) ||
         (it.category || '').toLowerCase().includes(val) ||
-        (it.summary || '').toLowerCase().includes(val)
+        (it.story_text || '').toLowerCase().includes(val)
       );
 
       // 3. Match Calendar Events
@@ -3264,7 +3271,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
       // Render News matches
       if (matchedNews.length > 0) {
-        html += '<div class="dropdown-section-title is-spaced">Stories (' + matchedNews.length + ')</div>';
+        html += '<div class="dropdown-section-title is-spaced">Stories</div>';
         matchedNews.slice(0, 4).forEach(it => {
           html += `
             <a href="news.html?q=${encodeURIComponent(val)}" class="search-result-item">
@@ -4134,7 +4141,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">The feed</h1>
-        <p class="page-standfirst">{{ items|length }} stories, most important first.</p>
+        <p class="page-standfirst">{{ feed_items|length }} {{ 'story' if feed_items|length == 1 else 'stories' }} from the last {{ feed_days }} days, most important first. Older ones are on each company’s page.</p>
       </header>
 
       <div class="view-tabs view-tabs-left" role="tablist" aria-label="Which stories to show">
@@ -4180,14 +4187,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
               <div class="feed-ticker-dropdown-list" id="feedTickerDropdownList">
                 <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" data-click="selectFeedTicker">
                   <span>All companies</span>
-                  <span class="pill-count">{{ items|length }}</span>
+                  <span class="pill-count">{{ feed_items|length }}</span>
                 </div>
                 {% for sec in sector_directory %}
                 <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}">{{ sec.name }}</div>
                 {% for co in sec.companies %}
                 <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" data-click="selectFeedTicker">
                   <span><span class="ticker-badge">{{ co.symbol }}</span> {{ co.name }}</span>
-                  <span class="pill-count">{{ co.story_count }}</span>
+                  <span class="pill-count">{{ feed_counts.get(co.symbol, 0) }}</span>
                 </div>
                 {% endfor %}
                 {% endfor %}
@@ -4200,7 +4207,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <span class="filter-label">Category</span>
           <div class="filter-options">
             <button class="filter-btn active" type="button" data-filter-type="category" data-val="ALL" data-click="setCategoryFilter">All</button>
-            {% for cat, count in stats.by_category.items() %}
+            {% for cat, count in feed_categories %}
             <button class="filter-btn" type="button" data-filter-type="category" data-val="{{ cat }}" data-click="setCategoryFilter">{{ cat }} <span class="pill-count">{{ count }}</span></button>
             {% endfor %}
           </div>
@@ -4218,7 +4225,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       </details>
 
       <div class="feed-list" id="newsBody">
-        {% for item in items %}
+        {% for item in feed_first %}
         <article class="news-row{% if item.score >= 7.0 %} is-high{% if loop.index <= 3 %} is-lead{% endif %}{% endif %}"
             data-score="{{ item.score }}"
             data-date="{{ item.published_date }}"
@@ -4226,8 +4233,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             data-tickers="{{ item.ticker }}{% if item.related_tickers_list %},{{ item.related_tickers_list|join(',') }}{% endif %}"
             data-sector="{{ item.macro_sector }}"
             data-source="{{ item.source }}"
-            data-category="{{ item.category }}"
-            data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.summary or '' }}">
+            data-category="{{ item.category }}">
           <a href="{{ company_url(item.ticker) }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
           <div class="feed-body">
             <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
@@ -4257,15 +4263,30 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     </main>
   </div>
 
+  <script type="application/json" id="feedData">{{ feed_json|safe }}</script>
   <script>
     """ + SHARED_MOBILE_JS + """
+
+    // The feed's stories arrive as data, and only the rows on screen are built, so the page stays
+    // quick however many companies there are. The rows the server wrote are what shows without JavaScript.
+    let FEED = [];
+    try { FEED = JSON.parse(document.getElementById('feedData')?.textContent || '[]'); } catch (e) { FEED = []; }
+    FEED.forEach(it => {
+      it.tickers = [it.ticker, ...(it.related || [])];
+      it.search = [it.ticker, it.company, it.sector, it.category, it.source_label, it.form, it.headline,
+        it.text, ...(it.refs || []).map(r => r.join(' '))].join(' ').toLowerCase();
+    });
 
     let currentSector = 'ALL';
     let currentTicker = 'ALL';
     let currentCategory = 'ALL';
     let currentSource = 'ALL';
     let currentOrder = 'score';
-    const expandedBands = new Set();
+    // How many extra rows each group shows after "Show more", and the same for the whole list
+    // when it isn't split into bands.
+    const extraRows = new Map();
+    const MORE_STEP = 50;
+    const UNBANDED_FIRST = 60;
 
     // Only the top of each band shows at first, so the page reads as edited rather than as a dump.
     const BANDS = [
@@ -4310,23 +4331,11 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
     function filterFeedTickerDropdown(query) {
       const q = (query || '').toLowerCase().trim();
-      const items = document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item');
-      const headers = document.querySelectorAll('#feedTickerDropdownList .feed-dropdown-sec-header');
-      
-      items.forEach(it => {
-        const t = (it.getAttribute('data-ticker') || '').toLowerCase();
-        const n = (it.getAttribute('data-name') || '').toLowerCase();
-        const s = (it.getAttribute('data-sector') || '').toLowerCase();
-        if (!q || t.includes(q) || n.includes(q) || s.includes(q)) {
-          it.style.display = 'flex';
-        } else {
-          it.style.display = 'none';
-        }
+      document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
+        const hay = [it.dataset.ticker, it.dataset.name, it.dataset.sector].join(' ').toLowerCase();
+        it.style.display = !q || hay.includes(q) ? 'flex' : 'none';
       });
-
-      headers.forEach(h => {
-        h.style.display = q ? 'none' : 'block';
-      });
+      document.querySelectorAll('#feedTickerDropdownList .feed-dropdown-sec-header').forEach(h => { h.style.display = q ? 'none' : 'block'; });
     }
 
     function selectFeedTicker(ticker) {
@@ -4376,42 +4385,6 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       filterItems();
     }
 
-    function filterItems() {
-      const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
-      const rows = document.querySelectorAll('.news-row');
-      const follows = followedSet();
-      const hidden = hiddenTypes();
-      const forYou = currentView() === 'foryou';
-      const line = document.getElementById('feedFollowLine');
-      if (line) line.hidden = !forYou;
-
-      rows.forEach(row => {
-        const rowTicker = row.getAttribute('data-ticker');
-        const rowTickers = (row.getAttribute('data-tickers') || '').split(',');
-        const rowSector = row.getAttribute('data-sector');
-        const rowCategory = row.getAttribute('data-category');
-        const rowSource = row.getAttribute('data-source');
-        const rowText = (row.getAttribute('data-text') || '').toLowerCase();
-
-        let matchSector = (currentSector === 'ALL') || (rowSector === currentSector);
-        let matchTicker = (currentTicker === 'ALL') || rowTickers.includes(currentTicker);
-        let matchCat = (currentCategory === 'ALL') || (rowCategory === currentCategory);
-        let matchSrc = (currentSource === 'ALL') || (rowSource === currentSource);
-        let matchQuery = !q || rowText.includes(q);
-        const matchView = !forYou
-          || (rowTickers.some(t => follows.has(t)) && !hidden.has(storyType(rowSource, rowCategory)));
-        const why = row.querySelector('.follow-reason');
-        if (why) {
-          why.textContent = forYou ? followReason(rowTicker, rowTickers) : '';
-          why.hidden = !why.textContent;
-        }
-
-        row.dataset.match = (matchView && matchSector && matchTicker && matchCat && matchSrc && matchQuery) ? '1' : '0';
-      });
-
-      renderGroups();
-    }
-
     function filtersActive() {
       const q = (document.getElementById('searchInput')?.value || '').trim();
       return Boolean(q) || currentSector !== 'ALL' || currentTicker !== 'ALL' || currentCategory !== 'ALL' || currentSource !== 'ALL';
@@ -4429,115 +4402,151 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       setTickerFilter('ALL');
     }
 
-    function groupHeader(key, label, count) {
-      const head = document.createElement('div');
-      head.className = 'feed-group';
-      head.dataset.key = key;
-      const title = document.createElement('h2');
-      title.className = 'feed-group-title';
-      title.textContent = label;
-      const meta = document.createElement('span');
-      meta.className = 'feed-group-note';
-      meta.textContent = `${count} ${count === 1 ? 'story' : 'stories'}`;
-      head.append(title, meta);
-      return head;
+    // Any change to what's shown starts the list from the top again.
+    function filterItems() {
+      extraRows.clear();
+      renderFeed();
     }
 
-    function moreButton(key, hiddenCount) {
-      const btn = document.createElement('button');
-      const open = expandedBands.has(key);
-      btn.type = 'button';
-      btn.className = 'feed-more';
-      btn.dataset.key = key;
-      btn.textContent = open ? 'Show fewer' : `Show ${hiddenCount} more`;
-      btn.setAttribute('aria-expanded', String(open));
-      btn.addEventListener('click', () => {
-        if (open) expandedBands.delete(key);
-        else expandedBands.add(key);
-        renderGroups();
-        document.querySelector(`.feed-more[data-key="${key}"]`)?.focus({ preventScroll: true });
-      });
-      return btn;
+    function matchingStories() {
+      const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+      const forYou = currentView() === 'foryou';
+      const follows = followedSet();
+      const hidden = hiddenTypes();
+      const list = FEED.filter(it =>
+        (currentSector === 'ALL' || it.sector === currentSector)
+        && (currentTicker === 'ALL' || it.tickers.includes(currentTicker))
+        && (currentCategory === 'ALL' || it.category === currentCategory)
+        && (currentSource === 'ALL' || it.source === currentSource)
+        && (!q || it.search.includes(q))
+        && (!forYou || (it.tickers.some(t => follows.has(t)) && !hidden.has(storyType(it.source, it.category)))));
+      const byScore = (a, b) => (b.score - a.score) || b.date.localeCompare(a.date);
+      const byDate = (a, b) => b.date.localeCompare(a.date) || (b.score - a.score);
+      return list.sort(currentOrder === 'score' ? byScore : byDate);
     }
 
-    // Draws the group headings, marks the lead stories, and shortens each band until it is asked
-    // for or filtered into.
-    function renderGroups() {
+    function dayLabel(key) {
+      const parts = key.split('-').map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    // The same markup the server writes for a row.
+    function feedRowHtml(it, lead, forYou) {
+      const reason = forYou ? followReason(it.ticker, it.tickers) : '';
+      const refs = it.refs || [];
+      const read = it.source === 'sec_edgar' ? 'Read the filing' : (it.source === 'company_ir' ? 'Read the release' : 'Read the article');
+      const meta = [it.category, it.source_label, it.form].filter(Boolean).join(' · ');
+      return `
+        <article class="news-row${it.score >= 7 ? ' is-high' : ''}${lead ? ' is-lead' : ''}" data-match="1" data-score="${escapeHtml(it.score)}" data-date="${escapeHtml(it.date)}" data-ticker="${escapeHtml(it.ticker)}" data-tickers="${escapeHtml(it.tickers.join(','))}" data-sector="${escapeHtml(it.sector)}" data-source="${escapeHtml(it.source)}" data-category="${escapeHtml(it.category)}">
+          <a href="${companyHref(it.ticker)}" class="ticker-badge" title="${escapeHtml(it.company)}">${escapeHtml(it.ticker)}</a>
+          <div class="feed-body">
+            <h3 class="feed-headline"><a href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.headline)}</a></h3>
+            ${it.text ? `<p class="feed-summary">${figuresHtml(it.text)}</p>` : ''}${it.ai ? `<p class="feed-takeaway">${figuresHtml(it.ai)}</p>` : ''}
+            <p class="follow-reason"${reason ? '' : ' hidden'}>${escapeHtml(reason)}</p>
+            <details class="feed-details">
+              <summary><span class="feed-meta">${escapeHtml(meta)}</span></summary>
+              <div class="feed-details-body">
+                ${refs.length ? `<p class="feed-detail-label">Also relevant to ${plural(refs.length, 'company', 'companies')}</p>
+                <ul class="feed-refs">${refs.map(([t, note]) => `<li><a href="${companyHref(t)}" class="ticker-badge">${escapeHtml(t)}</a> ${escapeHtml(note)}</li>`).join('')}</ul>` : ''}
+                ${it.breakdown ? `<p class="feed-detail-label">How it scored: ${escapeHtml(it.score)}</p><p class="feed-breakdown">${escapeHtml(it.breakdown)}</p>` : ''}
+                <a href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer" class="home-more">${read}</a>
+              </div>
+            </details>
+          </div>
+          <span class="date-cell">${escapeHtml(shortDay(it.date))}</span>
+        </article>`;
+    }
+
+    function groupHtml(key, label, count) {
+      return `<div class="feed-group" data-key="${escapeHtml(key)}"><h2 class="feed-group-title">${escapeHtml(label)}</h2><span class="feed-group-note">${plural(count, 'story', 'stories')}</span></div>`;
+    }
+
+    function moreHtml(key, hiddenCount, canFold) {
+      const open = !hiddenCount && canFold;
+      const label = open ? 'Show fewer' : `Show ${Math.min(hiddenCount, MORE_STEP)} more`;
+      return `<button class="feed-more" type="button" data-key="${escapeHtml(key)}" aria-expanded="${open}">${label}</button>`;
+    }
+
+    // Edited (by importance, nothing filtered): bands with the top of each showing. Otherwise the
+    // matches in order, a page at a time.
+    function renderFeed() {
       const body = document.getElementById('newsBody');
-      body.querySelectorAll('.feed-group, .feed-more').forEach(h => h.remove());
-      const rows = Array.from(body.querySelectorAll('.news-row'));
+      const empty = document.getElementById('feedEmpty');
+      if (!body || !empty) return;
+      const forYou = currentView() === 'foryou';
+      const line = document.getElementById('feedFollowLine');
+      if (line) line.hidden = !forYou;
+
+      const stories = matchingStories();
       const active = filtersActive();
       const edited = currentOrder === 'score' && !active;
-      const groups = new Map();
+      const groups = [];
+      const byKey = new Map();
+      stories.forEach(it => {
+        const band = bandFor(it.score);
+        const key = currentOrder === 'score' ? band.key : it.date;
+        if (!byKey.has(key)) {
+          const group = { key, band, items: [] };
+          byKey.set(key, group);
+          groups.push(group);
+        }
+        byKey.get(key).items.push(it);
+      });
+
+      let html = '';
       let leads = 0;
-
-      rows.forEach(row => {
-        const matched = row.dataset.match !== '0';
-        const band = bandFor(parseFloat(row.dataset.score));
-        const key = currentOrder === 'score' ? band.key : row.dataset.date;
-        let collapsed = false;
-        if (matched) {
-          if (!groups.has(key)) groups.set(key, { first: row, last: null, count: 0, band, hidden: 0 });
-          const group = groups.get(key);
-          collapsed = edited && group.count >= band.show && !expandedBands.has(key);
-          group.count += 1;
-          if (collapsed) group.hidden += 1;
-          else group.last = row;
+      let budget = UNBANDED_FIRST + (extraRows.get('all') || 0);
+      let leftOver = 0;
+      groups.forEach(group => {
+        const total = group.items.length;
+        const show = edited
+          ? Math.min(total, group.band.show + (extraRows.get(group.key) || 0))
+          : Math.min(total, Math.max(0, budget));
+        if (!edited) {
+          budget -= show;
+          leftOver += total - show;
+          if (!show) return;
         }
-        row.hidden = !matched || collapsed;
-        const lead = edited && matched && band.key === 'high' && leads < LEAD_STORIES;
-        row.classList.toggle('is-lead', lead);
-        if (lead) leads += 1;
+        html += groupHtml(group.key, currentOrder === 'score' ? group.band.label : dayLabel(group.key), total);
+        group.items.slice(0, show).forEach(it => {
+          const lead = edited && group.band.key === 'high' && leads < LEAD_STORIES;
+          if (lead) leads += 1;
+          html += feedRowHtml(it, lead, forYou);
+        });
+        if (edited && total > group.band.show) html += moreHtml(group.key, total - show, true);
       });
+      if (!edited && leftOver) html += moreHtml('all', leftOver, false);
 
-      groups.forEach((group, key) => {
-        const label = currentOrder === 'score'
-          ? group.band.label
-          : (() => {
-              const parts = key.split('-').map(Number);
-              return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-            })();
-        body.insertBefore(groupHeader(key, label, group.count), group.first);
-        if (edited && (group.hidden || expandedBands.has(key)) && group.count > group.band.show) {
-          body.insertBefore(moreButton(key, group.hidden), group.last ? group.last.nextSibling : group.first);
-        }
-      });
+      body.innerHTML = html;
+      body.append(empty);
 
-      const shown = Array.from(groups.values()).reduce((sum, g) => sum + g.count, 0);
       const countEl = document.getElementById('feedResultCount');
-      if (countEl) countEl.textContent = active ? `${shown} of ${rows.length} stories` : '';
+      if (countEl) countEl.textContent = active ? `${stories.length} of ${FEED.length} stories` : '';
       const clearBtn = document.getElementById('feedClearFilters');
       if (clearBtn) clearBtn.hidden = !active;
-      const empty = document.getElementById('feedEmpty');
-      if (empty) {
-        empty.hidden = shown !== 0;
-        const forYou = currentView() === 'foryou';
-        empty.innerHTML = forYou && !followsAnything()
-          ? 'You aren’t following anything yet. Pick companies or sectors in <a href="settings.html">Your feed</a>, or switch to Everything.'
-          : (forYou && hiddenTypes().size
-            ? 'No stories match. Some story types are hidden in <a href="settings.html">Your feed</a>.'
-            : 'No stories match these filters.');
-      }
+      empty.hidden = stories.length !== 0;
+      empty.innerHTML = forYou && !followsAnything()
+        ? 'You aren’t following anything yet. Pick companies or sectors in <a href="settings.html">Your feed</a>, or switch to Everything.'
+        : (forYou && hiddenTypes().size
+          ? 'No stories match. Some story types are hidden in <a href="settings.html">Your feed</a>.'
+          : 'No stories match these filters.');
     }
 
+    document.getElementById('newsBody')?.addEventListener('click', e => {
+      const btn = e.target.closest('.feed-more');
+      if (!btn) return;
+      const key = btn.dataset.key;
+      if (btn.getAttribute('aria-expanded') === 'true') extraRows.delete(key);
+      else extraRows.set(key, (extraRows.get(key) || 0) + MORE_STEP);
+      renderFeed();
+      document.querySelector(`.feed-more[data-key="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
+    });
+
     function sortRows(criterion) {
-      currentOrder = criterion;
-      const body = document.getElementById('newsBody');
-      const empty = document.getElementById('feedEmpty');
-      const rows = Array.from(body.querySelectorAll('.news-row'));
-
-      document.getElementById('sortScoreBtn')?.classList.toggle('active', criterion === 'score');
-      document.getElementById('sortDateBtn')?.classList.toggle('active', criterion === 'date');
-
-      rows.sort((a, b) => {
-        if (criterion === 'score') {
-          return parseFloat(b.getAttribute('data-score')) - parseFloat(a.getAttribute('data-score'));
-        }
-        return b.getAttribute('data-date').localeCompare(a.getAttribute('data-date'));
-      });
-
-      rows.forEach(r => body.insertBefore(r, empty));
-      renderGroups();
+      currentOrder = criterion === 'date' ? 'date' : 'score';
+      document.getElementById('sortScoreBtn')?.classList.toggle('active', currentOrder === 'score');
+      document.getElementById('sortDateBtn')?.classList.toggle('active', currentOrder === 'date');
+      filterItems();
     }
 
     // URL parameter auto-filter (?ticker=NVDA or ?q=keyword)
@@ -4559,7 +4568,6 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         }
       }
       sortRows('score');
-      filterItems();
     });
 
     document.addEventListener('followchange', () => filterItems());
@@ -6000,6 +6008,75 @@ def _calendar_agenda(events: List[Dict[str, Any]], names: Dict[str, str], today:
     }
 
 
+FEED_DAYS = 30
+HOME_STORIES_PER_COMPANY = 6
+HOME_ITEM_FIELDS = ("ticker", "related_tickers_list", "source", "category", "score", "published_date", "created_at",
+                    "url", "clean_headline", "story_text", "ai_summary", "form_or_type")
+
+
+def _home_data(items: List[Dict[str, Any]], companies: List[Dict[str, Any]], today: Optional[date] = None) -> Dict[str, Any]:
+    """What Home's script needs, and no more: each company's few most important recent stories,
+    when each recent story arrived (for "since your last visit"), and how companies relate.
+
+    Everyone downloads the same data, so which companies a visitor follows never leaves the browser."""
+    recent = _feed_window(items, today)
+    known = {c["symbol"] for c in companies}
+    picked: Dict[str, Dict[str, Any]] = {}
+    for sym, stories in _stories_by_company(recent).items():
+        if sym not in known:
+            continue
+        ranked = sorted(stories, key=lambda it: (it.get("score") or 0, str(it.get("published_date") or "")), reverse=True)
+        for it in ranked[:HOME_STORIES_PER_COMPANY]:
+            picked.setdefault(it.get("item_uid") or id(it), it)
+    home_items = [{k: it.get(k) for k in HOME_ITEM_FIELDS} for it in recent if (it.get("item_uid") or id(it)) in picked]
+    arrivals = [[str(it.get("created_at") or ""), [it.get("ticker")] + [t for t in it.get("related_tickers_list") or [] if t]]
+                for it in recent if it.get("created_at")]
+
+    def linked(values):
+        return [str(v).upper() for v in values or [] if str(v).upper() in known]
+
+    slim_companies = [{
+        "symbol": c["symbol"], "name": c["name"], "sector": c.get("sector", ""), "macro_sector": c.get("macro_sector", ""), "story_count": c.get("story_count", 0),
+        "key_customers": linked(c.get("key_customers")), "key_suppliers": linked(c.get("key_suppliers")),
+        "competitors": linked(c.get("competitors")),
+    } for c in companies]
+    return {"items": home_items, "arrivals": arrivals, "companies": slim_companies}
+
+
+FEED_FIRST = 40
+
+
+def _feed_window(items: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
+    """The stories from the last FEED_DAYS days, most important first.
+
+    The days count back from the newest story rather than from today, so a pause in collection
+    leaves the last month on show instead of an empty feed."""
+    today = (today or date.today()).isoformat()
+    dates = [d for d in (str(it.get("published_date") or "")[:10] for it in items)
+             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) and d <= today]
+    if not dates:
+        return []
+    newest = datetime.strptime(max(dates), "%Y-%m-%d").date()
+    since = (newest - timedelta(days=FEED_DAYS)).isoformat()
+    window = [it for it in items if since <= str(it.get("published_date") or "")[:10] <= today]
+    return sorted(window, key=lambda it: (it.get("score") or 0, str(it.get("published_date") or "")), reverse=True)
+
+
+def _feed_record(it: Dict[str, Any]) -> Dict[str, Any]:
+    """One story as the feed's script needs it."""
+    refs = [[r.get("related_ticker"), r.get("impact_note") or ""] for r in it.get("cross_references_list") or []
+            if r.get("related_ticker")]
+    return {
+        "ticker": it.get("ticker") or "", "company": it.get("company_name") or "", "sector": it.get("macro_sector") or "",
+        "category": it.get("category") or "", "source": it.get("source") or "", "source_label": it.get("source_label") or "",
+        "form": it.get("form_or_type") or "", "score": it.get("score") or 0, "date": str(it.get("published_date") or ""),
+        "url": it.get("url") or "", "headline": it.get("clean_headline") or it.get("headline") or "",
+        "text": it.get("story_text") or "", "ai": it.get("ai_summary") or "",
+        "related": [t for t in it.get("related_tickers_list") or [] if t and t != it.get("ticker")],
+        "refs": refs, "breakdown": (it.get("score_breakdown") or "").replace(" | ", " · "),
+    }
+
+
 def _trending(items: List[Dict[str, Any]], companies: List[Dict[str, Any]], today: Optional[date] = None, limit: int = 8) -> List[Dict[str, Any]]:
     """Companies with the most important news in the last 7 days, each with the real reasons why."""
     today = today or date.today()
@@ -6518,6 +6595,7 @@ def render_dashboard(
                 "companies": cos,
             })
 
+    feed_items = _feed_window(items)
     common_context = {
         "short_date": _short_date,
         "safe_url": _safe_url,
@@ -6527,6 +6605,13 @@ def render_dashboard(
         "agenda": _calendar_agenda(calendar_events, {c["symbol"]: c["name"] for c in enriched_watchlist}),
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
         "trending": _trending(items, enriched_watchlist),
+        "home_data_json": _script_json(_home_data(items, enriched_watchlist)),
+        "feed_items": feed_items,
+        "feed_first": feed_items[:FEED_FIRST],
+        "feed_json": _script_json([_feed_record(it) for it in feed_items]),
+        "feed_days": FEED_DAYS,
+        "feed_counts": Counter(t for it in feed_items for t in {it.get("ticker"), *(it.get("related_tickers_list") or [])} if t),
+        "feed_categories": Counter(it.get("category") or "Other" for it in feed_items).most_common(),
         "next_earnings": _next_earnings(calendar_events),
         "heat_class": _heat_class,
         "figures": _figures_html,

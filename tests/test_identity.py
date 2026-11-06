@@ -120,6 +120,11 @@ def test_hidden_feed_rows_stay_hidden():
     assert ".news-row[hidden] { display: none; }" in SHARED_CSS
 
 
+def test_anything_hidden_stays_hidden():
+    """The Following strip sets display: flex, which showed it empty to people who follow nothing."""
+    assert "[hidden] { display: none !important; }" in SHARED_CSS
+
+
 def test_map_text_is_readable_on_every_step_in_both_themes():
     for selector in (":root", ':root[data-theme="dark"]'):
         t = _tokens(selector)
