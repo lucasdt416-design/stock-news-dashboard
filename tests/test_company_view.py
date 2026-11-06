@@ -106,9 +106,9 @@ class TestCompanyViewAndRender(unittest.TestCase):
         # Verify sections for Boeing (BA)
         self.assertIn("id=\"profile-BA\"", content)
         self.assertIn("The Boeing Company", content)
-        self.assertIn("Corporate Ecosystem", content)
-        self.assertIn("Macroeconomic Sensitivities", content)
-        self.assertIn("Forthcoming Calendar", content)
+        self.assertIn("Customers, suppliers and competitors", content)
+        self.assertIn("What in the economy affects it", content)
+        self.assertIn("Coming up", content)
         self.assertIn("company-card-deck", content)
 
         # Verify human-readable Newsroom links
@@ -184,8 +184,8 @@ class TestCompanyViewAndRender(unittest.TestCase):
         self.assertIn("categoryChart", analytics_html)
         self.assertIn("comparativeChartCanvas", analytics_html)
         self.assertIn("perfCompanySelect", analytics_html)
-        self.assertIn("Pipeline Health &amp; Safeguards", analytics_html)
-        self.assertIn("SEC EDGAR Filings", analytics_html)
+        self.assertIn("Data status", analytics_html)
+        self.assertIn("SEC filings", analytics_html)
 
 
 if __name__ == "__main__":

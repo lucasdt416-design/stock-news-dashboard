@@ -11,11 +11,11 @@ import json
 import logging
 import os
 import re
-import shutil
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import yaml
 from jinja2 import Template
+from markupsafe import Markup, escape
 from pipeline.calendar import calculate_relative_badge
 from pipeline.normalize import clean_text
 from pipeline.persist import (
@@ -30,7 +30,6 @@ from pipeline.persist import (
 
 logger = logging.getLogger(__name__)
 
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 CHART_JS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
 SAFE_URL_PATTERN = re.compile(r"https?://[^\s\x00-\x1f\x7f\"'<>`]+", re.IGNORECASE)
 INLINE_SCRIPT_PATTERN = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.DOTALL)
@@ -177,54 +176,48 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
 # SHARED BASE CSS & ORGANIC RESPONSIVE DESIGN SYSTEM
 # ==============================================================================
 SHARED_CSS = """
-    @font-face {
-      font-family: 'Fredoka';
-      src: url('assets/fonts/fredoka.woff2') format('woff2');
-      font-weight: 700;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'Hanken Grotesk';
-      src: url('assets/fonts/hanken-grotesk.woff2') format('woff2');
-      font-weight: 400 700;
-      font-display: swap;
-    }
-
-    /* Ink stage with one amber accent. Dark is the default; light is opt-in via data-theme.
+    /* Neutral greys with one blue for links and focus. White by default, black when asked.
        Green and red only ever mean up and down. */
     :root {
-      color-scheme: dark;
-      --bg-base: #0b0d12;
-      --bg-surface: #12151c;
-      --bg-surface-elevated: #1a1e27;
+      color-scheme: light;
+      --bg-base: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f5f5f7;
       --bg-surface-glass: var(--bg-surface);
-      --bg-surface-highlight: #232834;
-      --bg-hover: #171b23;
-      --border-subtle: #1e222c;
-      --border-card: #2b303c;
-      --text-primary: #f4efe6;
-      --text-secondary: #c6c1b6;
-      --text-muted: #98948b;
-      --accent: #ffb020;
-      --accent-soft: #2b2211;
-      --on-accent: #0b0d12;
-      --pos: #3dd68c;
-      --pos-soft: #10271c;
-      --neg: #ff6b5e;
-      --neg-soft: #2e1614;
-      --warn: #f2c661;
-      --warn-soft: #2a2412;
-      --scrim: rgba(0, 0, 0, 0.6);
+      --bg-surface-highlight: #e8e8ed;
+      --bg-hover: #f5f5f7;
+      --border-subtle: #e8e8ed;
+      --border-card: #d2d2d7;
+      --text-primary: #1d1d1f;
+      --text-secondary: #424245;
+      --text-muted: #6e6e73;
+      --accent: #0066cc;
+      --accent-soft: #e8f1fb;
+      --on-accent: #ffffff;
+      --pos: #1a7f37;
+      --pos-soft: #e3f3e7;
+      --neg: #d70015;
+      --neg-soft: #fbe6e7;
+      --warn: #8a5a00;
+      --warn-soft: #f7efdc;
+      --scrim: rgba(18, 20, 26, 0.45);
       /* Chart series, validated for colour-blind separation on this surface. No greens or reds. */
-      --series-1: #3f92d0;
-      --series-2: #d05f94;
-      --series-3: #b28b28;
-      --series-4: #16a2ae;
-      --series-5: #d9642b;
-      --series-6: #9b78d0;
-      --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
-      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
+      --series-1: #1f6fb2;
+      --series-2: #be4a86;
+      --series-3: #8f7312;
+      --series-4: #00899f;
+      --series-5: #bc5a1e;
+      --series-6: #7a4fbf;
+      /* The watchlist map: three strengths each way, with a grey middle. Ink is chosen per step. */
+      --heat-u1: #d9f2e0; --heat-u1-ink: #0d3b1c;
+      --heat-u2: #8fd6a4; --heat-u2-ink: #0d3b1c;
+      --heat-u3: #1a7f37; --heat-u3-ink: #ffffff;
+      --heat-n: #e8e8ed; --heat-n-ink: #1d1d1f;
+      --heat-d1: #fce0de; --heat-d1-ink: #5c0f0a;
+      --heat-d2: #f4a19b; --heat-d2-ink: #4a0b07;
+      --heat-d3: #c81e1e; --heat-d3-ink: #ffffff;
+      --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
+      --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
 
       /* Older names kept so existing components inherit the new palette. */
       --border-glass: var(--border-card);
@@ -240,9 +233,9 @@ SHARED_CSS = """
       --accent-orange-dark: var(--warn);
       --accent-orange-main: var(--warn);
 
-      /* Fredoka is for the wordmark and the Home headline only. Everything else is one sans. */
-      --font-display: 'Fredoka', 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
-      --font-sans: 'Hanken Grotesk', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      /* The device's own font: San Francisco on Apple, Segoe UI on Windows, Roboto on Android. */
+      --font-display: var(--font-sans);
+      --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       --font-serif: var(--font-sans);
       --font-mono: var(--font-sans);
 
@@ -263,36 +256,43 @@ SHARED_CSS = """
       --transition-normal: 0.18s ease-out;
     }
 
-    :root[data-theme="light"] {
-      color-scheme: light;
-      --bg-base: #fbf8f1;
-      --bg-surface: #fffdf8;
-      --bg-surface-elevated: #f3efe5;
-      --bg-surface-highlight: #eae5d8;
-      --bg-hover: #f5f1e7;
-      --border-subtle: #ece7db;
-      --border-card: #dad4c5;
-      --text-primary: #12141a;
-      --text-secondary: #3e4049;
-      --text-muted: #62645f;
-      --accent: #955800;
-      --accent-soft: #f8ebd2;
-      --on-accent: #fffdf8;
-      --pos: #0f7a4a;
-      --pos-soft: #dff1e6;
-      --neg: #b3321f;
-      --neg-soft: #f8e2dd;
-      --warn: #7a5c00;
-      --warn-soft: #f4ecd2;
-      --scrim: rgba(18, 20, 26, 0.45);
-      --series-1: #1f6fb2;
-      --series-2: #be4a86;
-      --series-3: #8f7312;
-      --series-4: #00899f;
-      --series-5: #bc5a1e;
-      --series-6: #7a4fbf;
-      --shadow-dropdown: 0 12px 32px rgba(18, 20, 26, 0.14);
-      --shadow-modal: 0 12px 32px rgba(18, 20, 26, 0.2);
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-base: #000000;
+      --bg-surface: #000000;
+      --bg-surface-elevated: #1c1c1e;
+      --bg-surface-highlight: #2c2c2e;
+      --bg-hover: #1c1c1e;
+      --border-subtle: #2c2c2e;
+      --border-card: #3a3a3c;
+      --text-primary: #f5f5f7;
+      --text-secondary: #c7c7cc;
+      --text-muted: #98989d;
+      --accent: #2997ff;
+      --accent-soft: #0f2740;
+      --on-accent: #000000;
+      --pos: #30d158;
+      --pos-soft: #0d2a16;
+      --neg: #ff453a;
+      --neg-soft: #331210;
+      --warn: #ffd60a;
+      --warn-soft: #2e2806;
+      --scrim: rgba(0, 0, 0, 0.6);
+      --series-1: #3f92d0;
+      --series-2: #d05f94;
+      --series-3: #b28b28;
+      --series-4: #16a2ae;
+      --series-5: #d9642b;
+      --series-6: #9b78d0;
+      --heat-u1: #10331c; --heat-u1-ink: #d9f2e0;
+      --heat-u2: #17572b; --heat-u2-ink: #ffffff;
+      --heat-u3: #1e7f38; --heat-u3-ink: #ffffff;
+      --heat-n: #2c2c2e; --heat-n-ink: #f5f5f7;
+      --heat-d1: #3a1614; --heat-d1-ink: #fce0de;
+      --heat-d2: #7a1f19; --heat-d2-ink: #ffffff;
+      --heat-d3: #c9302a; --heat-d3-ink: #ffffff;
+      --shadow-dropdown: 0 12px 32px rgba(0, 0, 0, 0.55);
+      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.65);
     }
 
     button, input, select, textarea {
@@ -301,7 +301,7 @@ SHARED_CSS = """
 
     h1, h2, h3 {
       font-family: var(--font-sans);
-      font-weight: 650;
+      font-weight: 600;
       letter-spacing: -0.015em;
     }
 
@@ -569,12 +569,6 @@ SHARED_CSS = """
     .nav-link.active {
       color: var(--text-primary);
       font-weight: 600;
-    }
-
-    .nav-count {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      color: var(--text-muted);
     }
 
     .sidebar-footer {
@@ -1080,8 +1074,7 @@ SHARED_CSS = """
         border: 0;
         overflow: visible;
       }
-      .page-home .app-sidebar .sidebar-brand { display: none; }
-      .page-home .app-sidebar > div:first-child:has(.sidebar-brand) { display: none; }
+      .page-home .sidebar-head { margin: 0; }
       .page-home .sidebar-nav { flex-direction: row; gap: 1.5rem; flex: 1; }
       .page-home .nav-link { gap: 0.4rem; }
       .page-home .sidebar-footer { display: flex; align-items: center; gap: 1.25rem; margin: 0; padding: 0; }
@@ -1089,7 +1082,6 @@ SHARED_CSS = """
     }
 
     @media (max-width: 1024px) {
-      .page-home .mobile-top-header .sidebar-brand { visibility: hidden; }
       .page-home .mobile-top-header { background: transparent; border: 0; position: absolute; width: 100%; }
     }
 
@@ -1119,16 +1111,6 @@ SHARED_CSS = """
       padding: clamp(4.25rem, 10vh, 6.5rem) 1rem 0;
       pointer-events: none;
     }
-
-    .hero-wordmark {
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: clamp(3.4rem, 8.5vw, 7rem);
-      line-height: 0.95;
-      letter-spacing: -0.015em;
-    }
-
-    .hero-wordmark span { color: var(--accent); }
 
     .hero-headline {
       font-family: var(--font-display);
@@ -1293,8 +1275,6 @@ SHARED_CSS = """
       border-bottom: 1px solid var(--border-subtle);
     }
 
-    .top-score { font-size: 1.3rem; font-weight: 700; color: var(--text-muted); }
-    .top-score.is-high { color: var(--accent); }
     .top-ticker { font-weight: 700; color: var(--text-primary); text-decoration: none; }
     .top-ticker:hover, .top-title:hover { color: var(--accent); }
     .top-title { font-size: 1.05rem; font-weight: 500; color: var(--text-primary); text-decoration: none; overflow-wrap: anywhere; }
@@ -1368,7 +1348,199 @@ SHARED_CSS = """
     tr.news-row:hover td {
       background: var(--bg-surface);
     }
-    /* Feed Sector Filter Bar & Ticker Popover */
+
+    /* Restraint: type, spacing and rules do the structuring. No boxes around content, no shadows
+       on anything that isn't floating, no decoration. Later rules here deliberately win. */
+    @media (prefers-reduced-motion: no-preference) {
+      @view-transition { navigation: auto; }
+      a, button { transition: opacity 0.16s ease-out; }
+    }
+
+    body { font-size: 1rem; -webkit-font-smoothing: antialiased; }
+    main a:hover { opacity: 0.62; }
+    main a:active, .nav-link:active, .mobile-tab-link:active, button:active { opacity: 0.45; }
+
+    .app-sidebar { padding: 1.75rem 1.5rem; }
+    .nav-link { padding: 0.4rem 0; font-size: 0.95rem; color: var(--text-muted); }
+    .nav-link:hover { color: var(--text-primary); }
+    .nav-link.active { color: var(--text-primary); font-weight: 600; }
+    .brand-title { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.015em; }
+    .orbit-dust { display: none; }
+    .hero-headline { font-size: clamp(3.25rem, 8vw, 6.5rem); font-weight: 600; line-height: 1; letter-spacing: -0.03em; margin-top: 0; }
+    .hero-sub { margin-top: 0.9rem; font-size: clamp(1.1rem, 2vw, 1.6rem); line-height: 1.35; letter-spacing: -0.01em; color: var(--text-muted); }
+    .sidebar-footer { font-size: 0.78rem; }
+    .theme-toggle { text-decoration: none; color: var(--text-muted); font-size: 0.78rem; }
+    .mobile-tab-link { font-size: 0.76rem; border-top: 0; margin-top: 0; }
+    .mobile-tab-link.active { font-weight: 600; }
+    .mobile-bottom-nav { border-top-color: var(--border-subtle); }
+
+    /* Search */
+    .search-box { height: 60px; background: var(--bg-surface-elevated); border: 1px solid transparent; border-radius: 16px; }
+    .search-box:hover { border-color: transparent; }
+    .search-box:focus-within { background: var(--bg-base); border-color: var(--text-primary); }
+    .search-input { font-size: 1.08rem; font-weight: 400; }
+    .search-shortcut { border: 0; font-weight: 500; padding: 0; }
+    .search-dropdown { border-radius: 16px; border-color: var(--border-subtle); padding: 0.5rem 1.25rem 1rem; }
+
+    /* Home: the ring is type floating in space, not a set of cards */
+    .hero-orbit-stage .search-wrapper { width: min(560px, calc(100% - 2rem)); }
+    .orbit-chip { background: none; border: 0; border-radius: 10px; padding: 0.35rem 0.5rem; text-align: center; }
+    .orbit-ticker { font-size: 1.7rem; font-weight: 600; letter-spacing: -0.02em; }
+    .orbit-name { font-size: 0.76rem; color: var(--text-muted); }
+    .orbit-fact { justify-content: center; font-size: 0.76rem; margin-top: 0.15rem; }
+    .orbit-dot { width: 6px; height: 6px; background: var(--border-card); }
+    .orbit-dot.is-high { background: var(--accent); }
+    .orbit-browse, .home-more, .fp-more { color: var(--accent); font-weight: 400; font-size: 1rem; text-decoration: none; }
+    .orbit-spark { display: block; width: 66%; height: 20px; margin: 0.2rem auto 0.05rem; overflow: visible; }
+    .orbit-spark polyline { fill: none; stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .orbit-spark.is-up polyline { stroke: var(--pos); }
+    .orbit-spark.is-down polyline { stroke: var(--neg); }
+    .orbit-move { display: block; font-size: 0.86rem; font-weight: 600; white-space: nowrap; }
+    .orbit-note { position: absolute; left: 0; right: 0; bottom: 3.4rem; z-index: 70; text-align: center; font-size: 0.8rem; color: var(--text-muted); pointer-events: none; }
+    .orbit-static .orbit-spark { margin-left: 0; }
+    .orbit-hero:has(.orbit-static) .orbit-note { position: static; margin-top: 1.5rem; }
+    .orbit-static .orbit-ring { gap: 1.25rem 0.5rem; }
+    .orbit-static .orbit-chip { text-align: left; }
+    .orbit-static .orbit-fact { justify-content: flex-start; }
+
+    .home-heat { max-width: 1180px; margin: 0 auto; padding: 5rem 1.5rem 0; }
+    .heat-heading { font-size: clamp(2rem, 4.5vw, 3.25rem); font-weight: 600; line-height: 1.08; letter-spacing: -0.025em; }
+    .heat-sub { margin-top: 0.5rem; font-size: 1.1rem; color: var(--text-muted); }
+    .heat-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; margin-top: 1.75rem; list-style: none; border-radius: 16px; overflow: hidden; }
+    .heat-tile { display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem; height: 100%; padding: 0.9rem 1rem; text-decoration: none; }
+    .heat-ticker { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.015em; }
+    .heat-move { font-size: 0.95rem; font-weight: 500; }
+    .heat-u1 { background: var(--heat-u1); color: var(--heat-u1-ink); }
+    .heat-u2 { background: var(--heat-u2); color: var(--heat-u2-ink); }
+    .heat-u3 { background: var(--heat-u3); color: var(--heat-u3-ink); }
+    .heat-n { background: var(--heat-n); color: var(--heat-n-ink); }
+    .heat-d1 { background: var(--heat-d1); color: var(--heat-d1-ink); }
+    .heat-d2 { background: var(--heat-d2); color: var(--heat-d2-ink); }
+    .heat-d3 { background: var(--heat-d3); color: var(--heat-d3-ink); }
+
+    .home-below { max-width: 52rem; padding: 5rem 1.5rem 7rem; }
+    .home-heading { font-size: 0.95rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0; margin-bottom: 0.25rem; }
+    .home-stories { margin-bottom: 5rem; }
+    .top-list { border-top: 0; }
+    .top-row { grid-template-columns: 4.5rem minmax(0, 1fr) auto; gap: 0.5rem; padding: 0.85rem 0; }
+    .top-row:last-child { border-bottom: 0; }
+    .top-ticker { font-size: 0.86rem; font-weight: 600; color: var(--text-muted); }
+    .top-title { font-size: 1.1rem; font-weight: 500; line-height: 1.35; letter-spacing: -0.005em; }
+    .top-date { font-size: 0.84rem; }
+    .top-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1rem 0 2rem; }
+    .top-row.is-lead .top-body { grid-column: 1 / -1; grid-row: 2; }
+    .top-row.is-lead .top-title { font-size: clamp(1.75rem, 4vw, 2.6rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.024em; }
+    .top-summary { margin-top: 0.25rem; max-width: 38rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-secondary); }
+    .top-row.is-lead .top-summary { margin-top: 0.8rem; font-size: 1.1rem; }
+
+    .home-doors { display: block; margin-bottom: 4rem; border-top: 1px solid var(--border-card); }
+    .door { flex-direction: row; align-items: baseline; gap: 1.5rem; min-height: 0; padding: 1.15rem 0; background: none; border: 0; border-bottom: 1px solid var(--border-subtle); border-radius: 0; }
+    .door:hover .door-title { color: inherit; }
+    .door-title { font-size: 1.3rem; font-weight: 600; flex: none; width: 10rem; }
+    .door-line { font-size: 1rem; color: var(--text-muted); }
+
+    .recent-list { gap: 0.4rem 1.75rem; }
+    .recent-list a { padding: 0.25rem 0; background: none; border: 0; border-radius: 0; }
+    .home-clear { text-decoration: none; }
+
+    /* Feed: edited like a front page, dense below the fold */
+    .page-feed .app-main { max-width: 60rem; }
+    .page-feed .page-header { margin-bottom: 1.75rem; }
+    .feed-search { background: var(--bg-surface-elevated); border: 1px solid transparent; border-radius: 12px; padding: 0.7rem 1rem; }
+    .feed-search:focus { background: var(--bg-base); border-color: var(--text-primary); }
+    .company-feed-tools .feed-search { border: 1px solid transparent; padding: 0.55rem 0.9rem; }
+    .feed-sort-btn.active { color: var(--text-primary); }
+    .feed-group { padding: 3rem 0 0.4rem; border-bottom: 1px solid var(--border-card); justify-content: space-between; }
+    .feed-group-title { font-size: 0.95rem; font-weight: 600; letter-spacing: 0; }
+    .feed-group-note { font-size: 0.84rem; }
+    .news-row { grid-template-columns: 4rem minmax(0, 1fr) 3.5rem; gap: 0.5rem; padding: 0.7rem 0; }
+    .ticker-badge { font-weight: 600; color: var(--text-muted); }
+    .feed-headline, .news-row.is-high .feed-headline { font-size: 1.04rem; font-weight: 500; line-height: 1.35; letter-spacing: -0.005em; }
+    .news-row[hidden] { display: none; }
+    .feed-summary { margin-top: 0.3rem; max-width: 44rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-secondary); overflow-wrap: anywhere; }
+    .fig { font-weight: 600; color: var(--text-primary); }
+    .feed-meta { font-size: 0.78rem; }
+    .feed-details summary .feed-meta::after { content: ' · More'; }
+    .feed-details[open] summary .feed-meta::after { content: ' · Less'; }
+    .date-cell { font-size: 0.8rem; }
+    .news-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1.25rem 0 1.75rem; }
+    .news-row.is-lead .feed-body { grid-column: 1 / -1; grid-row: 2; }
+    .news-row.is-lead .feed-headline { font-size: clamp(1.45rem, 3vw, 2rem); font-weight: 600; line-height: 1.14; letter-spacing: -0.02em; }
+    .news-row.is-lead .feed-summary { margin-top: 0.6rem; font-size: 1.06rem; }
+    .news-row.is-lead .feed-details { margin-top: 0.35rem; }
+    .feed-more { display: block; margin-top: 0.9rem; min-height: 36px; background: none; border: 0; color: var(--accent); font-size: 0.95rem; cursor: pointer; }
+
+    /* Companies */
+    .company-news-item { grid-template-columns: minmax(0, 1fr) 3.25rem; }
+    .company-profile-container, .company-browser-sector-name, .econ-ledger, .fp-list { border-color: var(--border-card); }
+    .company-hero-symbol { font-weight: 500; }
+    .company-hero-name { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 600; letter-spacing: -0.028em; }
+    .company-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.7rem; margin-bottom: 1rem; }
+    .company-price-val { font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 500; letter-spacing: -0.02em; }
+    .company-price-move { font-size: 1.25rem; font-weight: 600; }
+    .company-price-span { font-size: 0.95rem; color: var(--text-muted); }
+    .company-links a { color: var(--accent); }
+    .company-kpi-val, .perf-kpi-val { font-weight: 500; }
+    .fp-heading { font-weight: 600; font-size: 1.25rem; border-bottom-color: var(--border-subtle); }
+
+    /* Calendar: colour says what kind of event it is, a hollow mark says it's estimated */
+    .cal-track { height: 84px; border-bottom-color: var(--border-card); }
+    .cal-mark, .cal-key { width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: var(--text-muted); }
+    .cal-key { display: inline-block; margin: 0 0.4rem 0 0; }
+    .cal-mark[data-event-type*="Earnings"], .cal-key.is-earnings { background: var(--series-1); }
+    .cal-mark[data-event-type*="Dividend"], .cal-key.is-dividend { background: var(--series-4); }
+    .cal-mark[data-event-type*="SEC"], .cal-key.is-sec { background: var(--series-5); }
+    .cal-mark[data-event-type*="Conference"], .cal-key.is-conference { background: var(--series-6); }
+    .cal-mark:hover { background: var(--text-primary); }
+    .cal-mark.is-estimated, .cal-mark.is-estimated:hover { background: var(--bg-base); box-shadow: inset 0 0 0 2px var(--series-5); }
+    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 2px var(--text-muted); }
+    .cal-today { font-weight: 600; border-left-color: var(--accent); color: var(--accent); }
+    .cal-week-title { border-bottom-color: var(--border-card); font-size: 1.25rem; font-weight: 600; }
+    .calendar-card[data-event-type*="Earnings"] .cal-details::before,
+    .calendar-card[data-event-type*="Dividend"] .cal-details::before,
+    .calendar-card[data-event-type*="SEC"] .cal-details::before,
+    .calendar-card[data-event-type*="Conference"] .cal-details::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 0.4rem; border-radius: 50%; vertical-align: 0.06em; }
+    .calendar-card[data-event-type*="Earnings"] .cal-details::before { background: var(--series-1); }
+    .calendar-card[data-event-type*="Dividend"] .cal-details::before { background: var(--series-4); }
+    .calendar-card[data-event-type*="SEC"] .cal-details::before { background: var(--series-5); }
+    .calendar-card[data-event-type*="Conference"] .cal-details::before { background: var(--series-6); }
+    .cal-source { color: var(--accent); }
+
+    /* Economy */
+    .economic-series-name { font-weight: 600; letter-spacing: -0.015em; }
+    .economic-val { font-size: 1.6rem; font-weight: 500; }
+    .mx-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+    .econ-select { background: var(--bg-surface-elevated); border: 0; border-radius: 8px; padding: 0.35rem 0.6rem; }
+    .sparkline-tooltip { border-radius: 6px; padding: 0.2rem 0.5rem; }
+
+    @media (min-width: 641px) and (max-width: 1024px) {
+      .heat-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .home-below { padding: 3.5rem 1.15rem calc(6rem + env(safe-area-inset-bottom)); }
+      .orbit-chip { width: 112px; padding: 0.2rem 0.25rem; }
+      .orbit-ticker { font-size: 1.3rem; }
+      .orbit-name { display: none; }
+      .orbit-spark { display: none; }
+      .orbit-static .orbit-spark { display: block; height: 20px; }
+      .orbit-move { font-size: 0.74rem; }
+      .orbit-note { bottom: calc(5.4rem + env(safe-area-inset-bottom)); font-size: 0.72rem; }
+      .home-heat { padding: 3.5rem 1.15rem 0; }
+      .heat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; }
+      .heat-tile { padding: 0.65rem 0.7rem; gap: 0.75rem; }
+      .heat-ticker { font-size: 1.02rem; }
+      .heat-move { font-size: 0.82rem; }
+      .orbit-fact { font-size: 0.68rem; margin-top: 0; }
+      .orbit-static .orbit-name { display: block; }
+      .search-box { height: 54px; }
+      .top-row { grid-template-columns: 3.6rem minmax(0, 1fr); }
+      .door { flex-direction: column; gap: 0.15rem; padding: 0.95rem 0; }
+      .door-title { width: auto; font-size: 1.15rem; }
+      .door-line { font-size: 0.92rem; }
+      .news-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.5rem; }
+      .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
+    }
 """
 
 # ==============================================================================
@@ -1397,21 +1569,21 @@ NAVIGATION_LAYOUT_HTML = """
 
   <nav class="sidebar-nav" aria-label="Pages">
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Home</span></a>
-    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span><span class="nav-count">{{ watchlist_companies|length }}</span></a>
-    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span><span class="nav-count">{{ stats.total }}</span></a>
-    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span><span class="nav-count">{{ calendar_events|length }}</span></a>
-    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Economy</span><span class="nav-count">{{ economic_indicators|length }}</span></a>
+    <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span></a>
+    <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span></a>
+    <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span></a>
+    <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Economy</span></a>
     <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Analytics</span></a>
   </nav>
 
   <div class="sidebar-footer">
-    {% if latest_run %}
-    <div{% if latest_run.status != 'HEALTHY' %} class="sidebar-status-alert"{% endif %}>Pipeline: {{ latest_run.status|lower }}</div>
-    {% else %}
-    <div>No pipeline runs recorded</div>
+    {% if not latest_run %}
+    <div>No updates yet</div>
+    {% elif latest_run.status != 'HEALTHY' %}
+    <div class="sidebar-status-alert">Last update had problems</div>
     {% endif %}
-    <div>Updated: {{ generated_at }}</div>
-    <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Switch to light</button>
+    <div>Updated {{ generated_at.rsplit(':', 1)[0] }}</div>
+    <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Dark mode</button>
   </div>
 </aside>
 
@@ -1488,27 +1660,41 @@ function cssColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-// Charts measure their legends with the current font, so draw again once the web fonts arrive.
-function whenChartFontsReady(callback) {
-  if (!document.fonts || !document.fonts.load) return;
-  Promise.all([
-    document.fonts.load("11px 'Hanken Grotesk'"),
-    document.fonts.load("500 12px 'Hanken Grotesk'"),
-  ]).then(callback).catch(() => {});
+// Canvas charts can't inherit the page font either.
+const CHART_FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+// The collector's labels are written for analysts; these say the same thing plainly.
+const ASSESSMENT_WORDS = {
+  'Strong Outperformance vs Peers': 'Well ahead of peers',
+  'Moderate Outperformance': 'Slightly ahead of peers',
+  'In-Line with Competitors': 'In line with peers',
+  'Moderate Underperformance': 'Slightly behind peers',
+  'Lagging Peer Group': 'Well behind peers',
+};
+
+function plainAssessment(label) {
+  return ASSESSMENT_WORDS[label] || label;
+}
+
+// "2026-09-01" or "09-01" becomes "Sep 1".
+function shortDay(value) {
+  const m = /(\\d{2})-(\\d{2})$/.exec(String(value || ''));
+  if (!m) return String(value || '');
+  return new Date(2000, Number(m[1]) - 1, Number(m[2])).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function currentTheme() {
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
 function labelThemeToggle() {
   const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = currentTheme() === 'light' ? 'Switch to dark' : 'Switch to light';
+  if (btn) btn.textContent = currentTheme() === 'light' ? 'Dark mode' : 'Light mode';
 }
 
 function cycleTheme() {
   const next = currentTheme() === 'light' ? 'dark' : 'light';
-  if (next === 'dark') delete document.documentElement.dataset.theme;
+  if (next === 'light') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = next;
   try {
     localStorage.setItem('stockpulse_theme', next);
@@ -1591,8 +1777,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Search your watchlist and see the top stories, upcoming events and the economy.">
-  <title>StockPulse: what happened to your stocks?</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <title>StockPulse: keeping you informed</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -1607,8 +1793,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
 
         <div class="hero-copy">
-          <p class="hero-wordmark">Stock<span>Pulse</span></p>
-          <h1 class="hero-headline">What happened to your stocks?</h1>
+          <h1 class="hero-headline">Welcome!</h1>
+          <p class="hero-sub">We keep you informed about the stocks you follow.</p>
         </div>
 
         <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
@@ -1640,20 +1826,61 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <a class="orbit-chip" href="company.html?ticker={{ co.symbol|urlencode }}" draggable="false">
                 <span class="orbit-ticker">{{ co.symbol }}</span>
                 <span class="orbit-name">{{ co.name }}</span>
+                {% if co.move_pct is not none %}
+                <svg class="orbit-spark {{ 'is-up' if co.move_pct >= 0 else 'is-down' }}" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{ co.spark }}"/></svg>
+                <span class="orbit-move {{ 'tone-up' if co.move_pct >= 0 else 'tone-down' }}">{{ "%+.1f"|format(co.move_pct) }}%</span>
+                {% else %}
                 <span class="orbit-fact">{% if co.top_score is not none %}<span class="orbit-dot{% if co.top_score >= 7 %} is-high{% endif %}" title="Top story score {{ co.top_score }}"></span>{% if co.new_count %}{{ co.new_count }} new {{ 'story' if co.new_count == 1 else 'stories' }}{% else %}Top story {{ co.top_score }}{% endif %}{% else %}No stories yet{% endif %}</span>
+                {% endif %}
               </a>
             </li>
             {% endfor %}
           </ul>
         </div>
 
+        {% if watchlist_moves %}<p class="orbit-note">Price change over the last 3 months</p>{% endif %}
         <a class="orbit-browse" href="company.html">Browse all {{ watchlist_companies|length }} companies</a>
       </section>
 
+      {% if watchlist_moves %}
+      {% set risers = watchlist_moves|selectattr('move_pct', 'gt', 0)|list|length %}
+      {% set fallers = watchlist_moves|selectattr('move_pct', 'lt', 0)|list|length %}
+      <section class="home-heat" aria-labelledby="homeHeatHeading">
+        <h2 class="heat-heading" id="homeHeatHeading">{{ risers }} up, {{ fallers }} down</h2>
+        <p class="heat-sub">Your watchlist over the last 3 months, best to worst.</p>
+        <ul class="heat-grid">
+          {% for co in watchlist_moves %}
+          <li><a class="heat-tile {{ heat_class(co.move_pct) }}" href="company.html?ticker={{ co.symbol|urlencode }}" title="{{ co.name }}"><span class="heat-ticker">{{ co.symbol }}</span><span class="heat-move">{{ "%+.1f"|format(co.move_pct) }}%</span></a></li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
       <div class="home-below">
+        <section class="home-stories" aria-labelledby="homeStoriesHeading">
+          <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
+          {% if priority_items %}
+          <ol class="top-list">
+            {% for it in priority_items[:5] %}
+            <li class="top-row{% if loop.first %} is-lead{% endif %}">
+              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
+              <div class="top-body">
+                <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+                {% if it.story_text %}<p class="top-summary">{{ figures(it.story_text) }}</p>{% endif %}
+              </div>
+              <span class="top-date">{{ short_date(it.published_date) }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
+          {% endif %}
+          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
+        </section>
+
         <nav class="home-doors" aria-label="Sections">
           <a class="door" href="news.html">
-            <span class="door-title">Today's news</span>
+            <span class="door-title">News</span>
             <span class="door-line">{{ stats.high_priority_count }} to read first, out of {{ stats.total }} stories</span>
           </a>
           <a class="door" href="calendar.html">
@@ -1670,24 +1897,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           </a>
         </nav>
 
-        <section class="home-stories" aria-labelledby="homeStoriesHeading">
-          <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
-          {% if priority_items %}
-          <ol class="top-list">
-            {% for it in priority_items[:5] %}
-            <li class="top-row">
-              <span class="top-score{% if it.score >= 7 %} is-high{% endif %}" title="{{ it.score_breakdown }}">{{ it.score }}</span>
-              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
-              <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
-              <span class="top-date">{{ short_date(it.published_date) }}</span>
-            </li>
-            {% endfor %}
-          </ol>
-          {% else %}
-          <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
-          {% endif %}
-          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
-        </section>
 
         <section id="recentlyViewedSection" aria-labelledby="homeRecentHeading" hidden>
           <div class="home-heading-row">
@@ -2001,10 +2210,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         canvas.height = Math.round(dust.h * ratio);
         dust.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         dust.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
-        dust.strength = document.documentElement.dataset.theme === 'light' ? 0.45 : 1;
+        dust.strength = 0;
       }
 
       function drawDust(dt, spin) {
+        if (!dust.strength) return;
         const ctx = dust.ctx;
         ctx.clearRect(0, 0, dust.w, dust.h);
         dust.px += (dust.tx - dust.px) * (1 - Math.exp(-dt * 3));
@@ -2226,7 +2436,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         (it.ticker || '').toLowerCase().includes(val) ||
         (it.form_or_type || '').toLowerCase().includes(val) ||
         (it.category || '').toLowerCase().includes(val) ||
-        (it.llm_summary || '').toLowerCase().includes(val)
+        (it.summary || '').toLowerCase().includes(val)
       );
 
       // 3. Match Calendar Events
@@ -2328,7 +2538,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         });
       }
 
-      // Render Macroeconomic matches
+      // Render economy matches
       if (matchedEcon.length > 0) {
         html += '<div class="dropdown-section-title is-spaced">Economy</div>';
         matchedEcon.slice(0, 2).forEach(ind => {
@@ -2589,7 +2799,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">Analytics</h1>
-        <p class="page-standfirst">What the pipeline has collected, how a holding compares with its peers, and whether collection is healthy.</p>
+        <p class="page-standfirst">What we've collected, how a stock compares with its peers, and whether updates are running.</p>
       </header>
 
       <dl class="company-kpi-ribbon analytics-stat-row">
@@ -2599,7 +2809,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           <dd class="company-kpi-sub">Scored and stored</dd>
         </div>
         <div class="company-kpi-card">
-          <dt class="company-kpi-title">Scored 7 or higher</dt>
+          <dt class="company-kpi-title">To read first</dt>
           <dd class="company-kpi-val">{{ stats.high_priority_count }}</dd>
           <dd class="company-kpi-sub">{{ ((stats.high_priority_count / stats.total * 100) if stats.total else 0)|round(1) }}% of stories</dd>
         </div>
@@ -2637,9 +2847,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       </div>
 
       <section class="comparative-perf-card" aria-labelledby="analyticsPerfHeading">
-        <h2 class="fp-heading" id="analyticsPerfHeading">3-Month Comparative Performance vs. Peers &amp; S&amp;P 500</h2>
+        <h2 class="fp-heading" id="analyticsPerfHeading">3 months against peers and the S&amp;P 500</h2>
         <div class="analytics-perf-tools">
-          <p class="econ-note">Percent change since the start of the period, against up to three competitors and the S&amp;P 500.</p>
+          <p class="econ-note">Percent change since the start of the 3 months, against up to three competitors and the S&amp;P 500.</p>
           <label class="analytics-perf-picker"><span class="filter-label">Company</span>
             <select id="perfCompanySelect" class="econ-select comparative-select" data-change="renderComparativePerformanceChart">
               {% for sec in sector_directory %}
@@ -2662,32 +2872,32 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       </section>
 
       <section class="health-section" id="health" aria-labelledby="analyticsHealthHeading">
-        <h2 class="fp-heading" id="analyticsHealthHeading">Pipeline Health &amp; Safeguards</h2>
+        <h2 class="fp-heading" id="analyticsHealthHeading">Data status</h2>
         {% if latest_run %}
-        <p class="health-status{% if latest_run.status != 'HEALTHY' %} is-alert{% endif %}">Latest run: {{ latest_run.status|lower }}. {{ latest_run.health_message }}</p>
-        <p class="econ-note">Run at {{ latest_run.run_timestamp|replace('T', ' ') }}. Typical volume: {{ latest_run.moving_avg_raw }} items per run.</p>
+        <p class="health-status{% if latest_run.status != 'HEALTHY' %} is-alert{% endif %}">Last update: {{ latest_run.status|lower }}. {{ latest_run.health_message }}</p>
+        <p class="econ-note">Updated {{ latest_run.run_timestamp|replace('T', ' ') }}. A typical update brings in {{ latest_run.moving_avg_raw|round|int }} items.</p>
         {% else %}
         <p class="health-status">No pipeline runs recorded yet.</p>
         {% endif %}
         <dl class="company-kpi-ribbon health-grid">
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">SEC EDGAR Filings</dt>
+            <dt class="company-kpi-title">SEC filings</dt>
             <dd class="company-kpi-val">{{ latest_run.edgar_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">Company Releases</dt>
+            <dt class="company-kpi-title">Company releases</dt>
             <dd class="company-kpi-val">{{ latest_run.company_ir_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">News Stories</dt>
+            <dt class="company-kpi-title">News stories</dt>
             <dd class="company-kpi-val">{{ latest_run.news_media_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">Unique After Deduplication</dt>
+            <dt class="company-kpi-title">After removing duplicates</dt>
             <dd class="company-kpi-val">{{ latest_run.total_unique if latest_run else '&mdash;'|safe }}</dd>
           </div>
           <div class="company-kpi-card">
-            <dt class="company-kpi-title">Scored 7 or Higher</dt>
+            <dt class="company-kpi-title">To read first</dt>
             <dd class="company-kpi-val">{{ latest_run.high_impact_count if latest_run else '&mdash;'|safe }}</dd>
           </div>
         </dl>
@@ -2727,23 +2937,18 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           return {
             label: ticker,
             data: rawChartData.timeline_series[ticker] || [],
-            borderColor: stroke,
             backgroundColor: stroke,
-            borderWidth: 2,
-            fill: false,
-            tension: 0,
-            pointBackgroundColor: stroke,
-            pointBorderColor: cssColor('--bg-base'),
-            pointBorderWidth: 2,
-            pointRadius: isPhone ? 3 : 4,
-            pointHoverRadius: 5,
+            borderWidth: 0,
+            borderRadius: 2,
+            barPercentage: 0.7,
+            categoryPercentage: 0.85,
           };
         });
 
         new Chart(ctxTimeline, {
-          type: 'line',
+          type: 'bar',
           data: {
-            labels: rawChartData.timeline_dates,
+            labels: rawChartData.timeline_dates.map(shortDay),
             datasets: datasets
           },
           options: {
@@ -2763,7 +2968,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                   boxHeight: 8,
                   usePointStyle: true,
                   pointStyle: 'circle',
-                  font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                  font: { family: CHART_FONT, size: isPhone ? 10 : 11 },
                   color: cssColor('--text-secondary'),
                   padding: isPhone ? 6 : (isNarrow ? 8 : 14)
                 }
@@ -2772,10 +2977,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 backgroundColor: cssColor('--text-primary'),
                 titleColor: cssColor('--bg-base'),
                 bodyColor: cssColor('--bg-base'),
-                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
-                bodyFont: { family: 'Hanken Grotesk', size: 11 },
+                titleFont: { family: CHART_FONT, size: 11, weight: '500' },
+                bodyFont: { family: CHART_FONT, size: 11 },
                 padding: 10,
-                cornerRadius: 2,
+                cornerRadius: 8,
                 displayColors: true,
                 boxWidth: 8,
                 boxHeight: 8,
@@ -2784,9 +2989,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
             },
             scales: {
               x: {
+                stacked: true,
                 grid: { display: false, drawBorder: false },
                 ticks: { 
-                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  font: { family: CHART_FONT, size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
                   color: cssColor('--text-muted'),
                   maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
                   autoSkip: true,
@@ -2794,11 +3000,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 }
               },
               y: {
+                stacked: true,
                 beginAtZero: true,
                 grid: { color: cssColor('--border-subtle'), drawBorder: false },
                 ticks: { 
                   precision: 0, 
-                  font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
+                  font: { family: CHART_FONT, size: isPhone ? 8.5 : (isNarrow ? 9 : 10) }, 
                   color: cssColor('--text-muted'), 
                   maxTicksLimit: isPhone ? 4 : 6,
                   stepSize: 1 
@@ -2874,7 +3081,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
               ctx.textAlign = isRight ? 'left' : 'right';
               ctx.textBaseline = 'middle';
-              ctx.font = "11px 'Hanken Grotesk', sans-serif";
+              ctx.font = `11px ${CHART_FONT}`;
               ctx.fillStyle = cssColor('--text-primary');
               ctx.fillText(`${pct}%`, endHorizontalX + (isRight ? 3 : -3), ey);
             });
@@ -2908,10 +3115,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 backgroundColor: cssColor('--text-primary'),
                 titleColor: cssColor('--bg-base'),
                 bodyColor: cssColor('--bg-base'),
-                titleFont: { family: 'Hanken Grotesk', size: 11, weight: '500' },
-                bodyFont: { family: 'Hanken Grotesk', size: 11 },
+                titleFont: { family: CHART_FONT, size: 11, weight: '500' },
+                bodyFont: { family: CHART_FONT, size: 11 },
                 padding: 8,
-                cornerRadius: 2,
+                cornerRadius: 8,
                 callbacks: {
                   label: function(context) {
                     const val = context.parsed || 0;
@@ -2988,24 +3195,24 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} over 3 months</div>
             <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Top Peers Avg</div>
+            <div class="perf-kpi-label">Peers on average</div>
             <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
             <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">Broad Market Benchmark</div>
+            <div class="perf-kpi-sub">The wider market</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Peer Relative Alpha</div>
+            <div class="perf-kpi-label">Compared with peers</div>
             <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(plainAssessment(coData.assessment))}</div>
           </div>
         `;
       }
@@ -3020,7 +3227,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               <th>Start</th>
               <th>Latest</th>
               <th>Change</th>
-              <th>Against this company</th>
+              <th>Against ${escapeHtml(symbol)}</th>
             </tr>
           </thead>
           <tbody>
@@ -3072,7 +3279,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (!target || !target.series) return;
-      const labels = target.series.map(pt => pt.date);
+      const labels = target.series.map(pt => shortDay(pt.date));
 
       const datasets = [
         {
@@ -3130,7 +3337,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                font: { family: CHART_FONT, size: isPhone ? 10 : 11 },
                 color: cssColor('--text-secondary'),
                 padding: isPhone ? 6 : 10
               }
@@ -3139,10 +3346,10 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               backgroundColor: cssColor('--text-primary'),
               titleColor: cssColor('--bg-base'),
               bodyColor: cssColor('--bg-base'),
-              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
-              bodyFont: { family: 'Hanken Grotesk', size: 11 },
+              titleFont: { family: CHART_FONT, size: 12, weight: '500' },
+              bodyFont: { family: CHART_FONT, size: 11 },
               padding: 10,
-              cornerRadius: 2,
+              cornerRadius: 8,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -3155,7 +3362,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxRotation: 0
               }
@@ -3164,7 +3371,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
               grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
@@ -3177,7 +3384,6 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
     function initAnalyticsPage() {
       initCharts();
       renderComparativePerformanceChart('NVDA');
-      whenChartFontsReady(redrawAnalyticsCharts);
     }
 
     function redrawAnalyticsCharts() {
@@ -3208,26 +3414,26 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and takeaways.">
+  <meta name="description" content="Every story on your watchlist, ranked by importance, with filters and summaries.">
   <title>StockPulse — The feed</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
   </style>
 </head>
-<body>
+<body class="page-feed">
   <div class="app-layout">
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">The feed</h1>
-        <p class="page-standfirst">{{ items|length }} stories, ranked by how much they deserve your time.</p>
+        <p class="page-standfirst">{{ items|length }} stories, most important first.</p>
       </header>
 
       <div class="feed-toolbar">
-        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and takeaways" data-input="filterItems">
+        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and summaries" data-input="filterItems">
         <div class="feed-toolbar-row">
           <div class="feed-sort" role="group" aria-label="Order">
             <button class="feed-sort-btn active" id="sortScoreBtn" type="button" data-click="sortRows" data-sort="score">By importance</button>
@@ -3302,7 +3508,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
       <div class="feed-list" id="newsBody">
         {% for item in items %}
-        <article class="news-row{% if item.score >= 7.0 %} is-high{% endif %}"
+        <article class="news-row{% if item.score >= 7.0 %} is-high{% if loop.index <= 3 %} is-lead{% endif %}{% endif %}"
             data-score="{{ item.score }}"
             data-date="{{ item.published_date }}"
             data-ticker="{{ item.ticker }}"
@@ -3310,17 +3516,14 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             data-sector="{{ item.macro_sector }}"
             data-source="{{ item.source }}"
             data-category="{{ item.category }}"
-            data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.llm_summary or '' }} {{ item.summary or '' }}">
-          <span class="feed-score" title="{{ item.score_breakdown }}">{{ item.score }}</span>
+            data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.summary or '' }}">
           <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
           <div class="feed-body">
             <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
-            {% if item.llm_summary and item.score >= 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
+            {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}
             <details class="feed-details">
               <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
               <div class="feed-details-body">
-                {% if item.llm_summary and item.score < 7.0 %}<p class="feed-takeaway">{{ item.llm_summary }}</p>{% endif %}
-                {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
                 {% if item.cross_references_list %}
                 <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
                 <ul class="feed-refs">
@@ -3329,7 +3532,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   {% endfor %}
                 </ul>
                 {% endif %}
-                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored: {{ item.score }}</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
                 <a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
               </div>
             </details>
@@ -3350,13 +3553,15 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     let currentCategory = 'ALL';
     let currentSource = 'ALL';
     let currentOrder = 'score';
-    let onFileOpen = false;
+    const expandedBands = new Set();
 
+    // Only the top of each band shows at first, so the page reads as edited rather than as a dump.
     const BANDS = [
-      { key: 'high', label: 'Read first', note: 'Score 7 and above', min: 7 },
-      { key: 'mid', label: 'Worth knowing', note: 'Score 4 to 7', min: 4 },
-      { key: 'low', label: 'On file', note: 'Below 4, mostly routine', min: -Infinity },
+      { key: 'high', label: 'Read first', min: 7, show: 10 },
+      { key: 'mid', label: 'Worth knowing', min: 4, show: 5 },
+      { key: 'low', label: 'Routine', min: -Infinity, show: 0 },
     ];
+    const LEAD_STORIES = 3;
 
     function bandFor(score) {
       return BANDS.find(b => score >= b.min);
@@ -3500,7 +3705,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       setTickerFilter('ALL');
     }
 
-    function groupHeader(key, label, note, count, toggle) {
+    function groupHeader(key, label, count) {
       const head = document.createElement('div');
       head.className = 'feed-group';
       head.dataset.key = key;
@@ -3509,58 +3714,69 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       title.textContent = label;
       const meta = document.createElement('span');
       meta.className = 'feed-group-note';
-      meta.textContent = note ? `${count} · ${note}` : String(count);
+      meta.textContent = `${count} ${count === 1 ? 'story' : 'stories'}`;
       head.append(title, meta);
-      if (toggle) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'feed-group-toggle';
-        btn.textContent = onFileOpen ? 'Hide' : 'Show';
-        btn.setAttribute('aria-expanded', String(onFileOpen));
-        btn.addEventListener('click', () => {
-          onFileOpen = !onFileOpen;
-          renderGroups();
-        });
-        head.append(btn);
-      }
       return head;
     }
 
-    // Draws the group headings, and collapses "On file" until it is asked for or filtered into.
+    function moreButton(key, hiddenCount) {
+      const btn = document.createElement('button');
+      const open = expandedBands.has(key);
+      btn.type = 'button';
+      btn.className = 'feed-more';
+      btn.dataset.key = key;
+      btn.textContent = open ? 'Show fewer' : `Show ${hiddenCount} more`;
+      btn.setAttribute('aria-expanded', String(open));
+      btn.addEventListener('click', () => {
+        if (open) expandedBands.delete(key);
+        else expandedBands.add(key);
+        renderGroups();
+        document.querySelector(`.feed-more[data-key="${key}"]`)?.focus({ preventScroll: true });
+      });
+      return btn;
+    }
+
+    // Draws the group headings, marks the lead stories, and shortens each band until it is asked
+    // for or filtered into.
     function renderGroups() {
       const body = document.getElementById('newsBody');
-      body.querySelectorAll('.feed-group').forEach(h => h.remove());
+      body.querySelectorAll('.feed-group, .feed-more').forEach(h => h.remove());
       const rows = Array.from(body.querySelectorAll('.news-row'));
       const active = filtersActive();
+      const edited = currentOrder === 'score' && !active;
       const groups = new Map();
+      let leads = 0;
 
       rows.forEach(row => {
         const matched = row.dataset.match !== '0';
-        let key;
-        if (currentOrder === 'score') {
-          key = bandFor(parseFloat(row.dataset.score)).key;
-        } else {
-          key = row.dataset.date;
-        }
+        const band = bandFor(parseFloat(row.dataset.score));
+        const key = currentOrder === 'score' ? band.key : row.dataset.date;
+        let collapsed = false;
         if (matched) {
-          if (!groups.has(key)) groups.set(key, { first: row, count: 0 });
-          groups.get(key).count += 1;
+          if (!groups.has(key)) groups.set(key, { first: row, last: null, count: 0, band, hidden: 0 });
+          const group = groups.get(key);
+          collapsed = edited && group.count >= band.show && !expandedBands.has(key);
+          group.count += 1;
+          if (collapsed) group.hidden += 1;
+          else group.last = row;
         }
-        const collapsed = currentOrder === 'score' && key === 'low' && !onFileOpen && !active;
         row.hidden = !matched || collapsed;
+        const lead = edited && matched && band.key === 'high' && leads < LEAD_STORIES;
+        row.classList.toggle('is-lead', lead);
+        if (lead) leads += 1;
       });
 
       groups.forEach((group, key) => {
-        let head;
-        if (currentOrder === 'score') {
-          const band = BANDS.find(b => b.key === key);
-          head = groupHeader(key, band.label, band.note, group.count, key === 'low' && !active);
-        } else {
-          const parts = key.split('-').map(Number);
-          const label = new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-          head = groupHeader(key, label, '', group.count, false);
+        const label = currentOrder === 'score'
+          ? group.band.label
+          : (() => {
+              const parts = key.split('-').map(Number);
+              return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            })();
+        body.insertBefore(groupHeader(key, label, group.count), group.first);
+        if (edited && (group.hidden || expandedBands.has(key)) && group.count > group.band.show) {
+          body.insertBefore(moreButton(key, group.hidden), group.last ? group.last.nextSibling : group.first);
         }
-        body.insertBefore(head, group.first);
       });
 
       const shown = Array.from(groups.values()).reduce((sum, g) => sum + g.count, 0);
@@ -3628,7 +3844,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Upcoming earnings calls, dividends, conferences, and SEC deadlines for your watchlist.">
   <title>StockPulse — Calendar</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3659,8 +3875,11 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
           {% endfor %}
         </div>
         <figcaption class="cal-legend">
-          <span><i class="cal-key"></i>Confirmed</span>
-          <span><i class="cal-key is-estimated"></i>Estimated from filing rules</span>
+          <span><i class="cal-key is-earnings"></i>Earnings</span>
+          <span><i class="cal-key is-dividend"></i>Dividend</span>
+          <span><i class="cal-key is-sec"></i>SEC deadline</span>
+          <span><i class="cal-key is-conference"></i>Conference</span>
+          <span><i class="cal-key is-estimated"></i>Hollow means estimated from filing rules</span>
         </figcaption>
       </figure>
       {% endif %}
@@ -3668,9 +3887,9 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       <div class="controls-panel cal-filters">
         <div class="filter-options" role="group" aria-label="Filter events">
           <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" data-click="filterCalendar">All <span class="pill-count">{{ calendar_events|length }}</span></button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings Calls</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividend Dates</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC Filing Deadlines</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividends</button>
+          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC deadlines</button>
           <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" data-click="filterCalendar">Conferences</button>
         </div>
       </div>
@@ -3747,7 +3966,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Economic indicators and the watchlist holdings each one touches.">
   <title>StockPulse — Economy</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -3760,7 +3979,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">Economy</h1>
-        <p class="page-standfirst">{{ economic_indicators|length }} indicators, and the holdings each one touches.</p>
+        <p class="page-standfirst">{{ economic_indicators|length }} indicators, and the companies each one affects.</p>
       </header>
 
       <details class="controls-panel" id="econFilters">
@@ -3794,7 +4013,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         <article class="economic-card" data-indicator-id="{{ ind.indicator_id }}" data-relevant-tickers="{{ ind.relevant_tickers }}">
           <div class="econ-name">
             <h2 class="economic-series-name">{{ ind.name }}</h2>
-            <p class="econ-sub">{{ ind.category }} · {{ ind.series_id }} · Observed {{ short_date(ind.observation_date) }}</p>
+            <p class="econ-sub">{{ ind.category }} · As of {{ short_date(ind.observation_date) }}</p>
           </div>
           <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
             <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" aria-hidden="true"></svg>
@@ -3813,14 +4032,14 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
             </div>
           </div>
           <details class="feed-details econ-details">
-            <summary><span class="feed-meta">Why it matters, and {{ ind.tickers_list|length }} holdings it touches</span></summary>
+            <summary><span class="feed-meta">Why it matters, and the {{ ind.tickers_list|length }} companies it affects</span></summary>
             <div class="feed-details-body">
               {% if ind.ai_synthesis %}
-              <p class="feed-detail-label">AI Macro Takeaway</p>
+              <p class="feed-detail-label">Why it matters</p>
               <p class="feed-takeaway">{{ ind.ai_synthesis }}</p>
               {% endif %}
               {% if ind.context_note %}<p class="feed-detail-label">What it measures</p><p>{{ ind.context_note }}</p>{% endif %}
-              <p class="feed-detail-label">Holdings</p>
+              <p class="feed-detail-label">Companies</p>
               <p class="econ-holdings">{% for sym in ind.tickers_list %}<a href="company.html?ticker={{ sym|urlencode }}" class="ticker-badge">{{ sym }}</a> {% endfor %}</p>
             </div>
           </details>
@@ -3831,7 +4050,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       {% set short_names = {'interest_rates': 'Rates', 'treasury_10y': '10Y', 'inflation': 'CPI', 'crude_oil': 'Oil', 'unemployment': 'Jobs'} %}
       <section class="econ-section" aria-labelledby="econMatrixHeading">
         <h2 class="fp-heading" id="econMatrixHeading">Who feels what</h2>
-        <p class="econ-note">A mark means the watchlist records that company as sensitive to the indicator.</p>
+        <p class="econ-note">A dot means that indicator affects the company.</p>
         <div class="table-container">
           <table class="econ-matrix">
             <thead>
@@ -3862,7 +4081,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
       </section>
 
       <section class="econ-section" aria-labelledby="econScheduleHeading">
-        <h2 class="fp-heading" id="econScheduleHeading">Upcoming Macroeconomic Releases</h2>
+        <h2 class="fp-heading" id="econScheduleHeading">Coming up</h2>
         {% if economic_schedule and economic_schedule|selectattr('passed')|list|length == economic_schedule|length %}
         <p class="econ-note econ-stale">Every date on this schedule has passed. It is a fixed list and needs updating.</p>
         {% endif %}
@@ -3926,15 +4145,15 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         svg.innerHTML = `
-          <path d="${pathD}" fill="none" stroke="var(--text-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="var(--text-primary)" />
+          <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="var(--accent)" />
           <circle class="hover-dot" cx="0" cy="0" r="4.5" fill="var(--accent)" display="none" />
         `;
 
         // Update labels
         const startLabel = wrap.querySelector('.spark-start');
         const endLabel = wrap.querySelector('.spark-end');
-        if (startLabel) startLabel.textContent = `${history[0].date.substring(0, 7)}: ${history[0].value}${unit.includes('%') ? '%' : ''}`;
+        if (startLabel) startLabel.textContent = `${new Date(history[0].date.substring(0, 7) + '-15').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}: ${history[0].value}${unit.includes('%') ? '%' : ''}`;
         if (endLabel) endLabel.textContent = `${history[history.length - 1].value}${unit.includes('%') ? '%' : ''}`;
 
         // Create tooltip
@@ -4037,7 +4256,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="Your watchlist by sector, with a file on each company: performance, stories, events, and relationships.">
   <title>StockPulse — Companies</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffb020' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
@@ -4052,13 +4271,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       {% set watchlist_symbols = watchlist_companies|map(attribute='symbol')|list %}
       <header class="page-header">
         <h1 class="page-title">Companies</h1>
-        <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to read its file.</p>
+        <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to see its news and price.</p>
       </header>
 
       <details class="company-directory-browser" id="companyDirectory" open>
         <summary class="feed-filters-toggle">All companies</summary>
         <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
-        <p class="econ-note">Percentages show 3-month return against the S&amp;P 500.</p>
+        <p class="econ-note">Percentages show how far each stock is ahead of or behind the S&amp;P 500 over 3 months.</p>
         <div class="company-browser-grid company-strip" id="companyStripContainer">
           {% for sec in sector_directory %}
           <section class="company-browser-sector">
@@ -4116,9 +4335,13 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         <header class="company-hero-box">
           <p class="company-hero-symbol">{{ co.symbol }} · {{ co.sector|replace('_', ' ')|title }}</p>
           <h2 class="company-hero-name">{{ co.name }}</h2>
+          {% set price = ((performance_data or {}).get('companies') or {}).get(co.symbol, {}).get('target', {}).get('latest_price') %}
+          {% if co.move_pct is not none and price is number %}
+          <p class="company-price"><span class="company-price-val">${{ "%.2f"|format(price) }}</span> <span class="company-price-move {{ 'tone-up' if co.move_pct >= 0 else 'tone-down' }}">{{ "%+.2f"|format(co.move_pct) }}%</span> <span class="company-price-span">over 3 months</span></p>
+          {% endif %}
           {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
           <p class="company-links">
-            {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">CIK {{ co.cik }} ↗</a>{% endif %}
+            {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">SEC filings ↗</a>{% endif %}
             {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ safe_url(co.newsroom_url or co.ir_page_url or co.ir_feed_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
             <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
           </p>
@@ -4130,7 +4353,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <dd class="company-kpi-sub">{{ ns.news_count }} news, {{ ns.edgar_count }} SEC, {{ ns.ir_count }} releases</dd>
             </div>
             <div class="company-kpi-card">
-              <dt class="company-kpi-title">Scored 7 or higher</dt>
+              <dt class="company-kpi-title">To read first</dt>
               <dd class="company-kpi-val">{{ ns.high_count }}</dd>
             </div>
             <div class="company-kpi-card">
@@ -4139,7 +4362,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <dd class="company-kpi-sub">{% if co_events %}{{ event_kind(co_events[0].event_type or '') }}{% else %}Nothing scheduled{% endif %}</dd>
             </div>
             <div class="company-kpi-card">
-              <dt class="company-kpi-title">Relationships</dt>
+              <dt class="company-kpi-title">Connections</dt>
               <dd class="company-kpi-val">{{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}</dd>
               <dd class="company-kpi-sub">{{ co.key_customers|length if co.key_customers else 0 }} customers, {{ co.key_suppliers|length if co.key_suppliers else 0 }} suppliers, {{ co.competitors|length if co.competitors else 0 }} competitors</dd>
             </div>
@@ -4147,8 +4370,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         </header>
 
         <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
-          <h3 class="fp-heading">3-Month Performance vs. Competitors &amp; S&amp;P 500</h3>
-          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the period.</p>
+          <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
+          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
           <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
           <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
           <div class="perf-table-wrap">
@@ -4172,15 +4395,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             {% if co_news %}
               {% for it in co_news %}
               <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}">
-                <span class="feed-score" title="{{ it.score_breakdown }}">{{ it.score }}</span>
                 <div class="feed-body">
                   <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
-                  {% if it.llm_summary and it.score >= 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
+                  {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
                   <details class="feed-details">
                     <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
                     <div class="feed-details-body">
-                      {% if it.llm_summary and it.score < 7.0 %}<p class="feed-takeaway">{{ it.llm_summary }}</p>{% endif %}
-                      {% if it.summary %}<p>{{ it.summary }}</p>{% endif %}
                       {% if it.cross_references_list %}
                       <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
                       <ul class="feed-refs">
@@ -4189,7 +4409,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                         {% endfor %}
                       </ul>
                       {% endif %}
-                      {% if it.score_breakdown %}<p class="feed-detail-label">How it scored</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                      {% if it.score_breakdown %}<p class="feed-detail-label">How it scored: {{ it.score }}</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
                       <a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
                     </div>
                   </details>
@@ -4205,7 +4425,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
           <aside class="company-side-deck">
             <section class="company-side-box">
-              <h3 class="fp-heading">Forthcoming Calendar</h3>
+              <h3 class="fp-heading">Coming up</h3>
               {% if co_events %}
               <ul class="fp-side-list">
                 {% for ev in co_events %}
@@ -4221,7 +4441,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </section>
 
             <section class="company-side-box">
-              <h3 class="fp-heading">Macroeconomic Sensitivities</h3>
+              <h3 class="fp-heading">What in the economy affects it</h3>
               <ul class="fp-side-list">
                 {% for ind in economic_indicators %}
                 {% if ind.tickers_list and co.symbol in ind.tickers_list %}
@@ -4236,7 +4456,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </section>
 
             <section class="company-side-box">
-              <h3 class="fp-heading">Corporate Ecosystem</h3>
+              <h3 class="fp-heading">Customers, suppliers and competitors</h3>
               {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
               {% if names %}
               <p class="feed-detail-label">{{ label }}</p>
@@ -4309,24 +4529,24 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
         kpiGrid.innerHTML = `
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">${escapeHtml(symbol)} 3M Return</div>
+            <div class="perf-kpi-label">${escapeHtml(symbol)} over 3 months</div>
             <div class="perf-kpi-val ${tgtPct >= 0 ? 'tone-up' : 'tone-down'}">${tgtPct >= 0 ? '+' : ''}${tgtPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">Latest: $${target.latest_price.toFixed(2)}</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Top Peers Avg</div>
+            <div class="perf-kpi-label">Peers on average</div>
             <div class="perf-kpi-val ${avgPeerPct >= 0 ? 'tone-up' : 'tone-down'}\">${avgPeerPct >= 0 ? '+' : ''}${avgPeerPct.toFixed(2)}%</div>
             <div class="perf-kpi-sub">${escapeHtml(comps.map(c => c.symbol).join(', ') || 'None')}</div>
           </div>
           <div class="perf-kpi-box">
             <div class="perf-kpi-label">S&P 500 (SPY)</div>
             <div class="perf-kpi-val ${spyPct >= 0 ? 'tone-up' : 'tone-down'}\">${spyPct >= 0 ? '+' : ''}${spyPct.toFixed(2)}%</div>
-            <div class="perf-kpi-sub">Broad Market Benchmark</div>
+            <div class="perf-kpi-sub">The wider market</div>
           </div>
           <div class="perf-kpi-box">
-            <div class="perf-kpi-label">Peer Relative Alpha</div>
+            <div class="perf-kpi-label">Compared with peers</div>
             <div class="perf-kpi-val ${alphaPeers >= 0 ? 'tone-up' : 'tone-down'}">${alphaPeers >= 0 ? '+' : ''}${alphaPeers.toFixed(2)}%</div>
-            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(coData.assessment)}</div>
+            <div class="perf-kpi-sub tone-strong ${coData.assessment_type === 'positive' ? 'tone-up' : (coData.assessment_type === 'negative' ? 'tone-down' : 'tone-flat')}">${escapeHtml(plainAssessment(coData.assessment))}</div>
           </div>
         `;
       }
@@ -4341,7 +4561,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               <th>Start</th>
               <th>Latest</th>
               <th>Change</th>
-              <th>Against this company</th>
+              <th>Against ${escapeHtml(symbol)}</th>
             </tr>
           </thead>
           <tbody>
@@ -4393,7 +4613,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       }
 
       if (!target || !target.series) return;
-      const labels = target.series.map(pt => pt.date);
+      const labels = target.series.map(pt => shortDay(pt.date));
 
       const datasets = [
         {
@@ -4451,7 +4671,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               labels: {
                 boxWidth: isPhone ? 10 : 14,
                 boxHeight: 3,
-                font: { family: 'Hanken Grotesk', size: isPhone ? 10 : 11 },
+                font: { family: CHART_FONT, size: isPhone ? 10 : 11 },
                 color: cssColor('--text-secondary'),
                 padding: isPhone ? 8 : 12
               }
@@ -4460,10 +4680,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               backgroundColor: cssColor('--text-primary'),
               titleColor: cssColor('--bg-base'),
               bodyColor: cssColor('--bg-base'),
-              titleFont: { family: 'Hanken Grotesk', size: 12, weight: '500' },
-              bodyFont: { family: 'Hanken Grotesk', size: 11 },
+              titleFont: { family: CHART_FONT, size: 12, weight: '500' },
+              bodyFont: { family: CHART_FONT, size: 11 },
               padding: 10,
-              cornerRadius: 2,
+              cornerRadius: 8,
               callbacks: {
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y.toFixed(2)}%`;
@@ -4476,7 +4696,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               grid: { display: false },
               ticks: {
                 maxTicksLimit: isPhone ? 4 : (isNarrow ? 5 : 8),
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxRotation: 0
               }
@@ -4485,7 +4705,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               grid: { color: cssColor('--border-subtle') },
               ticks: {
                 callback: function(val) { return (val >= 0 ? '+' : '') + val + '%'; },
-                font: { family: 'Hanken Grotesk', size: isPhone ? 8.5 : 10 },
+                font: { family: CHART_FONT, size: isPhone ? 8.5 : 10 },
                 color: cssColor('--text-muted'),
                 maxTicksLimit: isPhone ? 4 : 6
               }
@@ -4594,9 +4814,6 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       } else {
         switchCompany('NVDA', false, true);
       }
-      whenChartFontsReady(() => {
-        if (currentCompany) renderCompanyComparativeChart(currentCompany);
-      });
     });
   </script>
 </body>
@@ -4730,11 +4947,71 @@ def _orbit_companies(
             "name": co.get("name", ""),
             "top_score": top_scores.get(co.get("symbol")),
             "new_count": new_counts.get(co.get("symbol"), 0),
+            "move_pct": co.get("move_pct"),
+            "spark": co.get("spark", ""),
         }
         for co in companies
     ]
     ranked.sort(key=lambda co: (co["top_score"] is None, -(co["top_score"] or 0), -co["new_count"], co["symbol"]))
     return ranked
+
+
+def _sparkline_points(series: Any, width: int = 100, height: int = 28, samples: int = 24) -> str:
+    """SVG polyline points for a price series, thinned out so 30 chips stay small in the page."""
+    closes = [pt["close"] for pt in series or []
+              if isinstance(pt, dict) and isinstance(pt.get("close"), (int, float))]
+    if len(closes) < 2:
+        return ""
+    step = max(1, (len(closes) - 1) / (samples - 1))
+    picked = [closes[round(i * step)] for i in range(int((len(closes) - 1) / step) + 1)]
+    if picked[-1] != closes[-1]:
+        picked.append(closes[-1])
+    low, high = min(picked), max(picked)
+    spread = (high - low) or 1
+    last = len(picked) - 1
+    return " ".join(f"{i * width / last:.1f},{height - (v - low) / spread * height:.1f}" for i, v in enumerate(picked))
+
+
+def _heat_class(pct: float) -> str:
+    """The map's colour step. Under 2% either way reads as flat."""
+    size = abs(pct)
+    if size < 2:
+        return "heat-n"
+    level = 1 if size < 8 else (2 if size < 16 else 3)
+    return f"heat-{'u' if pct > 0 else 'd'}{level}"
+
+
+SEC_BOILERPLATE = "Official SEC submission"
+FIGURE_PATTERN = re.compile(
+    r"(?:US)?[$€£]\s?\d[\d,.]*\d?(?:\s?(?:million|billion|trillion|bn)\b)?"
+    r"|[+\-−]?\d[\d,.]*\s?%"
+    r"|\b\d[\d,.]*\s(?:million|billion|trillion)\b",
+    re.IGNORECASE,
+)
+
+
+def _story_text(item: Dict[str, Any]) -> str:
+    """What the source itself said, which is where the real numbers are.
+
+    SEC items only carry a filing reference, so they get nothing rather than filler. Sources cut
+    long text off; a trailing fragment is dropped unless it has a figure in it.
+    """
+    text = clean_text(item.get("summary", "") or "")
+    if not text or text.startswith(SEC_BOILERPLATE):
+        return ""
+    text = re.sub(r"(?<=[a-z%)])\.(?=[A-Z])", ". ", text)
+    if text.endswith(("...", "…")):
+        body = text.rstrip(".… ")
+        ends = [m.end() for m in re.finditer(r"[.!?][\"”’]?\s", body)]
+        if ends and ends[-1] >= 60 and not re.search(r"\d", body[ends[-1]:]):
+            return body[:ends[-1]].strip()
+        return body + "…"
+    return text
+
+
+def _figures_html(text: str) -> Markup:
+    """Escape the text, then pick out money and percentages so they can be scanned."""
+    return Markup(FIGURE_PATTERN.sub(lambda m: f'<strong class="fig">{m.group(0)}</strong>', str(escape(text or ""))))
 
 
 def _next_earnings(events: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -4784,7 +5061,6 @@ def _content_security_policy(html: str) -> str:
         "default-src 'none'",
         "script-src " + " ".join(script_sources),
         "style-src " + " ".join(hashes["style"]),
-        "font-src 'self'",
         "img-src 'self' data:",
         "connect-src 'self'",
         "base-uri 'none'",
@@ -4858,6 +5134,7 @@ def render_dashboard(
     for it in raw_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["story_text"] = _story_text(it_copy)
         it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         items.append(it_copy)
 
@@ -4865,6 +5142,7 @@ def render_dashboard(
     for it in priority_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["story_text"] = _story_text(it_copy)
         it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         enriched_priority.append(it_copy)
 
@@ -4902,6 +5180,12 @@ def render_dashboard(
         # Performance snippet
         co_perf = perf_companies.get(sym, {})
         co_copy["perf_total_pct"] = co_perf.get("target", {}).get("total_pct_change", 0.0)
+        # Unlike the 0.0 above, None means no price data, so nothing gets drawn as if it were flat.
+        move = co_perf.get("target", {}).get("total_pct_change")
+        spark = _sparkline_points(co_perf.get("target", {}).get("series"))
+        has_move = isinstance(move, (int, float)) and bool(spark)
+        co_copy["move_pct"] = move if has_move else None
+        co_copy["spark"] = spark if has_move else ""
         co_copy["alpha_vs_spy"] = co_perf.get("alpha_vs_spy", 0.0)
         co_copy["alpha_vs_peers"] = co_perf.get("alpha_vs_peers", 0.0)
         co_copy["assessment"] = co_perf.get("assessment", "In-Line")
@@ -4932,6 +5216,13 @@ def render_dashboard(
         "calendar_view": _calendar_view(calendar_events),
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
         "next_earnings": _next_earnings(calendar_events),
+        "heat_class": _heat_class,
+        "figures": _figures_html,
+        "watchlist_moves": sorted(
+            (c for c in enriched_watchlist if c["move_pct"] is not None),
+            key=lambda c: c["move_pct"],
+            reverse=True,
+        ),
         "items": items,
         "priority_items": enriched_priority,
         "stats": stats,
@@ -4991,10 +5282,5 @@ def render_dashboard(
 
     with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
         f.write(_headers_file(policies))
-
-    fonts_dir = os.path.join(site_dir, "assets", "fonts")
-    os.makedirs(fonts_dir, exist_ok=True)
-    for font in ("fredoka.woff2", "hanken-grotesk.woff2"):
-        shutil.copy(os.path.join(ASSETS_DIR, "fonts", font), fonts_dir)
 
     return primary_output

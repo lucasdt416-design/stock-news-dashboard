@@ -115,15 +115,15 @@ def test_only_pages_with_charts_may_load_the_cdn(site):
         assert ("cdn.jsdelivr.net" in policy) == (page in ("analytics", "company"))
 
 
-def test_external_resources_carry_integrity_and_fonts_are_local(site):
+def test_external_resources_carry_integrity_and_no_web_fonts_load(site):
     for page in PAGES:
         html = (site / f"{page}.html").read_text(encoding="utf-8")
         for tag in re.findall(r"<script[^>]*\ssrc=[^>]*>", html):
             assert 'integrity="sha384-' in tag and 'crossorigin="anonymous"' in tag, tag
         assert "fonts.googleapis.com" not in html
         assert not re.search(r"<link[^>]+stylesheet", html)
-    assert (site / "assets" / "fonts" / "fredoka.woff2").stat().st_size > 1000
-    assert (site / "assets" / "fonts" / "hanken-grotesk.woff2").stat().st_size > 1000
+        assert "@font-face" not in html
+    assert not (site / "assets" / "fonts").exists()
 
 
 def test_every_action_in_markup_is_in_the_table():

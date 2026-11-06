@@ -101,7 +101,8 @@ def make_items(companies, today, rng):
             "source_label": label,
             "source_type": kind,
             "headline": head.format(name=name, low=sym.lower()),
-            "summary": "Synthetic demo record.",
+            "summary": f"{name} said revenue reached ${rng.randint(2, 90)}.{rng.randint(1, 9)} billion, "
+                       f"{rng.randint(2, 31)}% more than a year ago. Synthetic demo record.",
             "url": f"https://example.com/demo/{sym.lower()}/{n}",
             "published_date": pub.isoformat(),
             "published_time": f"{rng.randint(6, 21):02d}:{rng.choice(['00', '15', '30', '45'])}:00",
@@ -122,6 +123,7 @@ def make_items(companies, today, rng):
                      source_label="Demo Wire", source_type="press", form_or_type="NEWS")
     xss_item = dict(items[1], item_uid="demo-xss", url="https://example.com/demo/xss",
                     headline="Demo escaping check for company text", score=0.5,
+                    summary='Escaping check at $5 billion <img src=x onerror="window.__xss=1"> stays inert.',
                     llm_summary='Escaping check <img src=x onerror="window.__xss=1"> & "quotes" stay inert.',
                     category='Demo <img src=x onerror="window.__xss=1">')
     items += [score_item(long_item), xss_item]
