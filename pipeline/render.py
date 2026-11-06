@@ -854,7 +854,11 @@ SHARED_CSS = """
 
     .econ-schedule { list-style: none; }
     .econ-release { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
-    .econ-release .cal-when { flex-direction: column; gap: 0; }
+    .econ-release .cal-when { display: flex; flex-direction: column; gap: 0; }
+    .econ-release .cal-date { font-family: var(--font-mono); font-size: 0.82rem; }
+    .econ-release .cal-relative { font-size: 0.74rem; color: var(--text-muted); }
+    .econ-release .cal-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
+    .econ-release .cal-details { font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
     .econ-release.is-passed .cal-headline, .econ-release.is-passed .cal-date { color: var(--text-muted); }
 
     @media (max-width: 860px) {
