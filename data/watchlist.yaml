@@ -419,3 +419,423 @@ tickers:
     economic_sensitivities: [interest_rates, treasury_10y, inflation]
     notes: "Premier clean energy utility and renewable project developer. Key beneficiary of skyrocketing AI datacenter electricity demand and Florida population growth."
 
+
+  - symbol: ABT
+    name: "Abbott Laboratories"
+    cik: "0000001800"
+    sector: healthcare_pharmaceuticals
+    competitors: [MDT, TMO, JNJ]
+
+  - symbol: ACN
+    name: "Accenture plc"
+    cik: "0001467373"
+    sector: software_it_services
+    competitors: [IBM, ORCL, CRM]
+
+  - symbol: ADBE
+    name: "Adobe Inc."
+    cik: "0000796343"
+    sector: software_cloud
+    competitors: [CRM, MSFT, INTU]
+
+  - symbol: AMAT
+    name: "Applied Materials, Inc."
+    cik: "0000006951"
+    sector: semiconductors
+    competitors: [LRCX, KLAC, ASML]
+
+  - symbol: AMGN
+    name: "Amgen Inc."
+    cik: "0000318154"
+    sector: healthcare_pharmaceuticals
+    competitors: [GILD, LLY, BMY]
+
+  - symbol: AMT
+    name: "American Tower Corporation"
+    cik: "0001053507"
+    sector: real_estate_reit
+    competitors: [CCI, EQIX, PLD]
+
+  - symbol: ANET
+    name: "Arista Networks, Inc."
+    cik: "0001596532"
+    sector: tech_hardware
+    competitors: [CSCO, DELL, AVGO]
+
+  - symbol: AVGO
+    name: "Broadcom Inc."
+    cik: "0001730168"
+    sector: semiconductors
+    competitors: [NVDA, QCOM, AMD]
+
+  - symbol: AXP
+    name: "American Express Company"
+    cik: "0000004962"
+    sector: financial_banking
+    competitors: [V, MA, COF]
+
+  - symbol: BKNG
+    name: "Booking Holdings Inc."
+    cik: "0001075531"
+    sector: consumer_goods_travel
+    competitors: [EXPE, ABNB, MAR]
+
+  - symbol: BLK
+    name: "BlackRock, Inc."
+    cik: "0002012383"
+    sector: financial_investment_banking
+    competitors: [SCHW, MS, GS]
+
+  - symbol: BMY
+    name: "Bristol-Myers Squibb Company"
+    cik: "0000014272"
+    sector: healthcare_pharmaceuticals
+    competitors: [MRK, PFE, ABBV]
+
+  - symbol: BNY
+    name: "The Bank of New York Mellon Corporation"
+    cik: "0001390777"
+    sector: financial_banking
+    competitors: [STT, NTRS, JPM]
+
+  - symbol: BRK-B
+    name: "Berkshire Hathaway Inc."
+    cik: "0001067983"
+    sector: financial_insurance
+    competitors: [JPM, BLK, MS]
+
+  - symbol: C
+    name: "Citigroup Inc."
+    cik: "0000831001"
+    sector: financial_banking
+    competitors: [JPM, BAC, WFC]
+
+  - symbol: CMCSA
+    name: "Comcast Corporation"
+    cik: "0001166691"
+    sector: telecommunications
+    competitors: [CHTR, DIS, T]
+
+  - symbol: COF
+    name: "Capital One Financial Corporation"
+    cik: "0000927628"
+    sector: financial_banking
+    competitors: [AXP, JPM, USB]
+
+  - symbol: COP
+    name: "ConocoPhillips"
+    cik: "0001163165"
+    sector: energy_oil_gas
+    competitors: [XOM, CVX, EOG]
+
+  - symbol: CRM
+    name: "Salesforce, Inc."
+    cik: "0001108524"
+    sector: software_cloud
+    competitors: [ORCL, MSFT, NOW]
+
+  - symbol: CSCO
+    name: "Cisco Systems, Inc."
+    cik: "0000858877"
+    sector: tech_hardware
+    competitors: [ANET, IBM, DELL]
+
+  - symbol: CVS
+    name: "CVS Health Corporation"
+    cik: "0000064803"
+    sector: healthcare_services
+    competitors: [UNH, WBA, CI]
+
+  - symbol: DE
+    name: "Deere & Company"
+    cik: "0000315189"
+    sector: industrials_machinery
+    competitors: [CAT, CNH, AGCO]
+
+  - symbol: DELL
+    name: "Dell Technologies Inc."
+    cik: "0001571996"
+    sector: tech_hardware
+    competitors: [HPQ, HPE, CSCO]
+
+  - symbol: DHR
+    name: "Danaher Corporation"
+    cik: "0000313616"
+    sector: healthcare_life_sciences
+    competitors: [TMO, ABT, A]
+
+  - symbol: DUK
+    name: "Duke Energy Corporation"
+    cik: "0001326160"
+    sector: utilities_power
+    competitors: [SO, NEE, D]
+
+  - symbol: EMR
+    name: "Emerson Electric Co."
+    cik: "0000032604"
+    sector: industrials_electrical
+    competitors: [GEV, ROK, HON]
+
+  - symbol: FDX
+    name: "FedEx Corporation"
+    cik: "0001048911"
+    sector: industrials_transport
+    competitors: [UPS, UNP, AMZN]
+
+  - symbol: GD
+    name: "General Dynamics Corporation"
+    cik: "0000040533"
+    sector: aerospace_defense
+    competitors: [LMT, RTX, NOC]
+
+  - symbol: GEV
+    name: "GE Vernova Inc."
+    cik: "0001996810"
+    sector: industrials_electrical
+    competitors: [GE, EMR, ETN]
+
+  - symbol: GILD
+    name: "Gilead Sciences, Inc."
+    cik: "0000882095"
+    sector: healthcare_pharmaceuticals
+    competitors: [AMGN, MRK, BMY]
+
+  - symbol: GM
+    name: "General Motors Company"
+    cik: "0001467858"
+    sector: consumer_goods_autos
+    competitors: [F, TSLA, TM]
+
+  - symbol: IBM
+    name: "International Business Machines Corporation"
+    cik: "0000051143"
+    sector: tech_hardware
+    competitors: [ACN, MSFT, ORCL]
+
+  - symbol: INTU
+    name: "Intuit Inc."
+    cik: "0000896878"
+    sector: software_cloud
+    competitors: [ADBE, CRM, MSFT]
+
+  - symbol: ISRG
+    name: "Intuitive Surgical, Inc."
+    cik: "0001035267"
+    sector: healthcare_medical_devices
+    competitors: [MDT, ABT, SYK]
+
+  - symbol: LIN
+    name: "Linde plc"
+    cik: "0001707925"
+    sector: materials_chemicals
+    competitors: [APD, SHW, DOW]
+
+  - symbol: LLY
+    name: "Eli Lilly and Company"
+    cik: "0000059478"
+    sector: healthcare_pharmaceuticals
+    competitors: [NVO, MRK, PFE]
+
+  - symbol: LMT
+    name: "Lockheed Martin Corporation"
+    cik: "0000936468"
+    sector: aerospace_defense
+    competitors: [RTX, GD, NOC]
+
+  - symbol: LOW
+    name: "Lowe's Companies, Inc."
+    cik: "0000060667"
+    sector: retail_home_improvement
+    competitors: [HD, WMT, COST]
+
+  - symbol: LRCX
+    name: "Lam Research Corporation"
+    cik: "0000707549"
+    sector: semiconductors
+    competitors: [AMAT, KLAC, ASML]
+
+  - symbol: MA
+    name: "Mastercard Incorporated"
+    cik: "0001141391"
+    sector: financial_payments
+    competitors: [V, AXP, PYPL]
+
+  - symbol: MDLZ
+    name: "Mondelez International, Inc."
+    cik: "0001103982"
+    sector: consumer_staples_food
+    competitors: [PEP, KO, HSY]
+
+  - symbol: MDT
+    name: "Medtronic plc"
+    cik: "0001613103"
+    sector: healthcare_medical_devices
+    competitors: [ABT, ISRG, BSX]
+
+  - symbol: MMM
+    name: "3M Company"
+    cik: "0000066740"
+    sector: industrials_conglomerate
+    competitors: [HON, GE, EMR]
+
+  - symbol: MO
+    name: "Altria Group, Inc."
+    cik: "0000764180"
+    sector: consumer_staples_tobacco
+    competitors: [PM, BTI]
+
+  - symbol: MRK
+    name: "Merck & Co., Inc."
+    cik: "0000310158"
+    sector: healthcare_pharmaceuticals
+    competitors: [PFE, LLY, BMY]
+
+  - symbol: MS
+    name: "Morgan Stanley"
+    cik: "0000895421"
+    sector: financial_investment_banking
+    competitors: [GS, JPM, SCHW]
+
+  - symbol: MU
+    name: "Micron Technology, Inc."
+    cik: "0000723125"
+    sector: semiconductors
+    competitors: [SNDK, WDC, INTC]
+
+  - symbol: NFLX
+    name: "Netflix, Inc."
+    cik: "0001065280"
+    sector: entertainment_media
+    competitors: [DIS, CMCSA, GOOGL]
+
+  - symbol: NOW
+    name: "ServiceNow, Inc."
+    cik: "0001373715"
+    sector: software_cloud
+    competitors: [CRM, ORCL, MSFT]
+
+  - symbol: ORCL
+    name: "Oracle Corporation"
+    cik: "0001341439"
+    sector: software_cloud
+    competitors: [MSFT, CRM, AMZN]
+
+  - symbol: PANW
+    name: "Palo Alto Networks, Inc."
+    cik: "0001327567"
+    sector: software_security
+    competitors: [CRWD, FTNT, CSCO]
+
+  - symbol: PEP
+    name: "PepsiCo, Inc."
+    cik: "0000077476"
+    sector: consumer_staples_beverages
+    competitors: [KO, MDLZ, PG]
+
+  - symbol: PLTR
+    name: "Palantir Technologies Inc."
+    cik: "0001321655"
+    sector: software_cloud
+    competitors: [NOW, SNOW, CRM]
+
+  - symbol: PM
+    name: "Philip Morris International Inc."
+    cik: "0001413329"
+    sector: consumer_staples_tobacco
+    competitors: [MO, BTI]
+
+  - symbol: QCOM
+    name: "QUALCOMM Incorporated"
+    cik: "0000804328"
+    sector: semiconductors
+    competitors: [AVGO, AMD, TXN]
+
+  - symbol: RTX
+    name: "RTX Corporation"
+    cik: "0000101829"
+    sector: aerospace_defense
+    competitors: [LMT, GD, BA]
+
+  - symbol: SBUX
+    name: "Starbucks Corporation"
+    cik: "0000829224"
+    sector: consumer_discretionary_restaurants
+    competitors: [MCD, CMG, YUM]
+
+  - symbol: SCHW
+    name: "The Charles Schwab Corporation"
+    cik: "0000316709"
+    sector: financial_investment_banking
+    competitors: [MS, BLK, IBKR]
+
+  - symbol: SNDK
+    name: "Sandisk Corporation"
+    cik: "0002023554"
+    sector: semiconductors
+    competitors: [MU, WDC, STX]
+
+  - symbol: SO
+    name: "The Southern Company"
+    cik: "0000092122"
+    sector: utilities_power
+    competitors: [DUK, NEE, D]
+
+  - symbol: T
+    name: "AT&T Inc."
+    cik: "0000732717"
+    sector: telecommunications
+    competitors: [VZ, TMUS, CMCSA]
+
+  - symbol: TMO
+    name: "Thermo Fisher Scientific Inc."
+    cik: "0000097745"
+    sector: healthcare_life_sciences
+    competitors: [DHR, ABT, A]
+
+  - symbol: TMUS
+    name: "T-Mobile US, Inc."
+    cik: "0001283699"
+    sector: telecommunications
+    competitors: [VZ, T, CMCSA]
+
+  - symbol: TXN
+    name: "Texas Instruments Incorporated"
+    cik: "0000097476"
+    sector: semiconductors
+    competitors: [ADI, INTC, QCOM]
+
+  - symbol: UBER
+    name: "Uber Technologies, Inc."
+    cik: "0001543151"
+    sector: software_mobility
+    competitors: [LYFT, DASH, ABNB]
+
+  - symbol: UNP
+    name: "Union Pacific Corporation"
+    cik: "0000100885"
+    sector: industrials_transport
+    competitors: [CSX, NSC, FDX]
+
+  - symbol: UPS
+    name: "United Parcel Service, Inc."
+    cik: "0001090727"
+    sector: industrials_transport
+    competitors: [FDX, UNP, AMZN]
+
+  - symbol: USB
+    name: "U.S. Bancorp"
+    cik: "0000036104"
+    sector: financial_banking
+    competitors: [WFC, PNC, COF]
+
+  - symbol: V
+    name: "Visa Inc."
+    cik: "0001403161"
+    sector: financial_payments
+    competitors: [MA, AXP, PYPL]
+
+  - symbol: WFC
+    name: "Wells Fargo & Company"
+    cik: "0000072971"
+    sector: financial_banking
+    competitors: [JPM, BAC, C]

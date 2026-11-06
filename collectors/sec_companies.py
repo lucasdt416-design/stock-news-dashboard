@@ -102,7 +102,7 @@ def sector_for_sic(sic: Any) -> str:
 def tidy_name(name: str) -> str:
     """SEC names are often in capitals ("COCA COLA CO"). Make those readable; leave mixed case alone."""
     name = re.sub(r"\s+", " ", str(name or "")).strip().rstrip("/").strip()
-    name = re.sub(r"\s*/[A-Z]{2}/?$", "", name)  # state suffixes like "/DE/"
+    name = re.sub(r"\s*[/\\][A-Za-z]{2}[/\\]?$", "", name)  # state suffixes like "/DE/" or "\\de\\"
     letters = [c for c in name if c.isalpha()]
     if not letters or sum(c.isupper() for c in letters) / len(letters) < 0.8:
         return name
@@ -111,8 +111,8 @@ def tidy_name(name: str) -> str:
         bare = raw.strip(".,").lower()
         if bare in SUFFIXES and i > 0:
             words.append(SUFFIXES[bare])
-        elif "&" in raw or (len(bare) <= 3 and not re.search(r"[aeiouy]", bare)):
-            words.append(raw.upper())  # AT&T, IBM, CSX
+        elif "&" in raw or (len(bare) <= 3 and not re.search(r"[aeiouy]", bare)) or (len(bare) == 2 and bare not in SMALL_WORDS):
+            words.append(raw.upper())  # AT&T, IBM, CSX, US
         elif bare in SMALL_WORDS and i > 0:
             words.append(bare)
         else:
@@ -183,8 +183,6 @@ def entries_yaml(entries: List[Dict[str, Any]]) -> str:
             f"    cik: \"{e['cik']}\"",
             f"    sector: {e['sector']}",
         ]
-        if e.get("industry"):
-            out.append(f"    notes: {json.dumps('SEC industry: ' + e['industry'].title())}")
     return "\n".join(out) + "\n"
 
 

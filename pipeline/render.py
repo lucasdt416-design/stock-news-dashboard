@@ -175,6 +175,7 @@ SECTOR_PREFIXES = (
     ("financial", "Finance"),
     ("tech_hardware", "Technology"),
     ("utilities", "Utilities"),
+    ("telecommunications", "Telecom"),
     ("industrials", "Industrials"),
     ("other", "Other"),
 )
@@ -5637,6 +5638,7 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
             {% if it.category == 'Insider Transactions' %}{% set tabs.insider = tabs.insider + 1 %}{% elif it.source == 'sec_edgar' %}{% set tabs.filings = tabs.filings + 1 %}{% else %}{% set tabs.news = tabs.news + 1 %}{% endif %}
           {% endfor %}
           {% set first_tab = 'news' if tabs.news else ('filings' if tabs.filings else ('insider' if tabs.insider else 'news')) %}
+          {% if co_news %}
           <div class="company-tabs view-tabs view-tabs-left" role="tablist" aria-label="{{ co.symbol }} stories">
             {% for key, label, n in [('news', 'News', tabs.news), ('filings', 'Filings', tabs.filings), ('insider', 'Insider trades', tabs.insider)] %}
             <button class="view-tab company-tab{% if key == first_tab %} active{% endif %}" role="tab" type="button" data-click="setCompanyTab" data-ticker="{{ co.symbol }}" data-tab="{{ key }}" aria-selected="{{ 'true' if key == first_tab else 'false' }}"{% if not n %} disabled{% endif %}>{{ label }} <span class="tab-count">{{ n }}</span></button>
@@ -5646,7 +5648,6 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
           {% if rollup %}<p class="company-rollup" data-tab-only="insider"{% if first_tab != 'insider' %} hidden{% endif %}>{{ rollup.sentence }} <span class="company-rollup-since">Filings since {{ short_date(rollup.since) }}.</span></p>{% endif %}
           <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
 
-          {% if co_news %}
             {% for it in co_news %}
             <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-ticker="{{ it.ticker }}" data-category="{{ it.category }}" data-source="{{ it.source }}" data-tab="{{ 'insider' if it.category == 'Insider Transactions' else ('filings' if it.source == 'sec_edgar' else 'news') }}">
               <div class="feed-body">
@@ -5695,6 +5696,9 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
             {% endif %}
           </section>
 
+          {% set co_inds = [] %}
+          {% for ind in economic_indicators %}{% if ind.tickers_list and co.symbol in ind.tickers_list %}{% set _ = co_inds.append(ind) %}{% endif %}{% endfor %}
+          {% if co_inds or co.macro_sensitivities %}
           <section class="company-side-box">
             <h3 class="fp-heading">What in the economy affects it</h3>
             <ul class="fp-side-list">
@@ -5709,7 +5713,9 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
             </ul>
             {% if co.macro_sensitivities %}<p class="company-side-note">Also watching: {{ co.macro_sensitivities|join(', ')|replace('_', ' ') }}</p>{% endif %}
           </section>
+          {% endif %}
 
+          {% if co.key_customers or co.key_suppliers or co.competitors %}
           <section class="company-side-box">
             <h3 class="fp-heading">Customers, suppliers and competitors</h3>
             {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
@@ -5719,9 +5725,11 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
             {% endif %}
             {% endfor %}
           </section>
+          {% endif %}
         </aside>
       </div>
 
+      {% if has_perf %}
       <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
         <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
         <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
@@ -5731,6 +5739,7 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
           <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
         </div>
       </section>
+      {% endif %}
     </article>
     </main>
   </div>
@@ -6930,6 +6939,7 @@ def render_dashboard(
                    co_events=[ev for ev in calendar_events if ev.get("ticker") == sym])
         co_perf = perf_companies.get(sym)
         ctx["company_perf_json"] = _script_json({"companies": {sym: co_perf}} if co_perf else {})
+        ctx["has_perf"] = bool(co_perf and (co_perf.get("target") or {}).get("series"))
         rendered = page_tmpl.render(**ctx)
         company_policies.add(_content_security_policy(rendered))
         with open(os.path.join(site_dir, f"company-{_company_slug(sym)}.html"), "w", encoding="utf-8") as f:
