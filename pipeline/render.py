@@ -1542,6 +1542,28 @@ SHARED_CSS = """
       .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
     }
 
+    /* ---- Company page ---- */
+    .company-glance { margin: 0.35rem 0 0.75rem; font-size: 0.95rem; color: var(--text-secondary); }
+    .company-results { margin: 2rem 0 3rem; }
+    .company-results-period { margin: 0.2rem 0 1rem; font-size: 0.86rem; color: var(--text-muted); }
+    .company-results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1.25rem 2rem; margin: 0; }
+    .company-result dt { font-size: 0.84rem; color: var(--text-secondary); }
+    .company-result-value { margin: 0.15rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .company-result-change { margin: 0.1rem 0 0; font-size: 0.9rem; color: var(--text-secondary); }
+    @media (max-width: 640px) {
+      .company-results-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+      .company-result dt { font-size: 0.74rem; }
+      .company-result-value { font-size: 1.1rem; }
+      .company-result-change { font-size: 0.78rem; }
+      .company-tabs { gap: 1.1rem; }
+    }
+    .company-tabs { margin: 0.25rem 0 0.75rem; }
+    .company-tab:disabled { opacity: 0.4; cursor: default; }
+    .tab-count { margin-left: 0.2rem; font-size: 0.8rem; font-weight: 400; color: var(--text-muted); }
+    .company-rollup { margin: 0.25rem 0 1rem; font-size: 1rem; line-height: 1.5; color: var(--text-primary); max-width: 40rem; }
+    .company-rollup-since { color: var(--text-muted); font-size: 0.86rem; }
+    .company-news-item[hidden] { display: none; }
+
     /* ---- Following ---- */
     .view-tabs { display: flex; justify-content: center; gap: 1.75rem; margin: 0.5rem 0 1.75rem; border-bottom: 1px solid var(--border-subtle); }
     .view-tabs-left { justify-content: flex-start; margin: 0 0 1rem; }
@@ -1681,7 +1703,8 @@ const PAGE_ACTIONS = {
     closeMobileNav: () => closeMobileNav(),
     cycleTheme: () => cycleTheme(),
     filterCalendar: el => filterCalendar(el.dataset.val, el),
-    filterCompanyNews: el => filterCompanyNews(el.dataset.ticker, el.dataset.source, el),
+    setCompanyTab: el => setCompanyTab(el),
+    showAllCompanyStories: el => showAllCompanyStories(el),
     filterEconomicBySector: el => filterEconomicBySector(el.dataset.sector, el),
     focusMobileSearch: () => focusMobileSearch(),
     openCompany: (el, event) => { event.preventDefault(); switchCompany(el.dataset.ticker); },
@@ -1707,7 +1730,7 @@ const PAGE_ACTIONS = {
     filterFeedTickerDropdown: el => filterFeedTickerDropdown(el.value),
     filterItems: () => filterItems(),
     filterSettingsCompanies: el => filterSettingsCompanies(el.value),
-    searchCompanyFeed: el => searchCompanyFeed(el.dataset.ticker, el.value),
+    searchCompanyFeed: el => searchCompanyFeed(el.dataset.ticker),
   },
   change: {
     filterEconomicByTicker: el => filterEconomicByTicker(el.value),
@@ -5053,55 +5076,48 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
           </p>
 
-          <dl class="company-kpi-ribbon">
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">Stories</dt>
-              <dd class="company-kpi-val">{{ co_news|length }}</dd>
-              <dd class="company-kpi-sub">{{ ns.news_count }} news, {{ ns.edgar_count }} SEC, {{ ns.ir_count }} releases</dd>
-            </div>
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">To read first</dt>
-              <dd class="company-kpi-val">{{ ns.high_count }}</dd>
-            </div>
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">Next event</dt>
-              <dd class="company-kpi-val">{% if co_events %}{{ short_date(co_events[0].event_date) }}{% else %}None{% endif %}</dd>
-              <dd class="company-kpi-sub">{% if co_events %}{{ event_kind(co_events[0].event_type or '') }}{% else %}Nothing scheduled{% endif %}</dd>
-            </div>
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">Connections</dt>
-              <dd class="company-kpi-val">{{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}</dd>
-              <dd class="company-kpi-sub">{{ co.key_customers|length if co.key_customers else 0 }} customers, {{ co.key_suppliers|length if co.key_suppliers else 0 }} suppliers, {{ co.competitors|length if co.competitors else 0 }} competitors</dd>
-            </div>
-          </dl>
+          {% set week_count = co_news|selectattr('published_date', 'ge', week_ago)|list|length %}
+          <p class="company-glance">{% if week_count %}{{ week_count }} new {{ 'story' if week_count == 1 else 'stories' }} this week{% else %}No new stories this week{% endif %}{% if co_events %} · Next: {{ event_kind(co_events[0].event_type or '') }}, {{ short_date(co_events[0].event_date) }}{% endif %}</p>
         </header>
 
-        <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
-          <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
-          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
-          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
-          <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
-          <div class="perf-table-wrap">
-            <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
-          </div>
+        {% set results = latest_results(co.symbol, co_news) %}
+        {% if results %}
+        <section class="company-results" aria-labelledby="results-{{ co.symbol }}">
+          <h3 class="fp-heading" id="results-{{ co.symbol }}">Latest results</h3>
+          <p class="company-results-period">{{ results.period }} · from the {{ results.form }} filed {{ short_date(results.filed) }}{% if results.compared %} · changes are against a year earlier{% endif %}</p>
+          <dl class="company-results-grid">
+            {% for f in results.figures %}
+            <div class="company-result">
+              <dt>{{ f.label }}</dt>
+              <dd class="company-result-value">{{ f.value }}</dd>
+              {% if f.change %}<dd class="company-result-change {{ f.tone }}">{{ f.change }}</dd>{% endif %}
+            </div>
+            {% endfor %}
+          </dl>
         </section>
+        {% endif %}
+
 
         <div class="company-grid-layout">
           <section class="company-card-deck" aria-label="Stories">
             <h3 class="fp-heading">Stories</h3>
-            <div class="company-feed-tools">
-              <div class="filter-options" role="group" aria-label="Filter by source">
-                <button class="filter-btn active company-source-filter-btn" type="button" data-source="ALL" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">All <span class="pill-count">{{ co_news|length }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="news_media" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">News <span class="pill-count">{{ ns.news_count }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="sec_edgar" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">SEC <span class="pill-count">{{ ns.edgar_count }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="company_ir" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">Releases <span class="pill-count">{{ ns.ir_count }}</span></button>
-              </div>
-              <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
+            {% set tabs = namespace(news=0, filings=0, insider=0) %}
+            {% for it in co_news %}
+              {% if it.category == 'Insider Transactions' %}{% set tabs.insider = tabs.insider + 1 %}{% elif it.source == 'sec_edgar' %}{% set tabs.filings = tabs.filings + 1 %}{% else %}{% set tabs.news = tabs.news + 1 %}{% endif %}
+            {% endfor %}
+            {% set first_tab = 'news' if tabs.news else ('filings' if tabs.filings else ('insider' if tabs.insider else 'news')) %}
+            <div class="company-tabs view-tabs view-tabs-left" role="tablist" aria-label="{{ co.symbol }} stories">
+              {% for key, label, n in [('news', 'News', tabs.news), ('filings', 'Filings', tabs.filings), ('insider', 'Insider trades', tabs.insider)] %}
+              <button class="view-tab company-tab{% if key == first_tab %} active{% endif %}" role="tab" type="button" data-click="setCompanyTab" data-ticker="{{ co.symbol }}" data-tab="{{ key }}" aria-selected="{{ 'true' if key == first_tab else 'false' }}"{% if not n %} disabled{% endif %}>{{ label }} <span class="tab-count">{{ n }}</span></button>
+              {% endfor %}
             </div>
+            {% set rollup = insider_rollup(co.symbol, co_news) %}
+            {% if rollup %}<p class="company-rollup" data-tab-only="insider"{% if first_tab != 'insider' %} hidden{% endif %}>{{ rollup.sentence }} <span class="company-rollup-since">Filings since {{ short_date(rollup.since) }}.</span></p>{% endif %}
+            <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
 
             {% if co_news %}
               {% for it in co_news %}
-              <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}">
+              <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}" data-tab="{{ 'insider' if it.category == 'Insider Transactions' else ('filings' if it.source == 'sec_edgar' else 'news') }}">
                 <div class="feed-body">
                   <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
                   {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
@@ -5124,6 +5140,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 <span class="date-cell">{{ short_date(it.published_date) }}</span>
               </article>
               {% endfor %}
+              <button class="feed-more company-more" type="button" data-click="showAllCompanyStories" data-ticker="{{ co.symbol }}" hidden>Show all</button>
               <p class="fp-empty company-feed-empty" hidden>No stories match.</p>
             {% else %}
               <p class="home-empty">No stories recorded for {{ co.symbol }} in this period.</p>
@@ -5138,7 +5155,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 {% for ev in co_events %}
                 <li class="fp-event">
                   <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
-                  <span class="fp-event-text">{{ ev.headline }}<span class="company-side-sub">{{ ev.relative_badge }} · {{ event_kind(ev.event_type or '') }}</span></span>
+                  <span class="fp-event-text">{{ event_kind(ev.event_type or '') }}<span class="company-side-sub">{{ ev.relative_badge }} · from “{{ ev.headline }}”</span></span>
                 </li>
                 {% endfor %}
               </ul>
@@ -5173,6 +5190,16 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </section>
           </aside>
         </div>
+
+        <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
+          <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
+          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
+          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
+          <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
+          <div class="perf-table-wrap">
+            <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
+          </div>
+        </section>
       </article>
       {% endfor %}
     </main>
@@ -5433,26 +5460,65 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    function applyCompanyFeedFilter(container, source, query) {
+    // Each tab shows its 5 most important stories until "Show all" is pressed; a search shows every match.
+    const COMPANY_TAB_LIMIT = 5;
+
+    function applyCompanyFeedFilter(container) {
+      const ticker = container.dataset.ticker;
+      const tab = container.dataset.tab || container.querySelector('.company-tab.active')?.dataset.tab || 'news';
+      const input = document.getElementById('search-' + ticker);
+      const query = (input ? input.value : '').toLowerCase().trim();
+      const expanded = container.dataset.expanded === tab;
+      let matched = 0;
       let shown = 0;
       container.querySelectorAll('.company-news-item').forEach(row => {
-        const sourceMatch = source === 'ALL' || row.getAttribute('data-source') === source;
-        const textMatch = !query || (row.textContent || '').toLowerCase().includes(query);
-        row.hidden = !(sourceMatch && textMatch);
-        if (!row.hidden) shown += 1;
+        const match = row.dataset.tab === tab && (!query || (row.textContent || '').toLowerCase().includes(query));
+        if (match) matched += 1;
+        const show = match && (query || expanded || matched <= COMPANY_TAB_LIMIT);
+        row.hidden = !show;
+        if (show) shown += 1;
       });
+      container.querySelectorAll('[data-tab-only]').forEach(el => { el.hidden = el.dataset.tabOnly !== tab; });
+      const more = container.querySelector('.company-more');
+      if (more) {
+        more.hidden = Boolean(query) || matched <= COMPANY_TAB_LIMIT;
+        more.textContent = expanded ? 'Show fewer' : `Show all ${matched}`;
+        more.setAttribute('aria-expanded', String(expanded));
+      }
       const empty = container.querySelector('.company-feed-empty');
       if (empty) empty.hidden = shown !== 0;
     }
 
-    function searchCompanyFeed(ticker, rawVal) {
-      const container = document.getElementById('profile-' + ticker);
-      if (!container) return;
-
-      const activeSourceBtn = container.querySelector('.company-source-filter-btn.active');
-      const activeSource = activeSourceBtn ? activeSourceBtn.getAttribute('data-source') || 'ALL' : 'ALL';
-      applyCompanyFeedFilter(container, activeSource, (rawVal || '').toLowerCase().trim());
+    function setCompanyTab(btn) {
+      const container = document.getElementById('profile-' + btn.dataset.ticker);
+      if (!container || btn.disabled) return;
+      container.dataset.tab = btn.dataset.tab;
+      delete container.dataset.expanded;
+      container.querySelectorAll('.company-tab').forEach(t => {
+        const on = t === btn;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', String(on));
+      });
+      applyCompanyFeedFilter(container);
     }
+
+    function showAllCompanyStories(btn) {
+      const container = document.getElementById('profile-' + btn.dataset.ticker);
+      if (!container) return;
+      const tab = container.dataset.tab || container.querySelector('.company-tab.active')?.dataset.tab;
+      if (container.dataset.expanded === tab) delete container.dataset.expanded;
+      else container.dataset.expanded = tab;
+      applyCompanyFeedFilter(container);
+    }
+
+    function searchCompanyFeed(ticker) {
+      const container = document.getElementById('profile-' + ticker);
+      if (container) applyCompanyFeedFilter(container);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.company-profile-container').forEach(applyCompanyFeedFilter);
+    });
 
     let currentCompany = null;
 
@@ -5486,17 +5552,6 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         newUrl.searchParams.set('ticker', ticker);
         window.history.pushState({ ticker: ticker }, '', newUrl);
       }
-    }
-
-    function filterCompanyNews(ticker, source, btn) {
-      const container = document.getElementById('profile-' + ticker);
-      if (!container) return;
-
-      container.querySelectorAll('.company-source-filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      const searchInput = document.getElementById('search-' + ticker);
-      applyCompanyFeedFilter(container, source, (searchInput ? searchInput.value : '').toLowerCase().trim());
     }
 
     window.addEventListener('popstate', () => {
@@ -5686,6 +5741,103 @@ def _heat_class(pct: float) -> str:
         return "heat-n"
     level = 1 if size < 8 else (2 if size < 16 else 3)
     return f"heat-{'u' if pct > 0 else 'd'}{level}"
+
+
+RESULT_PERIOD = re.compile(r"^(Quarter|Year) ended ([A-Z][a-z]{2} \d{1,2}, \d{4}): (.+?)\.(?: Changes are against.*)?$")
+RESULT_PART = re.compile(
+    r"^(revenue|net income|net loss|diluted earnings per share) (-?\$[\d,.]+(?: (?:billion|million))?)(?:, (.+))?$"
+)
+RESULT_LABELS = {
+    "revenue": "Revenue",
+    "net income": "Net income",
+    "net loss": "Net loss",
+    "diluted earnings per share": "Earnings per share",
+}
+INSIDER_TRADE = re.compile(
+    r"\b(sold|bought) ([\d,]+) shares at (?:an average of )?\$[\d,.]+, about \$([\d,.]+)( million| billion)?"
+)
+
+
+def _latest_results(symbol: str, items: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Revenue, profit and EPS from the company's newest 10-Q or 10-K, as the filing reader wrote them.
+
+    Returns None when there is no such filing, or its sentence isn't in the expected shape, so the
+    page shows nothing rather than a guess.
+    """
+    reports = [
+        it for it in items
+        if it.get("ticker") == symbol
+        and it.get("source") == "sec_edgar"
+        and str(it.get("form_or_type") or "").upper().split("/")[0] in ("10-Q", "10-K")
+        and RESULT_PERIOD.match(clean_text(it.get("summary") or ""))
+    ]
+    if not reports:
+        return None
+    report = max(reports, key=lambda it: str(it.get("published_date") or ""))
+    m = RESULT_PERIOD.match(clean_text(report.get("summary") or ""))
+    figures = []
+    for part in m.group(3).split("; "):
+        pm = RESULT_PART.match(part.strip())
+        if not pm:
+            continue
+        change = pm.group(3) or ""
+        tone = "tone-up" if change.startswith("up") else ("tone-down" if change.startswith("down") else "")
+        figures.append({"label": RESULT_LABELS[pm.group(1)], "value": pm.group(2), "change": change, "tone": tone})
+    if not figures:
+        return None
+    return {
+        "period": f"{m.group(1)} ended {m.group(2)}",
+        "form": str(report.get("form_or_type") or ""),
+        "filed": report.get("published_date") or "",
+        "url": report.get("url") or "",
+        "figures": figures,
+        "compared": any(f["change"] for f in figures),
+    }
+
+
+def _money_words(value: float) -> str:
+    if value >= 1e9:
+        return f"${value / 1e9:,.1f} billion"
+    if value >= 1e6:
+        return f"${value / 1e6:,.1f} million"
+    return f"${value:,.0f}"
+
+
+def _insider_rollup(symbol: str, items: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """One line for a company's insider trades, added up from the Form 4 sentences on the page."""
+    insider = [it for it in items if it.get("ticker") == symbol and it.get("category") == "Insider Transactions"]
+    if not insider:
+        return None
+    totals = {"sold": [0, 0.0, 0], "bought": [0, 0.0, 0]}  # trades, value, pre-arranged
+    for it in insider:
+        text = clean_text(it.get("summary") or "")
+        m = INSIDER_TRADE.search(text)
+        if not m:
+            continue
+        unit = {" million": 1e6, " billion": 1e9}.get(m.group(4) or "", 1)
+        entry = totals[m.group(1)]
+        entry[0] += 1
+        entry[1] += float(m.group(3).replace(",", "")) * unit
+        entry[2] += "pre-arranged trading plan" in text
+    since = min(str(it.get("published_date") or "") for it in insider)
+    parts = []
+    for verb in ("sold", "bought"):
+        n, value, planned = totals[verb]
+        if not n:
+            continue
+        line = f"{verb} about {_money_words(value)} in {n} {'trade' if n == 1 else 'trades'}"
+        if planned == n:
+            line += ", all pre-arranged" if n > 1 else ", pre-arranged"
+        elif planned:
+            line += f", {planned} of them pre-arranged"
+        parts.append(line)
+    if not parts:
+        sentence = f"{len(insider)} insider {'filing' if len(insider) == 1 else 'filings'}, none an open-market trade."
+    else:
+        sentence = "Insiders " + ", and ".join(parts) + "."
+        if not totals["bought"][0]:
+            sentence += " No open-market purchases."
+    return {"sentence": sentence, "since": since, "count": len(insider)}
 
 
 # The five kinds of story someone can hide from For you. storyType() in the shared script sorts
@@ -5975,6 +6127,9 @@ def render_dashboard(
         "watchlist_companies": enriched_watchlist,
         "sector_directory": sector_directory,
         "company_sectors": {c["symbol"]: c["macro_sector"] for c in enriched_watchlist},
+        "latest_results": _latest_results,
+        "insider_rollup": _insider_rollup,
+        "week_ago": (date.today() - timedelta(days=7)).isoformat(),
         "story_type_labels": STORY_TYPES,
         "story_type_counts": {k: sum(1 for it in items if _story_type(it) == k) for k in STORY_TYPES},
         "sector_directory_json": _script_json([
