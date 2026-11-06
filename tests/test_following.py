@@ -34,10 +34,14 @@ def test_home_and_feed_offer_both_views(tmp_path):
 
 
 def test_each_company_has_a_follow_button(tmp_path):
-    html = _site(tmp_path)["company.html"]
-    buttons = re.findall(r'class="follow-btn" type="button" data-click="toggleFollow" data-ticker="([A-Z.\-]+)"', html)
-    assert len(set(buttons)) >= 30
-    assert html.count("data-follow-mark=") >= 30
+    pages = _site(tmp_path)
+    assert pages["company.html"].count("data-follow-mark=") >= 30
+    company_pages = sorted((tmp_path / "site").glob("company-*.html"))
+    assert len(company_pages) >= 30
+    for page in company_pages:
+        html = page.read_text(encoding="utf-8")
+        buttons = re.findall(r'class="follow-btn" type="button" data-click="toggleFollow" data-ticker="([A-Z.\-]+)"', html)
+        assert len(buttons) == 1 and page.name == f"company-{buttons[0].lower()}.html", page.name
 
 
 def test_follows_stay_in_the_browser():

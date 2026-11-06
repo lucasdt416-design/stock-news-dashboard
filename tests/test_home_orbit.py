@@ -33,7 +33,7 @@ def test_required_ids_and_real_links_are_in_the_html(tmp_path):
     html = _render(tmp_path)
     for dom_id in REQUIRED_IDS:
         assert f'id="{dom_id}"' in html
-    links = re.findall(r'class="orbit-chip" href="company\.html\?ticker=([A-Z.\-]+)"', html)
+    links = re.findall(r'class="orbit-chip" href="company-([a-z0-9-]+)\.html"', html)
     assert len(links) >= 30, "every watchlist company stays reachable from the list"
     assert 'href="company.html"' in html, "Browse all companies"
     assert 'hero-orbit-stage orbit-static"' in html, "no-JS visitors must get the static grid"
@@ -134,7 +134,7 @@ def test_no_price_data_draws_no_moves_rather_than_fake_zeros(tmp_path):
 
 def test_map_runs_best_to_worst_and_counts_up_and_down(tmp_path):
     html = _render_with(tmp_path, _perf(("NVDA", -20.0), ("AAPL", 14.3), ("MSFT", 0.0), ("KO", 30.0)))
-    assert re.findall(r'heat-tile [^"]+" href="company\.html\?ticker=([A-Z]+)"', html) == ["KO", "AAPL", "MSFT", "NVDA"]
+    assert re.findall(r'heat-tile [^"]+" href="company-([a-z]+)\.html"', html) == ["ko", "aapl", "msft", "nvda"]
     assert ">2 up, 1 down</h2>" in html
     assert "+14.3%" in html and "-20.0%" in html
     assert 'class="orbit-move tone-down">-20.0%' in html
@@ -197,8 +197,14 @@ def test_stories_render_their_figures_and_never_the_template_takeaway(tmp_path):
     get_db_connection(db).close()
     out = tmp_path / "site" / "index.html"
     render_dashboard(output_path=str(out), db_path=db, performance_data={})
-    for page in ("index", "news", "company"):
+    for page in ("index", "news", "company-nvda"):
         html = (tmp_path / "site" / f"{page}.html").read_text(encoding="utf-8")
         body = html[:html.rindex("<script>")]
         assert '<strong class="fig">$5 billion</strong>' in body, page
         assert "Antitrust scrutiny." not in body, page
+
+
+def test_search_results_unhide_when_shown():
+    """Hidden always wins in the stylesheet, so showing the results has to drop the attribute too."""
+    assert "liveResults.hidden = false; liveResults.style.display = 'block';" in INDEX_TEMPLATE
+    assert '<div id="liveSearchResults" hidden></div>' in INDEX_TEMPLATE

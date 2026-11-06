@@ -90,30 +90,21 @@ class TestCompanyViewAndRender(unittest.TestCase):
     def tearDownClass(cls):
         cls.temp_dir.cleanup()
 
+    def _read(self, name):
+        with open(os.path.join(self.site_dir, name), "r", encoding="utf-8") as f:
+            return f.read()
+
     def test_company_html_exists(self):
         company_path = os.path.join(self.site_dir, "company.html")
         self.assertTrue(os.path.exists(company_path), "company.html must be generated")
+        content = self._read("company.html")
 
-        with open(company_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        # Verify company switcher strip
+        # The directory lists every company, each a link to its own page
         self.assertIn("company-strip", content)
         self.assertIn("data-ticker=\"BA\"", content)
         self.assertIn("data-ticker=\"NVDA\"", content)
         self.assertIn("data-ticker=\"AAPL\"", content)
-
-        # Verify sections for Boeing (BA)
-        self.assertIn("id=\"profile-BA\"", content)
-        self.assertIn("The Boeing Company", content)
-        self.assertIn("Customers, suppliers and competitors", content)
-        self.assertIn("What in the economy affects it", content)
-        self.assertIn("Coming up", content)
-        self.assertIn("company-card-deck", content)
-
-        # Verify human-readable Newsroom links
-        self.assertIn("https://nvidianews.nvidia.com", content)
-        self.assertIn("Newsroom ↗", content)
+        self.assertIn('href="company-ba.html"', content)
 
         # Verify company card layout structure & classes
         self.assertIn("company-browser-grid", content)
@@ -131,6 +122,26 @@ class TestCompanyViewAndRender(unittest.TestCase):
         self.assertIn("Costco Wholesale Corporation", content)
         self.assertIn("The Procter &amp; Gamble Company", content)
 
+    def test_each_company_has_its_own_page(self):
+        # Verify sections for Boeing (BA)
+        content = self._read("company-ba.html")
+        self.assertIn("id=\"profile-BA\"", content)
+        self.assertIn("The Boeing Company", content)
+        self.assertIn("Customers, suppliers and competitors", content)
+        self.assertIn("What in the economy affects it", content)
+        self.assertIn("Coming up", content)
+        self.assertIn("company-card-deck", content)
+        self.assertNotIn('id="profile-NVDA"', content, "a company page holds one company")
+        self.assertIn("Boeing Secures Commercial Airline Delivery Order", content)
+        self.assertNotIn("NVIDIA Files Current Report", content)
+
+        # Verify human-readable Newsroom links
+        nvda = self._read("company-nvda.html")
+        self.assertIn("https://nvidianews.nvidia.com", nvda)
+        self.assertIn("Newsroom ↗", nvda)
+        self.assertIn("Q3 FY2027", nvda, "its own events")
+        self.assertNotIn("Q3 FY2027", content)
+
     def test_ticker_links_across_pages(self):
         index_path = os.path.join(self.site_dir, "index.html")
         news_path = os.path.join(self.site_dir, "news.html")
@@ -139,25 +150,25 @@ class TestCompanyViewAndRender(unittest.TestCase):
 
         with open(index_path, "r", encoding="utf-8") as f:
             index_html = f.read()
-        self.assertIn("company.html?ticker=", index_html)
+        self.assertRegex(index_html, r'href="company-[a-z0-9-]+\.html"')
 
         with open(news_path, "r", encoding="utf-8") as f:
             news_html = f.read()
-        self.assertIn("company.html?ticker=", news_html)
+        self.assertIn('href="company-nvda.html"', news_html)
         self.assertIn("data-val=\"news_media\"", news_html)
         self.assertIn("News Media", news_html)
 
         with open(calendar_path, "r", encoding="utf-8") as f:
             cal_html = f.read()
-        self.assertIn("company.html?ticker=", cal_html)
+        self.assertIn('href="company-nvda.html"', cal_html)
 
         with open(economic_path, "r", encoding="utf-8") as f:
             econ_html = f.read()
-        self.assertIn("company.html?ticker=", econ_html)
+        self.assertRegex(econ_html, r'href="company-[a-z0-9-]+\.html"')
 
     def test_recently_viewed_section(self):
         index_path = os.path.join(self.site_dir, "index.html")
-        company_path = os.path.join(self.site_dir, "company.html")
+        company_path = os.path.join(self.site_dir, "company-nvda.html")
 
         with open(index_path, "r", encoding="utf-8") as f:
             index_html = f.read()

@@ -12,13 +12,14 @@ import pytest
 from pipeline.db import init_db
 from pipeline.persist import save_news_items
 from pipeline.render import (
-    ANALYTICS_TEMPLATE, CALENDAR_TEMPLATE, COMPANY_TEMPLATE, ECONOMIC_TEMPLATE, INDEX_TEMPLATE, NEWS_TEMPLATE,
-    SETTINGS_TEMPLATE,
-    _safe_url, _script_json, render_dashboard,
+    ANALYTICS_TEMPLATE, CALENDAR_TEMPLATE, COMPANY_PAGE_TEMPLATE, COMPANY_TEMPLATE, ECONOMIC_TEMPLATE, INDEX_TEMPLATE,
+    NEWS_TEMPLATE, SETTINGS_TEMPLATE,
+    _company_url_for, _safe_url, _script_json, render_dashboard,
 )
 
-TEMPLATES = [INDEX_TEMPLATE, ANALYTICS_TEMPLATE, NEWS_TEMPLATE, CALENDAR_TEMPLATE, ECONOMIC_TEMPLATE, COMPANY_TEMPLATE, SETTINGS_TEMPLATE]
-PAGES = ["index", "news", "calendar", "economic", "company", "analytics", "settings"]
+TEMPLATES = [INDEX_TEMPLATE, ANALYTICS_TEMPLATE, NEWS_TEMPLATE, CALENDAR_TEMPLATE, ECONOMIC_TEMPLATE, COMPANY_TEMPLATE,
+             COMPANY_PAGE_TEMPLATE, SETTINGS_TEMPLATE]
+PAGES = ["index", "news", "calendar", "economic", "company", "analytics", "settings", "company-nvda"]
 HOSTILE = '<img src=x onerror="window.__xss=1">'
 
 
@@ -45,7 +46,8 @@ def site(tmp_path_factory):
 
 def _policy_for(site, page):
     text = (site / "_headers").read_text(encoding="utf-8")
-    block = re.search(rf"^/{page}\.html\n  Content-Security-Policy: (.+)$", text, re.M)
+    rule = "/company-\\*" if page.startswith("company-") else rf"/{page}\.html"
+    block = re.search(rf"^{rule}\n  Content-Security-Policy: (.+)$", text, re.M)
     return block.group(1)
 
 
@@ -113,7 +115,7 @@ def test_headers_are_strict_and_short_enough_for_cloudflare(site):
 def test_only_pages_with_charts_may_load_the_cdn(site):
     for page in PAGES:
         policy = _policy_for(site, page)
-        assert ("cdn.jsdelivr.net" in policy) == (page in ("analytics", "company"))
+        assert ("cdn.jsdelivr.net" in policy) == (page == "analytics" or page.startswith("company-")), page
 
 
 def test_external_resources_carry_integrity_and_no_web_fonts_load(site):
@@ -154,7 +156,35 @@ def test_safe_url_allows(url):
 def test_no_template_puts_an_unchecked_value_in_an_href():
     for template in TEMPLATES:
         for value in re.findall(r'href="\{\{\s*(.+?)\s*\}\}', template):
-            assert value.startswith("safe_url("), value
+            assert value.startswith(("safe_url(", "company_url(")), value
+
+
+@pytest.mark.parametrize("symbol", ["NVDA", "nvda", "BRK.B", HOSTILE, "javascript:alert(1)", "../x", "", None, 42])
+def test_company_url_is_always_a_page_of_this_site(symbol):
+    url = _company_url_for({"NVDA", "BRK.B"})(symbol)
+    assert re.fullmatch(r"company-[a-z0-9-]+\.html|company\.html\?ticker=[A-Za-z0-9%._~-]*", url), url
+    assert _company_url_for({"NVDA"})("nvda") == "company-nvda.html"
+
+
+def test_one_rule_covers_every_company_page(site):
+    text = (site / "_headers").read_text(encoding="utf-8")
+    assert text.count("\n/company-*\n") == 1
+    pages = sorted(site.glob("company-*.html"))
+    assert len(pages) >= 30 and "/company-nvda" not in text, "no rule per company"
+    policy = _policy_for(site, "company-nvda")
+    for page in pages:
+        html = page.read_text(encoding="utf-8")
+        for block in re.findall(r"<script>(.*?)</script>", html, re.S):
+            digest = base64.b64encode(hashlib.sha256(block.encode("utf-8")).digest()).decode()
+            assert f"'sha256-{digest}'" in policy, page.name
+    assert len(re.findall(r"^\S", text, re.M)) < 100, "Cloudflare allows 100 rules"
+
+
+def test_data_blocks_are_json_only():
+    """Typed script blocks are left out of the hashes, so only data blocks may have a type."""
+    for template in TEMPLATES:
+        for tag in re.findall(r"<script\b[^>]*\btype=[^>]*>", template):
+            assert 'type="application/json"' in tag, tag
 
 
 @pytest.mark.parametrize("text", ["</script><script>x</script>", "<!--<script>", "</SCRIPT>", "  "])
@@ -171,8 +201,10 @@ def test_hostile_data_is_inert_in_rendered_html(site, page):
     tags = _tags(html)
     assert not [t for t, attrs in tags if t == "img"], "hostile <img> became a real element"
     assert "<script>window.__xss" not in html
-    inline = [t for t, attrs in tags if t == "script" and "src" not in attrs]
+    inline = [t for t, attrs in tags if t == "script" and "src" not in attrs and attrs.get("type") != "application/json"]
     assert len(inline) == 2, "only the theme boot and page scripts may exist"
+    data = [attrs for t, attrs in tags if t == "script" and attrs.get("type") == "application/json"]
+    assert len(data) <= 1
     for tag, attrs in tags:
         if tag == "a":
             assert not re.match(r"\s*(javascript|data|vbscript):", attrs.get("href") or "", re.I), attrs

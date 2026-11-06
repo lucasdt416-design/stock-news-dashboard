@@ -84,13 +84,18 @@ def test_insider_rollup_without_trades_says_so():
     assert _insider_rollup("AAPL", []) is None
 
 
-def _site(tmp_path, items):
+def _site(tmp_path, items, symbol="AAPL"):
     db = str(tmp_path / "t.db")
     init_db(db)
     save_news_items(items, db_path=db)
     out = tmp_path / "site" / "index.html"
     render_dashboard(output_path=str(out), db_path=db, performance_data={})
-    return (out.parent / "company.html").read_text(encoding="utf-8")
+    return (out.parent / f"company-{symbol.lower()}.html").read_text(encoding="utf-8")
+
+
+def _profile(html, symbol):
+    start = html.index(f'id="profile-{symbol}"')
+    return html[start:html.index("</article>", start)]
 
 
 def test_company_page_has_tabs_results_and_rollup(tmp_path):
@@ -98,7 +103,7 @@ def test_company_page_has_tabs_results_and_rollup(tmp_path):
         _filing("k", "AAPL", "10-K", TENK),
         _trade("t", "Jennifer Newstead (SVP) sold 2,399 shares at $325.75, about $781,474, under a pre-arranged trading plan."),
     ])
-    profile = html[html.index('id="profile-AAPL"'):html.index('id="profile-', html.index('id="profile-AAPL"') + 20)]
+    profile = _profile(html, "AAPL")
     assert "Latest results" in profile and "$478.8 billion" in profile
     for tab in ("news", "filings", "insider"):
         assert f'data-click="setCompanyTab" data-ticker="AAPL" data-tab="{tab}"' in profile
@@ -109,6 +114,6 @@ def test_company_page_has_tabs_results_and_rollup(tmp_path):
 
 
 def test_company_page_without_a_report_shows_no_results_section(tmp_path):
-    html = _site(tmp_path, [])
-    profile = html[html.index('id="profile-NVDA"'):html.index('id="profile-', html.index('id="profile-NVDA"') + 20)]
+    html = _site(tmp_path, [], "NVDA")
+    profile = _profile(html, "NVDA")
     assert "Latest results" not in profile

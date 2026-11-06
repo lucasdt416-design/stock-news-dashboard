@@ -10,6 +10,7 @@ Usage:
 """
 
 import argparse
+import re
 import http.server
 import json
 import os
@@ -26,7 +27,7 @@ PAGES = [
     ("calendar", "calendar.html"),
     ("economic", "economic.html"),
     ("directory", "company.html"),
-    ("company", "company.html?ticker=NVDA"),
+    ("company", "company-nvda.html"),
     ("analytics", "analytics.html"),
     ("settings", "settings.html"),
 ]
@@ -117,10 +118,19 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
     def end_headers(self):
-        path = self.path.split("?")[0]
-        for name, value in self.header_rules.get("/*", []) + self.header_rules.get(path, []):
+        for name, value in matching_headers(self.header_rules, self.path.split("?")[0]):
             self.send_header(name, value)
         super().end_headers()
+
+
+def matching_headers(rules, path):
+    """Every rule that matches, as Cloudflare applies them: exact paths, and * matching anything."""
+    found = []
+    for pattern, headers in rules.items():
+        regex = "^" + re.escape(pattern).replace("\\*", ".*") + "$"
+        if re.match(regex, path):
+            found += headers
+    return found
 
 
 def serve(site):

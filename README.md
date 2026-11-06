@@ -126,6 +126,15 @@ pip install -r requirements.txt
 ### 2. Configure Watchlist & Keys (Optional)
 
 - Edit tickers in `data/watchlist.yaml` (supports any US-listed ticker with CIK and IR feed URL).
+- Add companies by ticker, and the name, SEC number and sector are filled in from the SEC's free lists:
+  ```bash
+  python scripts/add_companies.py PEP NFLX LLY --dry-run   # look first
+  python scripts/add_companies.py PEP NFLX LLY             # then add
+  python scripts/add_companies.py "PEP=PepsiCo, Inc."      # pick the name yourself
+  ```
+  Each company gets its own page (`company-pep.html`), Home and the Feed carry only the last 30 days,
+  and Finnhub calls are paced to the free plan's limit, so the site stays quick with hundreds of companies.
+  A daily run with 300 companies takes roughly 12 extra minutes for that pacing.
 - Set your Gemini API key (optional — includes built-in offline heuristic fallback):
   ```bash
   export GEMINI_API_KEY="your-gemini-api-key"
