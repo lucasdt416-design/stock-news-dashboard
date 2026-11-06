@@ -1541,6 +1541,32 @@ SHARED_CSS = """
       .news-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.5rem; }
       .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
     }
+
+    /* ---- Following ---- */
+    .view-tabs { display: flex; justify-content: center; gap: 1.75rem; margin: 0.5rem 0 1.75rem; border-bottom: 1px solid var(--border-subtle); }
+    .view-tabs-left { justify-content: flex-start; margin: 0 0 1rem; }
+    .view-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 0.55rem 0; min-height: 44px; font: inherit; font-size: 0.98rem; color: var(--text-muted); cursor: pointer; }
+    .view-tab:hover { color: var(--text-primary); }
+    .view-tab.active { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--text-primary); }
+    .view-tab:focus-visible, .follow-btn:focus-visible, .link-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .follow-btn { flex: none; border: none; border-radius: var(--radius-full); padding: 0.4rem 1rem; min-height: 32px; font: inherit; font-size: 0.86rem; font-weight: 600; background: var(--accent); color: var(--on-accent); cursor: pointer; transition: background var(--transition-fast), color var(--transition-fast); }
+    .follow-btn[aria-pressed="true"] { background: var(--bg-hover); color: var(--text-primary); }
+    .company-hero-title-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .follow-footer { margin-top: 0.75rem; font-size: 0.84rem; color: var(--text-muted); }
+    .follow-footer a { color: var(--text-secondary); }
+    .link-btn { background: none; border: none; padding: 0; font: inherit; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+    .link-btn:hover, .follow-footer a:hover { color: var(--text-primary); }
+    .follow-reason { margin-top: 0.3rem; font-size: 0.78rem; color: var(--text-muted); }
+    .follow-suggest { list-style: none; margin: 0.75rem 0 1rem; padding: 0; }
+    .follow-suggest-title { margin-top: 2rem; font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+    .follow-suggest li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .follow-suggest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+    .company-browser-card.is-followed .company-browser-card-sec::after { content: " · Following"; color: var(--accent); }
+    .setup-banner { position: fixed; z-index: 400; left: 50%; bottom: 1.25rem; transform: translateX(-50%); width: min(36rem, calc(100% - 2rem)); display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem 1rem; padding: 0.9rem 1rem; border-radius: var(--radius-lg); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-dropdown); color: var(--text-primary); font-size: 0.92rem; }
+    .setup-banner p { flex: 1 1 100%; margin: 0; }
+    @media (max-width: 1024px) { .setup-banner { bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); } }
+    .setup-yes { border: none; border-radius: var(--radius-full); padding: 0.45rem 1.1rem; min-height: 36px; font: inherit; font-weight: 600; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+    .setup-no { background: none; border: none; min-height: 36px; font: inherit; color: var(--text-secondary); cursor: pointer; }
 """
 
 # ==============================================================================
@@ -1606,6 +1632,9 @@ const PAGE_ACTIONS = {
   click: {
     clearFeedFilters: () => clearFeedFilters(),
     clearRecentlyViewed: () => clearRecentlyViewed(),
+    copySetupLink: el => copySetupLink(el),
+    acceptSetupLink: () => acceptSetupLink(),
+    dismissSetupLink: () => dismissSetupLink(),
     closeMobileNav: () => closeMobileNav(),
     cycleTheme: () => cycleTheme(),
     filterCalendar: el => filterCalendar(el.dataset.val, el),
@@ -1620,6 +1649,8 @@ const PAGE_ACTIONS = {
     sortRows: el => sortRows(el.dataset.sort),
     switchCompany: el => switchCompany(el.dataset.ticker),
     toggleFeedTickerDropdown: () => toggleFeedTickerDropdown(),
+    toggleFollow: el => toggleFollow(el.dataset.ticker),
+    setView: el => setView(el.dataset.view),
     toggleMobileNav: () => toggleMobileNav(),
   },
   input: {
@@ -1765,6 +1796,176 @@ document.addEventListener('keydown', (e) => {
     if (typeof closeSearchDropdown === 'function') closeSearchDropdown();
   }
 });
+
+// ---- Following ------------------------------------------------------------------------------
+// The companies someone follows and the view they last chose live in this browser only
+// (localStorage). Nothing is sent anywhere. A setup link carries them to another device.
+const KNOWN_SYMBOLS = new Set({{ watchlist_companies|map(attribute='symbol')|list|tojson }});
+const FOLLOW_KEY = 'stockpulse_follow';
+
+function readFollowState() {
+  let raw = {};
+  try {
+    raw = JSON.parse(localStorage.getItem(FOLLOW_KEY) || '{}') || {};
+  } catch (e) { raw = {}; }
+  const symbols = Array.isArray(raw.symbols)
+    ? [...new Set(raw.symbols.map(s => String(s).toUpperCase()).filter(s => KNOWN_SYMBOLS.has(s)))]
+    : [];
+  const view = raw.view === 'foryou' || raw.view === 'all' ? raw.view : '';
+  return { symbols, view };
+}
+
+function writeFollowState(state) {
+  try {
+    localStorage.setItem(FOLLOW_KEY, JSON.stringify({ symbols: state.symbols, view: state.view }));
+  } catch (e) { /* storage may be blocked; follows then last for this page only */ }
+  followMemory = state;
+  document.dispatchEvent(new Event('followchange'));
+}
+
+let followMemory = null;
+function followState() {
+  if (!followMemory) followMemory = readFollowState();
+  return followMemory;
+}
+
+function followedSet() {
+  return new Set(followState().symbols);
+}
+
+// With nothing followed there is nothing "for you" yet, so everything shows.
+function currentView() {
+  const state = followState();
+  if (state.view) return state.view;
+  return state.symbols.length ? 'foryou' : 'all';
+}
+
+function setView(view) {
+  if (view !== 'foryou' && view !== 'all') return;
+  writeFollowState({ ...followState(), view });
+}
+
+function toggleFollow(symbol) {
+  const sym = String(symbol || '').toUpperCase();
+  if (!KNOWN_SYMBOLS.has(sym)) return;
+  const state = followState();
+  const symbols = state.symbols.includes(sym) ? state.symbols.filter(s => s !== sym) : [...state.symbols, sym];
+  writeFollowState({ ...state, symbols });
+}
+
+function syncFollowUi() {
+  const follows = followedSet();
+  document.querySelectorAll('.follow-btn[data-ticker]').forEach(btn => {
+    const on = follows.has(btn.dataset.ticker);
+    btn.setAttribute('aria-pressed', String(on));
+    btn.textContent = on ? 'Following' : 'Follow';
+  });
+  document.querySelectorAll('[data-follow-mark]').forEach(el => {
+    el.classList.toggle('is-followed', follows.has(el.dataset.followMark));
+  });
+  const view = currentView();
+  document.querySelectorAll('.view-tab[data-view]').forEach(tab => {
+    const on = tab.dataset.view === view;
+    tab.classList.toggle('active', on);
+    tab.setAttribute('aria-selected', String(on));
+  });
+  document.querySelectorAll('[data-follow-count]').forEach(el => {
+    const n = follows.size;
+    el.textContent = n ? `Following ${n} ${n === 1 ? 'company' : 'companies'}` : 'Not following any companies yet';
+  });
+}
+
+function setupLinkUrl() {
+  const state = followState();
+  const base = new URL('index.html', window.location.href);
+  base.hash = 'follow=' + state.symbols.map(encodeURIComponent).join(',');
+  return base.href;
+}
+
+function copySetupLink(btn) {
+  const url = setupLinkUrl();
+  const done = text => {
+    if (!btn) return;
+    const before = btn.dataset.label || btn.textContent;
+    btn.dataset.label = before;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = before; }, 2400);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(() => done('Link copied'), () => window.prompt('Copy this link:', url));
+  } else {
+    window.prompt('Copy this link:', url);
+  }
+}
+
+// A setup link (index.html#follow=NVDA,AAPL) asks before it replaces anything.
+let pendingSetup = null;
+function readSetupLink() {
+  const m = /^#follow=([A-Za-z0-9.,%-]*)$/.exec(window.location.hash || '');
+  if (!m) return null;
+  const symbols = [...new Set(decodeURIComponent(m[1]).split(',').map(s => s.trim().toUpperCase()).filter(s => KNOWN_SYMBOLS.has(s)))];
+  return symbols;
+}
+
+function clearSetupHash() {
+  try {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  } catch (e) { window.location.hash = ''; }
+}
+
+function acceptSetupLink() {
+  if (pendingSetup) writeFollowState({ symbols: pendingSetup, view: pendingSetup.length ? 'foryou' : 'all' });
+  dismissSetupLink();
+}
+
+function dismissSetupLink() {
+  pendingSetup = null;
+  document.getElementById('setupLinkBanner')?.remove();
+  clearSetupHash();
+}
+
+function offerSetupLink() {
+  const symbols = readSetupLink();
+  if (!symbols) return;
+  const current = followState().symbols;
+  if (symbols.length === current.length && symbols.every(s => current.includes(s))) {
+    clearSetupHash();
+    return;
+  }
+  pendingSetup = symbols;
+  const main = document.querySelector('.app-main');
+  if (!main) return;
+  const bar = document.createElement('div');
+  bar.className = 'setup-banner';
+  bar.id = 'setupLinkBanner';
+  bar.setAttribute('role', 'region');
+  bar.setAttribute('aria-label', 'Use a setup link');
+  const text = document.createElement('p');
+  text.textContent = symbols.length
+    ? `Use this setup? It follows ${symbols.join(', ')}${current.length ? ', and replaces the ' + current.length + ' you follow now' : ''}.`
+    : 'This setup link follows no companies.';
+  const yes = document.createElement('button');
+  yes.type = 'button';
+  yes.className = 'setup-yes';
+  yes.dataset.click = 'acceptSetupLink';
+  yes.textContent = 'Use it';
+  const no = document.createElement('button');
+  no.type = 'button';
+  no.className = 'setup-no';
+  no.dataset.click = 'dismissSetupLink';
+  no.textContent = 'No thanks';
+  bar.append(text, yes, no);
+  main.prepend(bar);
+}
+
+document.addEventListener('followchange', syncFollowUi);
+document.addEventListener('DOMContentLoaded', () => { syncFollowUi(); offerSetupLink(); });
+// Another tab changed the follows: pick that up here too.
+window.addEventListener('storage', e => {
+  if (e.key !== FOLLOW_KEY) return;
+  followMemory = null;
+  document.dispatchEvent(new Event('followchange'));
+});
 """
 
 
@@ -1842,6 +2043,11 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <a class="orbit-browse" href="company.html">Browse all {{ watchlist_companies|length }} companies</a>
       </section>
 
+      <div class="view-tabs" role="tablist" aria-label="Which stories to show">
+        <button class="view-tab" id="viewTabForYou" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+        <button class="view-tab active" id="viewTabAll" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
+      </div>
+
       {% if watchlist_moves %}
       {% set risers = watchlist_moves|selectattr('move_pct', 'gt', 0)|list|length %}
       {% set fallers = watchlist_moves|selectattr('move_pct', 'lt', 0)|list|length %}
@@ -1850,7 +2056,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <p class="heat-sub">Your watchlist over the last 3 months, best to worst.</p>
         <ul class="heat-grid">
           {% for co in watchlist_moves %}
-          <li><a class="heat-tile {{ heat_class(co.move_pct) }}" href="company.html?ticker={{ co.symbol|urlencode }}" title="{{ co.name }}"><span class="heat-ticker">{{ co.symbol }}</span><span class="heat-move">{{ "%+.1f"|format(co.move_pct) }}%</span></a></li>
+          <li data-symbol="{{ co.symbol }}" data-move="{{ co.move_pct }}"><a class="heat-tile {{ heat_class(co.move_pct) }}" href="company.html?ticker={{ co.symbol|urlencode }}" title="{{ co.name }}"><span class="heat-ticker">{{ co.symbol }}</span><span class="heat-move">{{ "%+.1f"|format(co.move_pct) }}%</span></a></li>
           {% endfor %}
         </ul>
       </section>
@@ -1859,6 +2065,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <div class="home-below">
         <section class="home-stories" aria-labelledby="homeStoriesHeading">
           <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
+          <div id="topForYou" hidden></div>
+          <div id="topEverything">
           {% if priority_items %}
           <ol class="top-list">
             {% for it in priority_items[:5] %}
@@ -1875,7 +2083,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           {% else %}
           <p class="home-empty">No stories yet. They appear here after the next pipeline run.</p>
           {% endif %}
-          <a class="home-more" href="news.html">All {{ stats.total }} stories</a>
+          </div>
+          <a class="home-more" id="homeMoreLink" href="news.html">All {{ stats.total }} stories</a>
+          <p class="follow-footer"><span data-follow-count></span> · <a href="company.html">Edit</a> · <button class="link-btn" type="button" data-click="copySetupLink">Copy setup link</button></p>
         </section>
 
         <nav class="home-doors" aria-label="Sections">
@@ -1983,6 +2193,111 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       orbit.refresh();
     }
 
+    // ---- For you / Everything on the home page ----
+    // Same rule as figures() on the server: money and percentages in bold, after escaping.
+    const FIGURES = /(?:US)?[$€£]\\s?\\d(?:[\\d,.]*\\d)?(?:\\s?(?:million|billion|trillion|bn)\\b)?|[+\\-−]?\\d[\\d,.]*\\s?(?:%|percent\\b)|\\b\\d[\\d,.]*\\s(?:million|billion|trillion)\\b/gi;
+    function figuresHtml(text) {
+      return escapeHtml(text).replace(FIGURES, m => `<strong class="fig">${m}</strong>`);
+    }
+
+    // Why a story is in "For you", in words.
+    function followReason(item, follows) {
+      if (follows.has(item.ticker)) return `You follow ${item.ticker}`;
+      const linked = (item.related_tickers_list || []).filter(t => follows.has(t));
+      return linked.length ? `Mentions ${linked.slice(0, 2).join(' and ')}, which you follow` : '';
+    }
+
+    function storiesFor(follows, limit) {
+      return (allItems || [])
+        .filter(it => follows.has(it.ticker) || (it.related_tickers_list || []).some(t => follows.has(t)))
+        .sort((a, b) => (b.score - a.score) || String(b.published_date).localeCompare(String(a.published_date)))
+        .slice(0, limit);
+    }
+
+    function topRowHtml(it, i, follows) {
+      const reason = followReason(it, follows);
+      return `
+        <li class="top-row${i === 0 ? ' is-lead' : ''}">
+          <a class="top-ticker" href="company.html?ticker=${encodeURIComponent(it.ticker)}">${escapeHtml(it.ticker)}</a>
+          <div class="top-body">
+            <a class="top-title" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.clean_headline || it.headline)}</a>
+            ${it.story_text ? `<p class="top-summary">${figuresHtml(it.story_text)}</p>` : ''}
+            ${it.ai_summary ? `<p class="feed-takeaway">${figuresHtml(it.ai_summary)}</p>` : ''}
+            ${reason ? `<p class="follow-reason">${escapeHtml(reason)}</p>` : ''}
+          </div>
+          <span class="top-date">${escapeHtml(shortDay(it.published_date))}</span>
+        </li>`;
+    }
+
+    // Companies with the most going on, one tap each. Shown until a few are followed.
+    function suggestionsHtml(follows) {
+      const counts = {};
+      (allItems || []).forEach(it => { counts[it.ticker] = (counts[it.ticker] || 0) + 1; });
+      const names = {};
+      (watchlistCompanies || []).forEach(c => { names[c.symbol] = c.name; });
+      const picks = Object.keys(counts)
+        .filter(s => names[s] && !follows.has(s))
+        .sort((a, b) => counts[b] - counts[a])
+        .slice(0, follows.size ? 4 : 8);
+      const intro = follows.size
+        ? '<h3 class="follow-suggest-title">More companies to follow</h3>'
+        : '<p class="home-empty">Follow a few companies and their stories gather here, most important first.</p>';
+      return `
+        ${intro}
+        <ul class="follow-suggest">
+          ${picks.map(s => `<li><span class="follow-suggest-name"><span class="ticker-badge">${escapeHtml(s)}</span> ${escapeHtml(names[s])}</span><button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="${escapeHtml(s)}" aria-pressed="false">Follow</button></li>`).join('')}
+        </ul>
+        <a class="home-more" href="company.html">See all ${(watchlistCompanies || []).length} companies</a>`;
+    }
+
+    function renderHomeView() {
+      const view = currentView();
+      const follows = followedSet();
+      const forYou = view === 'foryou';
+      const mine = document.getElementById('topForYou');
+      const everything = document.getElementById('topEverything');
+      const heading = document.getElementById('homeStoriesHeading');
+      const more = document.getElementById('homeMoreLink');
+      if (!mine || !everything) return;
+
+      everything.hidden = forYou;
+      mine.hidden = !forYou;
+      if (heading) heading.textContent = forYou ? 'Top stories for you' : 'Top stories';
+      if (more) more.hidden = forYou && !follows.size;
+      if (forYou) {
+        if (!follows.size) {
+          mine.innerHTML = suggestionsHtml(follows);
+        } else {
+          const rows = storiesFor(follows, 5);
+          mine.innerHTML = (rows.length
+            ? `<ol class="top-list">${rows.map((it, i) => topRowHtml(it, i, follows)).join('')}</ol>`
+            : '<p class="home-empty">No stories yet about the companies you follow.</p>')
+            + (follows.size < 3 ? suggestionsHtml(follows) : '');
+        }
+      }
+
+      // The 3-month grid narrows to followed companies too.
+      const tiles = [...document.querySelectorAll('.heat-grid li[data-symbol]')];
+      const narrow = forYou && follows.size > 0;
+      let up = 0;
+      let down = 0;
+      tiles.forEach(li => {
+        const show = !narrow || follows.has(li.dataset.symbol);
+        li.hidden = !show;
+        const move = parseFloat(li.dataset.move);
+        if (show && move > 0) up += 1;
+        if (show && move < 0) down += 1;
+      });
+      const heatHeading = document.getElementById('homeHeatHeading');
+      if (heatHeading && tiles.length) heatHeading.textContent = `${up} up, ${down} down`;
+      const heatSub = document.querySelector('.heat-sub');
+      if (heatSub) heatSub.textContent = narrow ? 'The companies you follow over the last 3 months, best to worst.' : 'Your watchlist over the last 3 months, best to worst.';
+      syncFollowUi();
+    }
+
+    document.addEventListener('followchange', () => { renderHomeView(); if (typeof orbit !== 'undefined') orbit.refresh(); });
+    document.addEventListener('DOMContentLoaded', renderHomeView);
+
     // A ring of real company links orbiting the search bar. The chips are ordinary links in an
     // ordinary list: this script only positions them, and without it they stay a static grid.
     const orbit = (function createOrbit() {
@@ -2030,12 +2345,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         return stage.clientWidth < 640 ? 6 : (stage.clientWidth < 1025 ? 10 : 12);
       }
 
-      // Recently viewed companies join the ring first, then the biggest stories fill it up.
+      // Followed companies join the ring first, then recently viewed ones, then the biggest stories.
       function chooseVisible() {
         const count = slotCount();
         const chosen = [];
         const add = c => { if (c && !chosen.includes(c) && chosen.length < count) chosen.push(c); };
         matches.forEach(add);
+        followState().symbols.forEach(sym => add(bySymbol.get(sym)));
         readRecentlyViewed().slice(0, 4).forEach(item => add(bySymbol.get(item.symbol)));
         all.forEach(add);
         all.forEach(c => { c.el.hidden = !chosen.includes(c); });
@@ -3432,6 +3748,12 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <p class="page-standfirst">{{ items|length }} stories, most important first.</p>
       </header>
 
+      <div class="view-tabs view-tabs-left" role="tablist" aria-label="Which stories to show">
+        <button class="view-tab" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+        <button class="view-tab active" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
+      </div>
+      <p class="follow-footer" id="feedFollowLine" hidden><span data-follow-count></span> · <a href="company.html">Edit</a> · <button class="link-btn" type="button" data-click="copySetupLink">Copy setup link</button></p>
+
       <div class="feed-toolbar">
         <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and summaries" data-input="filterItems">
         <div class="feed-toolbar-row">
@@ -3667,6 +3989,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     function filterItems() {
       const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
       const rows = document.querySelectorAll('.news-row');
+      const follows = followedSet();
+      const forYou = currentView() === 'foryou';
+      const line = document.getElementById('feedFollowLine');
+      if (line) line.hidden = !forYou;
 
       rows.forEach(row => {
         const rowTicker = row.getAttribute('data-ticker');
@@ -3681,8 +4007,9 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         let matchCat = (currentCategory === 'ALL') || (rowCategory === currentCategory);
         let matchSrc = (currentSource === 'ALL') || (rowSource === currentSource);
         let matchQuery = !q || rowText.includes(q);
+        const matchView = !forYou || rowTickers.some(t => follows.has(t));
 
-        row.dataset.match = (matchSector && matchTicker && matchCat && matchSrc && matchQuery) ? '1' : '0';
+        row.dataset.match = (matchView && matchSector && matchTicker && matchCat && matchSrc && matchQuery) ? '1' : '0';
       });
 
       renderGroups();
@@ -3785,7 +4112,13 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const clearBtn = document.getElementById('feedClearFilters');
       if (clearBtn) clearBtn.hidden = !active;
       const empty = document.getElementById('feedEmpty');
-      if (empty) empty.hidden = shown !== 0;
+      if (empty) {
+        empty.hidden = shown !== 0;
+        const noFollows = currentView() === 'foryou' && followedSet().size === 0;
+        empty.innerHTML = noFollows
+          ? 'You aren’t following any companies yet. Open a company and tap Follow, or switch to Everything.'
+          : 'No stories match these filters.';
+      }
     }
 
     function sortRows(criterion) {
@@ -3829,6 +4162,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       sortRows('score');
       filterItems();
     });
+
+    document.addEventListener('followchange', () => filterItems());
   </script>
 </body>
 </html>
@@ -4287,6 +4622,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                     data-ticker="{{ co.symbol }}"
                     data-name="{{ co.name|lower }}"
                     data-sector="{{ co.macro_sector|lower }} {{ co.sector|replace('_', ' ')|lower }}"
+                    data-follow-mark="{{ co.symbol }}"
                     data-click="switchCompany">
               <span class="company-browser-card-left">
                 <span class="ticker-badge">{{ co.symbol }}</span>
@@ -4334,7 +4670,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       <article class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}"{% if not loop.first %} hidden{% endif %}>
         <header class="company-hero-box">
           <p class="company-hero-symbol">{{ co.symbol }} · {{ co.sector|replace('_', ' ')|title }}</p>
-          <h2 class="company-hero-name">{{ co.name }}</h2>
+          <div class="company-hero-title-row">
+            <h2 class="company-hero-name">{{ co.name }}</h2>
+            <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ co.symbol }}" aria-pressed="false">Follow</button>
+          </div>
           {% set price = ((performance_data or {}).get('companies') or {}).get(co.symbol, {}).get('target', {}).get('latest_price') %}
           {% if co.move_pct is not none and price is number %}
           <p class="company-price"><span class="company-price-val">${{ "%.2f"|format(price) }}</span> <span class="company-price-move {{ 'tone-up' if co.move_pct >= 0 else 'tone-down' }}">{{ "%+.2f"|format(co.move_pct) }}%</span> <span class="company-price-span">over 3 months</span></p>
