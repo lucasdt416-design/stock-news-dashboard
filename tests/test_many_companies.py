@@ -40,6 +40,13 @@ def test_every_industry_lands_in_a_real_sector():
     assert sector_for_sic(5810) == "consumer_discretionary_restaurants"
     assert sector_for_sic("") == "other" and sector_for_sic(None) == "other" and sector_for_sic(9999) == "other"
     assert get_company_macro_sector("ZZZZ", "") == "Other", "an unknown company is not filed under Technology"
+    expected = {"telecommunications": "Telecom", "retail_ecommerce": "Retail", "semiconductors": "Technology",
+                "software_cloud": "Technology", "utilities_power": "Utilities", "energy_oil_gas": "Energy",
+                "aerospace_defense": "Aerospace", "financial_insurance": "Finance", "healthcare_services": "Healthcare",
+                "industrials_transport": "Industrials", "consumer_staples_food": "Consumer Staples",
+                "consumer_goods_autos": "Consumer Goods", "materials_metals": "Materials", "real_estate_reit": "Real Estate"}
+    for slug, sector in expected.items():
+        assert get_company_macro_sector("ZZZZ", slug) == sector, slug
 
 
 def test_capital_names_are_tidied_and_mixed_case_is_left_alone():
@@ -48,6 +55,7 @@ def test_capital_names_are_tidied_and_mixed_case_is_left_alone():
     assert tidy_name("ELI LILLY & Co") == "Eli Lilly & Co."
     assert tidy_name("CSX CORP") == "CSX Corp."
     assert tidy_name("BANK OF AMERICA CORP /DE/") == "Bank of America Corp."
+    assert tidy_name("US BANCORP \\DE\\") == "US Bancorp"
     assert tidy_name("Salesforce, Inc.") == "Salesforce, Inc."
     assert tidy_name("NIKE, Inc.") == "NIKE, Inc."
 
@@ -81,7 +89,7 @@ def test_appended_entries_keep_the_watchlist_valid(tmp_path):
     path.write_text(original + entries_yaml(entries), encoding="utf-8")
     loaded = yaml.safe_load(path.read_text(encoding="utf-8"))["tickers"]
     assert loaded[-1] == {"symbol": "T", "name": 'Quote " and: colon', "cik": "0000732717",
-                          "sector": "telecommunications", "notes": "SEC industry: Telephone Communications"}
+                          "sector": "telecommunications"}
     assert loaded[-2]["symbol"] == "KO" and len(loaded) == len(yaml.safe_load(original)["tickers"]) + 2
 
 
@@ -185,3 +193,13 @@ def test_a_long_watchlist_keeps_home_and_the_feed_small(tmp_path):
     home_data = json.loads(re.search(r"const HOME_DATA = (.*?);\n", home).group(1))
     assert len(home_data["items"]) == 120 * HOME_STORIES_PER_COMPANY
     assert len(home) < 2_000_000
+
+
+def test_a_new_company_shows_no_empty_sections(tmp_path):
+    site = _big_site(tmp_path, count=2)
+    page = (site / "company-brk-b.html").read_text(encoding="utf-8")
+    body = page[page.index('id="profile-BRK.B"'):page.index("</article>")]
+    for empty in ("What in the economy affects it", "Customers, suppliers and competitors",
+                  "comparative-perf-card", 'class="company-tabs', "company-feed-search-input"):
+        assert empty not in body, empty
+    assert "No stories recorded for BRK.B in this period." in body
