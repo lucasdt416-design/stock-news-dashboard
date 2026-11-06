@@ -13,11 +13,12 @@ from pipeline.db import init_db
 from pipeline.persist import save_news_items
 from pipeline.render import (
     ANALYTICS_TEMPLATE, CALENDAR_TEMPLATE, COMPANY_TEMPLATE, ECONOMIC_TEMPLATE, INDEX_TEMPLATE, NEWS_TEMPLATE,
+    SETTINGS_TEMPLATE,
     _safe_url, _script_json, render_dashboard,
 )
 
-TEMPLATES = [INDEX_TEMPLATE, ANALYTICS_TEMPLATE, NEWS_TEMPLATE, CALENDAR_TEMPLATE, ECONOMIC_TEMPLATE, COMPANY_TEMPLATE]
-PAGES = ["index", "news", "calendar", "economic", "company", "analytics"]
+TEMPLATES = [INDEX_TEMPLATE, ANALYTICS_TEMPLATE, NEWS_TEMPLATE, CALENDAR_TEMPLATE, ECONOMIC_TEMPLATE, COMPANY_TEMPLATE, SETTINGS_TEMPLATE]
+PAGES = ["index", "news", "calendar", "economic", "company", "analytics", "settings"]
 HOSTILE = '<img src=x onerror="window.__xss=1">'
 
 

@@ -28,6 +28,7 @@ PAGES = [
     ("directory", "company.html"),
     ("company", "company.html?ticker=NVDA"),
     ("analytics", "analytics.html"),
+    ("settings", "settings.html"),
 ]
 
 SNAPSHOT_JS = """() => {

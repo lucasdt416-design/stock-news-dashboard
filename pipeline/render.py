@@ -1565,6 +1565,48 @@ SHARED_CSS = """
     .setup-banner { position: fixed; z-index: 400; left: 50%; bottom: 1.25rem; transform: translateX(-50%); width: min(36rem, calc(100% - 2rem)); display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem 1rem; padding: 0.9rem 1rem; border-radius: var(--radius-lg); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-dropdown); color: var(--text-primary); font-size: 0.92rem; }
     .setup-banner p { flex: 1 1 100%; margin: 0; }
     @media (max-width: 1024px) { .setup-banner { bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); } }
+    .picker { max-width: 46rem; margin: 0 auto 2.5rem; padding: 0 1rem; text-align: center; }
+    .picker-title { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+    .picker-sub { margin: 0.4rem 0 1.25rem; color: var(--text-secondary); }
+    .picker-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .picker .picker-chips { justify-content: center; }
+    .chip { border: 1px solid var(--border-subtle); border-radius: var(--radius-full); padding: 0.45rem 0.95rem; min-height: 40px; font: inherit; font-size: 0.92rem; background: none; color: var(--text-primary); cursor: pointer; transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast); }
+    .chip:hover { border-color: var(--text-muted); }
+    .chip[aria-pressed="true"] { background: var(--text-primary); border-color: var(--text-primary); color: var(--bg-base); }
+    .chip-count { margin-left: 0.25rem; opacity: 0.6; font-size: 0.82rem; }
+    .chip:focus-visible, .type-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .picker-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem 1.25rem; margin-top: 1.5rem; }
+    .picker-more { font-size: 0.9rem; color: var(--text-secondary); }
+    .setup-yes:disabled { opacity: 0.4; cursor: default; }
+    .settings-section { max-width: 44rem; padding: 1.75rem 0; border-top: 1px solid var(--border-subtle); }
+    .settings-heading { font-size: 1.15rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem; }
+    .settings-note { margin: 0 0 1rem; font-size: 0.9rem; color: var(--text-secondary); max-width: 36rem; }
+    .settings-subheading { margin: 1.5rem 0 0.1rem; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
+    .settings-group[hidden], .settings-group li[hidden] { display: none; }
+    .settings-group { border-bottom: 1px solid var(--border-subtle); }
+    .settings-group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; min-height: 44px; cursor: pointer; list-style: none; }
+    .settings-group-head::-webkit-details-marker { display: none; }
+    .settings-group-name { font-weight: 600; color: var(--text-primary); }
+    .settings-group-name::after { content: " +"; color: var(--text-muted); font-weight: 400; }
+    .settings-group[open] .settings-group-name::after { content: " –"; }
+    .settings-group-meta { font-size: 0.84rem; color: var(--text-muted); }
+    .settings-group .follow-suggest { margin: 0 0 0.75rem; }
+    .settings-group .follow-suggest li:last-child { border-bottom: none; }
+    .settings-co { display: flex; align-items: baseline; gap: 0.6rem; text-decoration: none; color: var(--text-primary); }
+    .settings-co:hover .settings-co-name { text-decoration: underline; text-underline-offset: 2px; }
+    .settings-co-ticker { flex: none; width: 3.4rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em; color: var(--text-muted); }
+    .settings-co-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .settings-via { margin-left: auto; font-size: 0.8rem; color: var(--text-muted); }
+    .settings-via[hidden] { display: none; }
+    .settings-toggles { list-style: none; margin: 0; padding: 0; }
+    .type-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border: none; border-bottom: 1px solid var(--border-subtle); background: none; font: inherit; text-align: left; color: var(--text-primary); cursor: pointer; }
+    .type-toggle-text { display: flex; flex-direction: column; }
+    .type-toggle-count { font-size: 0.8rem; color: var(--text-muted); }
+    .switch { position: relative; flex: none; width: 2.6rem; height: 1.55rem; border-radius: var(--radius-full); background: var(--bg-hover); transition: background var(--transition-fast); }
+    .switch::after { content: ""; position: absolute; top: 0.18rem; left: 0.18rem; width: 1.19rem; height: 1.19rem; border-radius: 50%; background: var(--bg-base); border: 1px solid var(--border-subtle); transition: transform var(--transition-fast); }
+    .type-toggle[aria-pressed="true"] .switch { background: var(--accent); }
+    .type-toggle[aria-pressed="true"] .switch::after { transform: translateX(1.05rem); border-color: transparent; }
+    .settings-actions { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center; }
     .setup-yes { border: none; border-radius: var(--radius-full); padding: 0.45rem 1.1rem; min-height: 36px; font: inherit; font-weight: 600; background: var(--accent); color: var(--on-accent); cursor: pointer; }
     .setup-no { background: none; border: none; min-height: 36px; font: inherit; color: var(--text-secondary); cursor: pointer; }
 """
@@ -1600,6 +1642,7 @@ NAVIGATION_LAYOUT_HTML = """
     <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span></a>
     <a href="economic.html" class="nav-link {% if active_page == 'economic' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Economy</span></a>
     <a href="analytics.html" class="nav-link {% if active_page == 'analytics' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Analytics</span></a>
+    <a href="settings.html" class="nav-link nav-link-feed {% if active_page == 'settings' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Your feed</span></a>
   </nav>
 
   <div class="sidebar-footer">
@@ -1650,6 +1693,12 @@ const PAGE_ACTIONS = {
     switchCompany: el => switchCompany(el.dataset.ticker),
     toggleFeedTickerDropdown: () => toggleFeedTickerDropdown(),
     toggleFollow: el => toggleFollow(el.dataset.ticker),
+    toggleSector: el => toggleSector(el.dataset.sectorToggle),
+    toggleStoryType: el => toggleStoryType(el.dataset.typeToggle),
+    resetFeed: () => resetFeed(),
+    pickSector: el => pickSector(el),
+    finishPicker: () => finishPicker(),
+    skipPicker: () => skipPicker(),
     setView: el => setView(el.dataset.view),
     toggleMobileNav: () => toggleMobileNav(),
   },
@@ -1657,6 +1706,7 @@ const PAGE_ACTIONS = {
     filterCompanyStrip: el => filterCompanyStrip(el.value),
     filterFeedTickerDropdown: el => filterFeedTickerDropdown(el.value),
     filterItems: () => filterItems(),
+    filterSettingsCompanies: el => filterSettingsCompanies(el.value),
     searchCompanyFeed: el => searchCompanyFeed(el.dataset.ticker, el.value),
   },
   change: {
@@ -1798,28 +1848,54 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---- Following ------------------------------------------------------------------------------
-// The companies someone follows and the view they last chose live in this browser only
-// (localStorage). Nothing is sent anywhere. A setup link carries them to another device.
+// What someone follows (companies and whole sectors), which story types they hide from For you,
+// and the view they last chose live in this browser only (localStorage). Nothing is sent anywhere.
+// A setup link carries them to another device.
 const KNOWN_SYMBOLS = new Set({{ watchlist_companies|map(attribute='symbol')|list|tojson }});
+const COMPANY_SECTOR = {{ company_sectors|tojson }};
+const KNOWN_SECTORS = new Set(Object.values(COMPANY_SECTOR));
+const STORY_TYPES = {{ story_type_labels|tojson }};
 const FOLLOW_KEY = 'stockpulse_follow';
 
+// Which of the five kinds a story is, from where it came from and what it's about.
+function storyType(source, category) {
+  if (category === 'Insider Transactions') return 'insider';
+  if (category === 'Earnings & Financials') return 'results';
+  if (source === 'sec_edgar') return 'filings';
+  if (source === 'company_ir') return 'releases';
+  return 'news';
+}
+
+function cleanList(value, allowed, upper) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map(v => (upper ? String(v).toUpperCase() : String(v))).filter(v => allowed(v)))];
+}
+
+let storedAnything = false;
 function readFollowState() {
   let raw = {};
+  storedAnything = false;
   try {
-    raw = JSON.parse(localStorage.getItem(FOLLOW_KEY) || '{}') || {};
+    const text = localStorage.getItem(FOLLOW_KEY);
+    storedAnything = text !== null;
+    raw = JSON.parse(text || '{}') || {};
   } catch (e) { raw = {}; }
-  const symbols = Array.isArray(raw.symbols)
-    ? [...new Set(raw.symbols.map(s => String(s).toUpperCase()).filter(s => KNOWN_SYMBOLS.has(s)))]
-    : [];
-  const view = raw.view === 'foryou' || raw.view === 'all' ? raw.view : '';
-  return { symbols, view };
+  return {
+    symbols: cleanList(raw.symbols, v => KNOWN_SYMBOLS.has(v), true),
+    sectors: cleanList(raw.sectors, v => KNOWN_SECTORS.has(v), false),
+    hide: cleanList(raw.hide, v => Object.prototype.hasOwnProperty.call(STORY_TYPES, v), false),
+    view: raw.view === 'foryou' || raw.view === 'all' ? raw.view : '',
+    onboarded: raw.onboarded === true,
+  };
 }
 
 function writeFollowState(state) {
+  const clean = { symbols: state.symbols, sectors: state.sectors, hide: state.hide, view: state.view, onboarded: state.onboarded };
   try {
-    localStorage.setItem(FOLLOW_KEY, JSON.stringify({ symbols: state.symbols, view: state.view }));
-  } catch (e) { /* storage may be blocked; follows then last for this page only */ }
-  followMemory = state;
+    localStorage.setItem(FOLLOW_KEY, JSON.stringify(clean));
+    storedAnything = true;
+  } catch (e) { /* storage may be blocked; the choices then last for this page only */ }
+  followMemory = clean;
   document.dispatchEvent(new Event('followchange'));
 }
 
@@ -1829,39 +1905,101 @@ function followState() {
   return followMemory;
 }
 
+function followsAnything() {
+  const state = followState();
+  return state.symbols.length > 0 || state.sectors.length > 0;
+}
+
+// Companies followed directly, plus every company in a followed sector.
 function followedSet() {
-  return new Set(followState().symbols);
+  const state = followState();
+  const set = new Set(state.symbols);
+  Object.keys(COMPANY_SECTOR).forEach(sym => { if (state.sectors.includes(COMPANY_SECTOR[sym])) set.add(sym); });
+  return set;
+}
+
+function hiddenTypes() {
+  return new Set(followState().hide);
+}
+
+// In words, why a story is in For you; '' if it doesn't belong there.
+function followReason(ticker, related) {
+  const state = followState();
+  if (state.symbols.includes(ticker)) return `You follow ${ticker}`;
+  if (state.sectors.includes(COMPANY_SECTOR[ticker])) return `In ${COMPANY_SECTOR[ticker]}, which you follow`;
+  const follows = followedSet();
+  const linked = (related || []).filter(t => t !== ticker && follows.has(t));
+  return linked.length ? `Mentions ${linked.slice(0, 2).join(' and ')}, which you follow` : '';
 }
 
 // With nothing followed there is nothing "for you" yet, so everything shows.
 function currentView() {
   const state = followState();
   if (state.view) return state.view;
-  return state.symbols.length ? 'foryou' : 'all';
+  return followsAnything() ? 'foryou' : 'all';
+}
+
+function updateFollowState(change) {
+  writeFollowState({ ...followState(), onboarded: true, ...change });
 }
 
 function setView(view) {
-  if (view !== 'foryou' && view !== 'all') return;
-  writeFollowState({ ...followState(), view });
+  if (view === 'foryou' || view === 'all') updateFollowState({ view });
+}
+
+function toggleIn(list, value) {
+  return list.includes(value) ? list.filter(v => v !== value) : [...list, value];
 }
 
 function toggleFollow(symbol) {
   const sym = String(symbol || '').toUpperCase();
-  if (!KNOWN_SYMBOLS.has(sym)) return;
+  if (KNOWN_SYMBOLS.has(sym)) updateFollowState({ symbols: toggleIn(followState().symbols, sym) });
+}
+
+function toggleSector(sector) {
+  if (KNOWN_SECTORS.has(sector)) updateFollowState({ sectors: toggleIn(followState().sectors, sector) });
+}
+
+function toggleStoryType(type) {
+  if (Object.prototype.hasOwnProperty.call(STORY_TYPES, type)) updateFollowState({ hide: toggleIn(followState().hide, type) });
+}
+
+function resetFeed() {
+  if (!window.confirm('Unfollow everything and reset your feed settings?')) return;
+  try { localStorage.removeItem(FOLLOW_KEY); } catch (e) { /* nothing stored */ }
+  followMemory = null;
+  document.dispatchEvent(new Event('followchange'));
+}
+
+function plural(n, one, many) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+function followSummary() {
   const state = followState();
-  const symbols = state.symbols.includes(sym) ? state.symbols.filter(s => s !== sym) : [...state.symbols, sym];
-  writeFollowState({ ...state, symbols });
+  const parts = [];
+  if (state.symbols.length) parts.push(plural(state.symbols.length, 'company', 'companies'));
+  if (state.sectors.length) parts.push(plural(state.sectors.length, 'sector', 'sectors'));
+  return parts.length ? `Following ${parts.join(' and ')}` : 'Not following anything yet';
 }
 
 function syncFollowUi() {
-  const follows = followedSet();
+  const state = followState();
+  const direct = new Set(state.symbols);
   document.querySelectorAll('.follow-btn[data-ticker]').forEach(btn => {
-    const on = follows.has(btn.dataset.ticker);
+    const on = direct.has(btn.dataset.ticker);
     btn.setAttribute('aria-pressed', String(on));
     btn.textContent = on ? 'Following' : 'Follow';
   });
+  const follows = followedSet();
   document.querySelectorAll('[data-follow-mark]').forEach(el => {
     el.classList.toggle('is-followed', follows.has(el.dataset.followMark));
+  });
+  document.querySelectorAll('[data-sector-toggle]').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(state.sectors.includes(btn.dataset.sectorToggle)));
+  });
+  document.querySelectorAll('[data-type-toggle]').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(!state.hide.includes(btn.dataset.typeToggle)));
   });
   const view = currentView();
   document.querySelectorAll('.view-tab[data-view]').forEach(tab => {
@@ -1869,16 +2007,16 @@ function syncFollowUi() {
     tab.classList.toggle('active', on);
     tab.setAttribute('aria-selected', String(on));
   });
-  document.querySelectorAll('[data-follow-count]').forEach(el => {
-    const n = follows.size;
-    el.textContent = n ? `Following ${n} ${n === 1 ? 'company' : 'companies'}` : 'Not following any companies yet';
-  });
+  document.querySelectorAll('[data-follow-count]').forEach(el => { el.textContent = followSummary(); });
 }
 
 function setupLinkUrl() {
   const state = followState();
   const base = new URL('index.html', window.location.href);
-  base.hash = 'follow=' + state.symbols.map(encodeURIComponent).join(',');
+  const parts = ['follow=' + state.symbols.map(encodeURIComponent).join(',')];
+  if (state.sectors.length) parts.push('sectors=' + state.sectors.map(encodeURIComponent).join(','));
+  if (state.hide.length) parts.push('hide=' + state.hide.join(','));
+  base.hash = parts.join('&');
   return base.href;
 }
 
@@ -1898,13 +2036,23 @@ function copySetupLink(btn) {
   }
 }
 
-// A setup link (index.html#follow=NVDA,AAPL) asks before it replaces anything.
+// A setup link (index.html#follow=NVDA,AAPL&sectors=Energy&hide=insider) asks before it replaces anything.
 let pendingSetup = null;
 function readSetupLink() {
-  const m = /^#follow=([A-Za-z0-9.,%-]*)$/.exec(window.location.hash || '');
-  if (!m) return null;
-  const symbols = [...new Set(decodeURIComponent(m[1]).split(',').map(s => s.trim().toUpperCase()).filter(s => KNOWN_SYMBOLS.has(s)))];
-  return symbols;
+  const hash = window.location.hash || '';
+  if (!/^#follow=[A-Za-z0-9.,%&=-]*$/.test(hash)) return null;
+  const fields = {};
+  hash.slice(1).split('&').forEach(pair => {
+    const at = pair.indexOf('=');
+    if (at > 0) {
+      try { fields[pair.slice(0, at)] = decodeURIComponent(pair.slice(at + 1)).split(','); } catch (e) { /* bad escape */ }
+    }
+  });
+  return {
+    symbols: cleanList((fields.follow || []).map(v => v.trim()), v => KNOWN_SYMBOLS.has(v), true),
+    sectors: cleanList(fields.sectors || [], v => KNOWN_SECTORS.has(v), false),
+    hide: cleanList(fields.hide || [], v => Object.prototype.hasOwnProperty.call(STORY_TYPES, v), false),
+  };
 }
 
 function clearSetupHash() {
@@ -1914,7 +2062,10 @@ function clearSetupHash() {
 }
 
 function acceptSetupLink() {
-  if (pendingSetup) writeFollowState({ symbols: pendingSetup, view: pendingSetup.length ? 'foryou' : 'all' });
+  if (pendingSetup) {
+    const any = pendingSetup.symbols.length || pendingSetup.sectors.length;
+    writeFollowState({ ...pendingSetup, view: any ? 'foryou' : 'all', onboarded: true });
+  }
   dismissSetupLink();
 }
 
@@ -1924,26 +2075,33 @@ function dismissSetupLink() {
   clearSetupHash();
 }
 
+function sameList(a, b) {
+  return a.length === b.length && a.every(v => b.includes(v));
+}
+
 function offerSetupLink() {
-  const symbols = readSetupLink();
-  if (!symbols) return;
-  const current = followState().symbols;
-  if (symbols.length === current.length && symbols.every(s => current.includes(s))) {
+  const setup = readSetupLink();
+  if (!setup) return;
+  const current = followState();
+  if (sameList(setup.symbols, current.symbols) && sameList(setup.sectors, current.sectors) && sameList(setup.hide, current.hide)) {
     clearSetupHash();
     return;
   }
-  pendingSetup = symbols;
+  pendingSetup = setup;
   const main = document.querySelector('.app-main');
   if (!main) return;
+  const what = [];
+  if (setup.symbols.length) what.push(setup.symbols.join(', '));
+  if (setup.sectors.length) what.push(`the ${setup.sectors.join(', ')} ${setup.sectors.length === 1 ? 'sector' : 'sectors'}`);
   const bar = document.createElement('div');
   bar.className = 'setup-banner';
   bar.id = 'setupLinkBanner';
   bar.setAttribute('role', 'region');
   bar.setAttribute('aria-label', 'Use a setup link');
   const text = document.createElement('p');
-  text.textContent = symbols.length
-    ? `Use this setup? It follows ${symbols.join(', ')}${current.length ? ', and replaces the ' + current.length + ' you follow now' : ''}.`
-    : 'This setup link follows no companies.';
+  text.textContent = what.length
+    ? `Use this setup? It follows ${what.join(' and ')}${followsAnything() ? ', and replaces what you follow now' : ''}.`
+    : 'This setup link follows nothing.';
   const yes = document.createElement('button');
   yes.type = 'button';
   yes.className = 'setup-yes';
@@ -2043,6 +2201,21 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <a class="orbit-browse" href="company.html">Browse all {{ watchlist_companies|length }} companies</a>
       </section>
 
+      <section class="picker" id="welcomePicker" aria-labelledby="pickerTitle" hidden>
+        <h2 class="picker-title" id="pickerTitle">What do you care about?</h2>
+        <p class="picker-sub">Pick a few sectors and their stories gather under For you. You can change this any time.</p>
+        <div class="picker-chips">
+          {% for sec in sector_directory %}
+          <button class="chip" type="button" data-click="pickSector" data-sector="{{ sec.name }}" aria-pressed="false">{{ sec.name }} <span class="chip-count">{{ sec.count }}</span></button>
+          {% endfor %}
+        </div>
+        <div class="picker-actions">
+          <button class="setup-yes" type="button" id="pickerDone" data-click="finishPicker" disabled>Show my stories</button>
+          <button class="setup-no" type="button" data-click="skipPicker">Show me everything</button>
+          <a class="picker-more" href="settings.html">Pick companies instead</a>
+        </div>
+      </section>
+
       <div class="view-tabs" role="tablist" aria-label="Which stories to show">
         <button class="view-tab" id="viewTabForYou" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
         <button class="view-tab active" id="viewTabAll" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
@@ -2085,7 +2258,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           {% endif %}
           </div>
           <a class="home-more" id="homeMoreLink" href="news.html">All {{ stats.total }} stories</a>
-          <p class="follow-footer"><span data-follow-count></span> · <a href="company.html">Edit</a> · <button class="link-btn" type="button" data-click="copySetupLink">Copy setup link</button></p>
+          <p class="follow-footer"><span data-follow-count></span> · <a href="settings.html">Edit</a> · <button class="link-btn" type="button" data-click="copySetupLink">Copy setup link</button></p>
         </section>
 
         <nav class="home-doors" aria-label="Sections">
@@ -2200,22 +2373,17 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       return escapeHtml(text).replace(FIGURES, m => `<strong class="fig">${m}</strong>`);
     }
 
-    // Why a story is in "For you", in words.
-    function followReason(item, follows) {
-      if (follows.has(item.ticker)) return `You follow ${item.ticker}`;
-      const linked = (item.related_tickers_list || []).filter(t => follows.has(t));
-      return linked.length ? `Mentions ${linked.slice(0, 2).join(' and ')}, which you follow` : '';
-    }
-
     function storiesFor(follows, limit) {
+      const hidden = hiddenTypes();
       return (allItems || [])
         .filter(it => follows.has(it.ticker) || (it.related_tickers_list || []).some(t => follows.has(t)))
+        .filter(it => !hidden.has(storyType(it.source, it.category)))
         .sort((a, b) => (b.score - a.score) || String(b.published_date).localeCompare(String(a.published_date)))
         .slice(0, limit);
     }
 
     function topRowHtml(it, i, follows) {
-      const reason = followReason(it, follows);
+      const reason = followReason(it.ticker, it.related_tickers_list);
       return `
         <li class="top-row${i === 0 ? ' is-lead' : ''}">
           <a class="top-ticker" href="company.html?ticker=${encodeURIComponent(it.ticker)}">${escapeHtml(it.ticker)}</a>
@@ -2238,8 +2406,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const picks = Object.keys(counts)
         .filter(s => names[s] && !follows.has(s))
         .sort((a, b) => counts[b] - counts[a])
-        .slice(0, follows.size ? 4 : 8);
-      const intro = follows.size
+        .slice(0, followsAnything() ? 4 : 8);
+      const intro = followsAnything()
         ? '<h3 class="follow-suggest-title">More companies to follow</h3>'
         : '<p class="home-empty">Follow a few companies and their stories gather here, most important first.</p>';
       return `
@@ -2263,9 +2431,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       everything.hidden = forYou;
       mine.hidden = !forYou;
       if (heading) heading.textContent = forYou ? 'Top stories for you' : 'Top stories';
-      if (more) more.hidden = forYou && !follows.size;
+      if (more) more.hidden = forYou && !followsAnything();
       if (forYou) {
-        if (!follows.size) {
+        if (!followsAnything()) {
           mine.innerHTML = suggestionsHtml(follows);
         } else {
           const rows = storiesFor(follows, 5);
@@ -2273,6 +2441,9 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             ? `<ol class="top-list">${rows.map((it, i) => topRowHtml(it, i, follows)).join('')}</ol>`
             : '<p class="home-empty">No stories yet about the companies you follow.</p>')
             + (follows.size < 3 ? suggestionsHtml(follows) : '');
+          if (!rows.length && hiddenTypes().size) {
+            mine.insertAdjacentHTML('afterbegin', '<p class="follow-reason">Some story types are hidden in <a href="settings.html">Your feed</a>.</p>');
+          }
         }
       }
 
@@ -2295,8 +2466,55 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       syncFollowUi();
     }
 
+    // ---- First visit: a short, skippable "what do you care about?" ----
+    const pickedSectors = new Set();
+
+    function pickSector(btn) {
+      const sector = btn.dataset.sector;
+      if (!KNOWN_SECTORS.has(sector)) return;
+      if (pickedSectors.has(sector)) pickedSectors.delete(sector);
+      else pickedSectors.add(sector);
+      btn.setAttribute('aria-pressed', String(pickedSectors.has(sector)));
+      const done = document.getElementById('pickerDone');
+      if (done) {
+        done.disabled = pickedSectors.size === 0;
+        done.textContent = pickedSectors.size ? `Show my stories (${plural(pickedSectors.size, 'sector', 'sectors')})` : 'Show my stories';
+      }
+    }
+
+    function closePicker() {
+      const picker = document.getElementById('welcomePicker');
+      if (picker) picker.hidden = true;
+    }
+
+    function finishPicker() {
+      const sectors = [...new Set([...followState().sectors, ...pickedSectors])];
+      updateFollowState({ sectors, view: 'foryou' });
+      closePicker();
+      document.getElementById('homeStoriesHeading')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function skipPicker() {
+      updateFollowState({ view: 'all' });
+      closePicker();
+    }
+
+    // Only for someone who has never chosen anything, and only if their browser can remember the answer.
+    function offerPicker() {
+      const picker = document.getElementById('welcomePicker');
+      if (!picker) return;
+      let canStore = false;
+      try {
+        localStorage.setItem('stockpulse_probe', '1');
+        localStorage.removeItem('stockpulse_probe');
+        canStore = true;
+      } catch (e) { canStore = false; }
+      followState();
+      picker.hidden = !(canStore && !storedAnything && !readSetupLink());
+    }
+
     document.addEventListener('followchange', () => { renderHomeView(); if (typeof orbit !== 'undefined') orbit.refresh(); });
-    document.addEventListener('DOMContentLoaded', renderHomeView);
+    document.addEventListener('DOMContentLoaded', () => { offerPicker(); renderHomeView(); });
 
     // A ring of real company links orbiting the search bar. The chips are ordinary links in an
     // ordinary list: this script only positions them, and without it they stay a static grid.
@@ -2352,6 +2570,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         const add = c => { if (c && !chosen.includes(c) && chosen.length < count) chosen.push(c); };
         matches.forEach(add);
         followState().symbols.forEach(sym => add(bySymbol.get(sym)));
+        followedSet().forEach(sym => add(bySymbol.get(sym)));
         readRecentlyViewed().slice(0, 4).forEach(item => add(bySymbol.get(item.symbol)));
         all.forEach(add);
         all.forEach(c => { c.el.hidden = !chosen.includes(c); });
@@ -3752,7 +3971,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         <button class="view-tab" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
         <button class="view-tab active" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
       </div>
-      <p class="follow-footer" id="feedFollowLine" hidden><span data-follow-count></span> · <a href="company.html">Edit</a> · <button class="link-btn" type="button" data-click="copySetupLink">Copy setup link</button></p>
+      <p class="follow-footer" id="feedFollowLine" hidden><span data-follow-count></span> · <a href="settings.html">Edit</a> · <button class="link-btn" type="button" data-click="copySetupLink">Copy setup link</button></p>
 
       <div class="feed-toolbar">
         <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and summaries" data-input="filterItems">
@@ -3843,6 +4062,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <div class="feed-body">
             <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
             {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}{% if item.ai_summary %}<p class="feed-takeaway">{{ figures(item.ai_summary) }}</p>{% endif %}
+            <p class="follow-reason" hidden></p>
             <details class="feed-details">
               <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
               <div class="feed-details-body">
@@ -3990,6 +4210,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
       const rows = document.querySelectorAll('.news-row');
       const follows = followedSet();
+      const hidden = hiddenTypes();
       const forYou = currentView() === 'foryou';
       const line = document.getElementById('feedFollowLine');
       if (line) line.hidden = !forYou;
@@ -4007,7 +4228,13 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         let matchCat = (currentCategory === 'ALL') || (rowCategory === currentCategory);
         let matchSrc = (currentSource === 'ALL') || (rowSource === currentSource);
         let matchQuery = !q || rowText.includes(q);
-        const matchView = !forYou || rowTickers.some(t => follows.has(t));
+        const matchView = !forYou
+          || (rowTickers.some(t => follows.has(t)) && !hidden.has(storyType(rowSource, rowCategory)));
+        const why = row.querySelector('.follow-reason');
+        if (why) {
+          why.textContent = forYou ? followReason(rowTicker, rowTickers) : '';
+          why.hidden = !why.textContent;
+        }
 
         row.dataset.match = (matchView && matchSector && matchTicker && matchCat && matchSrc && matchQuery) ? '1' : '0';
       });
@@ -4114,10 +4341,12 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const empty = document.getElementById('feedEmpty');
       if (empty) {
         empty.hidden = shown !== 0;
-        const noFollows = currentView() === 'foryou' && followedSet().size === 0;
-        empty.innerHTML = noFollows
-          ? 'You aren’t following any companies yet. Open a company and tap Follow, or switch to Everything.'
-          : 'No stories match these filters.';
+        const forYou = currentView() === 'foryou';
+        empty.innerHTML = forYou && !followsAnything()
+          ? 'You aren’t following anything yet. Pick companies or sectors in <a href="settings.html">Your feed</a>, or switch to Everything.'
+          : (forYou && hiddenTypes().size
+            ? 'No stories match. Some story types are hidden in <a href="settings.html">Your feed</a>.'
+            : 'No stories match these filters.');
       }
     }
 
@@ -4584,6 +4813,145 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 # ==============================================================================
 # 5. PER-COMPANY DEEP-DIVE TEMPLATE (site/company.html)
 # ==============================================================================
+SETTINGS_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Choose the companies, sectors and kinds of story that show under For you.">
+  <title>StockPulse — Your feed</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
+  <script>""" + THEME_BOOT_JS + """</script>
+  <style>
+""" + SHARED_CSS + """
+  </style>
+</head>
+<body class="page-settings">
+  <div class="app-layout">
+    """ + NAVIGATION_LAYOUT_HTML + """
+
+    <main class="app-main">
+      <header class="page-header">
+        <h1 class="page-title">Your feed</h1>
+        <p class="page-standfirst">Choose what shows under For you. <span data-follow-count></span>.</p>
+      </header>
+
+      <section class="settings-section" aria-labelledby="settingsViewHeading">
+        <h2 class="settings-heading" id="settingsViewHeading">Start on</h2>
+        <div class="view-tabs view-tabs-left" role="tablist" aria-label="Which tab Home and the Feed open on">
+          <button class="view-tab" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+          <button class="view-tab" role="tab" type="button" data-view="all" data-click="setView" aria-selected="false">Everything</button>
+        </div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settingsSectorHeading">
+        <h2 class="settings-heading" id="settingsSectorHeading">Sectors</h2>
+        <p class="settings-note">Following a sector follows every company in it, including ones added later.</p>
+        <div class="picker-chips">
+          {% for sec in sector_directory %}
+          <button class="chip" type="button" data-click="toggleSector" data-sector-toggle="{{ sec.name }}" aria-pressed="false">{{ sec.name }} <span class="chip-count">{{ sec.count }}</span></button>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settingsCompanyHeading">
+        <h2 class="settings-heading" id="settingsCompanyHeading">Companies</h2>
+        <input type="text" class="feed-search" id="settingsCompanyFilter" aria-label="Find a company" placeholder="Find a company or ticker" data-input="filterSettingsCompanies">
+        {% for sec in sector_directory %}
+        <details class="settings-group" data-sector-group="{{ sec.name }}">
+          <summary class="settings-group-head"><span class="settings-group-name">{{ sec.name }}</span><span class="settings-group-meta" data-group-meta>{{ sec.count }} {{ 'company' if sec.count == 1 else 'companies' }}</span></summary>
+          <ul class="follow-suggest">
+            {% for co in sec.companies %}
+            <li data-filter-text="{{ co.symbol|lower }} {{ co.name|lower }} {{ sec.name|lower }}" data-follow-mark="{{ co.symbol }}">
+              <a class="follow-suggest-name settings-co" href="company.html?ticker={{ co.symbol|urlencode }}"><span class="settings-co-ticker">{{ co.symbol }}</span><span class="settings-co-name">{{ co.name }}</span></a>
+              <span class="settings-via">In a sector you follow</span>
+              <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ co.symbol }}" aria-pressed="false">Follow</button>
+            </li>
+            {% endfor %}
+          </ul>
+        </details>
+        {% endfor %}
+        <p class="home-empty" id="settingsCompanyEmpty" hidden>No company matches.</p>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settingsTypeHeading">
+        <h2 class="settings-heading" id="settingsTypeHeading">Kinds of story in For you</h2>
+        <p class="settings-note">Everything always shows every story.</p>
+        <ul class="settings-toggles">
+          {% for key, label in story_type_labels.items() %}
+          <li>
+            <button class="type-toggle" type="button" data-click="toggleStoryType" data-type-toggle="{{ key }}" aria-pressed="true">
+              <span class="type-toggle-text"><span class="type-toggle-label">{{ label }}</span><span class="type-toggle-count">{{ story_type_counts[key] }} {{ 'story' if story_type_counts[key] == 1 else 'stories' }} right now</span></span>
+              <span class="switch" aria-hidden="true"></span>
+            </button>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settingsDeviceHeading">
+        <h2 class="settings-heading" id="settingsDeviceHeading">Saved in this browser</h2>
+        <p class="settings-note">Your choices stay on this device. Nothing is sent anywhere, so a different phone, a private window or clearing site data starts fresh. To use them somewhere else, open this link there.</p>
+        <div class="settings-actions">
+          <button class="setup-yes" type="button" data-click="copySetupLink">Copy setup link</button>
+          <button class="setup-no" type="button" data-click="resetFeed">Start over</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    """ + SHARED_MOBILE_JS + """
+
+    // Searching opens the sectors with a match and closes the rest; clearing the box folds them again.
+    function filterSettingsCompanies(value) {
+      const q = String(value || '').toLowerCase().trim();
+      let shown = 0;
+      document.querySelectorAll('.settings-group').forEach(group => {
+        let any = false;
+        group.querySelectorAll('li[data-filter-text]').forEach(li => {
+          const match = !q || li.dataset.filterText.includes(q);
+          li.hidden = !match;
+          if (match) { any = true; shown += 1; }
+        });
+        group.hidden = !any;
+        group.open = Boolean(q) && any;
+      });
+      const empty = document.getElementById('settingsCompanyEmpty');
+      if (empty) empty.hidden = shown > 0;
+    }
+
+    // A company followed through its sector says so, and its own button stays available.
+    // Each folded sector says how many of its companies are followed.
+    function markSectorFollows() {
+      const state = followState();
+      const sectors = new Set(state.sectors);
+      const direct = new Set(state.symbols);
+      document.querySelectorAll('.settings-group').forEach(group => {
+        const rows = [...group.querySelectorAll('li[data-follow-mark]')];
+        const whole = sectors.has(group.dataset.sectorGroup);
+        rows.forEach(li => {
+          const via = li.querySelector('.settings-via');
+          if (via) via.hidden = !whole || direct.has(li.dataset.followMark);
+        });
+        const n = rows.filter(li => direct.has(li.dataset.followMark)).length;
+        const meta = group.querySelector('[data-group-meta]');
+        if (meta) {
+          meta.textContent = whole
+            ? 'Following the whole sector'
+            : `${plural(rows.length, 'company', 'companies')}${n ? `, following ${n}` : ''}`;
+        }
+      });
+    }
+
+    document.addEventListener('followchange', markSectorFollows);
+    document.addEventListener('DOMContentLoaded', markSectorFollows);
+  </script>
+</body>
+</html>
+"""
+
+
 COMPANY_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5320,6 +5688,31 @@ def _heat_class(pct: float) -> str:
     return f"heat-{'u' if pct > 0 else 'd'}{level}"
 
 
+# The five kinds of story someone can hide from For you. storyType() in the shared script sorts
+# stories the same way as _story_type here.
+STORY_TYPES = {
+    "news": "News articles",
+    "releases": "Company press releases",
+    "results": "Results and reports",
+    "insider": "Insider trades",
+    "filings": "Other SEC filings",
+}
+
+
+def _story_type(item: Dict[str, Any]) -> str:
+    category = item.get("category") or ""
+    source = item.get("source") or ""
+    if category == "Insider Transactions":
+        return "insider"
+    if category == "Earnings & Financials":
+        return "results"
+    if source == "sec_edgar":
+        return "filings"
+    if source == "company_ir":
+        return "releases"
+    return "news"
+
+
 SEC_BOILERPLATE = "Official SEC submission"
 FIGURE_PATTERN = re.compile(
     r"(?:US)?[$€£]\s?\d(?:[\d,.]*\d)?(?:\s?(?:million|billion|trillion|bn)\b)?"
@@ -5581,6 +5974,9 @@ def render_dashboard(
         "generated_at": now_str,
         "watchlist_companies": enriched_watchlist,
         "sector_directory": sector_directory,
+        "company_sectors": {c["symbol"]: c["macro_sector"] for c in enriched_watchlist},
+        "story_type_labels": STORY_TYPES,
+        "story_type_counts": {k: sum(1 for it in items if _story_type(it) == k) for k in STORY_TYPES},
         "sector_directory_json": _script_json([
             {
                 "name": s["name"],
@@ -5603,7 +5999,7 @@ def render_dashboard(
         "performance_data_json": _script_json(performance_data or {}),
     }
 
-    # 4. Render and save all 6 pages
+    # 4. Render and save all 7 pages
     pages = [
         ("index.html", INDEX_TEMPLATE, "home"),
         ("news.html", NEWS_TEMPLATE, "news"),
@@ -5611,6 +6007,7 @@ def render_dashboard(
         ("economic.html", ECONOMIC_TEMPLATE, "economic"),
         ("company.html", COMPANY_TEMPLATE, "company"),
         ("analytics.html", ANALYTICS_TEMPLATE, "analytics"),
+        ("settings.html", SETTINGS_TEMPLATE, "settings"),
     ]
 
     policies: Dict[str, str] = {}
