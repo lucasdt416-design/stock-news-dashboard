@@ -70,7 +70,9 @@ jobs:
         id: run_pipeline
         env:
           SEC_EDGAR_USER_AGENT: "${{ secrets.SEC_EDGAR_USER_AGENT || 'StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)' }}"
-          GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
+          # Gemini's free plan allows only a few requests a day. A merge also runs this job, so only the
+          # daily schedule and manual runs ask it; stories left with a plain summary are sent next time.
+          GEMINI_API_KEY: "${{ github.event_name != 'push' && secrets.GEMINI_API_KEY || '' }}"
           FINNHUB_API_KEY: "${{ secrets.FINNHUB_API_KEY }}"
         run: |
           python scripts/run_local.py --fail-on-critical

@@ -14,6 +14,9 @@ import feedparser
 
 logger = logging.getLogger(__name__)
 
+# A feed whose newest item is older than this is probably no longer updated.
+STALE_DAYS = 180
+
 DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (StockNewsDashboard/1.0; contact: admin@stocknewsdashboard.local)"
 
 
@@ -49,7 +52,12 @@ def fetch_ir_feed(
                 parsed.bozo_exception,
             )
 
-        entries = parsed.entries[:max_items]
+        # Some feeds list their oldest items first; newest first, so the cap keeps the recent ones.
+        def entry_time(entry):
+            # dict.get skips feedparser's deprecated updated-to-published fallback (and its warning).
+            stamp = dict.get(entry, "published_parsed") or dict.get(entry, "updated_parsed")
+            return tuple(stamp) if stamp else ()
+        entries = sorted(parsed.entries, key=entry_time, reverse=True)[:max_items]
         items: List[Dict[str, Any]] = []
 
         for entry in entries:
@@ -90,6 +98,10 @@ def fetch_ir_feed(
                 "form_or_type": "PRESS_RELEASE",
             })
 
+        newest = max((it.get("published_date") or "" for it in items), default="")
+        cutoff = time.strftime("%Y-%m-%d", time.gmtime(time.time() - STALE_DAYS * 86400))
+        if items and re.match(r"\d{4}-\d{2}-\d{2}$", newest) and newest < cutoff:
+            logger.warning("IR feed for %s looks abandoned: its newest item is from %s (%s)", ticker, newest, feed_url)
         return items
 
     except urllib.error.HTTPError as e:
