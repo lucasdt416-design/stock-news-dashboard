@@ -1690,6 +1690,8 @@ SHARED_CSS = """
     .settings-co-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .settings-via { margin-left: auto; font-size: 0.8rem; color: var(--text-muted); }
     .settings-via[hidden] { display: none; }
+    .settings-learned { margin: 0.75rem 0 1rem; color: var(--text-primary); max-width: 40rem; }
+    .settings-learned:empty { display: none; }
     .settings-toggles { list-style: none; margin: 0; padding: 0; }
     .type-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border: none; border-bottom: 1px solid var(--border-subtle); background: none; font: inherit; text-align: left; color: var(--text-primary); cursor: pointer; }
     .type-toggle-text { display: flex; flex-direction: column; }
@@ -1785,6 +1787,8 @@ const PAGE_ACTIONS = {
     sortRows: el => sortRows(el.dataset.sort),
     toggleFeedTickerDropdown: () => toggleFeedTickerDropdown(),
     toggleFollow: el => toggleFollow(el.dataset.ticker),
+    toggleLearning: () => toggleLearning(),
+    forgetReading: () => forgetReading(),
     toggleSector: el => toggleSector(el.dataset.sectorToggle),
     toggleStoryType: el => toggleStoryType(el.dataset.typeToggle),
     resetFeed: () => resetFeed(),
@@ -1943,6 +1947,147 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ---- Learning from what you read ------------------------------------------------------------
+// Which stories someone opens and which company pages they visit stay in this browser
+// (localStorage), for 90 days at most. They only reorder For you and suggest companies to
+// follow: nothing is sent anywhere, the setup link doesn't carry them, Everything ignores them,
+// and Your feed can switch this off or forget it all.
+const READING_KEY = 'stockpulse_reading';
+const READING_MAX = 400;
+const READING_DAYS = 90;
+const READING_HALF_LIFE_DAYS = 30;
+const READING_MIN_EVENTS = 3;
+
+function readReading() {
+  let raw = {};
+  try { raw = JSON.parse(localStorage.getItem(READING_KEY) || '{}') || {}; } catch (e) { raw = {}; }
+  const cutoff = Date.now() / 1000 - READING_DAYS * 86400;
+  const events = (Array.isArray(raw.events) ? raw.events : [])
+    .filter(e => Array.isArray(e) && Number.isFinite(e[0]) && e[0] > cutoff && KNOWN_SYMBOLS.has(e[1])
+      && (e[2] === 'page' || Object.prototype.hasOwnProperty.call(STORY_TYPES, e[2])))
+    .map(e => [e[0], e[1], e[2]])
+    .slice(-READING_MAX);
+  return { on: raw.on !== false, events };
+}
+
+let readingMemory = null;
+function readingState() {
+  if (!readingMemory) readingMemory = readReading();
+  return readingMemory;
+}
+
+function writeReading(state) {
+  readingMemory = { on: state.on !== false, events: state.events.slice(-READING_MAX) };
+  try { localStorage.setItem(READING_KEY, JSON.stringify(readingMemory)); } catch (e) { /* blocked storage: this page only */ }
+  document.dispatchEvent(new Event('readingchange'));
+}
+
+// kind is a story type (news, results, ...) or 'page' for a visit to the company's page.
+function noteRead(symbol, kind) {
+  const state = readingState();
+  const sym = String(symbol || '').toUpperCase();
+  if (!state.on || !KNOWN_SYMBOLS.has(sym)) return;
+  if (kind !== 'page' && !Object.prototype.hasOwnProperty.call(STORY_TYPES, kind)) return;
+  const now = Math.floor(Date.now() / 1000);
+  const last = state.events[state.events.length - 1];
+  if (last && last[1] === sym && last[2] === kind && now - last[0] < 600) return;  // a reload or double click
+  writeReading({ on: true, events: [...state.events, [now, sym, kind]] });
+}
+
+function toggleLearning() {
+  const state = readingState();
+  writeReading({ on: !state.on, events: state.events });
+}
+
+function forgetReadingNow() {
+  writeReading({ on: readingState().on, events: [] });
+}
+
+function forgetReading() {
+  if (window.confirm('Forget every story and company page this browser has noted?')) forgetReadingNow();
+}
+
+// Recent reads count more: each one's weight halves every 30 days. A company page counts half.
+function readingInterests() {
+  const state = readingState();
+  const tickers = new Map();
+  const types = new Map();
+  const counts = new Map();
+  if (!state.on || state.events.length < READING_MIN_EVENTS) return { tickers, types, counts, active: false };
+  const now = Date.now() / 1000;
+  state.events.forEach(([t, sym, kind]) => {
+    const weight = Math.pow(0.5, (now - t) / (READING_HALF_LIFE_DAYS * 86400)) * (kind === 'page' ? 0.5 : 1);
+    tickers.set(sym, (tickers.get(sym) || 0) + weight);
+    counts.set(sym, (counts.get(sym) || 0) + 1);
+    if (kind !== 'page') types.set(kind, (types.get(kind) || 0) + weight);
+  });
+  return { tickers, types, counts, active: true };
+}
+
+// A function that says how far up a story moves in For you, and whether it moved for its company.
+// At most 1.5 for the company read most and 0.5 for the kind of story read most, against
+// importance scores that run from 0 to 10, so reading nudges the order rather than replacing it.
+function readingRanker() {
+  const { tickers, types, counts, active } = readingInterests();
+  if (!active) return () => ({ boost: 0, often: false });
+  const topTicker = Math.max(...tickers.values());
+  const typeTotal = [...types.values()].reduce((a, b) => a + b, 0);
+  const topType = typeTotal ? Math.max(...types.values()) : 0;
+  return (ticker, type) => {
+    const t = tickers.get(ticker) || 0;
+    const boost = 1.5 * (t / topTicker) + (topType ? 0.5 * ((types.get(type) || 0) / topType) : 0);
+    return { boost, often: (counts.get(ticker) || 0) >= READING_MIN_EVENTS && t >= topTicker / 3 };
+  };
+}
+
+// The followed reason, plus a note when reading moved the story up.
+function forYouReason(ticker, related, often) {
+  const reason = followReason(ticker, related);
+  return reason && often ? `${reason} · you often read ${ticker}` : reason;
+}
+
+// Companies read about but not followed, most read first.
+function readButNotFollowed(follows, limit) {
+  const { counts, active } = readingInterests();
+  if (!active) return [];
+  return [...counts.entries()]
+    .filter(([sym, n]) => n >= READING_MIN_EVENTS && !follows.has(sym))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([symbol, n]) => ({ symbol, reason: `You’ve read about ${symbol} ${n} times` }));
+}
+
+function readingSummary() {
+  const state = readingState();
+  const { tickers, types } = readingInterests();
+  const top = [...tickers.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([sym]) => sym);
+  const kinds = [...types.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => STORY_TYPES[k].toLowerCase());
+  const noted = plural(state.events.length, 'story or page', 'stories and pages');
+  if (!state.on) return { status: 'Off', detail: state.events.length ? `Paused. ${noted} from before are kept but not used.` : 'Off. Nothing is noted.' };
+  if (!top.length) {
+    return { status: `On · ${noted} noted`, detail: `Open a few stories and For you will start to lean toward them. It needs ${READING_MIN_EVENTS} to begin.` };
+  }
+  const names = top.length > 1 ? `${top.slice(0, -1).join(', ')} and ${top[top.length - 1]}` : top[0];
+  return {
+    status: `On · ${noted} noted in the last ${READING_DAYS} days`,
+    detail: `You read most about ${names}${kinds.length ? `, mostly ${kinds.join(', then ')}` : ''}. Stories like these move up in For you.`,
+  };
+}
+
+// Opening a story's link, in this tab or a new one, counts as reading it.
+function noteStoryClick(e) {
+  const link = e.target.closest && e.target.closest('a[href^="http"]');
+  const story = link && link.closest('[data-ticker][data-source][data-category]');
+  if (story) noteRead(story.dataset.ticker, storyType(story.dataset.source, story.dataset.category));
+}
+document.addEventListener('click', noteStoryClick, true);
+document.addEventListener('auxclick', noteStoryClick, true);
+window.addEventListener('storage', e => {
+  if (e.key !== READING_KEY) return;
+  readingMemory = null;
+  document.dispatchEvent(new Event('readingchange'));
+});
+
 // ---- Following ------------------------------------------------------------------------------
 // What someone follows (companies and whole sectors), which story types they hide from For you,
 // and the view they last chose live in this browser only (localStorage). Nothing is sent anywhere.
@@ -2071,9 +2216,10 @@ function toggleStoryType(type) {
 }
 
 function resetFeed() {
-  if (!window.confirm('Unfollow everything and reset your feed settings?')) return;
+  if (!window.confirm('Unfollow everything, forget what you read and reset your feed settings?')) return;
   try { localStorage.removeItem(FOLLOW_KEY); } catch (e) { /* nothing stored */ }
   followMemory = null;
+  forgetReadingNow();
   document.dispatchEvent(new Event('followchange'));
 }
 
@@ -2377,7 +2523,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           {% if priority_items %}
           <ol class="top-list">
             {% for it in priority_items[:5] %}
-            <li class="top-row{% if loop.first %} is-lead{% endif %}" data-created="{{ it.created_at or '' }}">
+            <li class="top-row{% if loop.first %} is-lead{% endif %}" data-created="{{ it.created_at or '' }}" data-ticker="{{ it.ticker }}" data-source="{{ it.source }}" data-category="{{ it.category }}">
               <a class="top-ticker" href="{{ company_url(it.ticker) }}">{{ it.ticker }}</a>
               <div class="top-body">
                 <span class="new-badge" hidden>New</span><a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
@@ -2505,19 +2651,22 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     }
 
     // ---- For you / Everything on the home page ----
+    // Most important first, nudged toward what this browser has seen you read.
     function storiesFor(follows, limit) {
       const hidden = hiddenTypes();
+      const rank = readingRanker();
       return (allItems || [])
         .filter(it => follows.has(it.ticker) || (it.related_tickers_list || []).some(t => follows.has(t)))
         .filter(it => !hidden.has(storyType(it.source, it.category)))
-        .sort((a, b) => (b.score - a.score) || String(b.published_date).localeCompare(String(a.published_date)))
+        .map(it => ({ ...it, read: rank(it.ticker, storyType(it.source, it.category)) }))
+        .sort((a, b) => ((b.score + b.read.boost) - (a.score + a.read.boost)) || String(b.published_date).localeCompare(String(a.published_date)))
         .slice(0, limit);
     }
 
     function topRowHtml(it, i, follows) {
-      const reason = followReason(it.ticker, it.related_tickers_list);
+      const reason = forYouReason(it.ticker, it.related_tickers_list, it.read && it.read.often);
       return `
-        <li class="top-row${i === 0 ? ' is-lead' : ''}" data-created="${escapeHtml(it.created_at || '')}">
+        <li class="top-row${i === 0 ? ' is-lead' : ''}" data-created="${escapeHtml(it.created_at || '')}" data-ticker="${escapeHtml(it.ticker)}" data-source="${escapeHtml(it.source)}" data-category="${escapeHtml(it.category)}">
           <a class="top-ticker" href="${companyHref(it.ticker)}">${escapeHtml(it.ticker)}</a>
           <div class="top-body">
             <span class="new-badge" hidden>New</span><a class="top-title" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.clean_headline || it.headline)}</a>
@@ -2555,11 +2704,13 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         seen.add(symbol);
         picks.push({ symbol, reason });
       };
-      // Half at most from links, one per kind of link first, so the list isn't four of the same.
+      // Companies you keep reading come first, then at most half from links, one per kind of link
+      // first, so the list isn't four of the same.
+      readButNotFollowed(follows, Math.ceil(count / 2)).forEach(p => add(p.symbol, p.reason));
       const related = relatedTo(follows);
       const byReason = new Map();
       related.forEach(r => { if (!byReason.has(r.reason)) byReason.set(r.reason, []); byReason.get(r.reason).push(r); });
-      const linkCap = Math.ceil(count / 2);
+      const linkCap = Math.min(count, picks.length + Math.ceil(count / 2));
       let round = 0;
       while (picks.length < linkCap && [...byReason.values()].some(list => list.length > round)) {
         byReason.forEach(list => { if (picks.length < linkCap && list[round]) add(list[round].symbol, list[round].reason); });
@@ -4458,7 +4609,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         && (currentSource === 'ALL' || it.source === currentSource)
         && (!q || it.search.includes(q))
         && (!forYou || (it.tickers.some(t => follows.has(t)) && !hidden.has(storyType(it.source, it.category)))));
-      const byScore = (a, b) => (b.score - a.score) || b.date.localeCompare(a.date);
+      // For you leans toward what this browser has seen you read; Everything never does.
+      const rank = forYou ? readingRanker() : () => ({ boost: 0, often: false });
+      list.forEach(it => { it.read = rank(it.ticker, storyType(it.source, it.category)); });
+      const byScore = (a, b) => ((b.score + b.read.boost) - (a.score + a.read.boost)) || b.date.localeCompare(a.date);
       const byDate = (a, b) => b.date.localeCompare(a.date) || (b.score - a.score);
       return list.sort(currentOrder === 'score' ? byScore : byDate);
     }
@@ -4470,7 +4624,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
     // The same markup the server writes for a row.
     function feedRowHtml(it, lead, forYou) {
-      const reason = forYou ? followReason(it.ticker, it.tickers) : '';
+      const reason = forYou ? forYouReason(it.ticker, it.tickers, it.read && it.read.often) : '';
       const refs = it.refs || [];
       const read = it.source === 'sec_edgar' ? 'Read the filing' : (it.source === 'company_ir' ? 'Read the release' : 'Read the article');
       const meta = [it.category, it.source_label, it.form].filter(Boolean).join(' · ');
@@ -5135,6 +5289,23 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
         </ul>
       </section>
 
+      <section class="settings-section" aria-labelledby="settingsLearnHeading">
+        <h2 class="settings-heading" id="settingsLearnHeading">What you read</h2>
+        <p class="settings-note">When you open a story or a company page, this browser notes the company and the kind of story. For you then puts more like them first, and Home suggests companies you keep reading. It never adds companies you don’t follow to For you, never changes Everything, and isn’t sent anywhere or put in the setup link.</p>
+        <ul class="settings-toggles">
+          <li>
+            <button class="type-toggle" type="button" id="learningToggle" data-click="toggleLearning" aria-pressed="true">
+              <span class="type-toggle-text"><span class="type-toggle-label">Learn from what I read</span><span class="type-toggle-count" id="learningStatus"></span></span>
+              <span class="switch" aria-hidden="true"></span>
+            </button>
+          </li>
+        </ul>
+        <p class="settings-learned" id="learningDetail" aria-live="polite"></p>
+        <div class="settings-actions">
+          <button class="setup-no" type="button" id="forgetReadingBtn" data-click="forgetReading">Forget what I read</button>
+        </div>
+      </section>
+
       <section class="settings-section" aria-labelledby="settingsDeviceHeading">
         <h2 class="settings-heading" id="settingsDeviceHeading">Saved in this browser</h2>
         <p class="settings-note">Your choices stay on this device. Nothing is sent anywhere, so a different phone, a private window or clearing site data starts fresh. To use them somewhere else, open this link there.</p>
@@ -5216,6 +5387,19 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
       syncFollowUi();
     }
 
+    function renderLearning() {
+      const summary = readingSummary();
+      const toggle = document.getElementById('learningToggle');
+      if (toggle) toggle.setAttribute('aria-pressed', String(readingState().on));
+      const status = document.getElementById('learningStatus');
+      if (status) status.textContent = summary.status;
+      const detail = document.getElementById('learningDetail');
+      if (detail) detail.textContent = summary.detail;
+      const forget = document.getElementById('forgetReadingBtn');
+      if (forget) forget.disabled = readingState().events.length === 0;
+    }
+    document.addEventListener('readingchange', renderLearning);
+    document.addEventListener('DOMContentLoaded', renderLearning);
     document.addEventListener('followchange', () => { markSectorFollows(); renderSettingsFollowing(); });
     document.addEventListener('DOMContentLoaded', () => { markSectorFollows(); renderSettingsFollowing(); });
   </script>
@@ -5464,7 +5648,7 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
 
           {% if co_news %}
             {% for it in co_news %}
-            <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}" data-tab="{{ 'insider' if it.category == 'Insider Transactions' else ('filings' if it.source == 'sec_edgar' else 'news') }}">
+            <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-ticker="{{ it.ticker }}" data-category="{{ it.category }}" data-source="{{ it.source }}" data-tab="{{ 'insider' if it.category == 'Insider Transactions' else ('filings' if it.source == 'sec_edgar' else 'news') }}">
               <div class="feed-body">
                 <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
                 {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
@@ -5859,7 +6043,10 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.company-profile-container').forEach(applyCompanyFeedFilter);
       renderFollowingStrip(currentCompany);
-      if (KNOWN_SYMBOLS.has(currentCompany)) trackRecentlyViewedCompany(currentCompany);
+      if (KNOWN_SYMBOLS.has(currentCompany)) {
+        trackRecentlyViewedCompany(currentCompany);
+        noteRead(currentCompany, 'page');
+      }
       renderCompanyComparativeChart(currentCompany);
     });
     document.addEventListener('followchange', () => renderFollowingStrip(currentCompany));
