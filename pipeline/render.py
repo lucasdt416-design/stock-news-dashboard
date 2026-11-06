@@ -90,7 +90,7 @@ def format_human_headline(item: Dict[str, Any]) -> str:
 
 
 # ==============================================================================
-# SECTOR DIRECTORY & CATEGORIZATION SYSTEM (10 MACRO SECTORS)
+# SECTOR DIRECTORY & CATEGORIZATION SYSTEM
 # ==============================================================================
 SECTOR_METADATA = {
     "Technology": {
@@ -143,16 +143,53 @@ SECTOR_METADATA = {
         "description": "Clean Power Generation & Electric Grid Utilities",
         "symbols": ["NEE"],
     },
+    "Materials": {
+        "icon": "",
+        "description": "Chemicals, Metals, Mining & Packaging",
+        "symbols": [],
+    },
+    "Real Estate": {
+        "icon": "",
+        "description": "Property Owners & Real Estate Investment Trusts",
+        "symbols": [],
+    },
+    "Consumer Goods": {
+        "icon": "",
+        "description": "Cars, Clothing, Leisure & Homebuilders",
+        "symbols": [],
+    },
+    "Other": {
+        "icon": "",
+        "description": "Companies not yet sorted into a sector",
+        "symbols": [],
+    },
 }
+
+# Sector names written by scripts/add_companies.py start with one of these, so they never
+# depend on the keyword guesses below.
+SECTOR_PREFIXES = (
+    ("materials", "Materials"),
+    ("real_estate", "Real Estate"),
+    ("consumer_goods", "Consumer Goods"),
+    ("healthcare", "Healthcare"),
+    ("financial", "Finance"),
+    ("tech_hardware", "Technology"),
+    ("utilities", "Utilities"),
+    ("industrials", "Industrials"),
+    ("other", "Other"),
+)
 
 
 def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
-    """Classify any stock symbol or sector string into one of the 10 macro sectors."""
+    """Classify any stock symbol or sector string into one of the macro sectors."""
     sym = (symbol or "").upper().strip()
     for sec_name, meta in SECTOR_METADATA.items():
         if sym in meta["symbols"]:
             return sec_name
     sec = (sector_str or "").lower()
+    for prefix, sector in SECTOR_PREFIXES:
+        if sec.startswith(prefix):
+            return sector
     if any(k in sec for k in ["semi", "software", "search", "social", "cloud", "tech"]):
         return "Technology"
     if any(k in sec for k in ["bank", "financ"]):
@@ -173,7 +210,7 @@ def get_company_macro_sector(symbol: str, sector_str: str = "") -> str:
         return "Telecom"
     if any(k in sec for k in ["util"]):
         return "Utilities"
-    return "Technology"
+    return "Other"
 
 
 # ==============================================================================
@@ -6433,7 +6470,7 @@ def _valid_watchlist(companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             continue
         seen_symbols.add(sym)
         seen_slugs.add(_company_slug(sym))
-        kept.append(dict(co, symbol=sym))
+        kept.append(dict(co, symbol=sym, sector=str(co.get("sector") or "")))
     return kept
 
 
@@ -6516,23 +6553,6 @@ def render_dashboard(
     latest_run = recent_runs[0] if recent_runs else None
     now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
 
-    # 2. Enrich items with human-readable headlines & macro sectors
-    items = []
-    for it in raw_items:
-        it_copy = dict(it)
-        it_copy["clean_headline"] = format_human_headline(it_copy)
-        it_copy["story_text"], it_copy["ai_summary"] = _story_text(it_copy), _ai_summary(it_copy)
-        it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
-        items.append(it_copy)
-
-    enriched_priority = []
-    for it in priority_items:
-        it_copy = dict(it)
-        it_copy["clean_headline"] = format_human_headline(it_copy)
-        it_copy["story_text"], it_copy["ai_summary"] = _story_text(it_copy), _ai_summary(it_copy)
-        it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
-        enriched_priority.append(it_copy)
-
     # 3. Load watchlist and build sector directory
     watchlist_path = watchlist_path or os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml")
     raw_watchlist_companies: List[Dict[str, Any]] = []
@@ -6540,6 +6560,29 @@ def render_dashboard(
         with open(watchlist_path, "r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
             raw_watchlist_companies = _valid_watchlist(cfg.get("tickers", []))
+
+    # A story takes its company's sector; only a company we don't list falls back to a guess.
+    sector_by_symbol = {co["symbol"]: get_company_macro_sector(co["symbol"], co.get("sector", "")) for co in raw_watchlist_companies}
+
+    def story_sector(item: Dict[str, Any]) -> str:
+        return sector_by_symbol.get(item.get("ticker", "")) or get_company_macro_sector(item.get("ticker", ""), item.get("category", ""))
+
+    # 2. Enrich items with human-readable headlines & macro sectors
+    items = []
+    for it in raw_items:
+        it_copy = dict(it)
+        it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["story_text"], it_copy["ai_summary"] = _story_text(it_copy), _ai_summary(it_copy)
+        it_copy["macro_sector"] = story_sector(it_copy)
+        items.append(it_copy)
+
+    enriched_priority = []
+    for it in priority_items:
+        it_copy = dict(it)
+        it_copy["clean_headline"] = format_human_headline(it_copy)
+        it_copy["story_text"], it_copy["ai_summary"] = _story_text(it_copy), _ai_summary(it_copy)
+        it_copy["macro_sector"] = story_sector(it_copy)
+        enriched_priority.append(it_copy)
 
     # 4. Comparative stock performance data
     if performance_data is None:

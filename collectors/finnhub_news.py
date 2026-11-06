@@ -16,6 +16,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from collectors.rate_limit import FINNHUB_LIMIT
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_USER_AGENT = os.environ.get(
@@ -55,6 +57,7 @@ def fetch_company_news_finnhub(
     )
 
     try:
+        FINNHUB_LIMIT.wait()
         with urllib.request.urlopen(req, timeout=timeout) as response:
             if response.status != 200:
                 logger.warning(

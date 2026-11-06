@@ -14,6 +14,8 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional
 
+from collectors.rate_limit import FINNHUB_LIMIT
+
 logger = logging.getLogger(__name__)
 
 FINNHUB_EARNINGS_URL = "https://finnhub.io/api/v1/calendar/earnings"
@@ -66,6 +68,7 @@ def fetch_ticker_earnings_calendar(
     req = urllib.request.Request(url, headers={"User-Agent": DEFAULT_USER_AGENT})
 
     try:
+        FINNHUB_LIMIT.wait()
         with urllib.request.urlopen(req, timeout=timeout) as response:
             data = json.loads(response.read().decode("utf-8"))
             return data.get("earningsCalendar", []) or []
