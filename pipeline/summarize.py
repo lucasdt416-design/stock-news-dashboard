@@ -1,15 +1,12 @@
-"""LLM-based and heuristic 'Why It Matters' summarization engine using Gemini API.
+"""Short story summaries: from Gemini when it works and can be checked, keyword templates otherwise.
 
-Optimized for 15+ company watchlists:
-- Batches items in chunks of 25 to minimize total HTTP requests.
-- Paces API calls with a safe inter-batch delay to stay under the 15 RPM free tier limit.
-- Caches and preserves existing summaries from SQLite to avoid redundant LLM calls.
-- Provides a high-quality contextual fallback engine if the API key is missing or calls fail.
+See summarize_items for how the free quota is spent and how summaries are checked against the source.
 """
 
 import json
 import logging
 import os
+import re
 import time
 import urllib.error
 import urllib.request
@@ -19,8 +16,8 @@ from pipeline.normalize import clean_text, extract_headline_subject
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+# Used only if the model list can't be read. Google keeps this alias pointing at its current Flash.
+FALLBACK_GEMINI_MODEL = "gemini-flash-latest"
 
 
 def extract_headline_topic(headline: str, subject: str = "") -> str:
@@ -177,153 +174,280 @@ def generate_fallback_summary(item: Dict[str, Any]) -> str:
     return f"Official company announcement detailing current business updates and strategic initiatives for {subject}."
 
 
+# --- Gemini ---------------------------------------------------------------------------------
+#
+# Google retires model names (gemini-1.5-flash, then gemini-2.5-flash) and every request then fails
+# with HTTP 404. So the model is chosen from the list Google says this key can use, once per run.
+
+GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
+SOURCE_SNIPPET_CHARS = 1200
+# Form 4 and Form 144 sentences are already exact; asking a model to restate them adds nothing.
+SKIP_AI_FORMS = {"4", "4/A", "144", "144/A", "3", "5"}
+NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+
+PROMPT = (
+    "You summarize company news for investors. For each item, write one or two plain sentences, "
+    "at most 45 words in all: what happened, keeping the key figures (amounts, percentages, share "
+    "counts, prices, dates) exactly as the text gives them, then, if it is clear from the text, why "
+    "it matters to a shareholder.\n"
+    "Rules: use only facts in that item's headline and text. Never add, round, convert or calculate "
+    "a number. No hype words, no advice, no 'investors should'. If the text says nothing beyond the "
+    "headline, return an empty string for that item.\n"
+    "Return ONLY a JSON object mapping each item's id to its summary string.\n\n"
+)
+
+
+class GeminiStop(Exception):
+    """A failure that will repeat for every batch (bad model, bad key, daily quota): stop asking."""
+
+
+def _gemini_request(url: str, api_key: str, body: Optional[Dict[str, Any]] = None, timeout: int = 30) -> Dict[str, Any]:
+    """The key goes in a header, so it never appears in a URL, a log line or an exception message."""
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode("utf-8") if body is not None else None,
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
+        method="POST" if body is not None else "GET",
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _google_error(e: urllib.error.HTTPError) -> str:
+    """Google's own explanation, e.g. 'models/gemini-2.5-flash is not found for API version v1beta'."""
+    try:
+        return json.loads(e.read().decode("utf-8")).get("error", {}).get("message", "")[:300]
+    except Exception:
+        return ""
+
+
+def _model_rank(name: str) -> Optional[tuple]:
+    """Stable Flash models, newest first; None for anything else (preview, image, audio, live...)."""
+    short = name.split("/")[-1]
+    if short == "gemini-flash-latest":
+        return (3, 0.0)
+    m = re.fullmatch(r"gemini-(\d+(?:\.\d+)?)-flash(-lite)?(?:-\d{3})?", short)
+    if not m:
+        return None
+    return (1 if m.group(2) else 2, float(m.group(1)))
+
+
+def choose_gemini_model(api_key: str) -> str:
+    """GEMINI_MODEL if set; otherwise the newest stable Flash model this key can call."""
+    configured = os.environ.get("GEMINI_MODEL", "").strip()
+    if configured:
+        return configured
+    try:
+        data = _gemini_request(f"{GEMINI_BASE}/models?pageSize=1000", api_key, timeout=20)
+    except urllib.error.HTTPError as e:
+        raise GeminiStop(f"listing models failed: HTTP {e.code} {_google_error(e)}".strip())
+    except Exception as e:
+        logger.warning("Could not list Gemini models (%s); trying %s.", e, FALLBACK_GEMINI_MODEL)
+        return FALLBACK_GEMINI_MODEL
+    usable = []
+    for m in data.get("models", []):
+        rank = _model_rank(m.get("name", ""))
+        if rank and "generateContent" in m.get("supportedGenerationMethods", []):
+            usable.append((rank, m["name"].split("/")[-1]))
+    if not usable:
+        raise GeminiStop("this key can't use any Gemini Flash model")
+    return max(usable)[1]
+
+
+_MODEL_BY_KEY: Dict[tuple, str] = {}
+
+
+def _cached_model(api_key: str) -> str:
+    """choose_gemini_model, asked once per run however many callers need it."""
+    key = (api_key, os.environ.get("GEMINI_MODEL", "").strip())
+    if key not in _MODEL_BY_KEY:
+        _MODEL_BY_KEY[key] = choose_gemini_model(api_key)
+    return _MODEL_BY_KEY[key]
+
+
+def numbers_in(text: str) -> set:
+    return {n.replace(",", "").rstrip(".") for n in NUMBER.findall(text or "")}
+
+
+def grounded(summary: str, source: str) -> bool:
+    """True when every number in the summary also appears in what the model was given."""
+    return numbers_in(summary) <= numbers_in(source)
+
+
+def _source_text(it: Dict[str, Any]) -> str:
+    return " ".join(str(it.get(k) or "") for k in ("company_name", "form_or_type", "published_date", "headline")) + " " + (it.get("summary") or "")[:SOURCE_SNIPPET_CHARS]
+
+
 def summarize_batch_with_gemini(
     batch: List[Dict[str, Any]],
     api_key: str,
-    timeout: int = 30,
+    timeout: int = 60,
     max_retries: int = 3,
+    model: Optional[str] = None,
 ) -> Dict[str, str]:
-    """Call Gemini API with retry & exponential backoff to generate 'why it matters' takeaways for a batch."""
-    if not api_key:
+    """One request for a batch. Returns {item_uid: summary} for the summaries that pass the number check.
+
+    Raises GeminiStop when retrying can't help (unknown model, rejected key, quota used up).
+    """
+    if not api_key or not batch:
         return {}
+    model = model or os.environ.get("GEMINI_MODEL", "").strip() or FALLBACK_GEMINI_MODEL
 
-    import re
-
-    items_payload = []
+    by_id = {}
+    payload = []
     for it in batch:
-        items_payload.append({
-            "id": it.get("item_uid"),
-            "ticker": it.get("ticker"),
+        uid = it.get("item_uid")
+        by_id[uid] = it
+        payload.append({
+            "id": uid,
             "company": it.get("company_name"),
             "form": it.get("form_or_type"),
-            "category": it.get("category"),
+            "date": it.get("published_date"),
             "headline": it.get("headline"),
-            "summary_snippet": (it.get("summary") or "")[:200],
+            "text": (it.get("summary") or "")[:SOURCE_SNIPPET_CHARS],
         })
-
-    prompt = (
-        "You are an expert financial analyst. For each company news item or SEC filing below, "
-        "write a concise, punchy ONE-SENTENCE plain-English explanation of why it matters to an investor "
-        "(e.g. 'Routine insider transaction under a scheduled 10b5-1 plan, not a material signal.' or "
-        "'Major quarterly report highlighting cloud revenue acceleration and margin expansion.').\n\n"
-        "Return ONLY a valid JSON object mapping each 'id' to its one-sentence summary string.\n\n"
-        f"Items to summarize:\n{json.dumps(items_payload, indent=2)}"
-    )
-
-    request_body = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.2,
-            "responseMimeType": "application/json",
-        },
+    body = {
+        "contents": [{"parts": [{"text": PROMPT + json.dumps(payload, ensure_ascii=False)}]}],
+        "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
     }
-
-    model = os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
-    url = GEMINI_API_URL.format(model=model, api_key=api_key)
+    url = f"{GEMINI_BASE}/models/{model}:generateContent"
 
     for attempt in range(max_retries):
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(request_body).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                raw_bytes = resp.read().decode("utf-8")
-                data = json.loads(raw_bytes)
-                candidates = data.get("candidates", [])
-                if candidates:
-                    text_out = candidates[0]["content"]["parts"][0]["text"].strip()
-                    # Strip any accidental markdown formatting fences
-                    if text_out.startswith("```"):
-                        text_out = re.sub(r"^```(?:json)?\s*", "", text_out)
-                        text_out = re.sub(r"\s*```$", "", text_out)
-                    return json.loads(text_out)
-                return {}
+            data = _gemini_request(url, api_key, body, timeout=timeout)
+            break
         except urllib.error.HTTPError as e:
+            detail = _google_error(e)
             if e.code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
-                retry_wait = 4.0 * (attempt + 1)
-                logger.warning(
-                    "Gemini API returned HTTP %s (%s). Retrying in %.1fs (attempt %d/%d)...",
-                    e.code, e.reason, retry_wait, attempt + 1, max_retries
-                )
-                time.sleep(retry_wait)
+                wait = 8.0 * (attempt + 1)
+                logger.warning("Gemini returned HTTP %s; retrying in %.0fs (%d/%d). %s", e.code, wait, attempt + 1, max_retries, detail)
+                time.sleep(wait)
                 continue
-            logger.warning("Gemini API returned HTTP %s (%s). Falling back safely.", e.code, e.reason)
+            if e.code in (400, 401, 403, 404, 429):
+                raise GeminiStop(f"HTTP {e.code} from {model}: {detail}".strip())
+            logger.warning("Gemini returned HTTP %s for this batch. %s", e.code, detail)
             return {}
-        except urllib.error.URLError as e:
+        except (urllib.error.URLError, TimeoutError) as e:
             if attempt < max_retries - 1:
-                retry_wait = 3.0 * (attempt + 1)
-                logger.warning("Gemini API connection error (%s). Retrying in %.1fs...", e.reason, retry_wait)
-                time.sleep(retry_wait)
+                time.sleep(4.0 * (attempt + 1))
                 continue
-            logger.warning("Gemini API connection error (%s). Falling back safely.", e.reason)
+            logger.warning("Could not reach Gemini (%s).", getattr(e, "reason", e))
             return {}
-        except json.JSONDecodeError as e:
-            logger.warning("Gemini API returned non-JSON output (%s). Falling back safely.", e)
-            return {}
-        except Exception as e:
-            logger.warning("Gemini API batch summarization error: %s. Falling back safely.", e)
-            return {}
+    else:
+        return {}
 
-    return {}
+    try:
+        text_out = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        text_out = re.sub(r"^```(?:json)?\s*|\s*```$", "", text_out)
+        results = json.loads(text_out)
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+        logger.warning("Gemini answer wasn't the JSON asked for (%s).", e)
+        return {}
+    if not isinstance(results, dict):
+        return {}
+
+    kept, dropped = {}, 0
+    for uid, summary in results.items():
+        if uid not in by_id or not isinstance(summary, str):
+            continue
+        summary = clean_text(summary)
+        if not summary:
+            continue
+        if grounded(summary, _source_text(by_id[uid])):
+            kept[uid] = summary
+        else:
+            dropped += 1
+    if dropped:
+        logger.info("Dropped %d Gemini summaries with a number that isn't in the source.", dropped)
+    return kept
+
+
+def _cached_ai_summaries(db_path: Optional[str]) -> Dict[str, tuple]:
+    """Summaries Gemini already wrote on earlier runs, so each story is only ever sent once."""
+    try:
+        from pipeline.db import get_db_connection, init_db
+        init_db(db_path)
+        conn = get_db_connection(db_path)
+        try:
+            rows = conn.execute(
+                "SELECT item_uid, llm_summary, summary_origin FROM news_items WHERE summary_origin LIKE 'ai:%'"
+            ).fetchall()
+        finally:
+            conn.close()
+        return {r["item_uid"]: (r["llm_summary"], r["summary_origin"]) for r in rows}
+    except Exception as e:
+        logger.debug("No cached summaries: %s", e)
+        return {}
 
 
 def summarize_items(
     items: List[Dict[str, Any]],
     api_key: Optional[str] = None,
     batch_size: int = 25,
-    inter_batch_delay: float = 4.5,
+    inter_batch_delay: float = 6.5,
     **kwargs,
 ) -> List[Dict[str, Any]]:
-    """Generate and attach a one-sentence 'why it matters' summary for each item.
+    """Attach a short summary to each item, from Gemini where it can be trusted.
 
-    Free tier safety guaranteed:
-    - Batches in chunks of 25 to respect token budgets.
-    - Paces requests with 4.5s delay to guarantee strict compliance with Gemini 15 RPM.
-    - Automatic exponential backoff retries on HTTP 429 / 503.
-    - Highly contextual, non-boilerplate fallback engine if API key is missing or calls fail.
+    - Stories Gemini summarized on an earlier run keep that summary (read from the database when
+      `db_path` is passed), so the free daily quota goes on new stories only.
+    - New stories go highest score first, at most GEMINI_MAX_BATCHES requests per run (default 12),
+      paced under the free tier's per-minute limit. The rest wait for the next run.
+    - A summary is only kept if every number in it appears in the source text.
+    - Anything without one gets the keyword fallback, marked "template" so the site doesn't show it.
     """
-    gemini_key = api_key or os.environ.get("GEMINI_API_KEY", "").strip()
+    gemini_key = (api_key or os.environ.get("GEMINI_API_KEY", "")).strip()
+    cached = _cached_ai_summaries(kwargs.get("db_path")) if kwargs.get("db_path") else {}
+    for it in items:
+        hit = cached.get(it.get("item_uid"))
+        if hit and not it.get("llm_summary"):
+            it["llm_summary"], it["summary_origin"] = hit
+        elif it.get("llm_summary") and not it.get("summary_origin"):
+            it["summary_origin"] = "given"
 
-    # Identify items that actually need summarization (skip already populated ones if any)
-    unsummarized = [it for it in items if not it.get("llm_summary")]
+    todo = [
+        it for it in items
+        if not it.get("llm_summary")
+        and (it.get("form_or_type") or "").upper() not in SKIP_AI_FORMS
+        and len((it.get("summary") or "").strip()) >= 40
+        and not (it.get("summary") or "").startswith("Official SEC submission")
+    ]
+    todo.sort(key=lambda it: (float(it.get("score") or 0), it.get("published_date") or ""), reverse=True)
 
-    if gemini_key and unsummarized:
-        logger.info(
-            "Using Gemini API for 'Why It Matters' summarization (%d new items in %d batches)...",
-            len(unsummarized),
-            (len(unsummarized) + batch_size - 1) // batch_size,
-        )
+    if gemini_key and todo:
+        try:
+            max_batches = int(os.environ.get("GEMINI_MAX_BATCHES", "12"))
+        except ValueError:
+            max_batches = 12
+        todo = todo[: max_batches * batch_size]
+        written = 0
+        try:
+            model = _cached_model(gemini_key)
+            batches = [todo[i : i + batch_size] for i in range(0, len(todo), batch_size)]
+            logger.info("Summarizing %d new stories with %s in %d requests.", len(todo), model, len(batches))
+            for n, batch in enumerate(batches, 1):
+                try:
+                    results = summarize_batch_with_gemini(batch, gemini_key, model=model)
+                except GeminiStop:
+                    raise
+                except Exception as e:
+                    logger.warning("Gemini batch %d failed: %s", n, e)
+                    results = {}
+                for it in batch:
+                    if results.get(it.get("item_uid")):
+                        it["llm_summary"] = results[it["item_uid"]]
+                        it["summary_origin"] = f"ai:{model}"
+                        written += 1
+                if n < len(batches):
+                    time.sleep(inter_batch_delay)
+        except GeminiStop as e:
+            logger.warning("Stopped asking Gemini: %s", e)
+        logger.info("Gemini wrote %d checked summaries this run.", written)
+    elif not gemini_key:
+        logger.info("No GEMINI_API_KEY set; using keyword summaries, which the site doesn't display.")
 
-        for i in range(0, len(unsummarized), batch_size):
-            batch = unsummarized[i : i + batch_size]
-            batch_num = (i // batch_size) + 1
-            total_batches = (len(unsummarized) + batch_size - 1) // batch_size
-            logger.info("Processing Gemini batch %d/%d (%d items)...", batch_num, total_batches, len(batch))
-
-            try:
-                llm_results = summarize_batch_with_gemini(batch, gemini_key)
-            except Exception as e:
-                logger.warning("Batch exception: %s", e)
-                llm_results = {}
-
-            for item in batch:
-                uid = item.get("item_uid")
-                if uid in llm_results and llm_results[uid]:
-                    item["llm_summary"] = str(llm_results[uid]).strip()
-                else:
-                    item["llm_summary"] = generate_fallback_summary(item)
-
-            if i + batch_size < len(unsummarized):
-                time.sleep(inter_batch_delay)
-    else:
-        if not gemini_key:
-            logger.info("No GEMINI_API_KEY detected; applying contextual 'Why It Matters' intelligence engine.")
-        for item in items:
-            if not item.get("llm_summary"):
-                item["llm_summary"] = generate_fallback_summary(item)
-
+    for it in items:
+        if not it.get("llm_summary"):
+            it["llm_summary"] = generate_fallback_summary(it)
+            it["summary_origin"] = "template"
     return items
-

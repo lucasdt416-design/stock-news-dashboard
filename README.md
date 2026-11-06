@@ -2,7 +2,7 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-stock--news--dashboard.pages.dev-blue?style=for-the-badge&logo=cloudflare)](https://stock-news-dashboard.pages.dev)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Gemini](https://img.shields.io/badge/AI-Gemini%202.5%20Flash-4E75F6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
+[![Gemini](https://img.shields.io/badge/AI-Gemini%20Flash-4E75F6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
 [![Cloudflare Pages](https://img.shields.io/badge/Deployed%20to-Cloudflare%20Pages-F38020?style=for-the-badge&logo=cloudflare)](https://stock-news-dashboard.pages.dev)
 [![Automation](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions%20Cron-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/lucasdt416-design/stock-news-dashboard/actions)
 
@@ -81,7 +81,8 @@ I designed this project to act as a **zero-cost, automated personal hedge-fund n
 ## ✨ Key Features
 
 - **⚡ Priority Intelligence Panel**: Spotlight grid displaying the top 8 highest-scored stories with color-coded score pills and category tags.
-- **💡 AI "Why It Matters" Takeaways**: Every item includes a single-sentence plain-English investor explanation powered by Gemini 2.5 Flash.
+- **🧾 What each filing says**: insider trades (who, shares, price, value, planned or not), planned sales, the text of 8-K announcements, and revenue, profit and EPS from 10-Q and 10-K reports, read from the SEC's free data and cached so each filing is fetched once.
+- **💡 Short AI summaries**: Gemini Flash writes one or two sentences per story. A summary is only shown if every number in it appears in the source text.
 - **📈 Interactive Visual Analytics**:
   - **Frequency Sparkline**: Tracks multi-company filing and news velocity over time (`NVDA`, `AAPL`, `MSFT`).
   - **Category Donut Chart**: Breaks down the distribution of disclosures across active categories.
@@ -96,7 +97,7 @@ I designed this project to act as a **zero-cost, automated personal hedge-fund n
 | Layer | Technologies |
 |---|---|
 | **Core & Pipeline** | Python 3.11, Jinja2, PyYAML, Feedparser |
-| **AI / LLM** | Google Gemini API (`gemini-2.5-flash` with structured batching) |
+| **AI / LLM** | Google Gemini API (newest stable Flash model the key can use, batched, cached per story) |
 | **Database** | SQLite3 (indexes on `score DESC`, `published_date DESC`, `ticker`) |
 | **Visualizations** | Chart.js 4.4 (loaded via CDN, zero-build dependency) |
 | **Frontend** | Semantic HTML5, Custom Responsive CSS (Dark Mode Glassmorphism) |
@@ -129,6 +130,10 @@ pip install -r requirements.txt
   ```bash
   export GEMINI_API_KEY="your-gemini-api-key"
   ```
+- Optional Gemini settings: `GEMINI_MODEL` pins a model (otherwise the newest stable Flash model your key
+  can use is picked each run, so a retired name can't break summaries), and `GEMINI_MAX_BATCHES`
+  (default 12) caps requests per run to stay inside the free daily quota. Stories already summarized are
+  never sent again.
 
 ### 3. Run the End-to-End Pipeline
 

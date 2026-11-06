@@ -38,6 +38,7 @@ if env_file.exists():
 
 from collectors.company_ir import collect_company_ir
 from collectors.edgar import collect_sec_edgar
+from collectors.edgar_details import enrich_filings
 from collectors.finnhub_news import collect_finnhub_news
 from collectors.stock_prices import collect_comparative_performance
 from pipeline.calendar import build_forthcoming_calendar
@@ -153,6 +154,8 @@ def main() -> None:
     )
     edgar_raw = collect_sec_edgar(watchlist=tickers, user_agent=user_agent)
     logger.info("Collected %d raw SEC filings", len(edgar_raw))
+    # Open each recent filing and pull out its figures (cached, so each filing is read once).
+    enrich_filings(edgar_raw, db_path=str(db_file), user_agent=user_agent)
 
     # 3. Stage 2: Company IR Newsroom RSS Collector
     logger.info("--- Stage 2: Company IR RSS Collector ---")
@@ -195,7 +198,7 @@ def main() -> None:
 
     # 9. AI 'Why It Matters' Summarization (High-Impact items)
     logger.info("--- Stage 7b: AI / Heuristic Summarization ---")
-    summarized_items = summarize_items(scored_items, watchlist_path=str(watchlist_path))
+    summarized_items = summarize_items(scored_items, watchlist_path=str(watchlist_path), db_path=str(db_file))
 
     # 10. Persist to Database & Rescore Historical
     logger.info("--- Saving to SQLite Database ---")

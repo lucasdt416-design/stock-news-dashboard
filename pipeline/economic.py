@@ -224,26 +224,25 @@ def generate_economic_synthesis(
 
     ticker_str = ", ".join(relevant_tickers[:5]) if relevant_tickers else "monitored holdings"
 
-    # 1. Try Gemini API if key is available
+    # 1. Gemini, when a key is set: same model choice, header-only key and number check as story summaries.
     if token:
         try:
+            from pipeline.summarize import _gemini_request, _cached_model, grounded, GEMINI_BASE
             prompt = (
-                f"You are a senior institutional macro portfolio strategist. Write a single, highly concise, punchy "
-                f"one-sentence executive synthesis (under 25 words) explaining how the latest trend in '{name}' "
-                f"(Current: {formatted_val}, Direction: {change_dir}, Delta: {change_val}) impacts our specific sensitive portfolio holdings: {ticker_str}. "
-                f"Do not use filler words. Output ONLY the single sentence."
+                f"In one plain sentence of under 25 words, say what the latest reading of '{name}' "
+                f"({formatted_val}, moving {change_dir} by {change_val}) could mean for these companies: {ticker_str}. "
+                f"Use only the numbers given here. No hype, no advice. Output only the sentence."
             )
-            import urllib.request
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={token}"
-            body = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
-            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                res_data = json.loads(resp.read().decode("utf-8"))
-                text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                if text:
-                    return text
-        except Exception as e:
-            logger.debug("Gemini economic synthesis fallback: %s", e)
+            model = _cached_model(token)
+            res_data = _gemini_request(
+                f"{GEMINI_BASE}/models/{model}:generateContent", token,
+                {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.1}}, timeout=15,
+            )
+            text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if text and grounded(text, prompt):
+                return text
+        except Exception as e:  # never let the economy page depend on Gemini
+            logger.debug("Gemini economic synthesis fallback: %s", type(e).__name__)
 
     # 2. Intelligent Contextual Deterministic Fallback
     if indicator_id == "interest_rates":

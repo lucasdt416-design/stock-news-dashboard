@@ -101,7 +101,8 @@ No secret values appear in this document, in the code, or in the pull requests.
 ### 9. API keys in pipeline URLs (Low, open)
 - **What:** these place keys in query strings, and logs from a public repo are public:
   `collectors/earnings_calendar.py:65`, `collectors/finnhub_news.py:44`, `pipeline/lookup.py:85,104,137`,
-  `pipeline/economic.py:237,337`, `pipeline/summarize.py:23`.
+  `pipeline/economic.py:337` (FRED). Gemini no longer: since the Gemini fix, `pipeline/summarize.py` and
+  `pipeline/economic.py` send the key only in the `x-goog-api-key` header.
 - **Risk:** I found no line that logs these URLs, and normal `urllib` HTTP and network errors do not
   include them. Other exceptions can: `collectors/earnings_calendar.py:65` does not encode `symbol`, and
   an invalid URL error quotes the URL, which that file logs. Today the symbols come from your own

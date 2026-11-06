@@ -1866,7 +1866,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
               <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
               <div class="top-body">
                 <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
-                {% if it.story_text %}<p class="top-summary">{{ figures(it.story_text) }}</p>{% endif %}
+                {% if it.story_text %}<p class="top-summary">{{ figures(it.story_text) }}</p>{% endif %}{% if it.ai_summary %}<p class="feed-takeaway">{{ figures(it.ai_summary) }}</p>{% endif %}
               </div>
               <span class="top-date">{{ short_date(it.published_date) }}</span>
             </li>
@@ -3520,7 +3520,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
           <div class="feed-body">
             <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
-            {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}
+            {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}{% if item.ai_summary %}<p class="feed-takeaway">{{ figures(item.ai_summary) }}</p>{% endif %}
             <details class="feed-details">
               <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
               <div class="feed-details-body">
@@ -4983,8 +4983,8 @@ def _heat_class(pct: float) -> str:
 
 SEC_BOILERPLATE = "Official SEC submission"
 FIGURE_PATTERN = re.compile(
-    r"(?:US)?[$€£]\s?\d[\d,.]*\d?(?:\s?(?:million|billion|trillion|bn)\b)?"
-    r"|[+\-−]?\d[\d,.]*\s?%"
+    r"(?:US)?[$€£]\s?\d(?:[\d,.]*\d)?(?:\s?(?:million|billion|trillion|bn)\b)?"
+    r"|[+\-−]?\d[\d,.]*\s?(?:%|percent\b)"
     r"|\b\d[\d,.]*\s(?:million|billion|trillion)\b",
     re.IGNORECASE,
 )
@@ -5007,6 +5007,13 @@ def _story_text(item: Dict[str, Any]) -> str:
             return body[:ends[-1]].strip()
         return body + "…"
     return text
+
+
+def _ai_summary(item: Dict[str, Any]) -> str:
+    """Gemini's summary, only when it passed the number check (keyword templates are never shown)."""
+    if not str(item.get("summary_origin") or "").startswith("ai:"):
+        return ""
+    return clean_text(item.get("llm_summary", "") or "")
 
 
 def _figures_html(text: str) -> Markup:
@@ -5134,7 +5141,7 @@ def render_dashboard(
     for it in raw_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
-        it_copy["story_text"] = _story_text(it_copy)
+        it_copy["story_text"], it_copy["ai_summary"] = _story_text(it_copy), _ai_summary(it_copy)
         it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         items.append(it_copy)
 
@@ -5142,7 +5149,7 @@ def render_dashboard(
     for it in priority_items:
         it_copy = dict(it)
         it_copy["clean_headline"] = format_human_headline(it_copy)
-        it_copy["story_text"] = _story_text(it_copy)
+        it_copy["story_text"], it_copy["ai_summary"] = _story_text(it_copy), _ai_summary(it_copy)
         it_copy["macro_sector"] = get_company_macro_sector(it_copy.get("ticker", ""), it_copy.get("category", ""))
         enriched_priority.append(it_copy)
 
