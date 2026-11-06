@@ -1546,6 +1546,43 @@ SHARED_CSS = """
     .company-rollup-since { color: var(--text-muted); font-size: 0.86rem; }
     .company-news-item[hidden] { display: none; }
 
+    /* ---- Following list at the top ---- */
+    .following-strip { display: flex; align-items: center; gap: 0.5rem 0.75rem; flex-wrap: wrap; margin: 0 0 1.25rem; }
+    .following-label { font-size: 0.84rem; font-weight: 600; color: var(--text-primary); }
+    .following-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .following-chip { border: 1px solid var(--border-subtle); border-radius: var(--radius-full); padding: 0.3rem 0.8rem; min-height: 34px; font: inherit; font-size: 0.86rem; font-weight: 600; background: none; color: var(--text-primary); cursor: pointer; }
+    .following-chip:hover { border-color: var(--text-muted); }
+    .following-chip.active { background: var(--text-primary); border-color: var(--text-primary); color: var(--bg-base); }
+    .following-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .following-edit { font-size: 0.84rem; color: var(--text-secondary); }
+    .settings-following .settings-group-name::after { content: ""; }
+
+    /* ---- Trending, suggestions, new since last visit ---- */
+    .home-trending { max-width: 72rem; margin: 0 auto 3.5rem; padding: 0 clamp(1rem, 4vw, 4.5rem); }
+    .trend-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0 2.5rem; }
+    .trend-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 0.1rem 1rem; align-items: center; padding: 0.9rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .trend-name { display: flex; align-items: baseline; gap: 0.55rem; min-width: 0; text-decoration: none; color: var(--text-primary); }
+    .trend-name:hover .trend-company { text-decoration: underline; text-underline-offset: 2px; }
+    .trend-ticker { font-weight: 600; }
+    .trend-company { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 0.92rem; }
+    .trend-reason { grid-column: 1; font-size: 0.82rem; color: var(--text-muted); }
+    .trend-item .follow-btn { grid-column: 2; grid-row: 1 / span 2; }
+    .follow-suggest-why { display: block; font-size: 0.8rem; color: var(--text-muted); }
+    .follow-suggest-name { white-space: normal; }
+    .new-badge { display: inline-block; margin-right: 0.45rem; padding: 0.05rem 0.45rem; border-radius: var(--radius-full); background: var(--accent); color: var(--on-accent); font-size: 0.7rem; font-weight: 600; vertical-align: 0.15em; }
+    .new-badge[hidden] { display: none; }
+
+    /* ---- Home tabs, above the welcome like Reels ---- */
+    .orbit-hero .hero-tabs { position: relative; z-index: 70; margin: 5.5rem 0 0; border-bottom: none; gap: 1.5rem; }
+    .orbit-hero .hero-tabs .view-tab { min-height: 40px; padding: 0.35rem 0.1rem; font-size: 1rem; }
+    .orbit-hero .hero-tabs + .hero-copy { padding-top: clamp(1.75rem, 6vh, 3.75rem); }
+    .hero-since { margin: 0.5rem 0 0; font-size: 0.92rem; color: var(--text-secondary); pointer-events: auto; }
+    .hero-since a { color: var(--accent); text-decoration: none; }
+    @media (max-width: 1024px) {
+      .orbit-hero .hero-tabs { margin-top: 4.25rem; }
+      .orbit-hero .hero-tabs + .hero-copy { padding-top: 1.25rem; }
+    }
+
     /* ---- Following ---- */
     .view-tabs { display: flex; justify-content: center; gap: 1.75rem; margin: 0.5rem 0 1.75rem; border-bottom: 1px solid var(--border-subtle); }
     .view-tabs-left { justify-content: flex-start; margin: 0 0 1rem; }
@@ -2122,6 +2159,17 @@ function offerSetupLink() {
   main.prepend(bar);
 }
 
+// Moves followed entries to the top of their list, keeping the original order otherwise.
+function followedFirst(list, itemSelector, symbolOf) {
+  if (!list) return;
+  const follows = followedSet();
+  const items = [...list.querySelectorAll(':scope > ' + itemSelector)];
+  items.forEach((el, i) => { if (!el.dataset.order) el.dataset.order = String(i); });
+  items
+    .sort((a, b) => (Number(follows.has(symbolOf(b))) - Number(follows.has(symbolOf(a)))) || (Number(a.dataset.order) - Number(b.dataset.order)))
+    .forEach(el => list.append(el));
+}
+
 document.addEventListener('followchange', syncFollowUi);
 document.addEventListener('DOMContentLoaded', () => { syncFollowUi(); offerSetupLink(); });
 // Another tab changed the follows: pick that up here too.
@@ -2157,9 +2205,15 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <section class="orbit-hero" id="orbitHero" aria-label="Search your watchlist">
         <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
 
+        <div class="view-tabs hero-tabs" role="tablist" aria-label="Which stories to show">
+          <button class="view-tab" id="viewTabForYou" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+          <button class="view-tab active" id="viewTabAll" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
+        </div>
+
         <div class="hero-copy">
           <h1 class="hero-headline">Welcome!</h1>
-          <p class="hero-sub">We keep you informed about the stocks you follow.</p>
+          <p class="hero-sub" id="heroSub">We keep you informed about the stocks you follow.</p>
+          <p class="hero-since" id="heroSince" hidden></p>
         </div>
 
         <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
@@ -2222,10 +2276,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </div>
       </section>
 
-      <div class="view-tabs" role="tablist" aria-label="Which stories to show">
-        <button class="view-tab" id="viewTabForYou" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
-        <button class="view-tab active" id="viewTabAll" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
-      </div>
 
       {% if watchlist_moves %}
       {% set risers = watchlist_moves|selectattr('move_pct', 'gt', 0)|list|length %}
@@ -2241,6 +2291,21 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       </section>
       {% endif %}
 
+      {% if trending %}
+      <section class="home-trending" aria-labelledby="homeTrendingHeading">
+        <h2 class="home-heading" id="homeTrendingHeading">Trending this week</h2>
+        <ul class="trend-list">
+          {% for t in trending %}
+          <li class="trend-item" data-symbol="{{ t.symbol }}">
+            <a class="trend-name" href="company.html?ticker={{ t.symbol|urlencode }}"><span class="trend-ticker">{{ t.symbol }}</span><span class="trend-company">{{ t.name }}</span></a>
+            <span class="trend-reason">{{ t.reason }}</span>
+            <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ t.symbol }}" aria-pressed="false">Follow</button>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
       <div class="home-below">
         <section class="home-stories" aria-labelledby="homeStoriesHeading">
           <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
@@ -2249,10 +2314,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           {% if priority_items %}
           <ol class="top-list">
             {% for it in priority_items[:5] %}
-            <li class="top-row{% if loop.first %} is-lead{% endif %}">
+            <li class="top-row{% if loop.first %} is-lead{% endif %}" data-created="{{ it.created_at or '' }}">
               <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
               <div class="top-body">
-                <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+                <span class="new-badge" hidden>New</span><a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
                 {% if it.story_text %}<p class="top-summary">{{ figures(it.story_text) }}</p>{% endif %}{% if it.ai_summary %}<p class="feed-takeaway">{{ figures(it.ai_summary) }}</p>{% endif %}
               </div>
               <span class="top-date">{{ short_date(it.published_date) }}</span>
@@ -2391,10 +2456,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     function topRowHtml(it, i, follows) {
       const reason = followReason(it.ticker, it.related_tickers_list);
       return `
-        <li class="top-row${i === 0 ? ' is-lead' : ''}">
+        <li class="top-row${i === 0 ? ' is-lead' : ''}" data-created="${escapeHtml(it.created_at || '')}">
           <a class="top-ticker" href="company.html?ticker=${encodeURIComponent(it.ticker)}">${escapeHtml(it.ticker)}</a>
           <div class="top-body">
-            <a class="top-title" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.clean_headline || it.headline)}</a>
+            <span class="new-badge" hidden>New</span><a class="top-title" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.clean_headline || it.headline)}</a>
             ${it.story_text ? `<p class="top-summary">${figuresHtml(it.story_text)}</p>` : ''}
             ${it.ai_summary ? `<p class="feed-takeaway">${figuresHtml(it.ai_summary)}</p>` : ''}
             ${reason ? `<p class="follow-reason">${escapeHtml(reason)}</p>` : ''}
@@ -2403,29 +2468,111 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </li>`;
     }
 
-    // Companies with the most going on, one tap each. Shown until a few are followed.
-    function suggestionsHtml(follows) {
+    const TRENDING = {{ trending|tojson }};
+    const COMPANY_BY_SYMBOL = {};
+    (watchlistCompanies || []).forEach(c => { COMPANY_BY_SYMBOL[c.symbol] = c; });
+
+    // Watchlist companies linked to what's followed, with the link in words.
+    function relatedTo(follows) {
+      const found = new Map();
+      const add = (sym, why) => { if (KNOWN_SYMBOLS.has(sym) && !follows.has(sym) && !found.has(sym)) found.set(sym, why); };
+      followState().symbols.forEach(src => {
+        const co = COMPANY_BY_SYMBOL[src] || {};
+        (co.key_suppliers || []).forEach(sym => add(String(sym).toUpperCase(), `Supplies ${src}`));
+        (co.key_customers || []).forEach(sym => add(String(sym).toUpperCase(), `Customer of ${src}`));
+        (co.competitors || []).forEach(sym => add(String(sym).toUpperCase(), `Competes with ${src}`));
+      });
+      return [...found.entries()].map(([symbol, reason]) => ({ symbol, reason }));
+    }
+
+    // Suggestions in order: linked to what you follow, trending this week, then the busiest.
+    function suggestionsFor(follows, count) {
+      const picks = [];
+      const seen = new Set();
+      const add = (symbol, reason) => {
+        if (picks.length >= count || seen.has(symbol) || follows.has(symbol) || !COMPANY_BY_SYMBOL[symbol]) return;
+        seen.add(symbol);
+        picks.push({ symbol, reason });
+      };
+      // Half at most from links, one per kind of link first, so the list isn't four of the same.
+      const related = relatedTo(follows);
+      const byReason = new Map();
+      related.forEach(r => { if (!byReason.has(r.reason)) byReason.set(r.reason, []); byReason.get(r.reason).push(r); });
+      const linkCap = Math.ceil(count / 2);
+      let round = 0;
+      while (picks.length < linkCap && [...byReason.values()].some(list => list.length > round)) {
+        byReason.forEach(list => { if (picks.length < linkCap && list[round]) add(list[round].symbol, list[round].reason); });
+        round += 1;
+      }
+      TRENDING.forEach(t => add(t.symbol, `Trending · ${t.reason}`));
       const counts = {};
       (allItems || []).forEach(it => { counts[it.ticker] = (counts[it.ticker] || 0) + 1; });
-      const names = {};
-      (watchlistCompanies || []).forEach(c => { names[c.symbol] = c.name; });
-      const picks = Object.keys(counts)
-        .filter(s => names[s] && !follows.has(s))
-        .sort((a, b) => counts[b] - counts[a])
-        .slice(0, followsAnything() ? 4 : 8);
+      Object.keys(counts).sort((a, b) => counts[b] - counts[a]).forEach(sym => add(sym, `${counts[sym]} stories`));
+      return picks;
+    }
+
+    function suggestionsHtml(follows) {
+      const picks = suggestionsFor(follows, followsAnything() ? 4 : 8);
+      if (!picks.length) return '';
       const intro = followsAnything()
-        ? '<h3 class="follow-suggest-title">More companies to follow</h3>'
+        ? '<h3 class="follow-suggest-title">Suggested for you</h3>'
         : '<p class="home-empty">Follow a few companies and their stories gather here, most important first.</p>';
       return `
         ${intro}
         <ul class="follow-suggest">
-          ${picks.map(s => `<li><span class="follow-suggest-name"><span class="ticker-badge">${escapeHtml(s)}</span> ${escapeHtml(names[s])}</span><button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="${escapeHtml(s)}" aria-pressed="false">Follow</button></li>`).join('')}
+          ${picks.map(p => `<li><span class="follow-suggest-name"><span class="ticker-badge">${escapeHtml(p.symbol)}</span> ${escapeHtml(COMPANY_BY_SYMBOL[p.symbol].name)}<span class="follow-suggest-why">${escapeHtml(p.reason)}</span></span><button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="${escapeHtml(p.symbol)}" aria-pressed="false">Follow</button></li>`).join('')}
         </ul>
-        <a class="home-more" href="company.html">See all ${(watchlistCompanies || []).length} companies</a>`;
+        <a class="home-more" href="settings.html">Choose companies and sectors</a>`;
+    }
+
+    // ---- Since your last visit ----
+    // The previous visit is kept for this whole browsing session, so the count doesn't vanish on reload.
+    let previousVisit = '';
+    function readPreviousVisit() {
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      try {
+        let prev = sessionStorage.getItem('stockpulse_prev_visit');
+        if (prev === null) {
+          prev = localStorage.getItem('stockpulse_last_visit') || '';
+          sessionStorage.setItem('stockpulse_prev_visit', prev);
+        }
+        localStorage.setItem('stockpulse_last_visit', now);
+        previousVisit = /^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/.test(prev) ? prev : '';
+      } catch (e) { previousVisit = ''; }
+    }
+
+    function isNew(created) {
+      return Boolean(previousVisit && created && created > previousVisit);
+    }
+
+    function renderSince(forYou, follows) {
+      const line = document.getElementById('heroSince');
+      document.querySelectorAll('.top-row[data-created]').forEach(row => {
+        const badge = row.querySelector('.new-badge');
+        if (badge) badge.hidden = !isNew(row.dataset.created);
+      });
+      if (!line) return;
+      if (!previousVisit) { line.hidden = true; return; }
+      const fresh = (allItems || []).filter(it => isNew(it.created_at)
+        && (!forYou || follows.has(it.ticker) || (it.related_tickers_list || []).some(t => follows.has(t))));
+      const when = new Date(previousVisit.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      line.hidden = false;
+      line.textContent = fresh.length
+        ? `${plural(fresh.length, 'new story', 'new stories')}${forYou ? ' about what you follow' : ''} since your last visit on ${when}.`
+        : `Nothing new${forYou ? ' about what you follow' : ''} since your last visit on ${when}.`;
+    }
+
+    function renderHeroLine(forYou) {
+      const sub = document.getElementById('heroSub');
+      if (!sub) return;
+      sub.textContent = forYou
+        ? (followsAnything() ? `${followSummary()}. Here’s what matters to you.` : 'Follow a few companies and this becomes yours.')
+        : 'We keep you informed about the stocks you follow.';
     }
 
     function renderHomeView() {
       const view = currentView();
+      renderHeroLine(view === 'foryou');
       const follows = followedSet();
       const forYou = view === 'foryou';
       const mine = document.getElementById('topForYou');
@@ -2446,7 +2593,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           mine.innerHTML = (rows.length
             ? `<ol class="top-list">${rows.map((it, i) => topRowHtml(it, i, follows)).join('')}</ol>`
             : '<p class="home-empty">No stories yet about the companies you follow.</p>')
-            + (follows.size < 3 ? suggestionsHtml(follows) : '');
+            + suggestionsHtml(follows);
           if (!rows.length && hiddenTypes().size) {
             mine.insertAdjacentHTML('afterbegin', '<p class="follow-reason">Some story types are hidden in <a href="settings.html">Your feed</a>.</p>');
           }
@@ -2467,6 +2614,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       });
       const heatHeading = document.getElementById('homeHeatHeading');
       if (heatHeading && tiles.length) heatHeading.textContent = `${up} up, ${down} down`;
+      document.querySelectorAll('.trend-item').forEach(li => { li.classList.toggle('is-followed', follows.has(li.dataset.symbol)); });
+      renderSince(forYou, follows);
       const heatSub = document.querySelector('.heat-sub');
       if (heatSub) heatSub.textContent = narrow ? 'The companies you follow over the last 3 months, best to worst.' : 'Your watchlist over the last 3 months, best to worst.';
       syncFollowUi();
@@ -2520,7 +2669,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     }
 
     document.addEventListener('followchange', () => { renderHomeView(); if (typeof orbit !== 'undefined') orbit.refresh(); });
-    document.addEventListener('DOMContentLoaded', () => { offerPicker(); renderHomeView(); });
+    document.addEventListener('DOMContentLoaded', () => { readPreviousVisit(); offerPicker(); renderHomeView(); });
 
     // A ring of real company links orbiting the search bar. The chips are ordinary links in an
     // ordinary list: this script only positions them, and without it they stay a static grid.
@@ -4889,6 +5038,10 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
       <section class="settings-section" aria-labelledby="settingsCompanyHeading">
         <h2 class="settings-heading" id="settingsCompanyHeading">Companies</h2>
         <input type="text" class="feed-search" id="settingsCompanyFilter" aria-label="Find a company" placeholder="Find a company or ticker" data-input="filterSettingsCompanies">
+        <details class="settings-group settings-following" id="settingsFollowing" open hidden>
+          <summary class="settings-group-head"><span class="settings-group-name">Following</span><span class="settings-group-meta" id="settingsFollowingMeta"></span></summary>
+          <ul class="follow-suggest" id="settingsFollowingList"></ul>
+        </details>
         {% for sec in sector_directory %}
         <details class="settings-group" data-sector-group="{{ sec.name }}">
           <summary class="settings-group-head"><span class="settings-group-name">{{ sec.name }}</span><span class="settings-group-meta" data-group-meta>{{ sec.count }} {{ 'company' if sec.count == 1 else 'companies' }}</span></summary>
@@ -4939,7 +5092,9 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
     function filterSettingsCompanies(value) {
       const q = String(value || '').toLowerCase().trim();
       let shown = 0;
-      document.querySelectorAll('.settings-group').forEach(group => {
+      const following = document.getElementById('settingsFollowing');
+      if (following) following.hidden = Boolean(q) || !following.querySelector('li');
+      document.querySelectorAll('.settings-group:not(#settingsFollowing)').forEach(group => {
         let any = false;
         group.querySelectorAll('li[data-filter-text]').forEach(li => {
           const match = !q || li.dataset.filterText.includes(q);
@@ -4959,7 +5114,7 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
       const state = followState();
       const sectors = new Set(state.sectors);
       const direct = new Set(state.symbols);
-      document.querySelectorAll('.settings-group').forEach(group => {
+      document.querySelectorAll('.settings-group:not(#settingsFollowing)').forEach(group => {
         const rows = [...group.querySelectorAll('li[data-follow-mark]')];
         const whole = sectors.has(group.dataset.sectorGroup);
         rows.forEach(li => {
@@ -4976,8 +5131,32 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    document.addEventListener('followchange', markSectorFollows);
-    document.addEventListener('DOMContentLoaded', markSectorFollows);
+    // The companies followed one by one, gathered at the top; each sector also lists them first.
+    function renderSettingsFollowing() {
+      const state = followState();
+      const group = document.getElementById('settingsFollowing');
+      const list = document.getElementById('settingsFollowingList');
+      if (!group || !list) return;
+      const rows = state.symbols
+        .map(sym => document.querySelector(`.settings-group:not(#settingsFollowing) li[data-follow-mark="${CSS.escape(sym)}"]`))
+        .filter(Boolean)
+        .map(li => {
+          const copy = li.cloneNode(true);
+          copy.querySelector('.settings-via')?.remove();
+          return copy;
+        });
+      list.replaceChildren(...rows);
+      group.hidden = rows.length === 0 || Boolean(document.getElementById('settingsCompanyFilter')?.value.trim());
+      const meta = document.getElementById('settingsFollowingMeta');
+      if (meta) meta.textContent = plural(rows.length, 'company', 'companies');
+      document.querySelectorAll('.settings-group:not(#settingsFollowing) .follow-suggest').forEach(ul => {
+        followedFirst(ul, 'li', el => el.dataset.followMark);
+      });
+      syncFollowUi();
+    }
+
+    document.addEventListener('followchange', () => { markSectorFollows(); renderSettingsFollowing(); });
+    document.addEventListener('DOMContentLoaded', () => { markSectorFollows(); renderSettingsFollowing(); });
   </script>
 </body>
 </html>
@@ -5009,11 +5188,21 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to see its news and price.</p>
       </header>
 
+      <nav class="following-strip" id="followingStrip" aria-label="Companies you follow" hidden>
+        <span class="following-label">Following</span>
+        <div class="following-chips" id="followingChips"></div>
+        <a class="following-edit" href="settings.html">Edit</a>
+      </nav>
+
       <details class="company-directory-browser" id="companyDirectory" open>
         <summary class="feed-filters-toggle">All companies</summary>
         <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
         <p class="econ-note">Percentages show how far each stock is ahead of or behind the S&amp;P 500 over 3 months.</p>
         <div class="company-browser-grid company-strip" id="companyStripContainer">
+          <section class="company-browser-sector" id="followingSection" hidden>
+            <h2 class="company-browser-sector-name">Following</h2>
+            <div id="followingCards"></div>
+          </section>
           {% for sec in sector_directory %}
           <section class="company-browser-sector">
             <h2 class="company-browser-sector-name">{{ sec.name }}</h2>
@@ -5529,6 +5718,46 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       document.querySelectorAll('.company-profile-container').forEach(applyCompanyFeedFilter);
     });
 
+    // Followed companies: a strip of chips at the very top, a Following group first in the
+    // directory, and first place inside their own sector.
+    function renderFollowingCompanies() {
+      const follows = followedSet();
+      const cards = [...document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection) .company-strip-pill')];
+      const mine = cards.filter(c => follows.has(c.dataset.ticker));
+      const strip = document.getElementById('followingStrip');
+      const chips = document.getElementById('followingChips');
+      if (strip && chips) {
+        chips.replaceChildren(...mine.map(card => {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'following-chip' + (card.dataset.ticker === currentCompany ? ' active' : '');
+          chip.dataset.click = 'switchCompany';
+          chip.dataset.ticker = card.dataset.ticker;
+          chip.textContent = card.dataset.ticker;
+          chip.title = card.querySelector('.company-browser-card-name')?.textContent || card.dataset.ticker;
+          return chip;
+        }));
+        strip.hidden = mine.length === 0;
+      }
+      const section = document.getElementById('followingSection');
+      const holder = document.getElementById('followingCards');
+      if (section && holder) {
+        holder.replaceChildren(...mine.map(card => {
+          const copy = card.cloneNode(true);
+          copy.removeAttribute('data-follow-mark');
+          copy.classList.remove('is-followed');
+          return copy;
+        }));
+        section.hidden = mine.length === 0;
+      }
+      document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
+        followedFirst(sec, '.company-strip-pill', el => el.dataset.ticker);
+      });
+    }
+
+    document.addEventListener('followchange', renderFollowingCompanies);
+    document.addEventListener('DOMContentLoaded', renderFollowingCompanies);
+
     let currentCompany = null;
 
     // showOnly: load a company without counting it as viewed, as on a bare visit to the directory.
@@ -5552,6 +5781,9 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
       document.querySelectorAll('.company-strip-pill').forEach(pill => {
         pill.classList.toggle('active', pill.getAttribute('data-ticker') === ticker);
+      });
+      document.querySelectorAll('.following-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.ticker === ticker);
       });
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5766,6 +5998,35 @@ def _calendar_agenda(events: List[Dict[str, Any]], names: Dict[str, str], today:
         "first": first,
         "sections": [{"label": sections[k]["label"], "days": [sections[k]["days"][d] for d in sorted(sections[k]["days"])]} for k in order],
     }
+
+
+def _trending(items: List[Dict[str, Any]], companies: List[Dict[str, Any]], today: Optional[date] = None, limit: int = 8) -> List[Dict[str, Any]]:
+    """Companies with the most important news in the last 7 days, each with the real reasons why."""
+    today = today or date.today()
+    since = (today - timedelta(days=7)).isoformat()
+    by_symbol = {c["symbol"]: c for c in companies}
+    scores: Dict[str, Dict[str, Any]] = {}
+    for it in items:
+        sym = it.get("ticker")
+        if sym not in by_symbol or str(it.get("published_date") or "") < since:
+            continue
+        entry = scores.setdefault(sym, {"weight": 0.0, "count": 0, "results": None})
+        entry["weight"] += float(it.get("score") or 0)
+        entry["count"] += 1
+        if it.get("category") == "Earnings & Financials" and not entry["results"]:
+            entry["results"] = it.get("published_date")
+    ranked = sorted((s for s in scores.items() if s[1]["count"] >= 2), key=lambda kv: kv[1]["weight"], reverse=True)
+    out = []
+    for sym, entry in ranked[:limit]:
+        co = by_symbol[sym]
+        reasons = [f"{entry['count']} stories this week"]
+        if entry["results"]:
+            reasons.append(f"Results out {_short_date(entry['results'])}")
+        move = co.get("move_pct")
+        if move is not None and abs(move) >= 10:
+            reasons.append(f"{move:+.0f}% in 3 months")
+        out.append({"symbol": sym, "name": co.get("name") or sym, "reason": " · ".join(reasons)})
+    return out
 
 
 def _economic_schedule(events: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
@@ -6210,6 +6471,7 @@ def render_dashboard(
         "calendar_view": _calendar_view(calendar_events),
         "agenda": _calendar_agenda(calendar_events, {c["symbol"]: c["name"] for c in enriched_watchlist}),
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
+        "trending": _trending(items, enriched_watchlist),
         "next_earnings": _next_earnings(calendar_events),
         "heat_class": _heat_class,
         "figures": _figures_html,
