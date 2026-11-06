@@ -822,43 +822,6 @@ SHARED_CSS = """
       .feed-details summary { min-height: 32px; }
     }
 
-    /* Calendar */
-    .cal-timeline { margin: 0 0 2rem; }
-    .cal-track { position: relative; height: 72px; margin: 0 0.5rem; border-bottom: 1px solid var(--text-primary); }
-    .cal-month { position: absolute; top: 0; bottom: 0; padding-left: 0.35rem; border-left: 1px solid var(--border-card); font-size: 0.74rem; color: var(--text-muted); }
-    .cal-mark { position: absolute; width: 7px; height: 10px; margin-left: -3px; background: var(--text-primary); }
-    .cal-mark::before { content: ''; position: absolute; inset: -6px -3px; }
-    .cal-mark:hover { background: var(--accent); }
-    .cal-mark.is-estimated { background: var(--bg-base); box-shadow: inset 0 0 0 1px var(--text-primary); }
-    .cal-mark.is-estimated:hover { box-shadow: inset 0 0 0 1px var(--accent); }
-    .cal-mark.is-dimmed { opacity: 0.15; }
-    .cal-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; margin-top: 0.6rem; font-size: 0.76rem; color: var(--text-muted); }
-    .cal-key { display: inline-block; width: 7px; height: 10px; margin-right: 0.45rem; background: var(--text-primary); }
-    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 1px var(--text-primary); }
-    .cal-today { color: var(--text-primary); border-left-color: var(--text-primary); }
-    .cal-filters { margin-bottom: 0.75rem; }
-
-    .cal-week { padding-top: 1.5rem; }
-    .cal-week-title { font-size: 1.3rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--text-primary); }
-    .calendar-card { display: grid; grid-template-columns: 6rem 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); scroll-margin-top: 5rem; }
-    .calendar-card:target { background: var(--accent-soft); }
-    .cal-when { display: flex; flex-direction: column; }
-    .cal-date { font-family: var(--font-mono); font-size: 0.82rem; }
-    .cal-relative { font-size: 0.74rem; color: var(--text-muted); }
-    .cal-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
-    .cal-details { font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
-    .cal-estimated { color: var(--warn); }
-    .cal-source { font-size: 0.8rem; color: var(--accent); text-decoration: none; white-space: nowrap; }
-    .cal-source:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-    @media (max-width: 620px) {
-      .cal-mark { width: 4px; margin-left: -2px; }
-      .calendar-card { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.75rem; }
-      .cal-when { flex-direction: row; gap: 0.5rem; align-items: baseline; grid-column: 1; }
-      .calendar-card > .ticker-badge { grid-column: 2; grid-row: 1; justify-self: end; }
-      .cal-body { grid-column: 1 / -1; }
-      .cal-source { grid-column: 1 / -1; padding: 0.35rem 0 0.1rem; }
-    }
 
     /* Economy */
     .econ-ledger { border-top: 1px solid var(--text-primary); margin-bottom: 3.5rem; }
@@ -1483,28 +1446,6 @@ SHARED_CSS = """
     .company-kpi-val, .perf-kpi-val { font-weight: 500; }
     .fp-heading { font-weight: 600; font-size: 1.25rem; border-bottom-color: var(--border-subtle); }
 
-    /* Calendar: colour says what kind of event it is, a hollow mark says it's estimated */
-    .cal-track { height: 84px; border-bottom-color: var(--border-card); }
-    .cal-mark, .cal-key { width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: var(--text-muted); }
-    .cal-key { display: inline-block; margin: 0 0.4rem 0 0; }
-    .cal-mark[data-event-type*="Earnings"], .cal-key.is-earnings { background: var(--series-1); }
-    .cal-mark[data-event-type*="Dividend"], .cal-key.is-dividend { background: var(--series-4); }
-    .cal-mark[data-event-type*="SEC"], .cal-key.is-sec { background: var(--series-5); }
-    .cal-mark[data-event-type*="Conference"], .cal-key.is-conference { background: var(--series-6); }
-    .cal-mark:hover { background: var(--text-primary); }
-    .cal-mark.is-estimated, .cal-mark.is-estimated:hover { background: var(--bg-base); box-shadow: inset 0 0 0 2px var(--series-5); }
-    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 2px var(--text-muted); }
-    .cal-today { font-weight: 600; border-left-color: var(--accent); color: var(--accent); }
-    .cal-week-title { border-bottom-color: var(--border-card); font-size: 1.25rem; font-weight: 600; }
-    .calendar-card[data-event-type*="Earnings"] .cal-details::before,
-    .calendar-card[data-event-type*="Dividend"] .cal-details::before,
-    .calendar-card[data-event-type*="SEC"] .cal-details::before,
-    .calendar-card[data-event-type*="Conference"] .cal-details::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 0.4rem; border-radius: 50%; vertical-align: 0.06em; }
-    .calendar-card[data-event-type*="Earnings"] .cal-details::before { background: var(--series-1); }
-    .calendar-card[data-event-type*="Dividend"] .cal-details::before { background: var(--series-4); }
-    .calendar-card[data-event-type*="SEC"] .cal-details::before { background: var(--series-5); }
-    .calendar-card[data-event-type*="Conference"] .cal-details::before { background: var(--series-6); }
-    .cal-source { color: var(--accent); }
 
     /* Economy */
     .economic-series-name { font-weight: 600; letter-spacing: -0.015em; }
@@ -1540,6 +1481,43 @@ SHARED_CSS = """
       .door-line { font-size: 0.92rem; }
       .news-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.5rem; }
       .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
+    }
+
+    /* ---- Calendar agenda ---- */
+    .agenda-filters { margin: 0 0 1.5rem; gap: 0.4rem 1.1rem; }
+    .agenda-key { display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.4rem; border-radius: 50%; vertical-align: 0.05rem; }
+    .agenda-key.is-earnings, .agenda-event.is-earnings { --event: var(--series-1); }
+    .agenda-key.is-dividend, .agenda-event.is-dividend { --event: var(--series-2); }
+    .agenda-key.is-sec, .agenda-event.is-sec { --event: var(--series-3); }
+    .agenda-key.is-conference, .agenda-event.is-conference { --event: var(--series-4); }
+    .agenda-key { background: var(--event); }
+    .agenda { max-width: 52rem; }
+    .agenda-section { margin-bottom: 2.25rem; }
+    .agenda-section[hidden], .agenda-day[hidden], .agenda-event[hidden] { display: none; }
+    .agenda-heading { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); padding-bottom: 0.6rem; border-bottom: 1px solid var(--border-subtle); }
+    .agenda-day { display: grid; grid-template-columns: 4.25rem minmax(0, 1fr); gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .agenda-date { display: flex; flex-direction: column; align-items: center; margin: 0; line-height: 1.1; color: var(--text-primary); }
+    .agenda-wd, .agenda-mo { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+    .agenda-dn { font-size: 1.9rem; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .agenda-day.is-today .agenda-wd, .agenda-day.is-today .agenda-dn { color: var(--accent); }
+    .agenda-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+    .agenda-event { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-left: 0.85rem; border-left: 3px solid var(--event); }
+    .agenda-main { min-width: 0; }
+    .agenda-title { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
+    .agenda-est { margin-left: 0.3rem; font-size: 0.78rem; font-weight: 500; color: var(--text-muted); }
+    .agenda-co { margin: 0.1rem 0 0; font-size: 0.92rem; color: var(--text-secondary); }
+    .agenda-co a { color: var(--text-primary); text-decoration: none; }
+    .agenda-co a:hover { text-decoration: underline; text-underline-offset: 2px; }
+    .agenda-source a { color: var(--accent); text-decoration: none; }
+    .agenda-source a:hover { text-decoration: underline; }
+    .agenda-source { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .agenda-add { flex: none; border: 1px solid var(--border-subtle); border-radius: var(--radius-full); padding: 0.35rem 0.85rem; min-height: 32px; font: inherit; font-size: 0.8rem; background: none; color: var(--text-secondary); cursor: pointer; }
+    .agenda-add:hover { color: var(--text-primary); border-color: var(--text-muted); }
+    .agenda-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    @media (max-width: 640px) {
+      .agenda-day { grid-template-columns: 3rem minmax(0, 1fr); gap: 0.85rem; }
+      .agenda-dn { font-size: 1.5rem; }
+      .agenda-event { flex-direction: column; gap: 0.5rem; }
     }
 
     /* ---- Company page ---- */
@@ -1703,6 +1681,7 @@ const PAGE_ACTIONS = {
     closeMobileNav: () => closeMobileNav(),
     cycleTheme: () => cycleTheme(),
     filterCalendar: el => filterCalendar(el.dataset.val, el),
+    addToCalendar: el => addToCalendar(el),
     setCompanyTab: el => setCompanyTab(el),
     showAllCompanyStories: el => showAllCompanyStories(el),
     filterEconomicBySector: el => filterEconomicBySector(el.dataset.sector, el),
@@ -4445,66 +4424,49 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       <header class="page-header">
         <h1 class="page-title">Calendar</h1>
         <p class="page-standfirst">
-          {% if calendar_events %}{{ calendar_events|length }} events ahead. Next: {{ calendar_events[0].headline }}, {{ calendar_events[0].relative_badge|lower }}.
+          {% if agenda.first %}{{ agenda.count }} {{ 'date' if agenda.count == 1 else 'dates' }} ahead. Next: {{ agenda.first.company }} {{ agenda.first.title|lower }}, {{ agenda.first.relative|lower }}.
           {% else %}Nothing scheduled yet.{% endif %}
         </p>
       </header>
 
-      {% if calendar_view.marks %}
-      <figure class="cal-timeline" aria-label="Events on a timeline">
-        <div class="cal-track">
-          <span class="cal-month cal-today" data-left="{{ calendar_view.today_pos }}">Today</span>
-          {% for m in calendar_view.months %}
-          <span class="cal-month" data-left="{{ m.pos }}">{{ m.label }}</span>
-          {% endfor %}
-          {% for mark in calendar_view.marks %}
-          <a class="cal-mark{% if mark.estimated %} is-estimated{% endif %}" href="#{{ mark.anchor }}" data-event-type="{{ mark.event_type }}" data-left="{{ mark.pos }}" data-bottom="{{ mark.lane * 12 }}" title="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}{% if mark.estimated %} (estimated){% endif %}" aria-label="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}"></a>
-          {% endfor %}
-        </div>
-        <figcaption class="cal-legend">
-          <span><i class="cal-key is-earnings"></i>Earnings</span>
-          <span><i class="cal-key is-dividend"></i>Dividend</span>
-          <span><i class="cal-key is-sec"></i>SEC deadline</span>
-          <span><i class="cal-key is-conference"></i>Conference</span>
-          <span><i class="cal-key is-estimated"></i>Hollow means estimated from filing rules</span>
-        </figcaption>
-      </figure>
-      {% endif %}
-
-      <div class="controls-panel cal-filters">
-        <div class="filter-options" role="group" aria-label="Filter events">
-          <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" data-click="filterCalendar">All <span class="pill-count">{{ calendar_events|length }}</span></button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividends</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC deadlines</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" data-click="filterCalendar">Conferences</button>
-        </div>
+      <div class="view-tabs view-tabs-left" role="tablist" aria-label="Which events to show">
+        <button class="view-tab" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+        <button class="view-tab active" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
       </div>
 
-      <div id="calendarGrid">
-        {% for week in calendar_view.weeks %}
-        <section class="cal-week">
-          <h2 class="cal-week-title">{{ week.label }}</h2>
-          {% for ev in week.events %}
-          <article class="calendar-card" id="{{ ev.anchor }}" data-event-type="{{ ev.event_type }}" data-source-type="{{ ev.source_type }}">
-            <div class="cal-when">
-              <span class="cal-date">{{ short_date(ev.event_date) }}</span>
-              <span class="cal-relative">{{ ev.relative_badge }}</span>
-            </div>
-            <a href="company.html?ticker={{ ev.ticker|urlencode }}" class="ticker-badge" title="{{ ev.company_name }}">{{ ev.ticker }}</a>
-            <div class="cal-body">
-              <h3 class="cal-headline">{{ ev.headline }}</h3>
-              <p class="cal-details">{{ ev.kind }}{% if ev.source_type == 'ESTIMATED_RULE' %} · <span class="cal-estimated">Estimated</span>{% endif %}{% if ev.details %} · {{ ev.details }}{% endif %}</p>
-            </div>
-            {% if ev.source_url and ev.source_url.startswith('http') %}
-            <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer" class="cal-source">{% if ev.source_type == 'ESTIMATED_RULE' %}SEC filings{% else %}Source{% endif %}</a>
-            {% endif %}
-          </article>
+      <div class="agenda-filters filter-options" role="group" aria-label="Kind of event">
+        <button class="filter-btn active agenda-filter" type="button" data-val="ALL" data-click="filterCalendar">All</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="earnings" data-click="filterCalendar"><i class="agenda-key is-earnings"></i>Earnings</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="dividend" data-click="filterCalendar"><i class="agenda-key is-dividend"></i>Dividends</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="sec" data-click="filterCalendar"><i class="agenda-key is-sec"></i>Report deadlines</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="conference" data-click="filterCalendar"><i class="agenda-key is-conference"></i>Conferences</button>
+      </div>
+
+      <div id="calendarGrid" class="agenda">
+        {% for section in agenda.sections %}
+        <section class="agenda-section">
+          <h2 class="agenda-heading">{{ section.label }}</h2>
+          {% for day in section.days %}
+          <div class="agenda-day{% if day.is_today %} is-today{% endif %}">
+            <p class="agenda-date" aria-label="{{ day.weekday }} {{ day.month }} {{ day.day }}"><span class="agenda-wd">{{ day.weekday }}</span><span class="agenda-dn">{{ day.day }}</span><span class="agenda-mo">{{ day.month }}</span></p>
+            <ul class="agenda-events">
+              {% for ev in day.events %}
+              <li class="agenda-event is-{{ ev.type }}" id="{{ ev.id }}" data-type="{{ ev.type }}" data-ticker="{{ ev.ticker }}">
+                <div class="agenda-main">
+                  <p class="agenda-title">{{ ev.title }}{% if ev.estimated %} <span class="agenda-est">estimated</span>{% endif %}</p>
+                  <p class="agenda-co"><a href="company.html?ticker={{ ev.ticker|urlencode }}">{{ ev.company }}</a> · {{ ev.ticker }} · {{ ev.relative }}</p>
+                  <p class="agenda-source">{% if ev.estimated %}Worked out from SEC filing deadlines, not announced by the company.{% else %}From “{{ ev.headline }}”{% endif %}{% if ev.url and ev.url.startswith('http') %} <a href="{{ safe_url(ev.url) }}" target="_blank" rel="noopener noreferrer">{% if ev.estimated %}SEC filings{% else %}Source{% endif %}</a>{% endif %}</p>
+                  <p class="follow-reason" hidden></p>
+                </div>
+                <button class="agenda-add" type="button" data-click="addToCalendar" data-ics-title="{{ ev.company }} {{ ev.title|lower }}{% if ev.estimated %} (estimated){% endif %}" data-ics-date="{{ ev.date }}" data-ics-url="{{ safe_url(ev.url, '') }}" data-ics-id="{{ ev.id }}-{{ ev.ticker }}">Add to calendar</button>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
           {% endfor %}
         </section>
-        {% else %}
-        <p class="home-empty">No upcoming events. They appear here after the next pipeline run.</p>
         {% endfor %}
+        <p class="home-empty" id="calendarEmpty"{% if agenda.count %} hidden{% endif %}>{% if agenda.count %}No events match.{% else %}No upcoming events. They appear here after the next pipeline run.{% endif %}</p>
       </div>
     </main>
   </div>
@@ -4512,32 +4474,75 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
-    function matchesCalendarFilter(evType, type) {
-      if (type === 'ALL') return true;
-      if (type === 'SEC') return evType.includes('SEC') || evType.includes('Statutory');
-      return evType.includes(type);
-    }
-
-    // Positions come from the data, and the CSP allows them to be set from script but not inline.
-    document.querySelectorAll('.cal-track [data-left]').forEach(el => {
-      el.style.left = `${Number(el.dataset.left)}%`;
-      if (el.dataset.bottom) el.style.bottom = `${Number(el.dataset.bottom)}px`;
-    });
+    let calendarType = 'ALL';
 
     function filterCalendar(type, btn) {
-      document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      document.querySelectorAll('.calendar-card').forEach(card => {
-        card.hidden = !matchesCalendarFilter(card.getAttribute('data-event-type') || '', type);
-      });
-      document.querySelectorAll('.cal-mark').forEach(mark => {
-        mark.classList.toggle('is-dimmed', !matchesCalendarFilter(mark.getAttribute('data-event-type') || '', type));
-      });
-      document.querySelectorAll('.cal-week').forEach(week => {
-        week.hidden = !week.querySelector('.calendar-card:not([hidden])');
-      });
+      calendarType = type;
+      document.querySelectorAll('.agenda-filter').forEach(b => b.classList.toggle('active', b === btn));
+      applyCalendar();
     }
+
+    // For you narrows to followed companies; the kind chips narrow by type. Empty days and sections fold away.
+    function applyCalendar() {
+      const forYou = currentView() === 'foryou';
+      const follows = followedSet();
+      let shown = 0;
+      document.querySelectorAll('.agenda-event').forEach(ev => {
+        const typeOk = calendarType === 'ALL' || ev.dataset.type === calendarType;
+        const followOk = !forYou || follows.has(ev.dataset.ticker);
+        ev.hidden = !(typeOk && followOk);
+        if (!ev.hidden) shown += 1;
+        const why = ev.querySelector('.follow-reason');
+        if (why) {
+          why.textContent = forYou ? followReason(ev.dataset.ticker, []) : '';
+          why.hidden = !why.textContent;
+        }
+      });
+      document.querySelectorAll('.agenda-day').forEach(day => { day.hidden = !day.querySelector('.agenda-event:not([hidden])'); });
+      document.querySelectorAll('.agenda-section').forEach(sec => { sec.hidden = !sec.querySelector('.agenda-day:not([hidden])'); });
+      const empty = document.getElementById('calendarEmpty');
+      if (empty && document.querySelector('.agenda-event')) {
+        empty.hidden = shown > 0;
+        empty.innerHTML = forYou && !followsAnything()
+          ? 'You aren’t following anything yet. Pick companies or sectors in <a href="settings.html">Your feed</a>, or switch to Everything.'
+          : (forYou ? 'Nothing scheduled for what you follow yet. Everything has every date.' : 'No events match.');
+      }
+    }
+
+    // An all-day event file the phone or computer calendar opens. Built here, so nothing is uploaded.
+    function icsText(value) {
+      return String(value || '').replace(/[\\\\;,]/g, m => '\\\\' + m).replace(/[\\r\\n]+/g, ' ');
+    }
+
+    function addToCalendar(btn) {
+      const iso = btn.dataset.icsDate || '';
+      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(iso)) return;
+      const start = iso.replace(/-/g, '');
+      const next = new Date(iso + 'T00:00:00Z');
+      next.setUTCDate(next.getUTCDate() + 1);
+      const end = next.toISOString().slice(0, 10).replace(/-/g, '');
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\\.\\d{3}/, '');
+      const lines = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//StockPulse//Calendar//EN', 'BEGIN:VEVENT',
+        `UID:${icsText(btn.dataset.icsId)}-${start}@stockpulse`, `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${start}`, `DTEND;VALUE=DATE:${end}`, `SUMMARY:${icsText(btn.dataset.icsTitle)}`,
+      ];
+      if (/^https?:\\/\\//i.test(btn.dataset.icsUrl || '')) lines.push(`URL:${icsText(btn.dataset.icsUrl)}`);
+      lines.push('END:VEVENT', 'END:VCALENDAR');
+      const blob = new Blob([lines.join('\\r\\n') + '\\r\\n'], { type: 'text/calendar' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${(btn.dataset.icsTitle || 'event').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase()}.ics`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      btn.textContent = 'Added';
+      setTimeout(() => { btn.textContent = 'Add to calendar'; }, 2400);
+    }
+
+    document.addEventListener('followchange', applyCalendar);
+    document.addEventListener('DOMContentLoaded', applyCalendar);
   </script>
 </body>
 </html>
@@ -5665,6 +5670,100 @@ def _calendar_view(events: List[Dict[str, Any]], today: Optional[date] = None) -
     return {"marks": marks, "months": months, "weeks": [weeks[k] for k in sorted(weeks)], "today_pos": position(today)}
 
 
+EVENT_TYPES = {
+    # key: (filter group, title)
+    "earnings": "Earnings call",
+    "dividend": "Dividend date",
+    "sec": "Quarterly report due",
+    "conference": "Investor conference",
+}
+
+
+def _event_type_key(event_type: str) -> str:
+    if "Earnings" in event_type:
+        return "earnings"
+    if "Dividend" in event_type:
+        return "dividend"
+    if "SEC" in event_type or "Statutory" in event_type:
+        return "sec"
+    return "conference"
+
+
+def _relative_day(when: date, today: date) -> str:
+    days = (when - today).days
+    if days == 0:
+        return "Today"
+    if days == 1:
+        return "Tomorrow"
+    if 1 < days < 14:
+        return f"In {days} days"
+    if days >= 14:
+        weeks = round(days / 7)
+        return f"In {weeks} weeks" if days < 60 else f"In about {round(days / 30)} months"
+    return f"{-days} days ago"
+
+
+def _calendar_agenda(events: List[Dict[str, Any]], names: Dict[str, str], today: Optional[date] = None) -> Dict[str, Any]:
+    """Upcoming events as an agenda: sections (This week, Next week, then by month) of days of events."""
+    today = today or date.today()
+    this_monday = today - timedelta(days=today.weekday())
+    sections: Dict[str, Dict[str, Any]] = {}
+    order: List[str] = []
+    count = 0
+    first = None
+    for index, event in enumerate(sorted(events, key=lambda e: str(e.get("event_date")))):
+        try:
+            when = date.fromisoformat(str(event.get("event_date")))
+        except ValueError:
+            continue
+        if when < today:
+            continue
+        key = _event_type_key(event.get("event_type") or "")
+        ticker = event.get("ticker") or ""
+        entry = {
+            "id": f"event-{index}",
+            "type": key,
+            "title": EVENT_TYPES[key],
+            "ticker": ticker,
+            "company": names.get(ticker) or event.get("company_name") or ticker,
+            "estimated": event.get("source_type") == "ESTIMATED_RULE",
+            "headline": event.get("headline") or "",
+            "url": event.get("source_url") or "",
+            "date": when.isoformat(),
+            "relative": _relative_day(when, today),
+        }
+        monday = when - timedelta(days=when.weekday())
+        if monday == this_monday:
+            label = "This week"
+        elif monday == this_monday + timedelta(days=7):
+            label = "Next week"
+        elif when.month == today.month and when.year == today.year:
+            label = f"Later in {when.strftime('%B')}"
+        else:
+            label = when.strftime("%B") if when.year == today.year else when.strftime("%B %Y")
+        if label not in sections:
+            sections[label] = {"label": label, "days": {}}
+            order.append(label)
+        days = sections[label]["days"]
+        if when not in days:
+            days[when] = {
+                "date": when.isoformat(),
+                "weekday": when.strftime("%a"),
+                "day": when.day,
+                "month": when.strftime("%b"),
+                "is_today": when == today,
+                "events": [],
+            }
+        days[when]["events"].append(entry)
+        count += 1
+        first = first or entry
+    return {
+        "count": count,
+        "first": first,
+        "sections": [{"label": sections[k]["label"], "days": [sections[k]["days"][d] for d in sorted(sections[k]["days"])]} for k in order],
+    }
+
+
 def _economic_schedule(events: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
     """Sort releases by date and work out timing now, since the stored labels can be stale."""
     today = today or date.today()
@@ -6105,6 +6204,7 @@ def render_dashboard(
         "economic_schedule": _economic_schedule(upcoming_economic_events),
         "event_kind": _event_kind,
         "calendar_view": _calendar_view(calendar_events),
+        "agenda": _calendar_agenda(calendar_events, {c["symbol"]: c["name"] for c in enriched_watchlist}),
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
         "next_earnings": _next_earnings(calendar_events),
         "heat_class": _heat_class,

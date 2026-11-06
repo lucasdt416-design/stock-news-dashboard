@@ -238,3 +238,44 @@ def test_build_forthcoming_calendar_integration(mock_finnhub):
         rows = cur.fetchall()
         assert len(rows) == len(events)
         conn.close()
+
+
+def test_agenda_groups_upcoming_events_and_names_them_plainly():
+    from datetime import date
+    from pipeline.render import _calendar_agenda
+    today = date(2026, 11, 6)  # a Friday
+    events = [
+        {"event_date": "2026-11-17", "ticker": "NVDA", "event_type": "Earnings Call / Results", "source_type": "SOURCED", "headline": "NVIDIA Sets Conference Call", "source_url": "https://x.test/n"},
+        {"event_date": "2026-11-09", "ticker": "XOM", "event_type": "Statutory SEC Deadline (Estimated)", "source_type": "ESTIMATED_RULE", "headline": "Estimated", "source_url": ""},
+        {"event_date": "2026-11-06", "ticker": "AAPL", "event_type": "Dividend (Payment/Record)", "source_type": "SOURCED", "headline": "Apple 8-K", "source_url": ""},
+        {"event_date": "2026-11-01", "ticker": "OLD", "event_type": "Earnings Call / Results", "source_type": "SOURCED", "headline": "past", "source_url": ""},
+        {"event_date": "2027-02-09", "ticker": "NEE", "event_type": "Investor Conference", "source_type": "SOURCED", "headline": "x", "source_url": ""},
+        {"event_date": "not a date", "ticker": "BAD", "event_type": "Earnings Call / Results"},
+    ]
+    agenda = _calendar_agenda(events, {"NVDA": "NVIDIA Corporation"}, today=today)
+    assert [s["label"] for s in agenda["sections"]] == ["This week", "Next week", "Later in November", "February 2027"]
+    assert agenda["count"] == 4, "past and undated events are left out"
+    first_day = agenda["sections"][0]["days"][0]
+    assert first_day["is_today"] and first_day["events"][0]["title"] == "Dividend date"
+    assert first_day["events"][0]["relative"] == "Today"
+    xom = agenda["sections"][1]["days"][0]["events"][0]
+    assert xom["title"] == "Quarterly report due" and xom["estimated"] and xom["relative"] == "In 3 days"
+    nvda = agenda["sections"][2]["days"][0]["events"][0]
+    assert nvda["company"] == "NVIDIA Corporation" and nvda["type"] == "earnings"
+    assert agenda["first"]["ticker"] == "AAPL"
+
+
+def test_calendar_page_offers_views_kinds_and_add_to_calendar(tmp_path):
+    from pipeline.db import init_db
+    from pipeline.render import render_dashboard
+    db = str(tmp_path / "t.db")
+    init_db(db)
+    out = tmp_path / "site" / "index.html"
+    render_dashboard(output_path=str(out), db_path=db, performance_data={})
+    html = (out.parent / "calendar.html").read_text(encoding="utf-8")
+    assert 'data-view="foryou" data-click="setView"' in html
+    for kind in ("earnings", "dividend", "sec", "conference"):
+        assert f'data-val="{kind}" data-click="filterCalendar"' in html
+    assert "cal-timeline" not in html and "cal-mark" not in html, "the dot strip and its styles are gone"
+    assert "function addToCalendar" in html and "new Blob(" in html
+    assert "fetch(" not in html[html.index("function addToCalendar"):], "the file is built in the browser"
