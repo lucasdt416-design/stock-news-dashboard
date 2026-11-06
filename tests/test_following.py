@@ -95,3 +95,42 @@ def test_story_types_sort_the_same_way_in_python_and_the_page():
         assert _story_type(item) == expected
     for literal in ("'Insider Transactions'", "'Earnings & Financials'", "'sec_edgar'", "'company_ir'"):
         assert literal in js
+
+
+def test_trending_ranks_by_this_weeks_important_news_with_real_reasons():
+    from datetime import date
+    from pipeline.render import _trending
+    today = date(2026, 11, 6)
+    companies = [{"symbol": "AAA", "name": "A Co", "move_pct": 32.4}, {"symbol": "BBB", "name": "B Co", "move_pct": 2.0},
+                 {"symbol": "CCC", "name": "C Co", "move_pct": None}]
+    items = (
+        [{"ticker": "AAA", "published_date": "2026-11-05", "score": 8.0, "category": "Earnings & Financials"}] * 2
+        + [{"ticker": "BBB", "published_date": "2026-11-04", "score": 3.0, "category": "x"}] * 3
+        + [{"ticker": "CCC", "published_date": "2026-10-01", "score": 9.0, "category": "x"}] * 5  # too old
+        + [{"ticker": "ZZZ", "published_date": "2026-11-05", "score": 9.0, "category": "x"}] * 5  # not on the watchlist
+    )
+    out = _trending(items, companies, today=today)
+    assert [t["symbol"] for t in out] == ["AAA", "BBB"]
+    assert out[0]["reason"] == "2 stories this week · Results out Nov 5 · +32% in 3 months"
+    assert out[1]["reason"] == "3 stories this week"
+
+
+def test_home_tabs_come_before_the_welcome(tmp_path):
+    html = _site(tmp_path)["index.html"]
+    assert html.index('class="view-tabs hero-tabs"') < html.index('class="hero-headline"')
+    assert html.count('data-click="setView"') == 2, "one set of tabs on Home"
+    assert 'id="heroSince"' in html
+
+
+def test_followed_companies_get_their_own_lists(tmp_path):
+    site = _site(tmp_path)
+    assert 'id="followingStrip"' in site["company.html"] and 'id="followingSection"' in site["company.html"]
+    assert 'id="settingsFollowing"' in site["settings.html"]
+    assert "function followedFirst" in site["company.html"]
+
+
+def test_last_visit_is_only_a_timestamp_in_this_browser():
+    from pipeline.render import INDEX_TEMPLATE
+    code = INDEX_TEMPLATE[INDEX_TEMPLATE.index("function readPreviousVisit"):INDEX_TEMPLATE.index("function isNew")]
+    assert "stockpulse_last_visit" in code and "try {" in code
+    assert "fetch(" not in code

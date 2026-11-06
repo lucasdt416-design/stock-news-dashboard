@@ -822,43 +822,6 @@ SHARED_CSS = """
       .feed-details summary { min-height: 32px; }
     }
 
-    /* Calendar */
-    .cal-timeline { margin: 0 0 2rem; }
-    .cal-track { position: relative; height: 72px; margin: 0 0.5rem; border-bottom: 1px solid var(--text-primary); }
-    .cal-month { position: absolute; top: 0; bottom: 0; padding-left: 0.35rem; border-left: 1px solid var(--border-card); font-size: 0.74rem; color: var(--text-muted); }
-    .cal-mark { position: absolute; width: 7px; height: 10px; margin-left: -3px; background: var(--text-primary); }
-    .cal-mark::before { content: ''; position: absolute; inset: -6px -3px; }
-    .cal-mark:hover { background: var(--accent); }
-    .cal-mark.is-estimated { background: var(--bg-base); box-shadow: inset 0 0 0 1px var(--text-primary); }
-    .cal-mark.is-estimated:hover { box-shadow: inset 0 0 0 1px var(--accent); }
-    .cal-mark.is-dimmed { opacity: 0.15; }
-    .cal-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; margin-top: 0.6rem; font-size: 0.76rem; color: var(--text-muted); }
-    .cal-key { display: inline-block; width: 7px; height: 10px; margin-right: 0.45rem; background: var(--text-primary); }
-    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 1px var(--text-primary); }
-    .cal-today { color: var(--text-primary); border-left-color: var(--text-primary); }
-    .cal-filters { margin-bottom: 0.75rem; }
-
-    .cal-week { padding-top: 1.5rem; }
-    .cal-week-title { font-size: 1.3rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--text-primary); }
-    .calendar-card { display: grid; grid-template-columns: 6rem 3.75rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); scroll-margin-top: 5rem; }
-    .calendar-card:target { background: var(--accent-soft); }
-    .cal-when { display: flex; flex-direction: column; }
-    .cal-date { font-family: var(--font-mono); font-size: 0.82rem; }
-    .cal-relative { font-size: 0.74rem; color: var(--text-muted); }
-    .cal-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
-    .cal-details { font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
-    .cal-estimated { color: var(--warn); }
-    .cal-source { font-size: 0.8rem; color: var(--accent); text-decoration: none; white-space: nowrap; }
-    .cal-source:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-    @media (max-width: 620px) {
-      .cal-mark { width: 4px; margin-left: -2px; }
-      .calendar-card { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.75rem; }
-      .cal-when { flex-direction: row; gap: 0.5rem; align-items: baseline; grid-column: 1; }
-      .calendar-card > .ticker-badge { grid-column: 2; grid-row: 1; justify-self: end; }
-      .cal-body { grid-column: 1 / -1; }
-      .cal-source { grid-column: 1 / -1; padding: 0.35rem 0 0.1rem; }
-    }
 
     /* Economy */
     .econ-ledger { border-top: 1px solid var(--text-primary); margin-bottom: 3.5rem; }
@@ -891,7 +854,11 @@ SHARED_CSS = """
 
     .econ-schedule { list-style: none; }
     .econ-release { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle); }
-    .econ-release .cal-when { flex-direction: column; gap: 0; }
+    .econ-release .cal-when { display: flex; flex-direction: column; gap: 0; }
+    .econ-release .cal-date { font-family: var(--font-mono); font-size: 0.82rem; }
+    .econ-release .cal-relative { font-size: 0.74rem; color: var(--text-muted); }
+    .econ-release .cal-headline { font-size: 1.08rem; font-weight: 400; line-height: 1.3; letter-spacing: 0; overflow-wrap: anywhere; }
+    .econ-release .cal-details { font-size: 0.82rem; line-height: 1.45; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
     .econ-release.is-passed .cal-headline, .econ-release.is-passed .cal-date { color: var(--text-muted); }
 
     @media (max-width: 860px) {
@@ -1483,28 +1450,6 @@ SHARED_CSS = """
     .company-kpi-val, .perf-kpi-val { font-weight: 500; }
     .fp-heading { font-weight: 600; font-size: 1.25rem; border-bottom-color: var(--border-subtle); }
 
-    /* Calendar: colour says what kind of event it is, a hollow mark says it's estimated */
-    .cal-track { height: 84px; border-bottom-color: var(--border-card); }
-    .cal-mark, .cal-key { width: 9px; height: 9px; margin-left: -4px; border-radius: 50%; background: var(--text-muted); }
-    .cal-key { display: inline-block; margin: 0 0.4rem 0 0; }
-    .cal-mark[data-event-type*="Earnings"], .cal-key.is-earnings { background: var(--series-1); }
-    .cal-mark[data-event-type*="Dividend"], .cal-key.is-dividend { background: var(--series-4); }
-    .cal-mark[data-event-type*="SEC"], .cal-key.is-sec { background: var(--series-5); }
-    .cal-mark[data-event-type*="Conference"], .cal-key.is-conference { background: var(--series-6); }
-    .cal-mark:hover { background: var(--text-primary); }
-    .cal-mark.is-estimated, .cal-mark.is-estimated:hover { background: var(--bg-base); box-shadow: inset 0 0 0 2px var(--series-5); }
-    .cal-key.is-estimated { background: transparent; box-shadow: inset 0 0 0 2px var(--text-muted); }
-    .cal-today { font-weight: 600; border-left-color: var(--accent); color: var(--accent); }
-    .cal-week-title { border-bottom-color: var(--border-card); font-size: 1.25rem; font-weight: 600; }
-    .calendar-card[data-event-type*="Earnings"] .cal-details::before,
-    .calendar-card[data-event-type*="Dividend"] .cal-details::before,
-    .calendar-card[data-event-type*="SEC"] .cal-details::before,
-    .calendar-card[data-event-type*="Conference"] .cal-details::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 0.4rem; border-radius: 50%; vertical-align: 0.06em; }
-    .calendar-card[data-event-type*="Earnings"] .cal-details::before { background: var(--series-1); }
-    .calendar-card[data-event-type*="Dividend"] .cal-details::before { background: var(--series-4); }
-    .calendar-card[data-event-type*="SEC"] .cal-details::before { background: var(--series-5); }
-    .calendar-card[data-event-type*="Conference"] .cal-details::before { background: var(--series-6); }
-    .cal-source { color: var(--accent); }
 
     /* Economy */
     .economic-series-name { font-weight: 600; letter-spacing: -0.015em; }
@@ -1540,6 +1485,102 @@ SHARED_CSS = """
       .door-line { font-size: 0.92rem; }
       .news-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 0.5rem; }
       .news-row .feed-body { grid-column: 1 / -1; grid-row: 2; }
+    }
+
+    /* ---- Calendar agenda ---- */
+    .agenda-filters { margin: 0 0 1.5rem; gap: 0.4rem 1.1rem; }
+    .agenda-key { display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.4rem; border-radius: 50%; vertical-align: 0.05rem; }
+    .agenda-key.is-earnings, .agenda-event.is-earnings { --event: var(--series-1); }
+    .agenda-key.is-dividend, .agenda-event.is-dividend { --event: var(--series-2); }
+    .agenda-key.is-sec, .agenda-event.is-sec { --event: var(--series-3); }
+    .agenda-key.is-conference, .agenda-event.is-conference { --event: var(--series-4); }
+    .agenda-key { background: var(--event); }
+    .agenda { max-width: 52rem; }
+    .agenda-section { margin-bottom: 2.25rem; }
+    .agenda-section[hidden], .agenda-day[hidden], .agenda-event[hidden] { display: none; }
+    .agenda-heading { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); padding-bottom: 0.6rem; border-bottom: 1px solid var(--border-subtle); }
+    .agenda-day { display: grid; grid-template-columns: 4.25rem minmax(0, 1fr); gap: 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .agenda-date { display: flex; flex-direction: column; align-items: center; margin: 0; line-height: 1.1; color: var(--text-primary); }
+    .agenda-wd, .agenda-mo { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+    .agenda-dn { font-size: 1.9rem; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .agenda-day.is-today .agenda-wd, .agenda-day.is-today .agenda-dn { color: var(--accent); }
+    .agenda-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+    .agenda-event { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-left: 0.85rem; border-left: 3px solid var(--event); }
+    .agenda-main { min-width: 0; }
+    .agenda-title { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
+    .agenda-est { margin-left: 0.3rem; font-size: 0.78rem; font-weight: 500; color: var(--text-muted); }
+    .agenda-co { margin: 0.1rem 0 0; font-size: 0.92rem; color: var(--text-secondary); }
+    .agenda-co a { color: var(--text-primary); text-decoration: none; }
+    .agenda-co a:hover { text-decoration: underline; text-underline-offset: 2px; }
+    .agenda-source a { color: var(--accent); text-decoration: none; }
+    .agenda-source a:hover { text-decoration: underline; }
+    .agenda-source { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .agenda-add { flex: none; border: 1px solid var(--border-subtle); border-radius: var(--radius-full); padding: 0.35rem 0.85rem; min-height: 32px; font: inherit; font-size: 0.8rem; background: none; color: var(--text-secondary); cursor: pointer; }
+    .agenda-add:hover { color: var(--text-primary); border-color: var(--text-muted); }
+    .agenda-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    @media (max-width: 640px) {
+      .agenda-day { grid-template-columns: 3rem minmax(0, 1fr); gap: 0.85rem; }
+      .agenda-dn { font-size: 1.5rem; }
+      .agenda-event { flex-direction: column; gap: 0.5rem; }
+    }
+
+    /* ---- Company page ---- */
+    .company-glance { margin: 0.35rem 0 0.75rem; font-size: 0.95rem; color: var(--text-secondary); }
+    .company-results { margin: 2rem 0 3rem; }
+    .company-results-period { margin: 0.2rem 0 1rem; font-size: 0.86rem; color: var(--text-muted); }
+    .company-results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1.25rem 2rem; margin: 0; }
+    .company-result dt { font-size: 0.84rem; color: var(--text-secondary); }
+    .company-result-value { margin: 0.15rem 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .company-result-change { margin: 0.1rem 0 0; font-size: 0.9rem; color: var(--text-secondary); }
+    @media (max-width: 640px) {
+      .company-results-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+      .company-result dt { font-size: 0.74rem; }
+      .company-result-value { font-size: 1.1rem; }
+      .company-result-change { font-size: 0.78rem; }
+      .company-tabs { gap: 1.1rem; }
+    }
+    .company-tabs { margin: 0.25rem 0 0.75rem; }
+    .company-tab:disabled { opacity: 0.4; cursor: default; }
+    .tab-count { margin-left: 0.2rem; font-size: 0.8rem; font-weight: 400; color: var(--text-muted); }
+    .company-rollup { margin: 0.25rem 0 1rem; font-size: 1rem; line-height: 1.5; color: var(--text-primary); max-width: 40rem; }
+    .company-rollup-since { color: var(--text-muted); font-size: 0.86rem; }
+    .company-news-item[hidden] { display: none; }
+
+    /* ---- Following list at the top ---- */
+    .following-strip { display: flex; align-items: center; gap: 0.5rem 0.75rem; flex-wrap: wrap; margin: 0 0 1.25rem; }
+    .following-label { font-size: 0.84rem; font-weight: 600; color: var(--text-primary); }
+    .following-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .following-chip { border: 1px solid var(--border-subtle); border-radius: var(--radius-full); padding: 0.3rem 0.8rem; min-height: 34px; font: inherit; font-size: 0.86rem; font-weight: 600; background: none; color: var(--text-primary); cursor: pointer; }
+    .following-chip:hover { border-color: var(--text-muted); }
+    .following-chip.active { background: var(--text-primary); border-color: var(--text-primary); color: var(--bg-base); }
+    .following-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .following-edit { font-size: 0.84rem; color: var(--text-secondary); }
+    .settings-following .settings-group-name::after { content: ""; }
+
+    /* ---- Trending, suggestions, new since last visit ---- */
+    .home-trending { max-width: 72rem; margin: 0 auto 3.5rem; padding: 0 clamp(1rem, 4vw, 4.5rem); }
+    .trend-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0 2.5rem; }
+    .trend-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 0.1rem 1rem; align-items: center; padding: 0.9rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .trend-name { display: flex; align-items: baseline; gap: 0.55rem; min-width: 0; text-decoration: none; color: var(--text-primary); }
+    .trend-name:hover .trend-company { text-decoration: underline; text-underline-offset: 2px; }
+    .trend-ticker { font-weight: 600; }
+    .trend-company { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 0.92rem; }
+    .trend-reason { grid-column: 1; font-size: 0.82rem; color: var(--text-muted); }
+    .trend-item .follow-btn { grid-column: 2; grid-row: 1 / span 2; }
+    .follow-suggest-why { display: block; font-size: 0.8rem; color: var(--text-muted); }
+    .follow-suggest-name { white-space: normal; }
+    .new-badge { display: inline-block; margin-right: 0.45rem; padding: 0.05rem 0.45rem; border-radius: var(--radius-full); background: var(--accent); color: var(--on-accent); font-size: 0.7rem; font-weight: 600; vertical-align: 0.15em; }
+    .new-badge[hidden] { display: none; }
+
+    /* ---- Home tabs, above the welcome like Reels ---- */
+    .orbit-hero .hero-tabs { position: relative; z-index: 70; margin: 5.5rem 0 0; border-bottom: none; gap: 1.5rem; }
+    .orbit-hero .hero-tabs .view-tab { min-height: 40px; padding: 0.35rem 0.1rem; font-size: 1rem; }
+    .orbit-hero .hero-tabs + .hero-copy { padding-top: clamp(1.75rem, 6vh, 3.75rem); }
+    .hero-since { margin: 0.5rem 0 0; font-size: 0.92rem; color: var(--text-secondary); pointer-events: auto; }
+    .hero-since a { color: var(--accent); text-decoration: none; }
+    @media (max-width: 1024px) {
+      .orbit-hero .hero-tabs { margin-top: 4.25rem; }
+      .orbit-hero .hero-tabs + .hero-copy { padding-top: 1.25rem; }
     }
 
     /* ---- Following ---- */
@@ -1681,7 +1722,9 @@ const PAGE_ACTIONS = {
     closeMobileNav: () => closeMobileNav(),
     cycleTheme: () => cycleTheme(),
     filterCalendar: el => filterCalendar(el.dataset.val, el),
-    filterCompanyNews: el => filterCompanyNews(el.dataset.ticker, el.dataset.source, el),
+    addToCalendar: el => addToCalendar(el),
+    setCompanyTab: el => setCompanyTab(el),
+    showAllCompanyStories: el => showAllCompanyStories(el),
     filterEconomicBySector: el => filterEconomicBySector(el.dataset.sector, el),
     focusMobileSearch: () => focusMobileSearch(),
     openCompany: (el, event) => { event.preventDefault(); switchCompany(el.dataset.ticker); },
@@ -1707,7 +1750,7 @@ const PAGE_ACTIONS = {
     filterFeedTickerDropdown: el => filterFeedTickerDropdown(el.value),
     filterItems: () => filterItems(),
     filterSettingsCompanies: el => filterSettingsCompanies(el.value),
-    searchCompanyFeed: el => searchCompanyFeed(el.dataset.ticker, el.value),
+    searchCompanyFeed: el => searchCompanyFeed(el.dataset.ticker),
   },
   change: {
     filterEconomicByTicker: el => filterEconomicByTicker(el.value),
@@ -2116,6 +2159,17 @@ function offerSetupLink() {
   main.prepend(bar);
 }
 
+// Moves followed entries to the top of their list, keeping the original order otherwise.
+function followedFirst(list, itemSelector, symbolOf) {
+  if (!list) return;
+  const follows = followedSet();
+  const items = [...list.querySelectorAll(':scope > ' + itemSelector)];
+  items.forEach((el, i) => { if (!el.dataset.order) el.dataset.order = String(i); });
+  items
+    .sort((a, b) => (Number(follows.has(symbolOf(b))) - Number(follows.has(symbolOf(a)))) || (Number(a.dataset.order) - Number(b.dataset.order)))
+    .forEach(el => list.append(el));
+}
+
 document.addEventListener('followchange', syncFollowUi);
 document.addEventListener('DOMContentLoaded', () => { syncFollowUi(); offerSetupLink(); });
 // Another tab changed the follows: pick that up here too.
@@ -2151,9 +2205,15 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       <section class="orbit-hero" id="orbitHero" aria-label="Search your watchlist">
         <canvas class="orbit-dust" id="orbitDust" aria-hidden="true"></canvas>
 
+        <div class="view-tabs hero-tabs" role="tablist" aria-label="Which stories to show">
+          <button class="view-tab" id="viewTabForYou" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+          <button class="view-tab active" id="viewTabAll" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
+        </div>
+
         <div class="hero-copy">
           <h1 class="hero-headline">Welcome!</h1>
-          <p class="hero-sub">We keep you informed about the stocks you follow.</p>
+          <p class="hero-sub" id="heroSub">We keep you informed about the stocks you follow.</p>
+          <p class="hero-since" id="heroSince" hidden></p>
         </div>
 
         <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
@@ -2216,10 +2276,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </div>
       </section>
 
-      <div class="view-tabs" role="tablist" aria-label="Which stories to show">
-        <button class="view-tab" id="viewTabForYou" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
-        <button class="view-tab active" id="viewTabAll" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
-      </div>
 
       {% if watchlist_moves %}
       {% set risers = watchlist_moves|selectattr('move_pct', 'gt', 0)|list|length %}
@@ -2235,6 +2291,21 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       </section>
       {% endif %}
 
+      {% if trending %}
+      <section class="home-trending" aria-labelledby="homeTrendingHeading">
+        <h2 class="home-heading" id="homeTrendingHeading">Trending this week</h2>
+        <ul class="trend-list">
+          {% for t in trending %}
+          <li class="trend-item" data-symbol="{{ t.symbol }}">
+            <a class="trend-name" href="company.html?ticker={{ t.symbol|urlencode }}"><span class="trend-ticker">{{ t.symbol }}</span><span class="trend-company">{{ t.name }}</span></a>
+            <span class="trend-reason">{{ t.reason }}</span>
+            <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ t.symbol }}" aria-pressed="false">Follow</button>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
       <div class="home-below">
         <section class="home-stories" aria-labelledby="homeStoriesHeading">
           <h2 class="home-heading" id="homeStoriesHeading">Top stories</h2>
@@ -2243,10 +2314,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           {% if priority_items %}
           <ol class="top-list">
             {% for it in priority_items[:5] %}
-            <li class="top-row{% if loop.first %} is-lead{% endif %}">
+            <li class="top-row{% if loop.first %} is-lead{% endif %}" data-created="{{ it.created_at or '' }}">
               <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
               <div class="top-body">
-                <a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
+                <span class="new-badge" hidden>New</span><a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
                 {% if it.story_text %}<p class="top-summary">{{ figures(it.story_text) }}</p>{% endif %}{% if it.ai_summary %}<p class="feed-takeaway">{{ figures(it.ai_summary) }}</p>{% endif %}
               </div>
               <span class="top-date">{{ short_date(it.published_date) }}</span>
@@ -2385,10 +2456,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     function topRowHtml(it, i, follows) {
       const reason = followReason(it.ticker, it.related_tickers_list);
       return `
-        <li class="top-row${i === 0 ? ' is-lead' : ''}">
+        <li class="top-row${i === 0 ? ' is-lead' : ''}" data-created="${escapeHtml(it.created_at || '')}">
           <a class="top-ticker" href="company.html?ticker=${encodeURIComponent(it.ticker)}">${escapeHtml(it.ticker)}</a>
           <div class="top-body">
-            <a class="top-title" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.clean_headline || it.headline)}</a>
+            <span class="new-badge" hidden>New</span><a class="top-title" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.clean_headline || it.headline)}</a>
             ${it.story_text ? `<p class="top-summary">${figuresHtml(it.story_text)}</p>` : ''}
             ${it.ai_summary ? `<p class="feed-takeaway">${figuresHtml(it.ai_summary)}</p>` : ''}
             ${reason ? `<p class="follow-reason">${escapeHtml(reason)}</p>` : ''}
@@ -2397,29 +2468,111 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </li>`;
     }
 
-    // Companies with the most going on, one tap each. Shown until a few are followed.
-    function suggestionsHtml(follows) {
+    const TRENDING = {{ trending|tojson }};
+    const COMPANY_BY_SYMBOL = {};
+    (watchlistCompanies || []).forEach(c => { COMPANY_BY_SYMBOL[c.symbol] = c; });
+
+    // Watchlist companies linked to what's followed, with the link in words.
+    function relatedTo(follows) {
+      const found = new Map();
+      const add = (sym, why) => { if (KNOWN_SYMBOLS.has(sym) && !follows.has(sym) && !found.has(sym)) found.set(sym, why); };
+      followState().symbols.forEach(src => {
+        const co = COMPANY_BY_SYMBOL[src] || {};
+        (co.key_suppliers || []).forEach(sym => add(String(sym).toUpperCase(), `Supplies ${src}`));
+        (co.key_customers || []).forEach(sym => add(String(sym).toUpperCase(), `Customer of ${src}`));
+        (co.competitors || []).forEach(sym => add(String(sym).toUpperCase(), `Competes with ${src}`));
+      });
+      return [...found.entries()].map(([symbol, reason]) => ({ symbol, reason }));
+    }
+
+    // Suggestions in order: linked to what you follow, trending this week, then the busiest.
+    function suggestionsFor(follows, count) {
+      const picks = [];
+      const seen = new Set();
+      const add = (symbol, reason) => {
+        if (picks.length >= count || seen.has(symbol) || follows.has(symbol) || !COMPANY_BY_SYMBOL[symbol]) return;
+        seen.add(symbol);
+        picks.push({ symbol, reason });
+      };
+      // Half at most from links, one per kind of link first, so the list isn't four of the same.
+      const related = relatedTo(follows);
+      const byReason = new Map();
+      related.forEach(r => { if (!byReason.has(r.reason)) byReason.set(r.reason, []); byReason.get(r.reason).push(r); });
+      const linkCap = Math.ceil(count / 2);
+      let round = 0;
+      while (picks.length < linkCap && [...byReason.values()].some(list => list.length > round)) {
+        byReason.forEach(list => { if (picks.length < linkCap && list[round]) add(list[round].symbol, list[round].reason); });
+        round += 1;
+      }
+      TRENDING.forEach(t => add(t.symbol, `Trending · ${t.reason}`));
       const counts = {};
       (allItems || []).forEach(it => { counts[it.ticker] = (counts[it.ticker] || 0) + 1; });
-      const names = {};
-      (watchlistCompanies || []).forEach(c => { names[c.symbol] = c.name; });
-      const picks = Object.keys(counts)
-        .filter(s => names[s] && !follows.has(s))
-        .sort((a, b) => counts[b] - counts[a])
-        .slice(0, followsAnything() ? 4 : 8);
+      Object.keys(counts).sort((a, b) => counts[b] - counts[a]).forEach(sym => add(sym, `${counts[sym]} stories`));
+      return picks;
+    }
+
+    function suggestionsHtml(follows) {
+      const picks = suggestionsFor(follows, followsAnything() ? 4 : 8);
+      if (!picks.length) return '';
       const intro = followsAnything()
-        ? '<h3 class="follow-suggest-title">More companies to follow</h3>'
+        ? '<h3 class="follow-suggest-title">Suggested for you</h3>'
         : '<p class="home-empty">Follow a few companies and their stories gather here, most important first.</p>';
       return `
         ${intro}
         <ul class="follow-suggest">
-          ${picks.map(s => `<li><span class="follow-suggest-name"><span class="ticker-badge">${escapeHtml(s)}</span> ${escapeHtml(names[s])}</span><button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="${escapeHtml(s)}" aria-pressed="false">Follow</button></li>`).join('')}
+          ${picks.map(p => `<li><span class="follow-suggest-name"><span class="ticker-badge">${escapeHtml(p.symbol)}</span> ${escapeHtml(COMPANY_BY_SYMBOL[p.symbol].name)}<span class="follow-suggest-why">${escapeHtml(p.reason)}</span></span><button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="${escapeHtml(p.symbol)}" aria-pressed="false">Follow</button></li>`).join('')}
         </ul>
-        <a class="home-more" href="company.html">See all ${(watchlistCompanies || []).length} companies</a>`;
+        <a class="home-more" href="settings.html">Choose companies and sectors</a>`;
+    }
+
+    // ---- Since your last visit ----
+    // The previous visit is kept for this whole browsing session, so the count doesn't vanish on reload.
+    let previousVisit = '';
+    function readPreviousVisit() {
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      try {
+        let prev = sessionStorage.getItem('stockpulse_prev_visit');
+        if (prev === null) {
+          prev = localStorage.getItem('stockpulse_last_visit') || '';
+          sessionStorage.setItem('stockpulse_prev_visit', prev);
+        }
+        localStorage.setItem('stockpulse_last_visit', now);
+        previousVisit = /^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/.test(prev) ? prev : '';
+      } catch (e) { previousVisit = ''; }
+    }
+
+    function isNew(created) {
+      return Boolean(previousVisit && created && created > previousVisit);
+    }
+
+    function renderSince(forYou, follows) {
+      const line = document.getElementById('heroSince');
+      document.querySelectorAll('.top-row[data-created]').forEach(row => {
+        const badge = row.querySelector('.new-badge');
+        if (badge) badge.hidden = !isNew(row.dataset.created);
+      });
+      if (!line) return;
+      if (!previousVisit) { line.hidden = true; return; }
+      const fresh = (allItems || []).filter(it => isNew(it.created_at)
+        && (!forYou || follows.has(it.ticker) || (it.related_tickers_list || []).some(t => follows.has(t))));
+      const when = new Date(previousVisit.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      line.hidden = false;
+      line.textContent = fresh.length
+        ? `${plural(fresh.length, 'new story', 'new stories')}${forYou ? ' about what you follow' : ''} since your last visit on ${when}.`
+        : `Nothing new${forYou ? ' about what you follow' : ''} since your last visit on ${when}.`;
+    }
+
+    function renderHeroLine(forYou) {
+      const sub = document.getElementById('heroSub');
+      if (!sub) return;
+      sub.textContent = forYou
+        ? (followsAnything() ? `${followSummary()}. Here’s what matters to you.` : 'Follow a few companies and this becomes yours.')
+        : 'We keep you informed about the stocks you follow.';
     }
 
     function renderHomeView() {
       const view = currentView();
+      renderHeroLine(view === 'foryou');
       const follows = followedSet();
       const forYou = view === 'foryou';
       const mine = document.getElementById('topForYou');
@@ -2440,7 +2593,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           mine.innerHTML = (rows.length
             ? `<ol class="top-list">${rows.map((it, i) => topRowHtml(it, i, follows)).join('')}</ol>`
             : '<p class="home-empty">No stories yet about the companies you follow.</p>')
-            + (follows.size < 3 ? suggestionsHtml(follows) : '');
+            + suggestionsHtml(follows);
           if (!rows.length && hiddenTypes().size) {
             mine.insertAdjacentHTML('afterbegin', '<p class="follow-reason">Some story types are hidden in <a href="settings.html">Your feed</a>.</p>');
           }
@@ -2461,6 +2614,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       });
       const heatHeading = document.getElementById('homeHeatHeading');
       if (heatHeading && tiles.length) heatHeading.textContent = `${up} up, ${down} down`;
+      document.querySelectorAll('.trend-item').forEach(li => { li.classList.toggle('is-followed', follows.has(li.dataset.symbol)); });
+      renderSince(forYou, follows);
       const heatSub = document.querySelector('.heat-sub');
       if (heatSub) heatSub.textContent = narrow ? 'The companies you follow over the last 3 months, best to worst.' : 'Your watchlist over the last 3 months, best to worst.';
       syncFollowUi();
@@ -2514,7 +2669,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
     }
 
     document.addEventListener('followchange', () => { renderHomeView(); if (typeof orbit !== 'undefined') orbit.refresh(); });
-    document.addEventListener('DOMContentLoaded', () => { offerPicker(); renderHomeView(); });
+    document.addEventListener('DOMContentLoaded', () => { readPreviousVisit(); offerPicker(); renderHomeView(); });
 
     // A ring of real company links orbiting the search bar. The chips are ordinary links in an
     // ordinary list: this script only positions them, and without it they stay a static grid.
@@ -4422,66 +4577,49 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       <header class="page-header">
         <h1 class="page-title">Calendar</h1>
         <p class="page-standfirst">
-          {% if calendar_events %}{{ calendar_events|length }} events ahead. Next: {{ calendar_events[0].headline }}, {{ calendar_events[0].relative_badge|lower }}.
+          {% if agenda.first %}{{ agenda.count }} {{ 'date' if agenda.count == 1 else 'dates' }} ahead. Next: {{ agenda.first.company }} {{ agenda.first.title|lower }}, {{ agenda.first.relative|lower }}.
           {% else %}Nothing scheduled yet.{% endif %}
         </p>
       </header>
 
-      {% if calendar_view.marks %}
-      <figure class="cal-timeline" aria-label="Events on a timeline">
-        <div class="cal-track">
-          <span class="cal-month cal-today" data-left="{{ calendar_view.today_pos }}">Today</span>
-          {% for m in calendar_view.months %}
-          <span class="cal-month" data-left="{{ m.pos }}">{{ m.label }}</span>
-          {% endfor %}
-          {% for mark in calendar_view.marks %}
-          <a class="cal-mark{% if mark.estimated %} is-estimated{% endif %}" href="#{{ mark.anchor }}" data-event-type="{{ mark.event_type }}" data-left="{{ mark.pos }}" data-bottom="{{ mark.lane * 12 }}" title="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}{% if mark.estimated %} (estimated){% endif %}" aria-label="{{ mark.date }}: {{ mark.ticker }} {{ mark.kind }}"></a>
-          {% endfor %}
-        </div>
-        <figcaption class="cal-legend">
-          <span><i class="cal-key is-earnings"></i>Earnings</span>
-          <span><i class="cal-key is-dividend"></i>Dividend</span>
-          <span><i class="cal-key is-sec"></i>SEC deadline</span>
-          <span><i class="cal-key is-conference"></i>Conference</span>
-          <span><i class="cal-key is-estimated"></i>Hollow means estimated from filing rules</span>
-        </figcaption>
-      </figure>
-      {% endif %}
-
-      <div class="controls-panel cal-filters">
-        <div class="filter-options" role="group" aria-label="Filter events">
-          <button class="filter-btn active cal-filter-btn" type="button" data-val="ALL" data-click="filterCalendar">All <span class="pill-count">{{ calendar_events|length }}</span></button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Earnings" data-click="filterCalendar">Earnings</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Dividend" data-click="filterCalendar">Dividends</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="SEC" data-click="filterCalendar">SEC deadlines</button>
-          <button class="filter-btn cal-filter-btn" type="button" data-val="Conference" data-click="filterCalendar">Conferences</button>
-        </div>
+      <div class="view-tabs view-tabs-left" role="tablist" aria-label="Which events to show">
+        <button class="view-tab" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+        <button class="view-tab active" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
       </div>
 
-      <div id="calendarGrid">
-        {% for week in calendar_view.weeks %}
-        <section class="cal-week">
-          <h2 class="cal-week-title">{{ week.label }}</h2>
-          {% for ev in week.events %}
-          <article class="calendar-card" id="{{ ev.anchor }}" data-event-type="{{ ev.event_type }}" data-source-type="{{ ev.source_type }}">
-            <div class="cal-when">
-              <span class="cal-date">{{ short_date(ev.event_date) }}</span>
-              <span class="cal-relative">{{ ev.relative_badge }}</span>
-            </div>
-            <a href="company.html?ticker={{ ev.ticker|urlencode }}" class="ticker-badge" title="{{ ev.company_name }}">{{ ev.ticker }}</a>
-            <div class="cal-body">
-              <h3 class="cal-headline">{{ ev.headline }}</h3>
-              <p class="cal-details">{{ ev.kind }}{% if ev.source_type == 'ESTIMATED_RULE' %} · <span class="cal-estimated">Estimated</span>{% endif %}{% if ev.details %} · {{ ev.details }}{% endif %}</p>
-            </div>
-            {% if ev.source_url and ev.source_url.startswith('http') %}
-            <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer" class="cal-source">{% if ev.source_type == 'ESTIMATED_RULE' %}SEC filings{% else %}Source{% endif %}</a>
-            {% endif %}
-          </article>
+      <div class="agenda-filters filter-options" role="group" aria-label="Kind of event">
+        <button class="filter-btn active agenda-filter" type="button" data-val="ALL" data-click="filterCalendar">All</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="earnings" data-click="filterCalendar"><i class="agenda-key is-earnings"></i>Earnings</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="dividend" data-click="filterCalendar"><i class="agenda-key is-dividend"></i>Dividends</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="sec" data-click="filterCalendar"><i class="agenda-key is-sec"></i>Report deadlines</button>
+        <button class="filter-btn agenda-filter" type="button" data-val="conference" data-click="filterCalendar"><i class="agenda-key is-conference"></i>Conferences</button>
+      </div>
+
+      <div id="calendarGrid" class="agenda">
+        {% for section in agenda.sections %}
+        <section class="agenda-section">
+          <h2 class="agenda-heading">{{ section.label }}</h2>
+          {% for day in section.days %}
+          <div class="agenda-day{% if day.is_today %} is-today{% endif %}">
+            <p class="agenda-date" aria-label="{{ day.weekday }} {{ day.month }} {{ day.day }}"><span class="agenda-wd">{{ day.weekday }}</span><span class="agenda-dn">{{ day.day }}</span><span class="agenda-mo">{{ day.month }}</span></p>
+            <ul class="agenda-events">
+              {% for ev in day.events %}
+              <li class="agenda-event is-{{ ev.type }}" id="{{ ev.id }}" data-type="{{ ev.type }}" data-ticker="{{ ev.ticker }}">
+                <div class="agenda-main">
+                  <p class="agenda-title">{{ ev.title }}{% if ev.estimated %} <span class="agenda-est">estimated</span>{% endif %}</p>
+                  <p class="agenda-co"><a href="company.html?ticker={{ ev.ticker|urlencode }}">{{ ev.company }}</a> · {{ ev.ticker }} · {{ ev.relative }}</p>
+                  <p class="agenda-source">{% if ev.estimated %}Worked out from SEC filing deadlines, not announced by the company.{% else %}From “{{ ev.headline }}”{% endif %}{% if ev.url and ev.url.startswith('http') %} <a href="{{ safe_url(ev.url) }}" target="_blank" rel="noopener noreferrer">{% if ev.estimated %}SEC filings{% else %}Source{% endif %}</a>{% endif %}</p>
+                  <p class="follow-reason" hidden></p>
+                </div>
+                <button class="agenda-add" type="button" data-click="addToCalendar" data-ics-title="{{ ev.company }} {{ ev.title|lower }}{% if ev.estimated %} (estimated){% endif %}" data-ics-date="{{ ev.date }}" data-ics-url="{{ safe_url(ev.url, '') }}" data-ics-id="{{ ev.id }}-{{ ev.ticker }}">Add to calendar</button>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
           {% endfor %}
         </section>
-        {% else %}
-        <p class="home-empty">No upcoming events. They appear here after the next pipeline run.</p>
         {% endfor %}
+        <p class="home-empty" id="calendarEmpty"{% if agenda.count %} hidden{% endif %}>{% if agenda.count %}No events match.{% else %}No upcoming events. They appear here after the next pipeline run.{% endif %}</p>
       </div>
     </main>
   </div>
@@ -4489,32 +4627,75 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
   <script>
     """ + SHARED_MOBILE_JS + """
 
-    function matchesCalendarFilter(evType, type) {
-      if (type === 'ALL') return true;
-      if (type === 'SEC') return evType.includes('SEC') || evType.includes('Statutory');
-      return evType.includes(type);
-    }
-
-    // Positions come from the data, and the CSP allows them to be set from script but not inline.
-    document.querySelectorAll('.cal-track [data-left]').forEach(el => {
-      el.style.left = `${Number(el.dataset.left)}%`;
-      if (el.dataset.bottom) el.style.bottom = `${Number(el.dataset.bottom)}px`;
-    });
+    let calendarType = 'ALL';
 
     function filterCalendar(type, btn) {
-      document.querySelectorAll('.cal-filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      document.querySelectorAll('.calendar-card').forEach(card => {
-        card.hidden = !matchesCalendarFilter(card.getAttribute('data-event-type') || '', type);
-      });
-      document.querySelectorAll('.cal-mark').forEach(mark => {
-        mark.classList.toggle('is-dimmed', !matchesCalendarFilter(mark.getAttribute('data-event-type') || '', type));
-      });
-      document.querySelectorAll('.cal-week').forEach(week => {
-        week.hidden = !week.querySelector('.calendar-card:not([hidden])');
-      });
+      calendarType = type;
+      document.querySelectorAll('.agenda-filter').forEach(b => b.classList.toggle('active', b === btn));
+      applyCalendar();
     }
+
+    // For you narrows to followed companies; the kind chips narrow by type. Empty days and sections fold away.
+    function applyCalendar() {
+      const forYou = currentView() === 'foryou';
+      const follows = followedSet();
+      let shown = 0;
+      document.querySelectorAll('.agenda-event').forEach(ev => {
+        const typeOk = calendarType === 'ALL' || ev.dataset.type === calendarType;
+        const followOk = !forYou || follows.has(ev.dataset.ticker);
+        ev.hidden = !(typeOk && followOk);
+        if (!ev.hidden) shown += 1;
+        const why = ev.querySelector('.follow-reason');
+        if (why) {
+          why.textContent = forYou ? followReason(ev.dataset.ticker, []) : '';
+          why.hidden = !why.textContent;
+        }
+      });
+      document.querySelectorAll('.agenda-day').forEach(day => { day.hidden = !day.querySelector('.agenda-event:not([hidden])'); });
+      document.querySelectorAll('.agenda-section').forEach(sec => { sec.hidden = !sec.querySelector('.agenda-day:not([hidden])'); });
+      const empty = document.getElementById('calendarEmpty');
+      if (empty && document.querySelector('.agenda-event')) {
+        empty.hidden = shown > 0;
+        empty.innerHTML = forYou && !followsAnything()
+          ? 'You aren’t following anything yet. Pick companies or sectors in <a href="settings.html">Your feed</a>, or switch to Everything.'
+          : (forYou ? 'Nothing scheduled for what you follow yet. Everything has every date.' : 'No events match.');
+      }
+    }
+
+    // An all-day event file the phone or computer calendar opens. Built here, so nothing is uploaded.
+    function icsText(value) {
+      return String(value || '').replace(/[\\\\;,]/g, m => '\\\\' + m).replace(/[\\r\\n]+/g, ' ');
+    }
+
+    function addToCalendar(btn) {
+      const iso = btn.dataset.icsDate || '';
+      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(iso)) return;
+      const start = iso.replace(/-/g, '');
+      const next = new Date(iso + 'T00:00:00Z');
+      next.setUTCDate(next.getUTCDate() + 1);
+      const end = next.toISOString().slice(0, 10).replace(/-/g, '');
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\\.\\d{3}/, '');
+      const lines = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//StockPulse//Calendar//EN', 'BEGIN:VEVENT',
+        `UID:${icsText(btn.dataset.icsId)}-${start}@stockpulse`, `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${start}`, `DTEND;VALUE=DATE:${end}`, `SUMMARY:${icsText(btn.dataset.icsTitle)}`,
+      ];
+      if (/^https?:\\/\\//i.test(btn.dataset.icsUrl || '')) lines.push(`URL:${icsText(btn.dataset.icsUrl)}`);
+      lines.push('END:VEVENT', 'END:VCALENDAR');
+      const blob = new Blob([lines.join('\\r\\n') + '\\r\\n'], { type: 'text/calendar' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${(btn.dataset.icsTitle || 'event').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase()}.ics`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      btn.textContent = 'Added';
+      setTimeout(() => { btn.textContent = 'Add to calendar'; }, 2400);
+    }
+
+    document.addEventListener('followchange', applyCalendar);
+    document.addEventListener('DOMContentLoaded', applyCalendar);
   </script>
 </body>
 </html>
@@ -4857,6 +5038,10 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
       <section class="settings-section" aria-labelledby="settingsCompanyHeading">
         <h2 class="settings-heading" id="settingsCompanyHeading">Companies</h2>
         <input type="text" class="feed-search" id="settingsCompanyFilter" aria-label="Find a company" placeholder="Find a company or ticker" data-input="filterSettingsCompanies">
+        <details class="settings-group settings-following" id="settingsFollowing" open hidden>
+          <summary class="settings-group-head"><span class="settings-group-name">Following</span><span class="settings-group-meta" id="settingsFollowingMeta"></span></summary>
+          <ul class="follow-suggest" id="settingsFollowingList"></ul>
+        </details>
         {% for sec in sector_directory %}
         <details class="settings-group" data-sector-group="{{ sec.name }}">
           <summary class="settings-group-head"><span class="settings-group-name">{{ sec.name }}</span><span class="settings-group-meta" data-group-meta>{{ sec.count }} {{ 'company' if sec.count == 1 else 'companies' }}</span></summary>
@@ -4907,7 +5092,9 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
     function filterSettingsCompanies(value) {
       const q = String(value || '').toLowerCase().trim();
       let shown = 0;
-      document.querySelectorAll('.settings-group').forEach(group => {
+      const following = document.getElementById('settingsFollowing');
+      if (following) following.hidden = Boolean(q) || !following.querySelector('li');
+      document.querySelectorAll('.settings-group:not(#settingsFollowing)').forEach(group => {
         let any = false;
         group.querySelectorAll('li[data-filter-text]').forEach(li => {
           const match = !q || li.dataset.filterText.includes(q);
@@ -4927,7 +5114,7 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
       const state = followState();
       const sectors = new Set(state.sectors);
       const direct = new Set(state.symbols);
-      document.querySelectorAll('.settings-group').forEach(group => {
+      document.querySelectorAll('.settings-group:not(#settingsFollowing)').forEach(group => {
         const rows = [...group.querySelectorAll('li[data-follow-mark]')];
         const whole = sectors.has(group.dataset.sectorGroup);
         rows.forEach(li => {
@@ -4944,8 +5131,32 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    document.addEventListener('followchange', markSectorFollows);
-    document.addEventListener('DOMContentLoaded', markSectorFollows);
+    // The companies followed one by one, gathered at the top; each sector also lists them first.
+    function renderSettingsFollowing() {
+      const state = followState();
+      const group = document.getElementById('settingsFollowing');
+      const list = document.getElementById('settingsFollowingList');
+      if (!group || !list) return;
+      const rows = state.symbols
+        .map(sym => document.querySelector(`.settings-group:not(#settingsFollowing) li[data-follow-mark="${CSS.escape(sym)}"]`))
+        .filter(Boolean)
+        .map(li => {
+          const copy = li.cloneNode(true);
+          copy.querySelector('.settings-via')?.remove();
+          return copy;
+        });
+      list.replaceChildren(...rows);
+      group.hidden = rows.length === 0 || Boolean(document.getElementById('settingsCompanyFilter')?.value.trim());
+      const meta = document.getElementById('settingsFollowingMeta');
+      if (meta) meta.textContent = plural(rows.length, 'company', 'companies');
+      document.querySelectorAll('.settings-group:not(#settingsFollowing) .follow-suggest').forEach(ul => {
+        followedFirst(ul, 'li', el => el.dataset.followMark);
+      });
+      syncFollowUi();
+    }
+
+    document.addEventListener('followchange', () => { markSectorFollows(); renderSettingsFollowing(); });
+    document.addEventListener('DOMContentLoaded', () => { markSectorFollows(); renderSettingsFollowing(); });
   </script>
 </body>
 </html>
@@ -4977,11 +5188,21 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to see its news and price.</p>
       </header>
 
+      <nav class="following-strip" id="followingStrip" aria-label="Companies you follow" hidden>
+        <span class="following-label">Following</span>
+        <div class="following-chips" id="followingChips"></div>
+        <a class="following-edit" href="settings.html">Edit</a>
+      </nav>
+
       <details class="company-directory-browser" id="companyDirectory" open>
         <summary class="feed-filters-toggle">All companies</summary>
         <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
         <p class="econ-note">Percentages show how far each stock is ahead of or behind the S&amp;P 500 over 3 months.</p>
         <div class="company-browser-grid company-strip" id="companyStripContainer">
+          <section class="company-browser-sector" id="followingSection" hidden>
+            <h2 class="company-browser-sector-name">Following</h2>
+            <div id="followingCards"></div>
+          </section>
           {% for sec in sector_directory %}
           <section class="company-browser-sector">
             <h2 class="company-browser-sector-name">{{ sec.name }}</h2>
@@ -5053,55 +5274,48 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
           </p>
 
-          <dl class="company-kpi-ribbon">
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">Stories</dt>
-              <dd class="company-kpi-val">{{ co_news|length }}</dd>
-              <dd class="company-kpi-sub">{{ ns.news_count }} news, {{ ns.edgar_count }} SEC, {{ ns.ir_count }} releases</dd>
-            </div>
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">To read first</dt>
-              <dd class="company-kpi-val">{{ ns.high_count }}</dd>
-            </div>
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">Next event</dt>
-              <dd class="company-kpi-val">{% if co_events %}{{ short_date(co_events[0].event_date) }}{% else %}None{% endif %}</dd>
-              <dd class="company-kpi-sub">{% if co_events %}{{ event_kind(co_events[0].event_type or '') }}{% else %}Nothing scheduled{% endif %}</dd>
-            </div>
-            <div class="company-kpi-card">
-              <dt class="company-kpi-title">Connections</dt>
-              <dd class="company-kpi-val">{{ (co.key_customers|length if co.key_customers else 0) + (co.key_suppliers|length if co.key_suppliers else 0) + (co.competitors|length if co.competitors else 0) }}</dd>
-              <dd class="company-kpi-sub">{{ co.key_customers|length if co.key_customers else 0 }} customers, {{ co.key_suppliers|length if co.key_suppliers else 0 }} suppliers, {{ co.competitors|length if co.competitors else 0 }} competitors</dd>
-            </div>
-          </dl>
+          {% set week_count = co_news|selectattr('published_date', 'ge', week_ago)|list|length %}
+          <p class="company-glance">{% if week_count %}{{ week_count }} new {{ 'story' if week_count == 1 else 'stories' }} this week{% else %}No new stories this week{% endif %}{% if co_events %} · Next: {{ event_kind(co_events[0].event_type or '') }}, {{ short_date(co_events[0].event_date) }}{% endif %}</p>
         </header>
 
-        <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
-          <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
-          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
-          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
-          <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
-          <div class="perf-table-wrap">
-            <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
-          </div>
+        {% set results = latest_results(co.symbol, co_news) %}
+        {% if results %}
+        <section class="company-results" aria-labelledby="results-{{ co.symbol }}">
+          <h3 class="fp-heading" id="results-{{ co.symbol }}">Latest results</h3>
+          <p class="company-results-period">{{ results.period }} · from the {{ results.form }} filed {{ short_date(results.filed) }}{% if results.compared %} · changes are against a year earlier{% endif %}</p>
+          <dl class="company-results-grid">
+            {% for f in results.figures %}
+            <div class="company-result">
+              <dt>{{ f.label }}</dt>
+              <dd class="company-result-value">{{ f.value }}</dd>
+              {% if f.change %}<dd class="company-result-change {{ f.tone }}">{{ f.change }}</dd>{% endif %}
+            </div>
+            {% endfor %}
+          </dl>
         </section>
+        {% endif %}
+
 
         <div class="company-grid-layout">
           <section class="company-card-deck" aria-label="Stories">
             <h3 class="fp-heading">Stories</h3>
-            <div class="company-feed-tools">
-              <div class="filter-options" role="group" aria-label="Filter by source">
-                <button class="filter-btn active company-source-filter-btn" type="button" data-source="ALL" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">All <span class="pill-count">{{ co_news|length }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="news_media" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">News <span class="pill-count">{{ ns.news_count }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="sec_edgar" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">SEC <span class="pill-count">{{ ns.edgar_count }}</span></button>
-                <button class="filter-btn company-source-filter-btn" type="button" data-source="company_ir" data-ticker="{{ co.symbol }}" data-click="filterCompanyNews">Releases <span class="pill-count">{{ ns.ir_count }}</span></button>
-              </div>
-              <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
+            {% set tabs = namespace(news=0, filings=0, insider=0) %}
+            {% for it in co_news %}
+              {% if it.category == 'Insider Transactions' %}{% set tabs.insider = tabs.insider + 1 %}{% elif it.source == 'sec_edgar' %}{% set tabs.filings = tabs.filings + 1 %}{% else %}{% set tabs.news = tabs.news + 1 %}{% endif %}
+            {% endfor %}
+            {% set first_tab = 'news' if tabs.news else ('filings' if tabs.filings else ('insider' if tabs.insider else 'news')) %}
+            <div class="company-tabs view-tabs view-tabs-left" role="tablist" aria-label="{{ co.symbol }} stories">
+              {% for key, label, n in [('news', 'News', tabs.news), ('filings', 'Filings', tabs.filings), ('insider', 'Insider trades', tabs.insider)] %}
+              <button class="view-tab company-tab{% if key == first_tab %} active{% endif %}" role="tab" type="button" data-click="setCompanyTab" data-ticker="{{ co.symbol }}" data-tab="{{ key }}" aria-selected="{{ 'true' if key == first_tab else 'false' }}"{% if not n %} disabled{% endif %}>{{ label }} <span class="tab-count">{{ n }}</span></button>
+              {% endfor %}
             </div>
+            {% set rollup = insider_rollup(co.symbol, co_news) %}
+            {% if rollup %}<p class="company-rollup" data-tab-only="insider"{% if first_tab != 'insider' %} hidden{% endif %}>{{ rollup.sentence }} <span class="company-rollup-since">Filings since {{ short_date(rollup.since) }}.</span></p>{% endif %}
+            <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
 
             {% if co_news %}
               {% for it in co_news %}
-              <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}">
+              <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}" data-tab="{{ 'insider' if it.category == 'Insider Transactions' else ('filings' if it.source == 'sec_edgar' else 'news') }}">
                 <div class="feed-body">
                   <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
                   {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
@@ -5124,6 +5338,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 <span class="date-cell">{{ short_date(it.published_date) }}</span>
               </article>
               {% endfor %}
+              <button class="feed-more company-more" type="button" data-click="showAllCompanyStories" data-ticker="{{ co.symbol }}" hidden>Show all</button>
               <p class="fp-empty company-feed-empty" hidden>No stories match.</p>
             {% else %}
               <p class="home-empty">No stories recorded for {{ co.symbol }} in this period.</p>
@@ -5138,7 +5353,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 {% for ev in co_events %}
                 <li class="fp-event">
                   <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
-                  <span class="fp-event-text">{{ ev.headline }}<span class="company-side-sub">{{ ev.relative_badge }} · {{ event_kind(ev.event_type or '') }}</span></span>
+                  <span class="fp-event-text">{{ event_kind(ev.event_type or '') }}<span class="company-side-sub">{{ ev.relative_badge }} · from “{{ ev.headline }}”</span></span>
                 </li>
                 {% endfor %}
               </ul>
@@ -5173,6 +5388,16 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
             </section>
           </aside>
         </div>
+
+        <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
+          <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
+          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
+          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
+          <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
+          <div class="perf-table-wrap">
+            <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
+          </div>
+        </section>
       </article>
       {% endfor %}
     </main>
@@ -5433,26 +5658,105 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    function applyCompanyFeedFilter(container, source, query) {
+    // Each tab shows its 5 most important stories until "Show all" is pressed; a search shows every match.
+    const COMPANY_TAB_LIMIT = 5;
+
+    function applyCompanyFeedFilter(container) {
+      const ticker = container.dataset.ticker;
+      const tab = container.dataset.tab || container.querySelector('.company-tab.active')?.dataset.tab || 'news';
+      const input = document.getElementById('search-' + ticker);
+      const query = (input ? input.value : '').toLowerCase().trim();
+      const expanded = container.dataset.expanded === tab;
+      let matched = 0;
       let shown = 0;
       container.querySelectorAll('.company-news-item').forEach(row => {
-        const sourceMatch = source === 'ALL' || row.getAttribute('data-source') === source;
-        const textMatch = !query || (row.textContent || '').toLowerCase().includes(query);
-        row.hidden = !(sourceMatch && textMatch);
-        if (!row.hidden) shown += 1;
+        const match = row.dataset.tab === tab && (!query || (row.textContent || '').toLowerCase().includes(query));
+        if (match) matched += 1;
+        const show = match && (query || expanded || matched <= COMPANY_TAB_LIMIT);
+        row.hidden = !show;
+        if (show) shown += 1;
       });
+      container.querySelectorAll('[data-tab-only]').forEach(el => { el.hidden = el.dataset.tabOnly !== tab; });
+      const more = container.querySelector('.company-more');
+      if (more) {
+        more.hidden = Boolean(query) || matched <= COMPANY_TAB_LIMIT;
+        more.textContent = expanded ? 'Show fewer' : `Show all ${matched}`;
+        more.setAttribute('aria-expanded', String(expanded));
+      }
       const empty = container.querySelector('.company-feed-empty');
       if (empty) empty.hidden = shown !== 0;
     }
 
-    function searchCompanyFeed(ticker, rawVal) {
-      const container = document.getElementById('profile-' + ticker);
-      if (!container) return;
-
-      const activeSourceBtn = container.querySelector('.company-source-filter-btn.active');
-      const activeSource = activeSourceBtn ? activeSourceBtn.getAttribute('data-source') || 'ALL' : 'ALL';
-      applyCompanyFeedFilter(container, activeSource, (rawVal || '').toLowerCase().trim());
+    function setCompanyTab(btn) {
+      const container = document.getElementById('profile-' + btn.dataset.ticker);
+      if (!container || btn.disabled) return;
+      container.dataset.tab = btn.dataset.tab;
+      delete container.dataset.expanded;
+      container.querySelectorAll('.company-tab').forEach(t => {
+        const on = t === btn;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', String(on));
+      });
+      applyCompanyFeedFilter(container);
     }
+
+    function showAllCompanyStories(btn) {
+      const container = document.getElementById('profile-' + btn.dataset.ticker);
+      if (!container) return;
+      const tab = container.dataset.tab || container.querySelector('.company-tab.active')?.dataset.tab;
+      if (container.dataset.expanded === tab) delete container.dataset.expanded;
+      else container.dataset.expanded = tab;
+      applyCompanyFeedFilter(container);
+    }
+
+    function searchCompanyFeed(ticker) {
+      const container = document.getElementById('profile-' + ticker);
+      if (container) applyCompanyFeedFilter(container);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.company-profile-container').forEach(applyCompanyFeedFilter);
+    });
+
+    // Followed companies: a strip of chips at the very top, a Following group first in the
+    // directory, and first place inside their own sector.
+    function renderFollowingCompanies() {
+      const follows = followedSet();
+      const cards = [...document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection) .company-strip-pill')];
+      const mine = cards.filter(c => follows.has(c.dataset.ticker));
+      const strip = document.getElementById('followingStrip');
+      const chips = document.getElementById('followingChips');
+      if (strip && chips) {
+        chips.replaceChildren(...mine.map(card => {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'following-chip' + (card.dataset.ticker === currentCompany ? ' active' : '');
+          chip.dataset.click = 'switchCompany';
+          chip.dataset.ticker = card.dataset.ticker;
+          chip.textContent = card.dataset.ticker;
+          chip.title = card.querySelector('.company-browser-card-name')?.textContent || card.dataset.ticker;
+          return chip;
+        }));
+        strip.hidden = mine.length === 0;
+      }
+      const section = document.getElementById('followingSection');
+      const holder = document.getElementById('followingCards');
+      if (section && holder) {
+        holder.replaceChildren(...mine.map(card => {
+          const copy = card.cloneNode(true);
+          copy.removeAttribute('data-follow-mark');
+          copy.classList.remove('is-followed');
+          return copy;
+        }));
+        section.hidden = mine.length === 0;
+      }
+      document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
+        followedFirst(sec, '.company-strip-pill', el => el.dataset.ticker);
+      });
+    }
+
+    document.addEventListener('followchange', renderFollowingCompanies);
+    document.addEventListener('DOMContentLoaded', renderFollowingCompanies);
 
     let currentCompany = null;
 
@@ -5478,6 +5782,9 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       document.querySelectorAll('.company-strip-pill').forEach(pill => {
         pill.classList.toggle('active', pill.getAttribute('data-ticker') === ticker);
       });
+      document.querySelectorAll('.following-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.ticker === ticker);
+      });
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -5486,17 +5793,6 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         newUrl.searchParams.set('ticker', ticker);
         window.history.pushState({ ticker: ticker }, '', newUrl);
       }
-    }
-
-    function filterCompanyNews(ticker, source, btn) {
-      const container = document.getElementById('profile-' + ticker);
-      if (!container) return;
-
-      container.querySelectorAll('.company-source-filter-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      const searchInput = document.getElementById('search-' + ticker);
-      applyCompanyFeedFilter(container, source, (searchInput ? searchInput.value : '').toLowerCase().trim());
     }
 
     window.addEventListener('popstate', () => {
@@ -5610,6 +5906,129 @@ def _calendar_view(events: List[Dict[str, Any]], today: Optional[date] = None) -
     return {"marks": marks, "months": months, "weeks": [weeks[k] for k in sorted(weeks)], "today_pos": position(today)}
 
 
+EVENT_TYPES = {
+    # key: (filter group, title)
+    "earnings": "Earnings call",
+    "dividend": "Dividend date",
+    "sec": "Quarterly report due",
+    "conference": "Investor conference",
+}
+
+
+def _event_type_key(event_type: str) -> str:
+    if "Earnings" in event_type:
+        return "earnings"
+    if "Dividend" in event_type:
+        return "dividend"
+    if "SEC" in event_type or "Statutory" in event_type:
+        return "sec"
+    return "conference"
+
+
+def _relative_day(when: date, today: date) -> str:
+    days = (when - today).days
+    if days == 0:
+        return "Today"
+    if days == 1:
+        return "Tomorrow"
+    if 1 < days < 14:
+        return f"In {days} days"
+    if days >= 14:
+        weeks = round(days / 7)
+        return f"In {weeks} weeks" if days < 60 else f"In about {round(days / 30)} months"
+    return f"{-days} days ago"
+
+
+def _calendar_agenda(events: List[Dict[str, Any]], names: Dict[str, str], today: Optional[date] = None) -> Dict[str, Any]:
+    """Upcoming events as an agenda: sections (This week, Next week, then by month) of days of events."""
+    today = today or date.today()
+    this_monday = today - timedelta(days=today.weekday())
+    sections: Dict[str, Dict[str, Any]] = {}
+    order: List[str] = []
+    count = 0
+    first = None
+    for index, event in enumerate(sorted(events, key=lambda e: str(e.get("event_date")))):
+        try:
+            when = date.fromisoformat(str(event.get("event_date")))
+        except ValueError:
+            continue
+        if when < today:
+            continue
+        key = _event_type_key(event.get("event_type") or "")
+        ticker = event.get("ticker") or ""
+        entry = {
+            "id": f"event-{index}",
+            "type": key,
+            "title": EVENT_TYPES[key],
+            "ticker": ticker,
+            "company": names.get(ticker) or event.get("company_name") or ticker,
+            "estimated": event.get("source_type") == "ESTIMATED_RULE",
+            "headline": event.get("headline") or "",
+            "url": event.get("source_url") or "",
+            "date": when.isoformat(),
+            "relative": _relative_day(when, today),
+        }
+        monday = when - timedelta(days=when.weekday())
+        if monday == this_monday:
+            label = "This week"
+        elif monday == this_monday + timedelta(days=7):
+            label = "Next week"
+        elif when.month == today.month and when.year == today.year:
+            label = f"Later in {when.strftime('%B')}"
+        else:
+            label = when.strftime("%B") if when.year == today.year else when.strftime("%B %Y")
+        if label not in sections:
+            sections[label] = {"label": label, "days": {}}
+            order.append(label)
+        days = sections[label]["days"]
+        if when not in days:
+            days[when] = {
+                "date": when.isoformat(),
+                "weekday": when.strftime("%a"),
+                "day": when.day,
+                "month": when.strftime("%b"),
+                "is_today": when == today,
+                "events": [],
+            }
+        days[when]["events"].append(entry)
+        count += 1
+        first = first or entry
+    return {
+        "count": count,
+        "first": first,
+        "sections": [{"label": sections[k]["label"], "days": [sections[k]["days"][d] for d in sorted(sections[k]["days"])]} for k in order],
+    }
+
+
+def _trending(items: List[Dict[str, Any]], companies: List[Dict[str, Any]], today: Optional[date] = None, limit: int = 8) -> List[Dict[str, Any]]:
+    """Companies with the most important news in the last 7 days, each with the real reasons why."""
+    today = today or date.today()
+    since = (today - timedelta(days=7)).isoformat()
+    by_symbol = {c["symbol"]: c for c in companies}
+    scores: Dict[str, Dict[str, Any]] = {}
+    for it in items:
+        sym = it.get("ticker")
+        if sym not in by_symbol or str(it.get("published_date") or "") < since:
+            continue
+        entry = scores.setdefault(sym, {"weight": 0.0, "count": 0, "results": None})
+        entry["weight"] += float(it.get("score") or 0)
+        entry["count"] += 1
+        if it.get("category") == "Earnings & Financials" and not entry["results"]:
+            entry["results"] = it.get("published_date")
+    ranked = sorted((s for s in scores.items() if s[1]["count"] >= 2), key=lambda kv: kv[1]["weight"], reverse=True)
+    out = []
+    for sym, entry in ranked[:limit]:
+        co = by_symbol[sym]
+        reasons = [f"{entry['count']} stories this week"]
+        if entry["results"]:
+            reasons.append(f"Results out {_short_date(entry['results'])}")
+        move = co.get("move_pct")
+        if move is not None and abs(move) >= 10:
+            reasons.append(f"{move:+.0f}% in 3 months")
+        out.append({"symbol": sym, "name": co.get("name") or sym, "reason": " · ".join(reasons)})
+    return out
+
+
 def _economic_schedule(events: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
     """Sort releases by date and work out timing now, since the stored labels can be stale."""
     today = today or date.today()
@@ -5686,6 +6105,103 @@ def _heat_class(pct: float) -> str:
         return "heat-n"
     level = 1 if size < 8 else (2 if size < 16 else 3)
     return f"heat-{'u' if pct > 0 else 'd'}{level}"
+
+
+RESULT_PERIOD = re.compile(r"^(Quarter|Year) ended ([A-Z][a-z]{2} \d{1,2}, \d{4}): (.+?)\.(?: Changes are against.*)?$")
+RESULT_PART = re.compile(
+    r"^(revenue|net income|net loss|diluted earnings per share) (-?\$[\d,.]+(?: (?:billion|million))?)(?:, (.+))?$"
+)
+RESULT_LABELS = {
+    "revenue": "Revenue",
+    "net income": "Net income",
+    "net loss": "Net loss",
+    "diluted earnings per share": "Earnings per share",
+}
+INSIDER_TRADE = re.compile(
+    r"\b(sold|bought) ([\d,]+) shares at (?:an average of )?\$[\d,.]+, about \$([\d,.]+)( million| billion)?"
+)
+
+
+def _latest_results(symbol: str, items: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Revenue, profit and EPS from the company's newest 10-Q or 10-K, as the filing reader wrote them.
+
+    Returns None when there is no such filing, or its sentence isn't in the expected shape, so the
+    page shows nothing rather than a guess.
+    """
+    reports = [
+        it for it in items
+        if it.get("ticker") == symbol
+        and it.get("source") == "sec_edgar"
+        and str(it.get("form_or_type") or "").upper().split("/")[0] in ("10-Q", "10-K")
+        and RESULT_PERIOD.match(clean_text(it.get("summary") or ""))
+    ]
+    if not reports:
+        return None
+    report = max(reports, key=lambda it: str(it.get("published_date") or ""))
+    m = RESULT_PERIOD.match(clean_text(report.get("summary") or ""))
+    figures = []
+    for part in m.group(3).split("; "):
+        pm = RESULT_PART.match(part.strip())
+        if not pm:
+            continue
+        change = pm.group(3) or ""
+        tone = "tone-up" if change.startswith("up") else ("tone-down" if change.startswith("down") else "")
+        figures.append({"label": RESULT_LABELS[pm.group(1)], "value": pm.group(2), "change": change, "tone": tone})
+    if not figures:
+        return None
+    return {
+        "period": f"{m.group(1)} ended {m.group(2)}",
+        "form": str(report.get("form_or_type") or ""),
+        "filed": report.get("published_date") or "",
+        "url": report.get("url") or "",
+        "figures": figures,
+        "compared": any(f["change"] for f in figures),
+    }
+
+
+def _money_words(value: float) -> str:
+    if value >= 1e9:
+        return f"${value / 1e9:,.1f} billion"
+    if value >= 1e6:
+        return f"${value / 1e6:,.1f} million"
+    return f"${value:,.0f}"
+
+
+def _insider_rollup(symbol: str, items: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """One line for a company's insider trades, added up from the Form 4 sentences on the page."""
+    insider = [it for it in items if it.get("ticker") == symbol and it.get("category") == "Insider Transactions"]
+    if not insider:
+        return None
+    totals = {"sold": [0, 0.0, 0], "bought": [0, 0.0, 0]}  # trades, value, pre-arranged
+    for it in insider:
+        text = clean_text(it.get("summary") or "")
+        m = INSIDER_TRADE.search(text)
+        if not m:
+            continue
+        unit = {" million": 1e6, " billion": 1e9}.get(m.group(4) or "", 1)
+        entry = totals[m.group(1)]
+        entry[0] += 1
+        entry[1] += float(m.group(3).replace(",", "")) * unit
+        entry[2] += "pre-arranged trading plan" in text
+    since = min(str(it.get("published_date") or "") for it in insider)
+    parts = []
+    for verb in ("sold", "bought"):
+        n, value, planned = totals[verb]
+        if not n:
+            continue
+        line = f"{verb} about {_money_words(value)} in {n} {'trade' if n == 1 else 'trades'}"
+        if planned == n:
+            line += ", all pre-arranged" if n > 1 else ", pre-arranged"
+        elif planned:
+            line += f", {planned} of them pre-arranged"
+        parts.append(line)
+    if not parts:
+        sentence = f"{len(insider)} insider {'filing' if len(insider) == 1 else 'filings'}, none an open-market trade."
+    else:
+        sentence = "Insiders " + ", and ".join(parts) + "."
+        if not totals["bought"][0]:
+            sentence += " No open-market purchases."
+    return {"sentence": sentence, "since": since, "count": len(insider)}
 
 
 # The five kinds of story someone can hide from For you. storyType() in the shared script sorts
@@ -5953,7 +6469,9 @@ def render_dashboard(
         "economic_schedule": _economic_schedule(upcoming_economic_events),
         "event_kind": _event_kind,
         "calendar_view": _calendar_view(calendar_events),
+        "agenda": _calendar_agenda(calendar_events, {c["symbol"]: c["name"] for c in enriched_watchlist}),
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
+        "trending": _trending(items, enriched_watchlist),
         "next_earnings": _next_earnings(calendar_events),
         "heat_class": _heat_class,
         "figures": _figures_html,
@@ -5975,6 +6493,9 @@ def render_dashboard(
         "watchlist_companies": enriched_watchlist,
         "sector_directory": sector_directory,
         "company_sectors": {c["symbol"]: c["macro_sector"] for c in enriched_watchlist},
+        "latest_results": _latest_results,
+        "insider_rollup": _insider_rollup,
+        "week_ago": (date.today() - timedelta(days=7)).isoformat(),
         "story_type_labels": STORY_TYPES,
         "story_type_counts": {k: sum(1 for it in items if _story_type(it) == k) for k in STORY_TYPES},
         "sector_directory_json": _script_json([

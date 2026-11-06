@@ -126,3 +126,12 @@ def test_map_text_is_readable_on_every_step_in_both_themes():
         for step in ("u1", "u2", "u3", "n", "d1", "d2", "d3"):
             ratio = _contrast(t[f"heat-{step}-ink"], t[f"heat-{step}"])
             assert ratio >= 4.5, f"{selector} {step}: {ratio:.2f}"
+
+
+def test_every_class_the_economy_releases_use_is_styled():
+    import re as _re
+    from pipeline.render import ECONOMIC_TEMPLATE
+    block = ECONOMIC_TEMPLATE[ECONOMIC_TEMPLATE.index('<li class="econ-release'):]
+    block = block[:block.index("</li>")]
+    for cls in set(_re.findall(r'class="(cal-[a-z-]+)"', block)):
+        assert f".{cls}" in SHARED_CSS, cls

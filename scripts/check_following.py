@@ -30,7 +30,7 @@ async def run(site, out):
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(channel="chrome")
-            ctx = await browser.new_context(viewport={"width": 1280, "height": 1100})
+            ctx = await browser.new_context(viewport={"width": 1280, "height": 1100}, accept_downloads=True)
             pg = await ctx.new_page()
             pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
             pg.on("pageerror", lambda e: errors.append(str(e)))
@@ -68,7 +68,7 @@ async def run(site, out):
             check(await pg.locator(".settings-group[open]").count() >= 1, "searching opens the matching sector")
             await pg.click(f'.settings-group .follow-btn[data-ticker="{t1}"]')
             await pg.fill("#settingsCompanyFilter", "")
-            check(await pg.locator(".settings-group[open]").count() == 0, "clearing the search folds the sectors")
+            check(await pg.locator(".settings-group[open]:not(#settingsFollowing)").count() == 0, "clearing the search folds the sectors")
             await pg.click('.type-toggle[data-type-toggle="insider"]')
             await pg.wait_for_timeout(200)
             check(await pg.get_attribute('.type-toggle[data-type-toggle="insider"]', "aria-pressed") == "false", "insider trades switched off")
@@ -125,6 +125,60 @@ async def run(site, out):
             await pg2.goto(base + "settings.html")
             await pg2.wait_for_timeout(500)
             await pg2.screenshot(path=f"{out}/phone-settings.png")
+
+            # Tonight's additions, on the desktop session that follows things.
+            await pg.goto(base + "index.html")
+            await pg.wait_for_timeout(600)
+            tabs_box = await pg.locator(".hero-tabs").bounding_box()
+            head_box = await pg.locator(".hero-headline").bounding_box()
+            check(tabs_box["y"] + tabs_box["height"] <= head_box["y"], "For you / Everything sit above Welcome")
+            hit = await pg.evaluate("(() => { const b = document.getElementById('viewTabAll').getBoundingClientRect(); return document.elementFromPoint(b.left + 8, b.top + 8)?.id; })()")
+            check(hit == "viewTabAll", "nothing covers the tabs")
+            if await pg.locator(".trend-item").count():
+                trend = pg.locator(".trend-item .follow-btn[aria-pressed='false']").first
+                tsym = await trend.get_attribute("data-ticker")
+                await trend.click()
+                await pg.wait_for_timeout(200)
+                check(tsym in await pg.evaluate("followState().symbols"), "Follow from Trending works")
+                await pg.evaluate(f"toggleFollow('{tsym}')")
+            await pg.evaluate("localStorage.setItem('stockpulse_last_visit', '2000-01-01 00:00:00'); sessionStorage.clear()")
+            await pg.reload()
+            await pg.wait_for_timeout(700)
+            check(await pg.is_visible("#heroSince") and "since your last visit" in await pg.inner_text("#heroSince"), "Home says what is new since the last visit")
+            check(await pg.locator(".new-badge:not([hidden])").count() > 0, "new stories are marked New")
+            await pg.reload()
+            await pg.wait_for_timeout(500)
+            check(await pg.is_visible("#heroSince"), "the since-last-visit line survives a reload")
+
+            await pg.goto(base + "company.html")
+            await pg.wait_for_timeout(700)
+            chips = await pg.locator(".following-chip").all_inner_texts()
+            check(t1 in chips, "Companies shows a Following strip at the top")
+            check(await pg.locator("#followingSection .company-strip-pill").count() == len(chips), "the directory starts with a Following group")
+            await pg.click(f'.following-chip >> text="{t1}"')
+            await pg.wait_for_timeout(500)
+            check(await pg.is_visible(f"#profile-{t1}"), "a Following chip opens that company")
+
+            await pg.goto(base + "settings.html")
+            await pg.wait_for_timeout(500)
+            check(await pg.locator("#settingsFollowingList li").count() == 1, "Your feed lists followed companies first")
+
+            await pg.goto(base + "calendar.html")
+            await pg.wait_for_timeout(500)
+            if await pg.locator(".agenda-event").count():
+                await pg.click(".view-tab[data-view='all']")
+                await pg.wait_for_timeout(150)
+                total = await pg.locator(".agenda-event:not([hidden])").count()
+                await pg.click(".view-tab[data-view='foryou']")
+                await pg.wait_for_timeout(150)
+                mine = await pg.eval_on_selector_all(".agenda-event:not([hidden])", "els => els.map(e => e.dataset.ticker)")
+                follows = await pg.evaluate("[...followedSet()]")
+                check(all(t in follows for t in mine) and len(mine) <= total, "Calendar For you shows only followed companies")
+                await pg.click(".view-tab[data-view='all']")
+                async with pg.expect_download() as dl:
+                    await pg.locator(".agenda-add").first.click()
+                ics = open(await (await dl.value).path()).read()
+                check(ics.startswith("BEGIN:VCALENDAR") and "DTSTART;VALUE=DATE:" in ics, "Add to calendar downloads an event file")
 
             # Someone who just wants everything.
             fresh = await browser.new_context(viewport={"width": 1280, "height": 1100})
