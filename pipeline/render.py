@@ -1001,6 +1001,7 @@ SHARED_CSS = """
     .cat-stat-pct { width: 2.5rem; text-align: right; color: var(--text-muted); }
     .analytics-perf-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.25rem 2rem; }
     .analytics-perf-picker { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; max-width: 100%; }
+    .analytics-perf-picker .comparative-select { flex: 1 1 auto; min-width: 0; width: 100%; text-overflow: ellipsis; }
     .health-section { margin: 3.5rem 0 0; background: none; border: none; padding: 0; box-shadow: none; }
     .health-status { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.45; padding-top: 0.75rem; overflow-wrap: anywhere; }
     .health-status.is-alert { color: var(--neg); }
