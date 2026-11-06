@@ -59,8 +59,9 @@ def save_news_items(
                     llm_summary,
                     related_tickers,
                     cross_references,
-                    cross_ref_summary
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    cross_ref_summary,
+                    summary_origin
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(item_uid) DO UPDATE SET
                     category = excluded.category,
                     score = excluded.score,
@@ -70,7 +71,8 @@ def save_news_items(
                     summary = excluded.summary,
                     related_tickers = excluded.related_tickers,
                     cross_references = excluded.cross_references,
-                    cross_ref_summary = excluded.cross_ref_summary
+                    cross_ref_summary = excluded.cross_ref_summary,
+                    summary_origin = excluded.summary_origin
                 """,
                 (
                     item_uid,
@@ -93,6 +95,7 @@ def save_news_items(
                     rel_tickers_str,
                     cross_refs_str,
                     cross_ref_summary,
+                    it.get("summary_origin"),
                 ),
             )
             if cursor.rowcount > 0:

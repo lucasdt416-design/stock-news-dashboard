@@ -66,6 +66,21 @@ def init_db(db_path: Optional[str] = None) -> None:
             conn.execute("ALTER TABLE news_items ADD COLUMN cross_references TEXT")
         if "cross_ref_summary" not in columns:
             conn.execute("ALTER TABLE news_items ADD COLUMN cross_ref_summary TEXT")
+        # Who wrote llm_summary: "ai:<model>" for a checked Gemini summary, "template" otherwise.
+        if "summary_origin" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN summary_origin TEXT")
+
+        # What each SEC filing says, read once from the SEC and kept so it is never fetched twice.
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS filing_details (
+                accession TEXT PRIMARY KEY,
+                headline TEXT,
+                detail TEXT,
+                fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
 
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_news_published_date ON news_items(published_date DESC);"

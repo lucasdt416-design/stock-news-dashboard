@@ -173,10 +173,15 @@ def normalize_edgar_item(item: Dict[str, Any]) -> Dict[str, Any]:
         primary_desc=primary_desc,
     )
 
-    # Summary details
-    summary = f"Official SEC submission ({form}). Accession: {acc_num}"
-    if item.get("report_date"):
-        summary += f" | Report Period: {item.get('report_date')}"
+    # What the filing says, when collectors.edgar_details could read it; the bare reference otherwise.
+    if item.get("detail_headline"):
+        headline = f"{company_name or ticker} {item['detail_headline']}"
+    if item.get("detail_text"):
+        summary = item["detail_text"]
+    else:
+        summary = f"Official SEC submission ({form}). Accession: {acc_num}"
+        if item.get("report_date"):
+            summary += f" | Report Period: {item.get('report_date')}"
 
     return {
         "item_uid": generate_item_uid("sec_edgar", acc_num, url),

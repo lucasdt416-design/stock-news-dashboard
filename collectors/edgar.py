@@ -88,6 +88,7 @@ def parse_submissions(
     forms = recent.get("form", [])
     primary_documents = recent.get("primaryDocument", [])
     primary_doc_descriptions = recent.get("primaryDocDescription", [])
+    item_codes = recent.get("items", [])
 
     total_available = len(accession_numbers)
 
@@ -123,6 +124,7 @@ def parse_submissions(
         acceptance_dt = acceptance_date_times[i] if i < len(acceptance_date_times) else ""
         primary_doc = primary_documents[i] if i < len(primary_documents) else ""
         primary_desc = primary_doc_descriptions[i] if i < len(primary_doc_descriptions) else ""
+        items = item_codes[i] if i < len(item_codes) else ""
 
         if primary_doc:
             doc_url = SEC_ARCHIVE_URL.format(
@@ -144,6 +146,7 @@ def parse_submissions(
             "accession_number": acc_num,
             "primary_doc_name": primary_doc,
             "primary_doc_description": primary_desc,
+            "items": items or "",
             "url": doc_url,
         }
         filings.append(filing_item)
@@ -172,6 +175,9 @@ def collect_edgar_filings(
         data = fetch_company_submissions(cik, user_agent=user_agent)
         if data:
             filings = parse_submissions(data, ticker=symbol, max_items=max_items_per_ticker)
+            # The watchlist spelling ("McDonald's Corporation") reads better than the SEC's ("MCDONALDS CORP").
+            for filing in filings:
+                filing["company_name"] = entry.get("name") or filing["company_name"]
             logger.info("Retrieved %d filings for %s", len(filings), symbol)
             all_filings.extend(filings)
         else:
