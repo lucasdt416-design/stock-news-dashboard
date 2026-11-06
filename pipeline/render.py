@@ -6,6 +6,7 @@ SHARED_MOBILE_JS. Design rules are in docs/redesign-plan.md.
 """
 
 import base64
+import glob
 import hashlib
 import json
 import logging
@@ -13,6 +14,7 @@ import os
 import re
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote
 import yaml
 from jinja2 import Template
 from markupsafe import Markup, escape
@@ -32,7 +34,8 @@ logger = logging.getLogger(__name__)
 
 CHART_JS_URL = "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
 SAFE_URL_PATTERN = re.compile(r"https?://[^\s\x00-\x1f\x7f\"'<>`]+", re.IGNORECASE)
-INLINE_SCRIPT_PATTERN = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.DOTALL)
+# Code blocks only: a <script type="application/json"> holds data, which the browser never runs.
+INLINE_SCRIPT_PATTERN = re.compile(r"<script(?![^>]*\b(?:src|type)=)[^>]*>(.*?)</script>", re.DOTALL)
 INLINE_STYLE_PATTERN = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL)
 
 
@@ -1554,6 +1557,12 @@ SHARED_CSS = """
     .following-chip:hover { border-color: var(--text-muted); }
     .following-chip.active { background: var(--text-primary); border-color: var(--text-primary); color: var(--bg-base); }
     .following-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    a.following-chip { display: inline-flex; align-items: center; text-decoration: none; }
+    .company-back { display: inline-block; margin: 0 0 1.25rem; font-size: 0.9rem; color: var(--accent); text-decoration: none; }
+    .company-back::before { content: "‹ "; }
+    .company-back:hover { text-decoration: underline; }
+    .company-missing { margin: 0 0 1.5rem; padding: 0.75rem 0; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+    a.company-browser-card { text-decoration: none; }
     .following-edit { font-size: 0.84rem; color: var(--text-secondary); }
     .settings-following .settings-group-name::after { content: ""; }
 
@@ -1727,13 +1736,11 @@ const PAGE_ACTIONS = {
     showAllCompanyStories: el => showAllCompanyStories(el),
     filterEconomicBySector: el => filterEconomicBySector(el.dataset.sector, el),
     focusMobileSearch: () => focusMobileSearch(),
-    openCompany: (el, event) => { event.preventDefault(); switchCompany(el.dataset.ticker); },
     selectFeedTicker: el => selectFeedTicker(el.dataset.ticker),
     setCategoryFilter: el => setCategoryFilter(el.dataset.val, el),
     setFeedSectorFilter: el => setFeedSectorFilter(el.dataset.sector, el),
     setSourceFilter: el => setSourceFilter(el.dataset.val, el),
     sortRows: el => sortRows(el.dataset.sort),
-    switchCompany: el => switchCompany(el.dataset.ticker),
     toggleFeedTickerDropdown: () => toggleFeedTickerDropdown(),
     toggleFollow: el => toggleFollow(el.dataset.ticker),
     toggleSector: el => toggleSector(el.dataset.sectorToggle),
@@ -1853,7 +1860,6 @@ function closeMobileNav() {
 }
 
 function focusMobileSearch() {
-  document.getElementById('companyDirectory')?.setAttribute('open', '');
   const input = document.getElementById('globalSearchInput') || document.getElementById('companyStripFilter') || document.getElementById('searchInput');
   if (input) {
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1877,8 +1883,7 @@ document.addEventListener('keydown', (e) => {
       globalSearch.focus();
       if (typeof openSearchDropdown === 'function') openSearchDropdown();
     } else if (companySearch) {
-      document.getElementById('companyDirectory')?.setAttribute('open', '');
-      companySearch.focus();
+          companySearch.focus();
     } else if (feedSearch) {
       feedSearch.focus();
     } else {
@@ -1897,6 +1902,16 @@ document.addEventListener('keydown', (e) => {
 const KNOWN_SYMBOLS = new Set({{ watchlist_companies|map(attribute='symbol')|list|tojson }});
 const COMPANY_SECTOR = {{ company_sectors|tojson }};
 const KNOWN_SECTORS = new Set(Object.values(COMPANY_SECTOR));
+const COMPANY_NAMES = {{ company_names|tojson }};
+
+// Each company has its own page (company-nvda.html). Anything not on the watchlist goes to the
+// directory, which says so, rather than to a page that doesn't exist.
+function companyHref(symbol) {
+  const sym = String(symbol || '').toUpperCase();
+  return KNOWN_SYMBOLS.has(sym)
+    ? 'company-' + sym.toLowerCase().replace(/[^a-z0-9-]/g, '-') + '.html'
+    : 'company.html?ticker=' + encodeURIComponent(sym);
+}
 const STORY_TYPES = {{ story_type_labels|tojson }};
 const FOLLOW_KEY = 'stockpulse_follow';
 
@@ -2242,7 +2257,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <ul class="orbit-ring" id="orbitRing" aria-label="Companies with the biggest stories">
             {% for co in orbit_companies %}
             <li class="orbit-slot" data-symbol="{{ co.symbol }}" data-name="{{ co.name }}"{% if loop.index > 12 %} hidden{% endif %}>
-              <a class="orbit-chip" href="company.html?ticker={{ co.symbol|urlencode }}" draggable="false">
+              <a class="orbit-chip" href="{{ company_url(co.symbol) }}" draggable="false">
                 <span class="orbit-ticker">{{ co.symbol }}</span>
                 <span class="orbit-name">{{ co.name }}</span>
                 {% if co.move_pct is not none %}
@@ -2285,7 +2300,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <p class="heat-sub">Your watchlist over the last 3 months, best to worst.</p>
         <ul class="heat-grid">
           {% for co in watchlist_moves %}
-          <li data-symbol="{{ co.symbol }}" data-move="{{ co.move_pct }}"><a class="heat-tile {{ heat_class(co.move_pct) }}" href="company.html?ticker={{ co.symbol|urlencode }}" title="{{ co.name }}"><span class="heat-ticker">{{ co.symbol }}</span><span class="heat-move">{{ "%+.1f"|format(co.move_pct) }}%</span></a></li>
+          <li data-symbol="{{ co.symbol }}" data-move="{{ co.move_pct }}"><a class="heat-tile {{ heat_class(co.move_pct) }}" href="{{ company_url(co.symbol) }}" title="{{ co.name }}"><span class="heat-ticker">{{ co.symbol }}</span><span class="heat-move">{{ "%+.1f"|format(co.move_pct) }}%</span></a></li>
           {% endfor %}
         </ul>
       </section>
@@ -2297,7 +2312,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <ul class="trend-list">
           {% for t in trending %}
           <li class="trend-item" data-symbol="{{ t.symbol }}">
-            <a class="trend-name" href="company.html?ticker={{ t.symbol|urlencode }}"><span class="trend-ticker">{{ t.symbol }}</span><span class="trend-company">{{ t.name }}</span></a>
+            <a class="trend-name" href="{{ company_url(t.symbol) }}"><span class="trend-ticker">{{ t.symbol }}</span><span class="trend-company">{{ t.name }}</span></a>
             <span class="trend-reason">{{ t.reason }}</span>
             <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ t.symbol }}" aria-pressed="false">Follow</button>
           </li>
@@ -2315,7 +2330,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <ol class="top-list">
             {% for it in priority_items[:5] %}
             <li class="top-row{% if loop.first %} is-lead{% endif %}" data-created="{{ it.created_at or '' }}">
-              <a class="top-ticker" href="company.html?ticker={{ it.ticker|urlencode }}">{{ it.ticker }}</a>
+              <a class="top-ticker" href="{{ company_url(it.ticker) }}">{{ it.ticker }}</a>
               <div class="top-body">
                 <span class="new-badge" hidden>New</span><a class="top-title" href="{{ safe_url(it.url, 'news.html') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a>
                 {% if it.story_text %}<p class="top-summary">{{ figures(it.story_text) }}</p>{% endif %}{% if it.ai_summary %}<p class="feed-takeaway">{{ figures(it.ai_summary) }}</p>{% endif %}
@@ -2420,7 +2435,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         }
         return `
           <li>
-            <a href="company.html?ticker=${encodeURIComponent(item.symbol)}">
+            <a href="${companyHref(item.symbol)}">
               <span class="recent-ticker">${escapeHtml(item.symbol)}</span>
               <span class="recent-name">${escapeHtml(companies[item.symbol].name)}</span>
               <span class="recent-when">${escapeHtml(when)}</span>
@@ -2457,7 +2472,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
       const reason = followReason(it.ticker, it.related_tickers_list);
       return `
         <li class="top-row${i === 0 ? ' is-lead' : ''}" data-created="${escapeHtml(it.created_at || '')}">
-          <a class="top-ticker" href="company.html?ticker=${encodeURIComponent(it.ticker)}">${escapeHtml(it.ticker)}</a>
+          <a class="top-ticker" href="${companyHref(it.ticker)}">${escapeHtml(it.ticker)}</a>
           <div class="top-body">
             <span class="new-badge" hidden>New</span><a class="top-title" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.clean_headline || it.headline)}</a>
             ${it.story_text ? `<p class="top-summary">${figuresHtml(it.story_text)}</p>` : ''}
@@ -3195,7 +3210,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         html += '<div class="dropdown-section-title">Companies</div>';
         matchedCompanies.slice(0, 3).forEach(c => {
           html += `
-            <a href="company.html?ticker=${escapeHtml(c.symbol)}" class="search-result-item">
+            <a href="${companyHref(c.symbol)}" class="search-result-item">
               <div class="search-result-left">
                 <span class="ticker-badge ticker-${escapeHtml(c.symbol)}">${escapeHtml(c.symbol)}</span>
                 <div class="search-result-info">
@@ -3935,7 +3950,7 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td><a href="company.html?ticker=${escapeHtml(c.symbol)}" class="ticker-badge action-small">${escapeHtml(c.symbol)}</a></td>
+              <td><a href="${companyHref(c.symbol)}" class="ticker-badge action-small">${escapeHtml(c.symbol)}</a></td>
               <td>Peer</td>
               <td class="perf-num">$${c.base_price.toFixed(2)}</td>
               <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
@@ -4213,7 +4228,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             data-source="{{ item.source }}"
             data-category="{{ item.category }}"
             data-text="{{ item.ticker }} {{ item.company_name }} {{ item.macro_sector }} {{ item.category }} {{ item.source_label }} {{ item.form_or_type }} {{ item.clean_headline }} {{ item.headline }} {{ item.cross_ref_summary or '' }} {{ item.summary or '' }}">
-          <a href="company.html?ticker={{ item.ticker|urlencode }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
+          <a href="{{ company_url(item.ticker) }}" class="ticker-badge" title="{{ item.company_name }}">{{ item.ticker }}</a>
           <div class="feed-body">
             <h3 class="feed-headline"><a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ item.clean_headline }}</a></h3>
             {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}{% if item.ai_summary %}<p class="feed-takeaway">{{ figures(item.ai_summary) }}</p>{% endif %}
@@ -4225,7 +4240,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                 <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
                 <ul class="feed-refs">
                   {% for ref in item.cross_references_list %}
-                  <li><a href="company.html?ticker={{ ref.related_ticker|urlencode }}" class="ticker-badge">{{ ref.related_ticker }}</a> {{ ref.impact_note }}</li>
+                  <li><a href="{{ company_url(ref.related_ticker) }}" class="ticker-badge">{{ ref.related_ticker }}</a> {{ ref.impact_note }}</li>
                   {% endfor %}
                 </ul>
                 {% endif %}
@@ -4607,7 +4622,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
               <li class="agenda-event is-{{ ev.type }}" id="{{ ev.id }}" data-type="{{ ev.type }}" data-ticker="{{ ev.ticker }}">
                 <div class="agenda-main">
                   <p class="agenda-title">{{ ev.title }}{% if ev.estimated %} <span class="agenda-est">estimated</span>{% endif %}</p>
-                  <p class="agenda-co"><a href="company.html?ticker={{ ev.ticker|urlencode }}">{{ ev.company }}</a> · {{ ev.ticker }} · {{ ev.relative }}</p>
+                  <p class="agenda-co"><a href="{{ company_url(ev.ticker) }}">{{ ev.company }}</a> · {{ ev.ticker }} · {{ ev.relative }}</p>
                   <p class="agenda-source">{% if ev.estimated %}Worked out from SEC filing deadlines, not announced by the company.{% else %}From “{{ ev.headline }}”{% endif %}{% if ev.url and ev.url.startswith('http') %} <a href="{{ safe_url(ev.url) }}" target="_blank" rel="noopener noreferrer">{% if ev.estimated %}SEC filings{% else %}Source{% endif %}</a>{% endif %}</p>
                   <p class="follow-reason" hidden></p>
                 </div>
@@ -4785,7 +4800,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
               {% endif %}
               {% if ind.context_note %}<p class="feed-detail-label">What it measures</p><p>{{ ind.context_note }}</p>{% endif %}
               <p class="feed-detail-label">Companies</p>
-              <p class="econ-holdings">{% for sym in ind.tickers_list %}<a href="company.html?ticker={{ sym|urlencode }}" class="ticker-badge">{{ sym }}</a> {% endfor %}</p>
+              <p class="econ-holdings">{% for sym in ind.tickers_list %}<a href="{{ company_url(sym) }}" class="ticker-badge">{{ sym }}</a> {% endfor %}</p>
             </div>
           </details>
         </article>
@@ -4812,7 +4827,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
               <tr class="matrix-sector" data-sector="{{ sec.name }}"><th scope="rowgroup" colspan="{{ economic_indicators|length + 2 }}">{{ sec.name }}</th></tr>
               {% for co in sec.companies %}
               <tr class="matrix-row" data-ticker="{{ co.symbol }}" data-sector="{{ co.macro_sector }}">
-                <th scope="row"><a href="company.html?ticker={{ co.symbol|urlencode }}" class="ticker-badge" title="{{ co.name }}">{{ co.symbol }}</a> <span class="mx-name">{{ co.name }}</span></th>
+                <th scope="row"><a href="{{ company_url(co.symbol) }}" class="ticker-badge" title="{{ co.name }}">{{ co.symbol }}</a> <span class="mx-name">{{ co.name }}</span></th>
                 {% for ind in economic_indicators %}
                 <td class="mx-col">{% if co.symbol in ind.tickers_list %}<span class="mx-dot" role="img" aria-label="{{ co.symbol }} is sensitive to {{ ind.name }}"></span>{% endif %}</td>
                 {% endfor %}
@@ -5048,7 +5063,7 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
           <ul class="follow-suggest">
             {% for co in sec.companies %}
             <li data-filter-text="{{ co.symbol|lower }} {{ co.name|lower }} {{ sec.name|lower }}" data-follow-mark="{{ co.symbol }}">
-              <a class="follow-suggest-name settings-co" href="company.html?ticker={{ co.symbol|urlencode }}"><span class="settings-co-ticker">{{ co.symbol }}</span><span class="settings-co-name">{{ co.name }}</span></a>
+              <a class="follow-suggest-name settings-co" href="{{ company_url(co.symbol) }}"><span class="settings-co-ticker">{{ co.symbol }}</span><span class="settings-co-name">{{ co.name }}</span></a>
               <span class="settings-via">In a sector you follow</span>
               <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ co.symbol }}" aria-pressed="false">Follow</button>
             </li>
@@ -5163,6 +5178,29 @@ SETTINGS_TEMPLATE = """<!DOCTYPE html>
 """
 
 
+COMPANY_SHARED_JS = """
+    // The Following strip: one chip per followed company, in watchlist order, each a link to its page.
+    function renderFollowingStrip(current) {
+      const follows = followedSet();
+      const mine = [...KNOWN_SYMBOLS].filter(sym => follows.has(sym));
+      const strip = document.getElementById('followingStrip');
+      const chips = document.getElementById('followingChips');
+      if (strip && chips) {
+        chips.replaceChildren(...mine.map(sym => {
+          const chip = document.createElement('a');
+          chip.className = 'following-chip' + (sym === current ? ' active' : '');
+          chip.href = companyHref(sym);
+          chip.textContent = sym;
+          chip.title = COMPANY_NAMES[sym] || sym;
+          if (sym === current) chip.setAttribute('aria-current', 'page');
+          return chip;
+        }));
+        strip.hidden = mine.length === 0;
+      }
+      return mine;
+    }
+"""
+
 COMPANY_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5171,7 +5209,6 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
   <meta name="description" content="Your watchlist by sector, with a file on each company: performance, stories, events, and relationships.">
   <title>StockPulse — Companies</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
   <script>""" + THEME_BOOT_JS + """</script>
   <style>
 """ + SHARED_CSS + """
@@ -5182,10 +5219,10 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
     """ + NAVIGATION_LAYOUT_HTML + """
 
     <main class="app-main">
-      {% set watchlist_symbols = watchlist_companies|map(attribute='symbol')|list %}
       <header class="page-header">
         <h1 class="page-title">Companies</h1>
         <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to see its news and price.</p>
+        <p class="company-missing" id="companyMissing" role="status" hidden></p>
       </header>
 
       <nav class="following-strip" id="followingStrip" aria-label="Companies you follow" hidden>
@@ -5194,8 +5231,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         <a class="following-edit" href="settings.html">Edit</a>
       </nav>
 
-      <details class="company-directory-browser" id="companyDirectory" open>
-        <summary class="feed-filters-toggle">All companies</summary>
+      <section class="company-directory-browser" id="companyDirectory" aria-label="All companies">
         <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
         <p class="econ-note">Percentages show how far each stock is ahead of or behind the S&amp;P 500 over 3 months.</p>
         <div class="company-browser-grid company-strip" id="companyStripContainer">
@@ -5207,12 +5243,11 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           <section class="company-browser-sector">
             <h2 class="company-browser-sector-name">{{ sec.name }}</h2>
             {% for co in sec.companies %}
-            <button class="company-browser-card company-strip-pill" type="button"
+            <a class="company-browser-card company-strip-pill" href="{{ company_url(co.symbol) }}"
                     data-ticker="{{ co.symbol }}"
                     data-name="{{ co.name|lower }}"
                     data-sector="{{ co.macro_sector|lower }} {{ co.sector|replace('_', ' ')|lower }}"
-                    data-follow-mark="{{ co.symbol }}"
-                    data-click="switchCompany">
+                    data-follow-mark="{{ co.symbol }}">
               <span class="company-browser-card-left">
                 <span class="ticker-badge">{{ co.symbol }}</span>
                 <span class="company-browser-card-info">
@@ -5226,188 +5261,260 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
                 {% endif %}
                 <span class="company-browser-card-stories">{{ co.story_count }} {% if co.story_count == 1 %}story{% else %}stories{% endif %}</span>
               </span>
-            </button>
+            </a>
             {% endfor %}
           </section>
           {% endfor %}
         </div>
-      </details>
+      </section>
 
-      {% for co in watchlist_companies %}
-      {% set co_news = [] %}
-      {% for it in items %}
-        {% if it.ticker == co.symbol or (it.related_tickers_list and co.symbol in it.related_tickers_list) %}
-          {% set _ = co_news.append(it) %}
-        {% endif %}
-      {% endfor %}
-
-      {% set co_events = [] %}
-      {% for ev in calendar_events %}
-        {% if ev.ticker == co.symbol %}
-          {% set _ = co_events.append(ev) %}
-        {% endif %}
-      {% endfor %}
-
-      {% set ns = namespace(high_count=0, edgar_count=0, ir_count=0, news_count=0) %}
-      {% for it in co_news %}
-        {% if it.score >= 7.0 %}{% set ns.high_count = ns.high_count + 1 %}{% endif %}
-        {% if it.source == 'sec_edgar' %}{% set ns.edgar_count = ns.edgar_count + 1 %}{% endif %}
-        {% if it.source == 'company_ir' %}{% set ns.ir_count = ns.ir_count + 1 %}{% endif %}
-        {% if it.source == 'news_media' %}{% set ns.news_count = ns.news_count + 1 %}{% endif %}
-      {% endfor %}
-
-      <article class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}"{% if not loop.first %} hidden{% endif %}>
-        <header class="company-hero-box">
-          <p class="company-hero-symbol">{{ co.symbol }} · {{ co.sector|replace('_', ' ')|title }}</p>
-          <div class="company-hero-title-row">
-            <h2 class="company-hero-name">{{ co.name }}</h2>
-            <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ co.symbol }}" aria-pressed="false">Follow</button>
-          </div>
-          {% set price = ((performance_data or {}).get('companies') or {}).get(co.symbol, {}).get('target', {}).get('latest_price') %}
-          {% if co.move_pct is not none and price is number %}
-          <p class="company-price"><span class="company-price-val">${{ "%.2f"|format(price) }}</span> <span class="company-price-move {{ 'tone-up' if co.move_pct >= 0 else 'tone-down' }}">{{ "%+.2f"|format(co.move_pct) }}%</span> <span class="company-price-span">over 3 months</span></p>
-          {% endif %}
-          {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
-          <p class="company-links">
-            {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">SEC filings ↗</a>{% endif %}
-            {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ safe_url(co.newsroom_url or co.ir_page_url or co.ir_feed_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
-            <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
-          </p>
-
-          {% set week_count = co_news|selectattr('published_date', 'ge', week_ago)|list|length %}
-          <p class="company-glance">{% if week_count %}{{ week_count }} new {{ 'story' if week_count == 1 else 'stories' }} this week{% else %}No new stories this week{% endif %}{% if co_events %} · Next: {{ event_kind(co_events[0].event_type or '') }}, {{ short_date(co_events[0].event_date) }}{% endif %}</p>
-        </header>
-
-        {% set results = latest_results(co.symbol, co_news) %}
-        {% if results %}
-        <section class="company-results" aria-labelledby="results-{{ co.symbol }}">
-          <h3 class="fp-heading" id="results-{{ co.symbol }}">Latest results</h3>
-          <p class="company-results-period">{{ results.period }} · from the {{ results.form }} filed {{ short_date(results.filed) }}{% if results.compared %} · changes are against a year earlier{% endif %}</p>
-          <dl class="company-results-grid">
-            {% for f in results.figures %}
-            <div class="company-result">
-              <dt>{{ f.label }}</dt>
-              <dd class="company-result-value">{{ f.value }}</dd>
-              {% if f.change %}<dd class="company-result-change {{ f.tone }}">{{ f.change }}</dd>{% endif %}
-            </div>
-            {% endfor %}
-          </dl>
-        </section>
-        {% endif %}
-
-
-        <div class="company-grid-layout">
-          <section class="company-card-deck" aria-label="Stories">
-            <h3 class="fp-heading">Stories</h3>
-            {% set tabs = namespace(news=0, filings=0, insider=0) %}
-            {% for it in co_news %}
-              {% if it.category == 'Insider Transactions' %}{% set tabs.insider = tabs.insider + 1 %}{% elif it.source == 'sec_edgar' %}{% set tabs.filings = tabs.filings + 1 %}{% else %}{% set tabs.news = tabs.news + 1 %}{% endif %}
-            {% endfor %}
-            {% set first_tab = 'news' if tabs.news else ('filings' if tabs.filings else ('insider' if tabs.insider else 'news')) %}
-            <div class="company-tabs view-tabs view-tabs-left" role="tablist" aria-label="{{ co.symbol }} stories">
-              {% for key, label, n in [('news', 'News', tabs.news), ('filings', 'Filings', tabs.filings), ('insider', 'Insider trades', tabs.insider)] %}
-              <button class="view-tab company-tab{% if key == first_tab %} active{% endif %}" role="tab" type="button" data-click="setCompanyTab" data-ticker="{{ co.symbol }}" data-tab="{{ key }}" aria-selected="{{ 'true' if key == first_tab else 'false' }}"{% if not n %} disabled{% endif %}>{{ label }} <span class="tab-count">{{ n }}</span></button>
-              {% endfor %}
-            </div>
-            {% set rollup = insider_rollup(co.symbol, co_news) %}
-            {% if rollup %}<p class="company-rollup" data-tab-only="insider"{% if first_tab != 'insider' %} hidden{% endif %}>{{ rollup.sentence }} <span class="company-rollup-since">Filings since {{ short_date(rollup.since) }}.</span></p>{% endif %}
-            <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
-
-            {% if co_news %}
-              {% for it in co_news %}
-              <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}" data-tab="{{ 'insider' if it.category == 'Insider Transactions' else ('filings' if it.source == 'sec_edgar' else 'news') }}">
-                <div class="feed-body">
-                  <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
-                  {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
-                  <details class="feed-details">
-                    <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
-                    <div class="feed-details-body">
-                      {% if it.cross_references_list %}
-                      <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
-                      <ul class="feed-refs">
-                        {% for ref in it.cross_references_list %}
-                        <li>{% if ref.related_ticker in watchlist_symbols %}<a href="company.html?ticker={{ ref.related_ticker|urlencode }}" data-ticker="{{ ref.related_ticker }}" data-click="openCompany" class="ticker-badge">{{ ref.related_ticker }}</a>{% else %}<span class="company-outside">{{ ref.related_ticker }}</span>{% endif %} {{ ref.impact_note }}</li>
-                        {% endfor %}
-                      </ul>
-                      {% endif %}
-                      {% if it.score_breakdown %}<p class="feed-detail-label">How it scored: {{ it.score }}</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
-                      <a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
-                    </div>
-                  </details>
-                </div>
-                <span class="date-cell">{{ short_date(it.published_date) }}</span>
-              </article>
-              {% endfor %}
-              <button class="feed-more company-more" type="button" data-click="showAllCompanyStories" data-ticker="{{ co.symbol }}" hidden>Show all</button>
-              <p class="fp-empty company-feed-empty" hidden>No stories match.</p>
-            {% else %}
-              <p class="home-empty">No stories recorded for {{ co.symbol }} in this period.</p>
-            {% endif %}
-          </section>
-
-          <aside class="company-side-deck">
-            <section class="company-side-box">
-              <h3 class="fp-heading">Coming up</h3>
-              {% if co_events %}
-              <ul class="fp-side-list">
-                {% for ev in co_events %}
-                <li class="fp-event">
-                  <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
-                  <span class="fp-event-text">{{ event_kind(ev.event_type or '') }}<span class="company-side-sub">{{ ev.relative_badge }} · from “{{ ev.headline }}”</span></span>
-                </li>
-                {% endfor %}
-              </ul>
-              {% else %}
-              <p class="home-empty">Nothing scheduled.</p>
-              {% endif %}
-            </section>
-
-            <section class="company-side-box">
-              <h3 class="fp-heading">What in the economy affects it</h3>
-              <ul class="fp-side-list">
-                {% for ind in economic_indicators %}
-                {% if ind.tickers_list and co.symbol in ind.tickers_list %}
-                <li class="fp-indicator" title="{{ ind.context_note }}">
-                  <span>{{ ind.name }}</span>
-                  <span class="fp-indicator-value">{{ ind.formatted_value.split(' (')[0] }}</span>
-                </li>
-                {% endif %}
-                {% endfor %}
-              </ul>
-              {% if co.macro_sensitivities %}<p class="company-side-note">Also watching: {{ co.macro_sensitivities|join(', ')|replace('_', ' ') }}</p>{% endif %}
-            </section>
-
-            <section class="company-side-box">
-              <h3 class="fp-heading">Customers, suppliers and competitors</h3>
-              {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
-              {% if names %}
-              <p class="feed-detail-label">{{ label }}</p>
-              <p class="company-names">{% for name in names %}{% if name in watchlist_symbols %}<a href="company.html?ticker={{ name|urlencode }}" data-ticker="{{ name }}" data-click="openCompany" class="ticker-badge">{{ name }}</a>{% else %}<span class="company-outside">{{ name }}</span>{% endif %}{% if not loop.last %}<span class="company-sep">, </span>{% endif %}{% endfor %}</p>
-              {% endif %}
-              {% endfor %}
-            </section>
-          </aside>
-        </div>
-
-        <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
-          <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
-          <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
-          <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
-          <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
-          <div class="perf-table-wrap">
-            <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
-          </div>
-        </section>
-      </article>
-      {% endfor %}
     </main>
   </div>
 
   <script>
-    """ + SHARED_MOBILE_JS + """
+    """ + SHARED_MOBILE_JS + COMPANY_SHARED_JS + """
+    function filterCompanyStrip(rawVal) {
+      const q = (rawVal || '').toLowerCase().trim();
+      document.querySelectorAll('.company-strip-pill').forEach(pill => {
+        const haystack = [pill.dataset.ticker, pill.dataset.name, pill.dataset.sector].join(' ').toLowerCase();
+        pill.hidden = Boolean(q) && !haystack.includes(q);
+      });
+      document.querySelectorAll('.company-browser-sector').forEach(group => {
+        group.hidden = !group.querySelector('.company-strip-pill:not([hidden])');
+      });
+    }
 
-    const perfData = {{ performance_data_json|safe }};
+    // Followed companies: the strip at the very top, a Following group first in the directory,
+    // and first place inside their own sector.
+    function renderFollowingCompanies() {
+      const mine = new Set(renderFollowingStrip(''));
+      const cards = [...document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection) .company-strip-pill')];
+      const section = document.getElementById('followingSection');
+      const holder = document.getElementById('followingCards');
+      if (section && holder) {
+        holder.replaceChildren(...cards.filter(c => mine.has(c.dataset.ticker)).map(card => {
+          const copy = card.cloneNode(true);
+          copy.removeAttribute('data-follow-mark');
+          copy.classList.remove('is-followed');
+          return copy;
+        }));
+        section.hidden = mine.size === 0;
+      }
+      document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
+        followedFirst(sec, '.company-strip-pill', el => el.dataset.ticker);
+      });
+    }
+
+    document.addEventListener('followchange', renderFollowingCompanies);
+    document.addEventListener('DOMContentLoaded', renderFollowingCompanies);
+
+    // Old links (company.html?ticker=NVDA) go to the company's own page. Anything else from the
+    // URL, hostile or just unknown, is only ever shown as text.
+    (function openRequestedCompany() {
+      const requested = new URLSearchParams(window.location.search).get('ticker');
+      if (!requested) return;
+      const sym = /^[A-Za-z0-9.\\-]{1,10}$/.test(requested) ? requested.toUpperCase() : '';
+      if (sym && KNOWN_SYMBOLS.has(sym)) {
+        window.location.replace(companyHref(sym));
+        return;
+      }
+      const note = document.getElementById('companyMissing');
+      if (note) {
+        note.textContent = sym
+          ? `${sym} isn’t on the watchlist yet. Search for it on Home to see its latest price and headlines.`
+          : 'That company isn’t on the watchlist.';
+        note.hidden = false;
+      }
+    })();
+  </script>
+</body>
+</html>
+"""
+
+
+# One page per company (site/company-<ticker>.html), so a visitor downloads only the company they open.
+COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="{{ co.name }} ({{ co.symbol }}): its latest results, news, filings, insider trades and price.">
+  <title>{{ co.name }} ({{ co.symbol }}) — StockPulse</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+  <script>""" + THEME_BOOT_JS + """</script>
+  <style>
+""" + SHARED_CSS + """
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    """ + NAVIGATION_LAYOUT_HTML + """
+
+    <main class="app-main">
+      <nav class="following-strip" id="followingStrip" aria-label="Companies you follow" hidden>
+        <span class="following-label">Following</span>
+        <div class="following-chips" id="followingChips"></div>
+        <a class="following-edit" href="settings.html">Edit</a>
+      </nav>
+      <a class="company-back" href="company.html">All companies</a>
+
+    <article class="company-profile-container" id="profile-{{ co.symbol }}" data-ticker="{{ co.symbol }}">
+      <header class="company-hero-box">
+        <p class="company-hero-symbol">{{ co.symbol }} · {{ co.sector|replace('_', ' ')|title }}</p>
+        <div class="company-hero-title-row">
+          <h1 class="company-hero-name">{{ co.name }}</h1>
+          <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ co.symbol }}" aria-pressed="false">Follow</button>
+        </div>
+        {% set price = ((performance_data or {}).get('companies') or {}).get(co.symbol, {}).get('target', {}).get('latest_price') %}
+        {% if co.move_pct is not none and price is number %}
+        <p class="company-price"><span class="company-price-val">${{ "%.2f"|format(price) }}</span> <span class="company-price-move {{ 'tone-up' if co.move_pct >= 0 else 'tone-down' }}">{{ "%+.2f"|format(co.move_pct) }}%</span> <span class="company-price-span">over 3 months</span></p>
+        {% endif %}
+        {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
+        <p class="company-links">
+          {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">SEC filings ↗</a>{% endif %}
+          {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ safe_url(co.newsroom_url or co.ir_page_url or co.ir_feed_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
+          <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
+        </p>
+
+        {% set week_count = co_news|selectattr('published_date', 'ge', week_ago)|list|length %}
+        <p class="company-glance">{% if week_count %}{{ week_count }} new {{ 'story' if week_count == 1 else 'stories' }} this week{% else %}No new stories this week{% endif %}{% if co_events %} · Next: {{ event_kind(co_events[0].event_type or '') }}, {{ short_date(co_events[0].event_date) }}{% endif %}</p>
+      </header>
+
+      {% set results = latest_results(co.symbol, co_news) %}
+      {% if results %}
+      <section class="company-results" aria-labelledby="results-{{ co.symbol }}">
+        <h3 class="fp-heading" id="results-{{ co.symbol }}">Latest results</h3>
+        <p class="company-results-period">{{ results.period }} · from the {{ results.form }} filed {{ short_date(results.filed) }}{% if results.compared %} · changes are against a year earlier{% endif %}</p>
+        <dl class="company-results-grid">
+          {% for f in results.figures %}
+          <div class="company-result">
+            <dt>{{ f.label }}</dt>
+            <dd class="company-result-value">{{ f.value }}</dd>
+            {% if f.change %}<dd class="company-result-change {{ f.tone }}">{{ f.change }}</dd>{% endif %}
+          </div>
+          {% endfor %}
+        </dl>
+      </section>
+      {% endif %}
+
+
+      <div class="company-grid-layout">
+        <section class="company-card-deck" aria-label="Stories">
+          <h3 class="fp-heading">Stories</h3>
+          {% set tabs = namespace(news=0, filings=0, insider=0) %}
+          {% for it in co_news %}
+            {% if it.category == 'Insider Transactions' %}{% set tabs.insider = tabs.insider + 1 %}{% elif it.source == 'sec_edgar' %}{% set tabs.filings = tabs.filings + 1 %}{% else %}{% set tabs.news = tabs.news + 1 %}{% endif %}
+          {% endfor %}
+          {% set first_tab = 'news' if tabs.news else ('filings' if tabs.filings else ('insider' if tabs.insider else 'news')) %}
+          <div class="company-tabs view-tabs view-tabs-left" role="tablist" aria-label="{{ co.symbol }} stories">
+            {% for key, label, n in [('news', 'News', tabs.news), ('filings', 'Filings', tabs.filings), ('insider', 'Insider trades', tabs.insider)] %}
+            <button class="view-tab company-tab{% if key == first_tab %} active{% endif %}" role="tab" type="button" data-click="setCompanyTab" data-ticker="{{ co.symbol }}" data-tab="{{ key }}" aria-selected="{{ 'true' if key == first_tab else 'false' }}"{% if not n %} disabled{% endif %}>{{ label }} <span class="tab-count">{{ n }}</span></button>
+            {% endfor %}
+          </div>
+          {% set rollup = insider_rollup(co.symbol, co_news) %}
+          {% if rollup %}<p class="company-rollup" data-tab-only="insider"{% if first_tab != 'insider' %} hidden{% endif %}>{{ rollup.sentence }} <span class="company-rollup-since">Filings since {{ short_date(rollup.since) }}.</span></p>{% endif %}
+          <input type="text" class="feed-search company-feed-search-input" id="search-{{ co.symbol }}" data-ticker="{{ co.symbol }}" aria-label="Search {{ co.symbol }} stories" placeholder="Search {{ co.symbol }} stories" data-input="searchCompanyFeed">
+
+          {% if co_news %}
+            {% for it in co_news %}
+            <article class="company-news-item{% if it.score >= 7.0 %} is-high{% endif %}" data-source="{{ it.source }}" data-tab="{{ 'insider' if it.category == 'Insider Transactions' else ('filings' if it.source == 'sec_edgar' else 'news') }}">
+              <div class="feed-body">
+                <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
+                {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
+                <details class="feed-details">
+                  <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
+                  <div class="feed-details-body">
+                    {% if it.cross_references_list %}
+                    <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
+                    <ul class="feed-refs">
+                      {% for ref in it.cross_references_list %}
+                      <li>{% if ref.related_ticker in watchlist_symbols %}<a href="{{ company_url(ref.related_ticker) }}" class="ticker-badge">{{ ref.related_ticker }}</a>{% else %}<span class="company-outside">{{ ref.related_ticker }}</span>{% endif %} {{ ref.impact_note }}</li>
+                      {% endfor %}
+                    </ul>
+                    {% endif %}
+                    {% if it.score_breakdown %}<p class="feed-detail-label">How it scored: {{ it.score }}</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                    <a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
+                  </div>
+                </details>
+              </div>
+              <span class="date-cell">{{ short_date(it.published_date) }}</span>
+            </article>
+            {% endfor %}
+            <button class="feed-more company-more" type="button" data-click="showAllCompanyStories" data-ticker="{{ co.symbol }}" hidden>Show all</button>
+            <p class="fp-empty company-feed-empty" hidden>No stories match.</p>
+          {% else %}
+            <p class="home-empty">No stories recorded for {{ co.symbol }} in this period.</p>
+          {% endif %}
+        </section>
+
+        <aside class="company-side-deck">
+          <section class="company-side-box">
+            <h3 class="fp-heading">Coming up</h3>
+            {% if co_events %}
+            <ul class="fp-side-list">
+              {% for ev in co_events %}
+              <li class="fp-event">
+                <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
+                <span class="fp-event-text">{{ event_kind(ev.event_type or '') }}<span class="company-side-sub">{{ ev.relative_badge }} · from “{{ ev.headline }}”</span></span>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="home-empty">Nothing scheduled.</p>
+            {% endif %}
+          </section>
+
+          <section class="company-side-box">
+            <h3 class="fp-heading">What in the economy affects it</h3>
+            <ul class="fp-side-list">
+              {% for ind in economic_indicators %}
+              {% if ind.tickers_list and co.symbol in ind.tickers_list %}
+              <li class="fp-indicator" title="{{ ind.context_note }}">
+                <span>{{ ind.name }}</span>
+                <span class="fp-indicator-value">{{ ind.formatted_value.split(' (')[0] }}</span>
+              </li>
+              {% endif %}
+              {% endfor %}
+            </ul>
+            {% if co.macro_sensitivities %}<p class="company-side-note">Also watching: {{ co.macro_sensitivities|join(', ')|replace('_', ' ') }}</p>{% endif %}
+          </section>
+
+          <section class="company-side-box">
+            <h3 class="fp-heading">Customers, suppliers and competitors</h3>
+            {% for label, names in [('Customers', co.key_customers), ('Suppliers', co.key_suppliers), ('Competitors', co.competitors)] %}
+            {% if names %}
+            <p class="feed-detail-label">{{ label }}</p>
+            <p class="company-names">{% for name in names %}{% if name in watchlist_symbols %}<a href="{{ company_url(name) }}" class="ticker-badge">{{ name }}</a>{% else %}<span class="company-outside">{{ name }}</span>{% endif %}{% if not loop.last %}<span class="company-sep">, </span>{% endif %}{% endfor %}</p>
+            {% endif %}
+            {% endfor %}
+          </section>
+        </aside>
+      </div>
+
+      <section class="comparative-perf-card" id="compPerfCard-{{ co.symbol }}" aria-label="Three-month performance">
+        <h3 class="fp-heading">3 months against peers and the S&amp;P 500</h3>
+        <p class="econ-note">Is {{ co.symbol }}'s move normal or unusual? Percent change since the start of the 3 months.</p>
+        <div class="perf-kpi-grid" id="compPerfKpi-{{ co.symbol }}"></div>
+        <div class="perf-chart-box"><canvas id="compPerfCanvas-{{ co.symbol }}" role="img" aria-label="Line chart of {{ co.symbol }}, its peers, and the S&amp;P 500. The table below has the figures."></canvas></div>
+        <div class="perf-table-wrap">
+          <table class="perf-table" id="compPerfTable-{{ co.symbol }}"></table>
+        </div>
+      </section>
+    </article>
+    </main>
+  </div>
+
+  <script type="application/json" id="companyPerf">{{ company_perf_json|safe }}</script>
+  <script>
+    """ + SHARED_MOBILE_JS + COMPANY_SHARED_JS + """
+
+    // The price data sits in a data block, so every company page runs exactly the same script
+    // and one Content-Security-Policy covers them all.
+    let perfData = {};
+    try { perfData = JSON.parse(document.getElementById('companyPerf')?.textContent || '{}'); } catch (e) { perfData = {}; }
     const companyChartInstances = {};
+    const currentCompany = document.querySelector('.company-profile-container')?.dataset.ticker || '';
 
     function trackRecentlyViewedCompany(ticker) {
       if (!ticker) return;
@@ -5511,7 +5618,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
           const delta = (c.total_pct_change - target.total_pct_change).toFixed(2);
           rowsHtml += `
             <tr>
-              <td>${document.getElementById('profile-' + c.symbol) ? `<a href="company.html?ticker=${encodeURIComponent(c.symbol)}" data-ticker="${escapeHtml(c.symbol)}" data-click="openCompany" class="ticker-badge">${escapeHtml(c.symbol)}</a>` : `<span class="ticker-badge">${escapeHtml(c.symbol)}</span>`}</td>
+              <td>${KNOWN_SYMBOLS.has(c.symbol) ? `<a href="${companyHref(c.symbol)}" class="ticker-badge">${escapeHtml(c.symbol)}</a>` : `<span class="ticker-badge">${escapeHtml(c.symbol)}</span>`}</td>
               <td>Peer</td>
               <td class="perf-num">$${c.base_price.toFixed(2)}</td>
               <td class="perf-num">$${c.latest_price.toFixed(2)}</td>
@@ -5647,17 +5754,6 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       });
     }
 
-    function filterCompanyStrip(rawVal) {
-      const q = (rawVal || '').toLowerCase().trim();
-      document.querySelectorAll('.company-strip-pill').forEach(pill => {
-        const haystack = [pill.dataset.ticker, pill.dataset.name, pill.dataset.sector].join(' ').toLowerCase();
-        pill.hidden = Boolean(q) && !haystack.includes(q);
-      });
-      document.querySelectorAll('.company-browser-sector').forEach(group => {
-        group.hidden = !group.querySelector('.company-strip-pill:not([hidden])');
-      });
-    }
-
     // Each tab shows its 5 most important stories until "Show all" is pressed; a search shows every match.
     const COMPANY_TAB_LIMIT = 5;
 
@@ -5716,108 +5812,12 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.company-profile-container').forEach(applyCompanyFeedFilter);
+      renderFollowingStrip(currentCompany);
+      if (KNOWN_SYMBOLS.has(currentCompany)) trackRecentlyViewedCompany(currentCompany);
+      renderCompanyComparativeChart(currentCompany);
     });
-
-    // Followed companies: a strip of chips at the very top, a Following group first in the
-    // directory, and first place inside their own sector.
-    function renderFollowingCompanies() {
-      const follows = followedSet();
-      const cards = [...document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection) .company-strip-pill')];
-      const mine = cards.filter(c => follows.has(c.dataset.ticker));
-      const strip = document.getElementById('followingStrip');
-      const chips = document.getElementById('followingChips');
-      if (strip && chips) {
-        chips.replaceChildren(...mine.map(card => {
-          const chip = document.createElement('button');
-          chip.type = 'button';
-          chip.className = 'following-chip' + (card.dataset.ticker === currentCompany ? ' active' : '');
-          chip.dataset.click = 'switchCompany';
-          chip.dataset.ticker = card.dataset.ticker;
-          chip.textContent = card.dataset.ticker;
-          chip.title = card.querySelector('.company-browser-card-name')?.textContent || card.dataset.ticker;
-          return chip;
-        }));
-        strip.hidden = mine.length === 0;
-      }
-      const section = document.getElementById('followingSection');
-      const holder = document.getElementById('followingCards');
-      if (section && holder) {
-        holder.replaceChildren(...mine.map(card => {
-          const copy = card.cloneNode(true);
-          copy.removeAttribute('data-follow-mark');
-          copy.classList.remove('is-followed');
-          return copy;
-        }));
-        section.hidden = mine.length === 0;
-      }
-      document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
-        followedFirst(sec, '.company-strip-pill', el => el.dataset.ticker);
-      });
-    }
-
-    document.addEventListener('followchange', renderFollowingCompanies);
-    document.addEventListener('DOMContentLoaded', renderFollowingCompanies);
-
-    let currentCompany = null;
-
-    // showOnly: load a company without counting it as viewed, as on a bare visit to the directory.
-    function switchCompany(ticker, pushState = true, showOnly = false) {
-      const allProfiles = document.querySelectorAll('.company-profile-container');
-      let target = document.getElementById('profile-' + ticker);
-      const found = Boolean(target);
-      if (!target) {
-        target = allProfiles[0];
-        if (!target) return;
-        ticker = target.getAttribute('data-ticker');
-      }
-      allProfiles.forEach(el => { el.hidden = el !== target; });
-      currentCompany = ticker;
-
-      const directory = document.getElementById('companyDirectory');
-      if (directory) directory.open = showOnly;
-      if (found && !showOnly) trackRecentlyViewedCompany(ticker);
-
-      renderCompanyComparativeChart(ticker);
-
-      document.querySelectorAll('.company-strip-pill').forEach(pill => {
-        pill.classList.toggle('active', pill.getAttribute('data-ticker') === ticker);
-      });
-      document.querySelectorAll('.following-chip').forEach(chip => {
-        chip.classList.toggle('active', chip.dataset.ticker === ticker);
-      });
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      if (pushState) {
-        const newUrl = new URL(window.location);
-        newUrl.searchParams.set('ticker', ticker);
-        window.history.pushState({ ticker: ticker }, '', newUrl);
-      }
-    }
-
-    window.addEventListener('popstate', () => {
-      const ticker = new URLSearchParams(window.location.search).get('ticker');
-      const safe = ticker && /^[A-Za-z0-9.\\-]{1,10}$/.test(ticker) ? ticker.toUpperCase() : '';
-      switchCompany(safe || 'NVDA', false, !ticker);
-    });
-
-    document.addEventListener('themechange', () => {
-      if (currentCompany) renderCompanyComparativeChart(currentCompany);
-    });
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const requested = new URLSearchParams(window.location.search).get('ticker');
-      const known = requested && /^[A-Za-z0-9.\\-]{1,10}$/.test(requested) &&
-        document.getElementById('profile-' + requested.toUpperCase());
-      if (known) {
-        switchCompany(requested.toUpperCase(), false);
-      } else if (requested) {
-        // Anything else, hostile or just unknown, is treated as a ticker we don't cover.
-        switchCompany('', false);
-      } else {
-        switchCompany('NVDA', false, true);
-      }
-    });
+    document.addEventListener('followchange', () => renderFollowingStrip(currentCompany));
+    document.addEventListener('themechange', () => renderCompanyComparativeChart(currentCompany));
   </script>
 </body>
 </html>
@@ -6324,8 +6324,60 @@ def _content_security_policy(html: str) -> str:
     ])
 
 
-def _headers_file(policies: Dict[str, str]) -> str:
-    """Cloudflare Pages _headers: shared headers for everything, plus each page's own CSP."""
+TICKER_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9.\-]{0,9}$")
+
+
+def _company_slug(symbol: str) -> str:
+    """company-<slug>.html: lower case, with anything but letters, digits and hyphens made a hyphen."""
+    return re.sub(r"[^a-z0-9-]", "-", symbol.lower())
+
+
+def _company_url_for(known: set):
+    """company_url() for templates: a company's own page, or the directory for anything else."""
+    def company_url(symbol: Any) -> str:
+        sym = str(symbol or "").upper().strip()
+        if sym in known:
+            return f"company-{_company_slug(sym)}.html"
+        return "company.html?ticker=" + quote(sym, safe="")
+    return company_url
+
+
+def _valid_watchlist(companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Companies with a usable ticker and name, each once. A bad entry is skipped with a warning
+    rather than breaking the whole site."""
+    seen_symbols, seen_slugs, kept = set(), set(), []
+    for co in companies or []:
+        sym = str((co or {}).get("symbol") or "").upper().strip()
+        if not TICKER_PATTERN.match(sym) or not (co or {}).get("name"):
+            logger.warning("Skipping watchlist entry without a valid symbol and name: %r", co)
+            continue
+        if sym in seen_symbols or _company_slug(sym) in seen_slugs:
+            logger.warning("Skipping duplicate watchlist entry for %s", sym)
+            continue
+        seen_symbols.add(sym)
+        seen_slugs.add(_company_slug(sym))
+        kept.append(dict(co, symbol=sym))
+    return kept
+
+
+def _stories_by_company(items: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Each company's own stories and the ones that mention it, in feed order, built in one pass."""
+    out: Dict[str, List[Dict[str, Any]]] = {}
+    for it in items:
+        own = it.get("ticker")
+        if own:
+            out.setdefault(own, []).append(it)
+        for rel in it.get("related_tickers_list") or []:
+            if rel and rel != own:
+                out.setdefault(rel, []).append(it)
+    return out
+
+
+def _headers_file(policies: Dict[str, str], pattern_policies: Optional[Dict[str, str]] = None) -> str:
+    """Cloudflare Pages _headers: shared headers for everything, plus each page's own CSP.
+
+    pattern_policies covers many pages with one rule (/company-*), which keeps the file far below
+    Cloudflare's 100-rule limit however many companies there are."""
     lines = [
         "# Generated by pipeline/render.py. The hashes change on every render, so do not edit by hand.",
         "/*",
@@ -6341,6 +6393,8 @@ def _headers_file(policies: Dict[str, str]) -> str:
         paths = ["/", "/index", "/index.html"] if stem == "index" else [f"/{stem}", f"/{fname}"]
         for path in paths:
             lines += [path, f"  Content-Security-Policy: {policy}", ""]
+    for pattern, policy in (pattern_policies or {}).items():
+        lines += [pattern, f"  Content-Security-Policy: {policy}", ""]
     return "\n".join(lines)
 
 
@@ -6348,6 +6402,7 @@ def render_dashboard(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
     performance_data: Optional[Dict[str, Any]] = None,
+    watchlist_path: Optional[str] = None,
 ) -> str:
     """Render all 5 static HTML pages (Overview, Feed, Calendar, Macro, Company Detail) to disk."""
     if output_path is None:
@@ -6402,12 +6457,12 @@ def render_dashboard(
         enriched_priority.append(it_copy)
 
     # 3. Load watchlist and build sector directory
-    watchlist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml")
+    watchlist_path = watchlist_path or os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml")
     raw_watchlist_companies: List[Dict[str, Any]] = []
     if os.path.exists(watchlist_path):
         with open(watchlist_path, "r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
-            raw_watchlist_companies = cfg.get("tickers", [])
+            raw_watchlist_companies = _valid_watchlist(cfg.get("tickers", []))
 
     # 4. Comparative stock performance data
     if performance_data is None:
@@ -6493,6 +6548,9 @@ def render_dashboard(
         "watchlist_companies": enriched_watchlist,
         "sector_directory": sector_directory,
         "company_sectors": {c["symbol"]: c["macro_sector"] for c in enriched_watchlist},
+        "company_names": {c["symbol"]: c["name"] for c in enriched_watchlist},
+        "watchlist_symbols": {c["symbol"] for c in enriched_watchlist},
+        "company_url": _company_url_for({c["symbol"] for c in enriched_watchlist}),
         "latest_results": _latest_results,
         "insider_rollup": _insider_rollup,
         "week_ago": (date.today() - timedelta(days=7)).isoformat(),
@@ -6544,7 +6602,28 @@ def render_dashboard(
             f.write(rendered)
         logger.info("Rendered page: %s", out_file)
 
+    # One page per company. They share one script and one stylesheet, so one policy covers them all.
+    for stale in glob.glob(os.path.join(site_dir, "company-*.html")):
+        os.remove(stale)
+    stories = _stories_by_company(items)
+    page_tmpl = Template(COMPANY_PAGE_TEMPLATE, autoescape=True)
+    company_policies = set()
+    for co in enriched_watchlist:
+        sym = co["symbol"]
+        ctx = dict(common_context, active_page="company", co=co, co_news=stories.get(sym, []),
+                   co_events=[ev for ev in calendar_events if ev.get("ticker") == sym])
+        co_perf = perf_companies.get(sym)
+        ctx["company_perf_json"] = _script_json({"companies": {sym: co_perf}} if co_perf else {})
+        rendered = page_tmpl.render(**ctx)
+        company_policies.add(_content_security_policy(rendered))
+        with open(os.path.join(site_dir, f"company-{_company_slug(sym)}.html"), "w", encoding="utf-8") as f:
+            f.write(rendered)
+    if len(company_policies) > 1:
+        raise RuntimeError("Company pages ran different scripts, so one policy can't cover them")
+    pattern_policies = {"/company-*": company_policies.pop()} if company_policies else {}
+    logger.info("Rendered %d company pages", len(enriched_watchlist))
+
     with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
-        f.write(_headers_file(policies))
+        f.write(_headers_file(policies, pattern_policies))
 
     return primary_output

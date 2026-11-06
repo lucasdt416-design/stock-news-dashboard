@@ -150,8 +150,8 @@ def test_rendered_comparative_performance_markup(tmp_path):
     assert "recentlyViewedSection" in idx_content
     assert "comparativeChartCanvas" not in idx_content
 
-    # Check company.html
-    comp_file = out_dir / "company.html"
+    # Check the company's own page
+    comp_file = out_dir / "company-nvda.html"
     assert comp_file.exists()
     with open(comp_file, "r", encoding="utf-8") as f:
         comp_content = f.read()
