@@ -444,11 +444,16 @@ def get_economic_indicators(
             select_cols += ", history_json"
         if has_synthesis:
             select_cols += ", ai_synthesis"
+        if "source_url" not in cols:
+            conn.close()
+            return []  # stored before figures were read from FRED: placeholders, not readings
+        select_cols += ", source_url, as_of, change_text"
 
         cursor = conn.execute(
             f"""
             SELECT {select_cols}
             FROM economic_indicators
+            WHERE source_url IS NOT NULL AND source_url != ''
             ORDER BY 
                 CASE indicator_id
                     WHEN 'interest_rates' THEN 1

@@ -886,7 +886,7 @@ SHARED_CSS = """
     .econ-select { max-width: 100%; min-height: 32px; background: transparent; color: var(--text-primary); border: none; border-bottom: 1px solid var(--border-card); font-size: 0.84rem; padding: 0.2rem 0; }
     .econ-section { margin-bottom: 3.5rem; }
     .econ-note { font-size: 0.82rem; color: var(--text-muted); padding: 0.6rem 0 0.25rem; }
-    .econ-stale { color: var(--warn); }
+    .econ-source { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.6rem; }
 
     table.econ-matrix { width: 100%; min-width: 0; border-collapse: collapse; font-size: 0.84rem; }
     .econ-matrix th, .econ-matrix td { padding: 0.42rem 0.5rem 0.42rem 0; border-bottom: 1px solid var(--border-subtle); text-align: left; font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; color: inherit; vertical-align: baseline; white-space: normal; background: none; }
@@ -1558,8 +1558,8 @@ SHARED_CSS = """
     .agenda-co { margin: 0.1rem 0 0; font-size: 0.92rem; color: var(--text-secondary); }
     .agenda-co a { color: var(--text-primary); text-decoration: none; }
     .agenda-co a:hover { text-decoration: underline; text-underline-offset: 2px; }
-    .agenda-source a { color: var(--accent); text-decoration: none; }
-    .agenda-source a:hover { text-decoration: underline; }
+    .agenda-source a, .econ-source a, .econ-release .cal-details a { color: var(--accent); text-decoration: none; }
+    .agenda-source a:hover, .econ-source a:hover, .econ-release .cal-details a:hover { text-decoration: underline; }
     .agenda-source { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted); overflow-wrap: anywhere; }
     .agenda-add { flex: none; border: 1px solid var(--border-subtle); border-radius: var(--radius-full); padding: 0.35rem 0.85rem; min-height: 32px; font: inherit; font-size: 0.8rem; background: none; color: var(--text-secondary); cursor: pointer; }
     .agenda-add:hover { color: var(--text-primary); border-color: var(--text-muted); }
@@ -4974,7 +4974,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         <article class="economic-card" data-indicator-id="{{ ind.indicator_id }}" data-relevant-tickers="{{ ind.relevant_tickers }}">
           <div class="econ-name">
             <h2 class="economic-series-name">{{ ind.name }}</h2>
-            <p class="econ-sub">{{ ind.category }} · As of {{ short_date(ind.observation_date) }}</p>
+            <p class="econ-sub">{{ ind.category }} · As of {{ ind.as_of or short_date(ind.observation_date) }}</p>
           </div>
           <div class="sparkline-wrapper" id="sparkline-{{ ind.indicator_id }}" data-history='{{ ind.history_json|default("[]") }}' data-unit="{{ ind.unit }}">
             <svg class="sparkline-svg" id="svg-{{ ind.indicator_id }}" viewBox="0 0 280 60" aria-hidden="true"></svg>
@@ -4986,11 +4986,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
           <div class="econ-figure">
             <div class="economic-val">{{ ind.formatted_value.split(' (')[0] }}</div>
             {% if ' (' in ind.formatted_value %}<div class="econ-sub">({{ ind.formatted_value.split(' (', 1)[1] }}</div>{% endif %}
-            <div class="econ-change">
-              {% if ind.change_direction == 'up' %}▲ +{{ ind.change_value }}
-              {% elif ind.change_direction == 'down' %}▼ {{ ind.change_value }}
-              {% else %}Steady{% endif %}
-            </div>
+            {% if ind.change_text %}<div class="econ-change">{% if ind.change_direction == 'up' %}▲ {% elif ind.change_direction == 'down' %}▼ {% endif %}{{ ind.change_text }}</div>{% endif %}
           </div>
           <details class="feed-details econ-details">
             <summary><span class="feed-meta">Why it matters, and the {{ ind.tickers_list|length }} companies it affects</span></summary>
@@ -5002,9 +4998,12 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
               {% if ind.context_note %}<p class="feed-detail-label">What it measures</p><p>{{ ind.context_note }}</p>{% endif %}
               <p class="feed-detail-label">Companies</p>
               <p class="econ-holdings">{% for sym in ind.tickers_list %}<a href="{{ company_url(sym) }}" class="ticker-badge">{{ sym }}</a> {% endfor %}</p>
+              <p class="econ-source">From <a href="{{ safe_url(ind.source_url) }}" target="_blank" rel="noopener noreferrer">FRED, Federal Reserve Bank of St. Louis ↗</a></p>
             </div>
           </details>
         </article>
+        {% else %}
+        <p class="econ-note">No figures yet. They’re read from FRED on each update, and the last one couldn’t reach it.</p>
         {% endfor %}
       </div>
 
@@ -5043,18 +5042,18 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
       <section class="econ-section" aria-labelledby="econScheduleHeading">
         <h2 class="fp-heading" id="econScheduleHeading">Coming up</h2>
-        {% if economic_schedule and economic_schedule|selectattr('passed')|list|length == economic_schedule|length %}
-        <p class="econ-note econ-stale">Every date on this schedule has passed. It is a fixed list and needs updating.</p>
-        {% endif %}
+        <p class="econ-note">The next date of each release, from the official calendars.</p>
         <ul class="econ-schedule">
           {% for ev in economic_schedule %}
           <li class="econ-release{% if ev.passed %} is-passed{% endif %}">
             <span class="cal-when"><span class="cal-date">{{ short_date(ev.date) }}</span><span class="cal-relative">{{ ev.timing }}</span></span>
             <div>
               <h3 class="cal-headline">{{ ev.title }}</h3>
-              <p class="cal-details">{{ ev.authority }} · Expected: {{ ev.consensus }}</p>
+              <p class="cal-details">{{ ev.time_text }} · {{ ev.about }} <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer">{{ ev.authority }} ↗</a></p>
             </div>
           </li>
+          {% else %}
+          <li class="econ-note">No dates to show. The official calendars couldn’t be read on the last update.</li>
           {% endfor %}
         </ul>
       </section>
@@ -6731,16 +6730,10 @@ def render_dashboard(
     stats = get_news_stats(db_path=db_path)
     chart_data = get_chart_data(db_path=db_path)
     economic_indicators = get_economic_indicators(db_path=db_path)
-    if not economic_indicators:
-        try:
-            from pipeline.economic import collect_economic_indicators
-            economic_indicators = collect_economic_indicators(db_path=db_path)
-        except Exception as e:
-            logger.warning("Could not auto-seed economic indicators: %s", e)
 
     try:
         from pipeline.economic import get_upcoming_economic_events
-        upcoming_economic_events = get_upcoming_economic_events()
+        upcoming_economic_events = get_upcoming_economic_events(db_path=db_path)
     except Exception as e:
         logger.warning("Could not get upcoming economic events: %s", e)
         upcoming_economic_events = []

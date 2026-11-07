@@ -27,7 +27,7 @@ from pipeline.calendar import build_forthcoming_calendar
 from pipeline.crossref import apply_supply_chain_cross_references
 from pipeline.db import init_db
 from pipeline.dedupe import deduplicate_items
-from pipeline.economic import collect_economic_indicators
+from pipeline.economic import collect_economic_indicators, snapshot_fetch
 from pipeline.health import record_pipeline_run_health
 from pipeline.lookup import fetch_ticker_quick_lookup
 from pipeline.normalize import normalize_items
@@ -224,6 +224,7 @@ class TestPipelineEndToEnd(unittest.TestCase):
         econ_indicators = collect_economic_indicators(
             watchlist=tickers,
             db_path=self.db_path,
+            fetch=snapshot_fetch(str(Path(__file__).parent / "fixtures" / "economy")),
         )
         self.assertEqual(len(econ_indicators), 5)
 
