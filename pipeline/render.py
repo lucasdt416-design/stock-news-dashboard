@@ -5604,7 +5604,7 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
         {% if co.notes %}<p class="company-notes-card">{{ co.notes }}</p>{% endif %}
         <p class="company-links">
           {% if co.cik %}<a href="https://www.sec.gov/edgar/browse/?CIK={{ co.cik|urlencode }}" target="_blank" rel="noopener noreferrer">SEC filings ↗</a>{% endif %}
-          {% if co.newsroom_url or co.ir_page_url or co.ir_feed_url %}<a href="{{ safe_url(co.newsroom_url or co.ir_page_url or co.ir_feed_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% endif %}
+          {% if co.newsroom_url %}<a href="{{ safe_url(co.newsroom_url) }}" target="_blank" rel="noopener noreferrer">Newsroom ↗</a>{% elif co.ir_page_url %}<a href="{{ safe_url(co.ir_page_url) }}" target="_blank" rel="noopener noreferrer">Investor site ↗</a>{% endif %}
           <span>Regulators: {{ (co.regulators or ['SEC'])|join(', ')|replace('_', ' ') }}</span>
         </p>
 

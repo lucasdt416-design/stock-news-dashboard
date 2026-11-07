@@ -173,3 +173,11 @@ def test_economy_line_uses_the_header_key_and_drops_invented_numbers():
         line = generate_economic_synthesis("interest_rates", "Fed funds rate", "4.25%", "up", 0.25, ["NVDA"], api_key=KEY)
     assert KEY not in seen[0].full_url
     assert "30%" not in line  # 30 was not in the prompt, so the plain fallback is used
+
+
+def test_merges_do_not_spend_the_gemini_quota():
+    """Every merge to main runs the pipeline; on 2026-11-06 eight runs used up the free daily quota."""
+    from pathlib import Path
+    text = Path(".github/workflows/daily-run.yml").read_text(encoding="utf-8")
+    assert "GEMINI_API_KEY: \"${{ github.event_name != 'push' && secrets.GEMINI_API_KEY || '' }}\"" in text
+    assert text.count("secrets.GEMINI_API_KEY") == 1

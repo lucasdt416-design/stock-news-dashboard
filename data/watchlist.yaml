@@ -30,7 +30,7 @@ tickers:
   - symbol: MSFT
     name: Microsoft Corporation
     cik: "0000789019"
-    ir_feed_url: "https://news.microsoft.com/feed/"
+    ir_feed_url: "https://news.microsoft.com/source/feed/"
     newsroom_url: "https://news.microsoft.com"
     sector: software_cloud
     regulators: [FTC, CMA, EU_EC, SEC]
@@ -86,7 +86,7 @@ tickers:
   - symbol: TSLA
     name: Tesla, Inc.
     cik: "0001318605"
-    ir_feed_url: "https://ir.tesla.com/press-releases/rss"
+    ir_feed_url: "https://ir.tesla.com/rss.xml"
     newsroom_url: "https://ir.tesla.com/press-releases"
     sector: automotive_clean_energy
     regulators: [NHTSA, SEC, EPA, EU_EC]
@@ -100,7 +100,6 @@ tickers:
   - symbol: JPM
     name: JPMorgan Chase & Co.
     cik: "0000019617"
-    ir_feed_url: "https://jpmorganchaseco.gcs-web.com/rss/news-releases.xml"
     newsroom_url: "https://www.jpmorganchase.com/news-stories"
     sector: financial_banking
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
@@ -114,7 +113,7 @@ tickers:
   - symbol: JNJ
     name: Johnson & Johnson
     cik: "0000200406"
-    ir_feed_url: "https://investor.jnj.com/rss/news-releases.xml"
+    ir_feed_url: "https://investor.jnj.com/rss/pressrelease.aspx"
     newsroom_url: "https://www.jnj.com/media-center/press-releases"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
@@ -128,7 +127,7 @@ tickers:
   - symbol: XOM
     name: Exxon Mobil Corporation
     cik: "0000034088"
-    ir_feed_url: "https://corporate.exxonmobil.com/rss/news-releases.xml"
+    ir_feed_url: "https://investor.exxonmobil.com/company-information/press-releases/rss"
     newsroom_url: "https://corporate.exxonmobil.com/news"
     sector: energy_oil_gas
     regulators: [EPA, DOE, SEC, FTC]
@@ -142,7 +141,6 @@ tickers:
   - symbol: WMT
     name: Walmart Inc.
     cik: "0000104169"
-    ir_feed_url: "https://corporate.walmart.com/news/rss"
     newsroom_url: "https://corporate.walmart.com/news"
     sector: retail_consumer_staples
     regulators: [FTC, DOJ, SEC, OSHA]
@@ -170,7 +168,7 @@ tickers:
   - symbol: KO
     name: The Coca-Cola Company
     cik: "0000021344"
-    ir_feed_url: "https://www.coca-colacompany.com/news-releases.rss"
+    ir_feed_url: "https://investors.coca-colacompany.com/news-events/press-releases/rss"
     newsroom_url: "https://www.coca-colacompany.com/media-center"
     sector: consumer_staples_beverages
     regulators: [FDA, FTC, SEC, International_Food_Agencies]
@@ -184,7 +182,7 @@ tickers:
   - symbol: PFE
     name: Pfizer Inc.
     cik: "0000078003"
-    ir_feed_url: "https://investors.pfizer.com/rss/news-releases.xml"
+    ir_feed_url: "https://investors.pfizer.com/rss/pressrelease.aspx"
     newsroom_url: "https://www.pfizer.com/news/press-releases"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
@@ -198,7 +196,7 @@ tickers:
   - symbol: BA
     name: The Boeing Company
     cik: "0000012927"
-    ir_feed_url: "https://boeing.mediaroom.com/index.php?s=43&news_releases&format=rss"
+    ir_feed_url: "https://investors.boeing.com/rss/pressrelease.aspx"
     newsroom_url: "https://boeing.mediaroom.com/news-releases-statements"
     sector: aerospace_defense
     regulators: [FAA, DOD, SEC, EASA]
@@ -240,7 +238,7 @@ tickers:
   - symbol: BAC
     name: Bank of America Corporation
     cik: "0000070858"
-    ir_feed_url: "https://newsroom.bankofamerica.com"
+    ir_feed_url: "https://newsroom.bankofamerica.com/rssfeed"
     newsroom_url: "https://newsroom.bankofamerica.com"
     sector: financial_banking
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
@@ -254,7 +252,6 @@ tickers:
   - symbol: GS
     name: The Goldman Sachs Group, Inc.
     cik: "0000886982"
-    ir_feed_url: "https://www.goldmansachs.com/press-releases"
     newsroom_url: "https://www.goldmansachs.com/news-and-insights"
     sector: financial_investment_banking
     regulators: [Federal_Reserve, SEC, FINRA, CFTC, FCA]
@@ -268,7 +265,6 @@ tickers:
   - symbol: UNH
     name: UnitedHealth Group Incorporated
     cik: "0000731766"
-    ir_feed_url: "https://www.unitedhealthgroup.com/newsroom"
     newsroom_url: "https://www.unitedhealthgroup.com/newsroom"
     sector: healthcare_managed_care
     regulators: [CMS, HHS, FTC, DOJ, SEC]
@@ -282,7 +278,7 @@ tickers:
   - symbol: ABBV
     name: AbbVie Inc.
     cik: "0001551152"
-    ir_feed_url: "https://abbvie.gcs-web.com/rss/news-releases.xml"
+    ir_feed_url: "https://news.abbvie.com/index.php?s=2429&pagetemplate=rss"
     newsroom_url: "https://news.abbvie.com"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
@@ -296,7 +292,7 @@ tickers:
   - symbol: PG
     name: The Procter & Gamble Company
     cik: "0000080424"
-    ir_feed_url: "https://news.pg.com"
+    ir_feed_url: "https://www.pginvestor.com/rss/pressrelease.aspx"
     newsroom_url: "https://news.pg.com"
     sector: consumer_staples_household
     regulators: [FDA, FTC, SEC, EPA]
@@ -310,7 +306,6 @@ tickers:
   - symbol: MCD
     name: McDonald's Corporation
     cik: "0000063908"
-    ir_feed_url: "https://corporate.mcdonalds.com/corpmcd/en-us/news-center"
     newsroom_url: "https://corporate.mcdonalds.com/corpmcd/en-us/news-center"
     sector: consumer_discretionary_restaurants
     regulators: [FDA, FTC, SEC, NLRB]
@@ -324,7 +319,7 @@ tickers:
   - symbol: CAT
     name: Caterpillar Inc.
     cik: "0000018230"
-    ir_feed_url: "https://www.caterpillar.com/en/news"
+    ir_feed_url: "https://investors.caterpillar.com/rss/pressrelease.aspx"
     newsroom_url: "https://www.caterpillar.com/en/news"
     sector: industrials_heavy_machinery
     regulators: [EPA, OSHA, SEC, DOJ]
@@ -338,7 +333,6 @@ tickers:
   - symbol: GE
     name: GE Aerospace
     cik: "0000040545"
-    ir_feed_url: "https://www.geaerospace.com/news"
     newsroom_url: "https://www.geaerospace.com/news"
     sector: aerospace_defense
     regulators: [FAA, DOD, SEC, EASA]
@@ -352,7 +346,6 @@ tickers:
   - symbol: CVX
     name: Chevron Corporation
     cik: "0000093410"
-    ir_feed_url: "https://chevroncorp.gcs-web.com/rss/news-releases.xml"
     newsroom_url: "https://www.chevron.com/newsroom"
     sector: energy_oil_gas
     regulators: [EPA, DOE, SEC, FTC, DOI]
@@ -380,7 +373,7 @@ tickers:
   - symbol: COST
     name: Costco Wholesale Corporation
     cik: "0000909832"
-    ir_feed_url: "https://investor.costco.com"
+    ir_feed_url: "https://investor.costco.com/rss/pressrelease.aspx"
     newsroom_url: "https://investor.costco.com"
     sector: retail_consumer_staples
     regulators: [FTC, SEC, FDA, USDA, OSHA]
@@ -394,7 +387,7 @@ tickers:
   - symbol: VZ
     name: Verizon Communications Inc.
     cik: "0000732712"
-    ir_feed_url: "https://www.verizon.com/about/newsroom"
+    ir_feed_url: "https://www.verizon.com/about/rss.xml"
     newsroom_url: "https://www.verizon.com/about/newsroom"
     sector: telecommunications
     regulators: [FCC, FTC, SEC, DOJ]
@@ -423,6 +416,8 @@ tickers:
   - symbol: ABT
     name: "Abbott Laboratories"
     cik: "0000001800"
+    ir_feed_url: "https://abbott.mediaroom.com/press-releases?pagetemplate=rss"
+    ir_page_url: "https://abbott.mediaroom.com"
     sector: healthcare_pharmaceuticals
     competitors: [MDT, TMO, JNJ]
 
@@ -459,6 +454,8 @@ tickers:
   - symbol: ANET
     name: "Arista Networks, Inc."
     cik: "0001596532"
+    ir_feed_url: "https://investors.arista.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investors.arista.com"
     sector: tech_hardware
     competitors: [CSCO, DELL, AVGO]
 
@@ -471,24 +468,32 @@ tickers:
   - symbol: AXP
     name: "American Express Company"
     cik: "0000004962"
+    ir_feed_url: "https://ir.americanexpress.com/rss/pressrelease.aspx"
+    ir_page_url: "https://ir.americanexpress.com"
     sector: financial_banking
     competitors: [V, MA, COF]
 
   - symbol: BKNG
     name: "Booking Holdings Inc."
     cik: "0001075531"
+    ir_feed_url: "https://ir.bookingholdings.com/rss/pressrelease.aspx"
+    ir_page_url: "https://ir.bookingholdings.com"
     sector: consumer_goods_travel
     competitors: [EXPE, ABNB, MAR]
 
   - symbol: BLK
     name: "BlackRock, Inc."
     cik: "0002012383"
+    ir_feed_url: "https://ir.blackrock.com/rss/pressrelease.aspx"
+    ir_page_url: "https://ir.blackrock.com"
     sector: financial_investment_banking
     competitors: [SCHW, MS, GS]
 
   - symbol: BMY
     name: "Bristol-Myers Squibb Company"
     cik: "0000014272"
+    ir_feed_url: "https://news.bms.com/rss/pressrelease.aspx"
+    ir_page_url: "https://news.bms.com"
     sector: healthcare_pharmaceuticals
     competitors: [MRK, PFE, ABBV]
 
@@ -531,18 +536,24 @@ tickers:
   - symbol: CRM
     name: "Salesforce, Inc."
     cik: "0001108524"
+    ir_feed_url: "https://www.salesforce.com/news/feed/"
+    ir_page_url: "https://www.salesforce.com"
     sector: software_cloud
     competitors: [ORCL, MSFT, NOW]
 
   - symbol: CSCO
     name: "Cisco Systems, Inc."
     cik: "0000858877"
+    ir_feed_url: "https://investor.cisco.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.cisco.com"
     sector: tech_hardware
     competitors: [ANET, IBM, DELL]
 
   - symbol: CVS
     name: "CVS Health Corporation"
     cik: "0000064803"
+    ir_feed_url: "https://investors.cvshealth.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investors.cvshealth.com"
     sector: healthcare_services
     competitors: [UNH, WBA, CI]
 
@@ -555,36 +566,48 @@ tickers:
   - symbol: DELL
     name: "Dell Technologies Inc."
     cik: "0001571996"
+    ir_feed_url: "https://investors.delltechnologies.com/news-events/press-releases/rss"
+    ir_page_url: "https://investors.delltechnologies.com"
     sector: tech_hardware
     competitors: [HPQ, HPE, CSCO]
 
   - symbol: DHR
     name: "Danaher Corporation"
     cik: "0000313616"
+    ir_feed_url: "https://investors.danaher.com/press-releases?pagetemplate=rss"
+    ir_page_url: "https://investors.danaher.com"
     sector: healthcare_life_sciences
     competitors: [TMO, ABT, A]
 
   - symbol: DUK
     name: "Duke Energy Corporation"
     cik: "0001326160"
+    ir_feed_url: "https://investors.duke-energy.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investors.duke-energy.com"
     sector: utilities_power
     competitors: [SO, NEE, D]
 
   - symbol: EMR
     name: "Emerson Electric Co."
     cik: "0000032604"
+    ir_feed_url: "https://ir.emerson.com/news-events/press-releases/rss"
+    ir_page_url: "https://ir.emerson.com"
     sector: industrials_electrical
     competitors: [GEV, ROK, HON]
 
   - symbol: FDX
     name: "FedEx Corporation"
     cik: "0001048911"
+    ir_feed_url: "https://newsroom.fedex.com/index.rss"
+    ir_page_url: "https://newsroom.fedex.com"
     sector: industrials_transport
     competitors: [UPS, UNP, AMZN]
 
   - symbol: GD
     name: "General Dynamics Corporation"
     cik: "0000040533"
+    ir_feed_url: "https://investorrelations.gd.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investorrelations.gd.com"
     sector: aerospace_defense
     competitors: [LMT, RTX, NOC]
 
@@ -597,6 +620,8 @@ tickers:
   - symbol: GILD
     name: "Gilead Sciences, Inc."
     cik: "0000882095"
+    ir_feed_url: "https://investors.gilead.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investors.gilead.com"
     sector: healthcare_pharmaceuticals
     competitors: [AMGN, MRK, BMY]
 
@@ -609,12 +634,16 @@ tickers:
   - symbol: IBM
     name: "International Business Machines Corporation"
     cik: "0000051143"
+    ir_feed_url: "https://newsroom.ibm.com/announcements?pagetemplate=rss"
+    ir_page_url: "https://newsroom.ibm.com"
     sector: tech_hardware
     competitors: [ACN, MSFT, ORCL]
 
   - symbol: INTU
     name: "Intuit Inc."
     cik: "0000896878"
+    ir_feed_url: "https://investors.intuit.com/news-events/press-releases/rss"
+    ir_page_url: "https://investors.intuit.com"
     sector: software_cloud
     competitors: [ADBE, CRM, MSFT]
 
@@ -639,6 +668,8 @@ tickers:
   - symbol: LMT
     name: "Lockheed Martin Corporation"
     cik: "0000936468"
+    ir_feed_url: "https://news.lockheedmartin.com/news-releases?pagetemplate=rss"
+    ir_page_url: "https://news.lockheedmartin.com"
     sector: aerospace_defense
     competitors: [RTX, GD, NOC]
 
@@ -651,12 +682,16 @@ tickers:
   - symbol: LRCX
     name: "Lam Research Corporation"
     cik: "0000707549"
+    ir_feed_url: "https://newsroom.lamresearch.com/press-releases?pagetemplate=rss"
+    ir_page_url: "https://newsroom.lamresearch.com"
     sector: semiconductors
     competitors: [AMAT, KLAC, ASML]
 
   - symbol: MA
     name: "Mastercard Incorporated"
     cik: "0001141391"
+    ir_feed_url: "https://investor.mastercard.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.mastercard.com"
     sector: financial_payments
     competitors: [V, AXP, PYPL]
 
@@ -669,18 +704,24 @@ tickers:
   - symbol: MDT
     name: "Medtronic plc"
     cik: "0001613103"
+    ir_feed_url: "https://news.medtronic.com/press-releases?pagetemplate=rss"
+    ir_page_url: "https://news.medtronic.com"
     sector: healthcare_medical_devices
     competitors: [ABT, ISRG, BSX]
 
   - symbol: MMM
     name: "3M Company"
     cik: "0000066740"
+    ir_feed_url: "https://investors.3m.com/news-events/press-releases/rss"
+    ir_page_url: "https://investors.3m.com"
     sector: industrials_conglomerate
     competitors: [HON, GE, EMR]
 
   - symbol: MO
     name: "Altria Group, Inc."
     cik: "0000764180"
+    ir_feed_url: "https://investor.altria.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.altria.com"
     sector: consumer_staples_tobacco
     competitors: [PM, BTI]
 
@@ -699,24 +740,32 @@ tickers:
   - symbol: MU
     name: "Micron Technology, Inc."
     cik: "0000723125"
+    ir_feed_url: "https://investors.micron.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investors.micron.com"
     sector: semiconductors
     competitors: [SNDK, WDC, INTC]
 
   - symbol: NFLX
     name: "Netflix, Inc."
     cik: "0001065280"
+    ir_feed_url: "https://ir.netflix.net/rss/pressrelease.aspx"
+    ir_page_url: "https://ir.netflix.net"
     sector: entertainment_media
     competitors: [DIS, CMCSA, GOOGL]
 
   - symbol: NOW
     name: "ServiceNow, Inc."
     cik: "0001373715"
+    ir_feed_url: "https://newsroom.servicenow.com/rss/pressrelease.aspx"
+    ir_page_url: "https://newsroom.servicenow.com"
     sector: software_cloud
     competitors: [CRM, ORCL, MSFT]
 
   - symbol: ORCL
     name: "Oracle Corporation"
     cik: "0001341439"
+    ir_feed_url: "https://investor.oracle.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.oracle.com"
     sector: software_cloud
     competitors: [MSFT, CRM, AMZN]
 
@@ -747,24 +796,32 @@ tickers:
   - symbol: QCOM
     name: "QUALCOMM Incorporated"
     cik: "0000804328"
+    ir_feed_url: "https://investor.qualcomm.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.qualcomm.com"
     sector: semiconductors
     competitors: [AVGO, AMD, TXN]
 
   - symbol: RTX
     name: "RTX Corporation"
     cik: "0000101829"
+    ir_feed_url: "https://www.rtx.com/rss-feeds/news"
+    ir_page_url: "https://www.rtx.com"
     sector: aerospace_defense
     competitors: [LMT, GD, BA]
 
   - symbol: SBUX
     name: "Starbucks Corporation"
     cik: "0000829224"
+    ir_feed_url: "https://investor.starbucks.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.starbucks.com"
     sector: consumer_discretionary_restaurants
     competitors: [MCD, CMG, YUM]
 
   - symbol: SCHW
     name: "The Charles Schwab Corporation"
     cik: "0000316709"
+    ir_feed_url: "https://pressroom.aboutschwab.com/rss/pressrelease.aspx"
+    ir_page_url: "https://pressroom.aboutschwab.com"
     sector: financial_investment_banking
     competitors: [MS, BLK, IBKR]
 
@@ -789,6 +846,8 @@ tickers:
   - symbol: TMO
     name: "Thermo Fisher Scientific Inc."
     cik: "0000097745"
+    ir_feed_url: "https://ir.thermofisher.com/rss/pressrelease.aspx"
+    ir_page_url: "https://ir.thermofisher.com"
     sector: healthcare_life_sciences
     competitors: [DHR, ABT, A]
 
@@ -807,35 +866,47 @@ tickers:
   - symbol: UBER
     name: "Uber Technologies, Inc."
     cik: "0001543151"
+    ir_feed_url: "https://investor.uber.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.uber.com"
     sector: software_mobility
     competitors: [LYFT, DASH, ABNB]
 
   - symbol: UNP
     name: "Union Pacific Corporation"
     cik: "0000100885"
+    ir_feed_url: "https://www.up.com/news/rss.xml"
+    ir_page_url: "https://www.up.com"
     sector: industrials_transport
     competitors: [CSX, NSC, FDX]
 
   - symbol: UPS
     name: "United Parcel Service, Inc."
     cik: "0001090727"
+    ir_feed_url: "https://investors.ups.com/news-events/press-releases/rss"
+    ir_page_url: "https://investors.ups.com"
     sector: industrials_transport
     competitors: [FDX, UNP, AMZN]
 
   - symbol: USB
     name: "U.S. Bancorp"
     cik: "0000036104"
+    ir_feed_url: "https://ir.usbank.com/rss/pressrelease.aspx"
+    ir_page_url: "https://ir.usbank.com"
     sector: financial_banking
     competitors: [WFC, PNC, COF]
 
   - symbol: V
     name: "Visa Inc."
     cik: "0001403161"
+    ir_feed_url: "https://investor.visa.com/rss/pressrelease.aspx"
+    ir_page_url: "https://investor.visa.com"
     sector: financial_payments
     competitors: [MA, AXP, PYPL]
 
   - symbol: WFC
     name: "Wells Fargo & Company"
     cik: "0000072971"
+    ir_feed_url: "https://newsroom.wf.com/rss/pressrelease.aspx"
+    ir_page_url: "https://newsroom.wf.com"
     sector: financial_banking
     competitors: [JPM, BAC, C]
