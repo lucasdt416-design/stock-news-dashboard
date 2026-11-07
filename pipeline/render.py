@@ -5049,7 +5049,7 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
             <span class="cal-when"><span class="cal-date">{{ short_date(ev.date) }}</span><span class="cal-relative">{{ ev.timing }}</span></span>
             <div>
               <h3 class="cal-headline">{{ ev.title }}</h3>
-              <p class="cal-details">{{ ev.about }} <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer">{{ ev.authority }} ↗</a></p>
+              <p class="cal-details">{{ ev.time_text }} · {{ ev.about }} <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer">{{ ev.authority }} ↗</a></p>
             </div>
           </li>
           {% else %}

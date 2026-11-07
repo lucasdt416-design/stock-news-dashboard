@@ -132,29 +132,35 @@ def test_old_typed_in_rows_are_never_shown(tmp_path):
     conn.close()
 
 
+def T(y, m, d, hh, mm):
+    return datetime.datetime(y, m, d, hh, mm)
+
+
 def test_fed_meeting_dates():
     dates = parse_fomc_dates(fetch()(economic.FOMC_URL))
-    assert [d for d in dates if d.year == 2026] == [D(2026, 1, 28), D(2026, 3, 18), D(2026, 4, 29), D(2026, 6, 17),
-                                                     D(2026, 7, 29), D(2026, 9, 16), D(2026, 10, 28), D(2026, 12, 9)]
-    assert D(2027, 1, 27) in dates and len(dates) == 16
+    days = [D(2026, 1, 28), D(2026, 3, 18), D(2026, 4, 29), D(2026, 6, 17),
+            D(2026, 7, 29), D(2026, 9, 16), D(2026, 10, 28), D(2026, 12, 9)]
+    assert [d for d in dates if d.year == 2026] == [datetime.datetime.combine(d, datetime.time(14, 0)) for d in days]
+    assert T(2027, 1, 27, 14, 0) in dates and len(dates) == 16
     across = ('2028 FOMC Meetings <div class="fomc-meeting__month"><strong>Oct/Nov</strong></div>'
               '<div class="fomc-meeting__date">31-1</div> <div class="fomc-meeting__month"><strong>March</strong></div>'
               '<div class="fomc-meeting__date">9 (notation vote)</div>')
-    assert parse_fomc_dates(across) == [D(2028, 11, 1)]
+    assert parse_fomc_dates(across) == [T(2028, 11, 1, 14, 0)]
 
 
 def test_bls_release_dates():
     dates = parse_bls_dates(fetch()(economic.BLS_ICS_URL))
-    assert D(2026, 11, 6) in dates["jobs"] and D(2026, 12, 4) in dates["jobs"]
-    assert D(2026, 11, 10) in dates["cpi"] and D(2026, 12, 10) in dates["cpi"]
-    assert D(2026, 11, 7) not in dates["jobs"], "Employment Situation of Veterans is a different release"
+    assert T(2026, 11, 6, 8, 30) in dates["jobs"] and T(2026, 12, 4, 8, 30) in dates["jobs"]
+    assert T(2026, 11, 10, 8, 30) in dates["cpi"] and T(2026, 12, 10, 8, 30) in dates["cpi"]
+    assert all(d.date() != D(2026, 11, 7) for d in dates["jobs"]), "Employment Situation of Veterans is a different release"
 
 
 def test_eia_uses_wednesdays_and_the_listed_exceptions():
     page = fetch()(economic.EIA_SCHEDULE_URL)
     dates = parse_eia_dates(page, SAVED_ON)
-    assert D(2026, 11, 12) in dates and D(2026, 11, 11) not in dates, "Veterans Day moves it to Thursday"
-    assert D(2026, 11, 18) in dates and all(d.year == 2026 for d in dates)
+    assert T(2026, 11, 12, 12, 0) in dates, "Veterans Day moves it to Thursday at noon"
+    assert all(d.date() != D(2026, 11, 11) for d in dates)
+    assert T(2026, 11, 18, 10, 30) in dates and all(d.year == 2026 for d in dates)
     assert parse_eia_dates(page, D(2027, 3, 1)) == [], "no dates for a year the EIA hasn't listed holidays for"
     with pytest.raises(ValueError):
         parse_eia_dates("<html>moved</html>", SAVED_ON)
@@ -163,14 +169,17 @@ def test_eia_uses_wednesdays_and_the_listed_exceptions():
 def test_next_release_of_each_kind(tmp_path):
     db = str(tmp_path / "e.db")
     assert collect_economic_releases(db_path=db, fetch=fetch(), today=SAVED_ON) == {"fomc": 16, "jobs": 12, "cpi": 12, "eia": 8}
-    events = get_upcoming_economic_events(db_path=db, today=SAVED_ON)
-    assert [(e["event_id"], e["date"]) for e in events] == [
-        ("jobs", "2026-11-06"), ("cpi", "2026-11-10"), ("eia", "2026-11-12"), ("fomc", "2026-12-09")]
-    for e in events:
+    early = get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 7, 0))
+    assert [(e["event_id"], e["date"], e["time_text"]) for e in early] == [
+        ("jobs", "2026-11-06", "8:30 a.m. ET"), ("cpi", "2026-11-10", "8:30 a.m. ET"),
+        ("eia", "2026-11-12", "12:00 p.m. ET"), ("fomc", "2026-12-09", "2:00 p.m. ET")]
+    later = get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 8, 30))
+    assert ("jobs", "2026-12-04") in [(e["event_id"], e["date"]) for e in later], "a report that is out drops off"
+    for e in later:
         assert e["title"] and e["authority"] and e["about"] and e["source_url"].startswith("https://www.")
     collect_economic_releases(db_path=db, fetch=broken, today=SAVED_ON)
-    assert len(get_upcoming_economic_events(db_path=db, today=SAVED_ON)) == 4, "an unreadable calendar keeps its dates"
-    assert get_upcoming_economic_events(db_path=db, today=D(2029, 1, 1)) == []
+    assert len(get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 7, 0))) == 4, "an unreadable calendar keeps its dates"
+    assert get_upcoming_economic_events(db_path=db, now=T(2029, 1, 1, 0, 0)) == []
 
 
 def test_the_plain_line_uses_only_the_figure_it_was_given():
@@ -190,7 +199,7 @@ def test_render_economic_page(tmp_path):
     soon = datetime.date.today() + datetime.timedelta(days=3)
     conn = sqlite3.connect(db)
     conn.execute("DELETE FROM economic_releases WHERE kind = 'fomc'")
-    conn.execute("INSERT INTO economic_releases VALUES ('fomc', ?, 'now')", (soon.isoformat(),))
+    conn.execute("INSERT INTO economic_releases VALUES ('fomc', ?, '14:00', 'now')", (soon.isoformat(),))
     conn.commit()
     conn.close()
     render_dashboard(output_path=str(site / "index.html"), db_path=db, performance_data={})
@@ -199,6 +208,7 @@ def test_render_economic_page(tmp_path):
     assert "3.75–4.00%" in page and "(effective rate 3.88%)" in page
     assert "As of September 2026" in page and "−0.38 pts since Oct 8" in page
     assert 'href="https://fred.stlouisfed.org/series/DGS10"' in page
+    assert "2:00 p.m. ET · The Fed announces" in page
     assert "Fed interest rate decision" in page and 'href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"' in page
     for gone in ("Expected:", "Steady", "4.28%", "76.50", "It is a fixed list"):
         assert gone not in page, gone
@@ -213,3 +223,8 @@ def test_render_with_nothing_read_says_so(tmp_path):
     page = (tmp_path / "site" / "economic.html").read_text(encoding="utf-8")
     assert "No figures yet." in page and "No dates to show." in page
     assert "economic-card" not in page.split("economicCardsGrid", 1)[1].split("</div>", 1)[0]
+
+
+def test_unemployment_is_described_as_bls_defines_it():
+    note = by_id(INDICATORS)["unemployment"]["context_note"]
+    assert "labor force" in note and "working or looking for work" in note

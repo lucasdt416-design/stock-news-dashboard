@@ -82,8 +82,8 @@ INDICATORS: List[Dict[str, Any]] = [
         "series_id": "UNRATE",
         "category": "Jobs",
         "unit": "%",
-        "context_note": "The share of people looking for work who don't have a job. It shapes how much "
-                        "households spend and borrow.",
+        "context_note": "The share of the labor force (people working or looking for work) who are out of "
+                        "work and looking. It shapes how much households spend and borrow.",
     },
 ]
 
@@ -284,8 +284,8 @@ def generate_economic_synthesis(
     figure = formatted_val.split(" (")[0]
     moved = {"up": "rose to", "down": "fell to"}.get(change_dir, "held at")
     if indicator_id == "interest_rates":
-        return (f"The Fed's target range {moved} {figure}. It sets the floor for borrowing costs, "
-                f"so it matters for {ticker_str}.")
+        return (f"The Fed's target range {moved} {figure}. Banks' lending rates move with it, so it feeds "
+                f"into borrowing costs for {ticker_str}.")
     if indicator_id == "treasury_10y":
         return (f"The 10-year yield {moved} {figure}. Long-term borrowing and the value investors put on "
                 f"future profits both follow it, which matters for {ticker_str}.")
@@ -303,8 +303,13 @@ def generate_economic_synthesis(
 
 # ---- Release dates ------------------------------------------------------------------------------
 
-def parse_fomc_dates(page: str) -> List[datetime.date]:
-    """The last day of each scheduled meeting, which is when the decision comes out."""
+FOMC_STATEMENT_TIME = datetime.time(14, 0)  # "For release at 2:00 p.m." on each statement
+EIA_STANDARD_TIME = datetime.time(10, 30)   # "10:30 a.m. eastern time on Wednesday"
+EASTERN = "America/New_York"
+
+
+def parse_fomc_dates(page: str) -> List[datetime.datetime]:
+    """The last day of each scheduled meeting, when the decision comes out at 2:00 p.m. Eastern."""
     dates = []
     sections = re.split(r"(\d{4}) FOMC Meetings", page)
     for year_text, body in zip(sections[1::2], sections[2::2]):
@@ -319,21 +324,21 @@ def parse_fomc_dates(page: str) -> List[datetime.date]:
             first, last = int(days.group(1)), int(days.group(2) or days.group(1))
             month = months[-1] if (len(months) > 1 and last < first) else months[0]
             try:
-                dates.append(datetime.date(year, month, last))
+                dates.append(datetime.datetime.combine(datetime.date(year, month, last), FOMC_STATEMENT_TIME))
             except ValueError:
                 continue
     return sorted(set(dates))
 
 
-def parse_bls_dates(ics: str) -> Dict[str, List[datetime.date]]:
-    """Release dates for the jobs report and CPI from the BLS calendar file."""
-    found: Dict[str, List[datetime.date]] = {kind: [] for kind in BLS_SUMMARIES.values()}
+def parse_bls_dates(ics: str) -> Dict[str, List[datetime.datetime]]:
+    """Release times (Eastern) for the jobs report and CPI from the BLS calendar file."""
+    found: Dict[str, List[datetime.datetime]] = {kind: [] for kind in BLS_SUMMARIES.values()}
     for event in re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", ics, re.S):
         summary = re.search(r"^SUMMARY:(.*?)\r?$", event, re.M)
-        start = re.search(r"^DTSTART[^:\r\n]*:(\d{8})", event, re.M)
+        start = re.search(r"^DTSTART[^:\r\n]*:(\d{8})T(\d{4})", event, re.M)
         kind = BLS_SUMMARIES.get(summary.group(1).strip()) if summary else None
         if kind and start:
-            found[kind].append(datetime.datetime.strptime(start.group(1), "%Y%m%d").date())
+            found[kind].append(datetime.datetime.strptime(start.group(1) + start.group(2), "%Y%m%d%H%M"))
     return {kind: sorted(set(days)) for kind, days in found.items()}
 
 
@@ -344,24 +349,33 @@ def _long_date(text: str) -> Optional[datetime.date]:
         return None
 
 
-def parse_eia_dates(page: str, today: datetime.date, weeks: int = 8) -> List[datetime.date]:
+def _clock(text: str) -> Optional[datetime.time]:
+    m = re.fullmatch(r"\s*(\d{1,2}):(\d{2})\s*([ap])\.?m\.?\s*", text.lower())
+    if not m:
+        return None
+    hour = int(m.group(1)) % 12 + (12 if m.group(3) == "p" else 0)
+    return datetime.time(hour, int(m.group(2)))
+
+
+def parse_eia_dates(page: str, today: datetime.date, weeks: int = 8) -> List[datetime.datetime]:
     """The weekly report comes out on the Wednesday after the week it covers, except on the dates
     the EIA lists. Only weeks in years the EIA's table covers are given, so a holiday it hasn't
     listed yet can't produce a wrong date."""
-    moved: Dict[datetime.date, datetime.date] = {}
+    moved: Dict[datetime.date, datetime.datetime] = {}
     for row in re.findall(r"<tr.*?</tr>", page, re.S):
         cells = [html_lib.unescape(re.sub(r"<[^>]+>", " ", c)) for c in re.findall(r"<t[hd][\s>].*?</t[hd]>", row, re.S)]
         if len(cells) >= 2:
             week, release = _long_date(cells[0]), _long_date(cells[1])
-            if week and release:
-                moved[week] = release
+            clock = _clock(cells[3]) if len(cells) >= 4 else None
+            if week and release and clock:
+                moved[week] = datetime.datetime.combine(release, clock)
     if not moved:
         raise ValueError("the EIA schedule table wasn't found")
     last_year = max(d.year for d in moved.values())
     friday = today - datetime.timedelta(days=(today.weekday() - 4) % 7 + 7)
     dates = []
     for _ in range(weeks):
-        release = moved.get(friday, friday + datetime.timedelta(days=5))
+        release = moved.get(friday) or datetime.datetime.combine(friday + datetime.timedelta(days=5), EIA_STANDARD_TIME)
         if release.year <= last_year:
             dates.append(release)
         friday += datetime.timedelta(days=7)
@@ -410,6 +424,7 @@ def init_economic_schema(conn) -> None:
         CREATE TABLE IF NOT EXISTS economic_releases (
             kind TEXT NOT NULL,
             release_date TEXT NOT NULL,
+            release_time TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             PRIMARY KEY (kind, release_date)
         );
@@ -492,7 +507,7 @@ def collect_economic_releases(
     """Read release dates from the official calendars and store them. A calendar that can't be
     read keeps the dates it gave last time. Returns how many dates each calendar gave."""
     today = today or datetime.date.today()
-    found: Dict[str, List[datetime.date]] = {}
+    found: Dict[str, List[datetime.datetime]] = {}
     try:
         found["fomc"] = parse_fomc_dates(fetch(FOMC_URL))
     except Exception as exc:
@@ -516,8 +531,8 @@ def collect_economic_releases(
                 continue
             conn.execute("DELETE FROM economic_releases WHERE kind = ?", (kind,))
             conn.executemany(
-                "INSERT INTO economic_releases (kind, release_date, updated_at) VALUES (?, ?, ?)",
-                [(kind, d.isoformat(), now_iso) for d in days],
+                "INSERT INTO economic_releases (kind, release_date, release_time, updated_at) VALUES (?, ?, ?, ?)",
+                [(kind, d.date().isoformat(), d.strftime("%H:%M"), now_iso) for d in days],
             )
             counts[kind] = len(days)
         conn.commit()
@@ -525,21 +540,30 @@ def collect_economic_releases(
     return counts
 
 
+def _time_text(clock: str) -> str:
+    t = datetime.datetime.strptime(clock, "%H:%M")
+    return f"{t.hour % 12 or 12}:{t.minute:02d} {'a.m.' if t.hour < 12 else 'p.m.'} ET"
+
+
 def get_upcoming_economic_events(
-    db_path: Optional[str] = None, today: Optional[datetime.date] = None
+    db_path: Optional[str] = None, now: Optional[datetime.datetime] = None
 ) -> List[Dict[str, Any]]:
-    """The next date of each release, from the stored calendars. Empty when none is known."""
-    today = today or datetime.date.today()
+    """The next release of each kind that hasn't come out yet (times are US Eastern)."""
+    if now is None:
+        from zoneinfo import ZoneInfo
+        now = datetime.datetime.now(ZoneInfo(EASTERN)).replace(tzinfo=None)
     with closing(get_db_connection(db_path)) as conn:
         if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='economic_releases'").fetchone():
             return []
         rows = conn.execute(
-            "SELECT kind, MIN(release_date) AS release_date FROM economic_releases "
-            "WHERE release_date >= ? GROUP BY kind", (today.isoformat(),)
+            "SELECT kind, release_date, release_time FROM economic_releases WHERE release_date >= ? "
+            "ORDER BY release_date, release_time", (now.date().isoformat(),)
         ).fetchall()
-    events = []
+    events: Dict[str, Dict[str, Any]] = {}
     for row in rows:
         meta = RELEASES.get(row["kind"])
-        if meta:
-            events.append(dict(meta, event_id=row["kind"], date=row["release_date"]))
-    return sorted(events, key=lambda e: e["date"])
+        when = datetime.datetime.fromisoformat(f"{row['release_date']}T{row['release_time']}")
+        if meta and when > now and row["kind"] not in events:
+            events[row["kind"]] = dict(meta, event_id=row["kind"], date=row["release_date"],
+                                       time_text=_time_text(row["release_time"]))
+    return sorted(events.values(), key=lambda e: e["date"])
