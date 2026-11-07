@@ -3,7 +3,7 @@
 
 Everything here is invented for visual review. Headlines are deliberately generic, news items
 are credited to "Demo Wire", links point at example.com, and prices are a seeded random walk.
-Economic indicators come from the offline fallback already built into pipeline/economic.py.
+Economy figures and release dates come from saved copies of the real sources in tests/fixtures/economy.
 
 Usage:
     python scripts/build_demo.py [--db data/demo.db] [--site .capture/site]
@@ -23,7 +23,7 @@ import yaml  # noqa: E402
 
 from pipeline.calendar import calculate_relative_badge, format_display_date, init_calendar_schema  # noqa: E402
 from pipeline.db import get_db_connection, init_db  # noqa: E402
-from pipeline.economic import collect_economic_indicators  # noqa: E402
+from pipeline.economic import collect_economic_indicators, collect_economic_releases, snapshot_fetch  # noqa: E402
 from pipeline.health import init_health_schema  # noqa: E402
 from pipeline.persist import save_news_items  # noqa: E402
 from pipeline.render import render_dashboard  # noqa: E402
@@ -232,7 +232,9 @@ def build(db_path, site_dir):
         seed_calendar(conn, companies, today, rng)
         seed_runs(conn, today, rng)
     conn.close()
-    collect_economic_indicators(db_path=db_path)
+    economy = snapshot_fetch(os.path.join(ROOT, "tests", "fixtures", "economy"))
+    collect_economic_indicators(db_path=db_path, fetch=economy)
+    collect_economic_releases(db_path=db_path, fetch=economy, today=dt.date(2026, 11, 6))
     perf = make_performance(companies, today, rng)
     os.makedirs(site_dir, exist_ok=True)
     render_dashboard(output_path=os.path.join(site_dir, "index.html"), db_path=db_path, performance_data=perf)

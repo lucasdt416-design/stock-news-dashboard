@@ -1,183 +1,376 @@
-"""FRED Economic Intelligence Engine (Category #15).
+"""The Economy page: five indicators from FRED and the dates of the releases that move them.
 
-Pulls macroeconomic indicators from the Federal Reserve Bank of St. Louis (FRED):
-1. Federal Funds Target Rate (DFEDTARU / FEDFUNDS: 3.75% Upper Limit, 3.63% Effective)
-2. 10-Year Treasury Benchmark Yield (DGS10: 4.28%)
-3. Consumer Price Index (CPIAUCNS: 3.4% YoY)
-4. WTI Crude Oil Spot Price (DCOILWTICO: $76.50/bbl)
-5. Civilian Unemployment Rate (UNRATE: 4.1%)
+Every number comes from the source, with no key needed:
+- FRED's public download files (fred.stlouisfed.org/graph/fredgraph.csv?id=...) for the figures.
+- The Federal Reserve's meeting calendar, the BLS release calendar (an iCal file) and the EIA's
+  weekly oil report schedule for the dates.
 
-Maps indicators to company-specific economic_sensitivities defined in watchlist.yaml.
-Stores 12-24 month historical trend series for sparklines and generates AI-driven
-one-line synthesis for each indicator's portfolio impact.
+Nothing is typed in by hand. When a source can't be read, the last real reading or date stays (it
+shows its own "as of" date), and when there has never been one the page says so instead of guessing.
 """
 
 import csv
 import datetime
+import html as html_lib
+import io
 import json
 import logging
 import os
-import subprocess
+import re
 import urllib.request
-from typing import Any, Dict, List, Optional
+from contextlib import closing
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from urllib.parse import parse_qs, urlparse
+
 from pipeline.db import get_db_connection
 
 logger = logging.getLogger(__name__)
 
-# Verified 2026 baseline indicators with 12-24 month historical series
-FALLBACK_INDICATORS = {
-    "interest_rates": {
+USER_AGENT = "StockNewsDashboard/1.0 (contact: admin@stocknewsdashboard.local)"
+FRED_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}&cosd={start}"
+FRED_SERIES_URL = "https://fred.stlouisfed.org/series/{series}"
+FOMC_URL = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+BLS_ICS_URL = "https://www.bls.gov/schedule/news_release/bls.ics"
+EIA_SCHEDULE_URL = "https://www.eia.gov/petroleum/supply/weekly/schedule.php"
+
+HISTORY_DAYS = 800  # enough monthly readings for 13 points of a 12-month change
+SPARK_MONTHS = 13
+
+Fetch = Callable[[str], str]
+
+# What each card shows. Figures, dates and changes are filled in from FRED.
+INDICATORS: List[Dict[str, Any]] = [
+    {
         "indicator_id": "interest_rates",
-        "name": "Federal Funds Target Rate (Upper Limit)",
+        "name": "Federal funds target range",
         "series_id": "DFEDTARU",
-        "category": "Monetary Policy",
-        "current_value": 3.75,
-        "formatted_value": "3.75% (Effective: 3.63%)",
+        "category": "Interest rates",
         "unit": "%",
-        "previous_value": 3.75,
-        "change_value": 0.0,
-        "change_direction": "flat",
-        "observation_date": "2026-08-23",
-        "context_note": "Federal Reserve benchmark rate (3.50%-3.75% target range, 3.63% effective rate). Directly drives corporate borrowing costs, equity discount multiples, and commercial bank net interest margins.",
-        "history": [
-            {"date": "2025-08-01", "value": 5.25},
-            {"date": "2025-09-01", "value": 5.00},
-            {"date": "2025-10-01", "value": 4.75},
-            {"date": "2025-11-01", "value": 4.50},
-            {"date": "2025-12-01", "value": 4.25},
-            {"date": "2026-01-01", "value": 4.00},
-            {"date": "2026-02-01", "value": 4.00},
-            {"date": "2026-03-01", "value": 3.75},
-            {"date": "2026-04-01", "value": 3.75},
-            {"date": "2026-05-01", "value": 3.75},
-            {"date": "2026-06-01", "value": 3.75},
-            {"date": "2026-07-01", "value": 3.75},
-            {"date": "2026-08-01", "value": 3.75},
-        ],
+        "context_note": "The range the Federal Reserve sets for overnight lending between banks. It feeds into "
+                        "the cost of almost all borrowing, and into what banks earn on loans.",
     },
-    "treasury_10y": {
+    {
         "indicator_id": "treasury_10y",
-        "name": "10-Year Treasury Benchmark Yield",
+        "name": "10-year Treasury yield",
         "series_id": "DGS10",
-        "category": "Treasury Benchmark",
-        "current_value": 4.28,
-        "formatted_value": "4.28%",
+        "category": "Interest rates",
         "unit": "%",
-        "previous_value": 4.23,
-        "change_value": 0.05,
-        "change_direction": "up",
-        "observation_date": "2026-09-11",
-        "context_note": "Global risk-free benchmark for long-term corporate borrowing, capital expenditure financing, mortgage rates, and institutional DCF discount valuations.",
-        "history": [
-            {"date": "2025-08-01", "value": 3.92},
-            {"date": "2025-09-01", "value": 3.85},
-            {"date": "2025-10-01", "value": 4.05},
-            {"date": "2025-11-01", "value": 4.18},
-            {"date": "2025-12-01", "value": 4.12},
-            {"date": "2026-01-01", "value": 4.22},
-            {"date": "2026-02-01", "value": 4.30},
-            {"date": "2026-03-01", "value": 4.15},
-            {"date": "2026-04-01", "value": 4.25},
-            {"date": "2026-05-01", "value": 4.32},
-            {"date": "2026-06-01", "value": 4.20},
-            {"date": "2026-07-01", "value": 4.24},
-            {"date": "2026-08-01", "value": 4.23},
-            {"date": "2026-09-01", "value": 4.28},
-        ],
+        "context_note": "What the US government pays to borrow for ten years. Mortgages and long-term company "
+                        "debt are priced from it.",
     },
-    "inflation": {
+    {
         "indicator_id": "inflation",
-        "name": "Consumer Price Index (CPI YoY)",
+        "name": "Inflation (consumer prices)",
         "series_id": "CPIAUCNS",
-        "category": "Price Stability",
-        "current_value": 3.4,
-        "formatted_value": "3.4% YoY",
-        "unit": "% YoY",
-        "previous_value": 3.5,
-        "change_value": -0.1,
-        "change_direction": "down",
-        "observation_date": "2026-08-01",
-        "context_note": "Headline Consumer Price Index annual rate. Directly impacts real consumer purchasing power, retail basket margins, and supply chain input inflation.",
-        "history": [
-            {"date": "2025-08-01", "value": 3.1},
-            {"date": "2025-09-01", "value": 3.2},
-            {"date": "2025-10-01", "value": 3.3},
-            {"date": "2025-11-01", "value": 3.4},
-            {"date": "2025-12-01", "value": 3.5},
-            {"date": "2026-01-01", "value": 3.6},
-            {"date": "2026-02-01", "value": 3.7},
-            {"date": "2026-03-01", "value": 3.6},
-            {"date": "2026-04-01", "value": 3.5},
-            {"date": "2026-05-01", "value": 3.5},
-            {"date": "2026-06-01", "value": 3.5},
-            {"date": "2026-07-01", "value": 3.5},
-            {"date": "2026-08-01", "value": 3.4},
-        ],
-    },
-    "crude_oil": {
-        "indicator_id": "crude_oil",
-        "name": "WTI Crude Oil Spot Price",
-        "series_id": "DCOILWTICO",
-        "category": "Energy & Commodities",
-        "current_value": 76.50,
-        "formatted_value": "$76.50 / bbl",
-        "unit": "$/bbl",
-        "previous_value": 77.70,
-        "change_value": -1.20,
-        "change_direction": "down",
-        "observation_date": "2026-09-11",
-        "context_note": "West Texas Intermediate spot crude benchmark. Directly influences upstream oil & gas free cash flow (XOM, CVX) and transportation / jet fuel operational costs (BA, CAT, GE).",
-        "history": [
-            {"date": "2025-08-01", "value": 81.20},
-            {"date": "2025-09-01", "value": 84.50},
-            {"date": "2025-10-01", "value": 82.10},
-            {"date": "2025-11-01", "value": 79.30},
-            {"date": "2025-12-01", "value": 75.80},
-            {"date": "2026-01-01", "value": 74.20},
-            {"date": "2026-02-01", "value": 76.90},
-            {"date": "2026-03-01", "value": 79.50},
-            {"date": "2026-04-01", "value": 82.30},
-            {"date": "2026-05-01", "value": 80.10},
-            {"date": "2026-06-01", "value": 78.60},
-            {"date": "2026-07-01", "value": 77.90},
-            {"date": "2026-08-01", "value": 77.70},
-            {"date": "2026-09-01", "value": 76.50},
-        ],
-    },
-    "unemployment": {
-        "indicator_id": "unemployment",
-        "name": "Civilian Unemployment Rate",
-        "series_id": "UNRATE",
-        "category": "Labor Market",
-        "current_value": 4.1,
-        "formatted_value": "4.1%",
+        "category": "Prices, change over 12 months",
         "unit": "%",
-        "previous_value": 4.2,
-        "change_value": -0.1,
-        "change_direction": "down",
-        "observation_date": "2026-08-01",
-        "context_note": "U.S. civilian unemployment rate. Bellwether for consumer discretionary spending resilience, credit card delinquency risk, and commercial bank loan loss provisioning.",
-        "history": [
-            {"date": "2025-08-01", "value": 4.3},
-            {"date": "2025-09-01", "value": 4.3},
-            {"date": "2025-10-01", "value": 4.2},
-            {"date": "2025-11-01", "value": 4.2},
-            {"date": "2025-12-01", "value": 4.1},
-            {"date": "2026-01-01", "value": 4.1},
-            {"date": "2026-02-01", "value": 4.2},
-            {"date": "2026-03-01", "value": 4.2},
-            {"date": "2026-04-01", "value": 4.1},
-            {"date": "2026-05-01", "value": 4.1},
-            {"date": "2026-06-01", "value": 4.2},
-            {"date": "2026-07-01", "value": 4.2},
-            {"date": "2026-08-01", "value": 4.1},
-        ],
+        "context_note": "How much more a typical basket of goods and services costs than a year earlier, from "
+                        "the Consumer Price Index.",
     },
+    {
+        "indicator_id": "crude_oil",
+        "name": "Crude oil (WTI)",
+        "series_id": "DCOILWTICO",
+        "category": "Energy",
+        "unit": "$/bbl",
+        "context_note": "The US benchmark price for a barrel of crude oil. It sets fuel costs for airlines, "
+                        "shippers and manufacturers, and revenue for oil producers.",
+    },
+    {
+        "indicator_id": "unemployment",
+        "name": "Unemployment rate",
+        "series_id": "UNRATE",
+        "category": "Jobs",
+        "unit": "%",
+        "context_note": "The share of people looking for work who don't have a job. It shapes how much "
+                        "households spend and borrow.",
+    },
+]
+
+RELEASES: Dict[str, Dict[str, str]] = {
+    "fomc": {"title": "Fed interest rate decision", "authority": "Federal Reserve",
+             "about": "The Fed announces its target range for short-term interest rates.", "source_url": FOMC_URL},
+    "jobs": {"title": "Jobs report", "authority": "Bureau of Labor Statistics",
+             "about": "Hiring and the unemployment rate for the month before.",
+             "source_url": "https://www.bls.gov/schedule/news_release/empsit.htm"},
+    "cpi": {"title": "Consumer prices (CPI)", "authority": "Bureau of Labor Statistics",
+            "about": "How fast prices rose over the month before, and over the year.",
+            "source_url": "https://www.bls.gov/schedule/news_release/cpi.htm"},
+    "eia": {"title": "Weekly oil inventories", "authority": "Energy Information Administration",
+            "about": "US stocks of crude oil and fuel for the week before.", "source_url": EIA_SCHEDULE_URL},
 }
+BLS_SUMMARIES = {"Employment Situation": "jobs", "Consumer Price Index": "cpi"}
+MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
+# ---- Reading the sources ------------------------------------------------------------------------
+
+def http_get(url: str, timeout: int = 20) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", errors="replace")
+
+
+def snapshot_fetch(directory: str) -> Fetch:
+    """Read saved copies of the sources instead of the network (tests and the demo build)."""
+    def fetch(url: str) -> str:
+        if "fredgraph.csv" in url:
+            name = "fred_%s.csv" % parse_qs(urlparse(url).query)["id"][0]
+        else:
+            name = {FOMC_URL: "fomc.html", BLS_ICS_URL: "bls.ics", EIA_SCHEDULE_URL: "eia.html"}[url]
+        with open(os.path.join(directory, name), encoding="utf-8", newline="") as f:
+            return f.read()
+    return fetch
+
+
+def parse_fred_csv(text: str, series_id: str) -> List[Tuple[datetime.date, float]]:
+    """(date, value) pairs, oldest first. Blank or "." values (holidays) are skipped."""
+    rows = list(csv.reader(io.StringIO(text)))
+    if not rows or len(rows[0]) < 2 or rows[0][1].strip() != series_id:
+        raise ValueError(f"FRED sent something other than {series_id}")
+    points = []
+    for row in rows[1:]:
+        if len(row) < 2:
+            continue
+        try:
+            points.append((datetime.date.fromisoformat(row[0].strip()), float(row[1])))
+        except ValueError:
+            continue
+    points.sort()
+    return points
+
+
+def read_series(series_id: str, fetch: Fetch, today: datetime.date) -> List[Tuple[datetime.date, float]]:
+    start = (today - datetime.timedelta(days=HISTORY_DAYS)).isoformat()
+    points = parse_fred_csv(fetch(FRED_CSV_URL.format(series=series_id, start=start)), series_id)
+    if not points:
+        raise ValueError(f"FRED had no readings for {series_id}")
+    return points
+
+
+# ---- Working out what a card shows --------------------------------------------------------------
+
+def _month_name(d: datetime.date) -> str:
+    return d.strftime("%B %Y")
+
+
+def _day_name(d: datetime.date) -> str:
+    return f"{d.strftime('%b')} {d.day}, {d.year}"
+
+
+def _monthly(points: List[Tuple[datetime.date, float]], months: int = SPARK_MONTHS, digits: int = 2) -> List[Dict[str, Any]]:
+    """The last reading of each month, for the small chart."""
+    last: Dict[Tuple[int, int], Tuple[datetime.date, float]] = {}
+    for d, v in points:
+        last[(d.year, d.month)] = (d, v)
+    return [{"date": d.isoformat(), "value": round(v, digits)} for d, v in [last[k] for k in sorted(last)][-months:]]
+
+
+def _month_before(points: List[Tuple[datetime.date, float]]) -> Optional[Tuple[datetime.date, float]]:
+    """For a daily series, the last reading at least 28 days before the newest one."""
+    newest = points[-1][0]
+    earlier = [p for p in points if p[0] <= newest - datetime.timedelta(days=28)]
+    return earlier[-1] if earlier else None
+
+
+def _change(now: float, then: float, unit: str, when: str, digits: int) -> Dict[str, Any]:
+    delta = round(now - then, digits)
+    if delta == 0:
+        return {"change_value": 0.0, "change_direction": "flat", "change_text": f"Unchanged since {when}"}
+    sign = "+" if delta > 0 else "−"
+    size = f"${abs(delta):.{digits}f}" if unit == "$" else f"{abs(delta):.{digits}f} pts"
+    return {"change_value": delta, "change_direction": "up" if delta > 0 else "down",
+            "change_text": f"{sign}{size} since {when}"}
+
+
+def build_indicator(spec: Dict[str, Any], fetch: Fetch, today: datetime.date) -> Dict[str, Any]:
+    """One card's figures, straight from FRED. Raises when the source can't be read."""
+    ind_id = spec["indicator_id"]
+    item = dict(spec, source_url=FRED_SERIES_URL.format(series=spec["series_id"]))
+
+    if ind_id == "inflation":
+        index = read_series("CPIAUCNS", fetch, today)
+        by_month = {(d.year, d.month): v for d, v in index}
+        yoy = []
+        for d, v in index:
+            base = by_month.get((d.year - 1, d.month))
+            if base:
+                yoy.append((d, (v / base - 1) * 100))
+        if len(yoy) < 2:
+            raise ValueError("not enough CPI readings for a 12-month change")
+        (d0, v0), (d1, v1) = yoy[-2], yoy[-1]
+        item.update(current_value=round(v1, 1), previous_value=round(v0, 1), formatted_value=f"{v1:.1f}%",
+                    observation_date=d1.isoformat(), as_of=_month_name(d1), history=_monthly(yoy, digits=1),
+                    **_change(round(v1, 1), round(v0, 1), "pts", d0.strftime("%B"), 1))
+        return item
+
+    if ind_id == "unemployment":
+        points = read_series("UNRATE", fetch, today)
+        if len(points) < 2:
+            raise ValueError("not enough unemployment readings")
+        (d0, v0), (d1, v1) = points[-2], points[-1]
+        item.update(current_value=v1, previous_value=v0, formatted_value=f"{v1:.1f}%",
+                    observation_date=d1.isoformat(), as_of=_month_name(d1), history=_monthly(points, digits=1),
+                    **_change(v1, v0, "pts", d0.strftime("%B"), 1))
+        return item
+
+    if ind_id == "interest_rates":
+        upper = read_series("DFEDTARU", fetch, today)
+        lower = read_series("DFEDTARL", fetch, today)
+        try:
+            effective = read_series("DFF", fetch, today)[-1][1]
+        except Exception as exc:  # the range alone is still right
+            logger.warning("Could not read the effective federal funds rate: %s", exc)
+            effective = None
+        points, low = upper, lower[-1][1]
+        d1, v1 = upper[-1]
+        figure = f"{low:.2f}–{v1:.2f}%" + (f" (effective rate {effective:.2f}%)" if effective is not None else "")
+        digits, unit = 2, "pts"
+    elif ind_id == "treasury_10y":
+        points = read_series("DGS10", fetch, today)
+        d1, v1 = points[-1]
+        figure, digits, unit = f"{v1:.2f}%", 2, "pts"
+    elif ind_id == "crude_oil":
+        points = read_series("DCOILWTICO", fetch, today)
+        d1, v1 = points[-1]
+        figure, digits, unit = f"${v1:.2f} (a barrel)", 2, "$"
+    else:
+        raise ValueError(f"unknown indicator {ind_id}")
+
+    before = _month_before(points)
+    item.update(current_value=v1, formatted_value=figure, observation_date=d1.isoformat(),
+                as_of=_day_name(d1), history=_monthly(points))
+    if before:
+        when = f"{before[0].strftime('%b')} {before[0].day}"
+        item.update(previous_value=before[1], **_change(v1, before[1], unit, when, digits))
+    else:
+        item.update(previous_value=None, change_value=0.0, change_direction="flat", change_text="")
+    return item
+
+
+def generate_economic_synthesis(
+    indicator_id: str,
+    name: str,
+    formatted_val: str,
+    change_dir: str,
+    change_val: float,
+    relevant_tickers: List[str],
+    api_key: Optional[str] = None,
+) -> str:
+    """One plain sentence on why the reading matters. Gemini when a key is set, else a fixed line."""
+    token = api_key or os.environ.get("GEMINI_API_KEY", "").strip()
+    ticker_str = ", ".join(relevant_tickers[:5]) if relevant_tickers else "the companies below"
+
+    if token:
+        try:
+            from pipeline.summarize import _gemini_request, _cached_model, grounded, GEMINI_BASE
+            prompt = (
+                f"In one plain sentence of under 25 words, say what the latest reading of '{name}' "
+                f"({formatted_val}, moving {change_dir} by {change_val}) could mean for these companies: {ticker_str}. "
+                f"Use only the numbers given here. No hype, no advice. Output only the sentence."
+            )
+            model = _cached_model(token)
+            res_data = _gemini_request(
+                f"{GEMINI_BASE}/models/{model}:generateContent", token,
+                {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.1}}, timeout=15,
+            )
+            text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if text and grounded(text, prompt):
+                return text
+        except Exception as e:  # never let the economy page depend on Gemini
+            logger.debug("Gemini economic synthesis fallback: %s", type(e).__name__)
+
+    # Plain lines that hold whichever way the companies are exposed. Only the given figure is used.
+    figure = formatted_val.split(" (")[0]
+    moved = {"up": "rose to", "down": "fell to"}.get(change_dir, "held at")
+    if indicator_id == "interest_rates":
+        return (f"The Fed's target range {moved} {figure}. It sets the floor for borrowing costs, "
+                f"so it matters for {ticker_str}.")
+    if indicator_id == "treasury_10y":
+        return (f"The 10-year yield {moved} {figure}. Long-term borrowing and the value investors put on "
+                f"future profits both follow it, which matters for {ticker_str}.")
+    if indicator_id == "inflation":
+        return (f"Prices were {figure} higher than a year earlier. Inflation moves costs, what customers can "
+                f"afford and where rates go, which matters for {ticker_str}.")
+    if indicator_id == "crude_oil":
+        return (f"Oil {moved} {figure}. That is revenue for producers and a cost for anyone who burns fuel, "
+                f"which matters for {ticker_str}.")
+    if indicator_id == "unemployment":
+        return (f"Unemployment {moved} {figure}. More people in work usually means more spending and fewer "
+                f"missed loan payments, which matters for {ticker_str}.")
+    return f"{name} {moved} {figure}, which matters for {ticker_str}."
+
+
+# ---- Release dates ------------------------------------------------------------------------------
+
+def parse_fomc_dates(page: str) -> List[datetime.date]:
+    """The last day of each scheduled meeting, which is when the decision comes out."""
+    dates = []
+    sections = re.split(r"(\d{4}) FOMC Meetings", page)
+    for year_text, body in zip(sections[1::2], sections[2::2]):
+        year = int(year_text)
+        pairs = re.findall(r'fomc-meeting__month[^>]*>\s*<strong>([^<]+)</strong>.*?fomc-meeting__date[^>]*>([^<]+)<',
+                           body, re.S)
+        for month_text, day_text in pairs:
+            days = re.fullmatch(r"\s*(\d{1,2})(?:-(\d{1,2}))?\*?\s*", day_text)
+            months = [MONTHS.get(m.strip()[:3].lower()) for m in month_text.split("/")]
+            if not days or not all(months):
+                continue  # notation votes and unscheduled meetings have other wording
+            first, last = int(days.group(1)), int(days.group(2) or days.group(1))
+            month = months[-1] if (len(months) > 1 and last < first) else months[0]
+            try:
+                dates.append(datetime.date(year, month, last))
+            except ValueError:
+                continue
+    return sorted(set(dates))
+
+
+def parse_bls_dates(ics: str) -> Dict[str, List[datetime.date]]:
+    """Release dates for the jobs report and CPI from the BLS calendar file."""
+    found: Dict[str, List[datetime.date]] = {kind: [] for kind in BLS_SUMMARIES.values()}
+    for event in re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", ics, re.S):
+        summary = re.search(r"^SUMMARY:(.*?)\r?$", event, re.M)
+        start = re.search(r"^DTSTART[^:\r\n]*:(\d{8})", event, re.M)
+        kind = BLS_SUMMARIES.get(summary.group(1).strip()) if summary else None
+        if kind and start:
+            found[kind].append(datetime.datetime.strptime(start.group(1), "%Y%m%d").date())
+    return {kind: sorted(set(days)) for kind, days in found.items()}
+
+
+def _long_date(text: str) -> Optional[datetime.date]:
+    try:
+        return datetime.datetime.strptime(re.sub(r"\s+", " ", text).strip(), "%B %d, %Y").date()
+    except ValueError:
+        return None
+
+
+def parse_eia_dates(page: str, today: datetime.date, weeks: int = 8) -> List[datetime.date]:
+    """The weekly report comes out on the Wednesday after the week it covers, except on the dates
+    the EIA lists. Only weeks in years the EIA's table covers are given, so a holiday it hasn't
+    listed yet can't produce a wrong date."""
+    moved: Dict[datetime.date, datetime.date] = {}
+    for row in re.findall(r"<tr.*?</tr>", page, re.S):
+        cells = [html_lib.unescape(re.sub(r"<[^>]+>", " ", c)) for c in re.findall(r"<t[hd][\s>].*?</t[hd]>", row, re.S)]
+        if len(cells) >= 2:
+            week, release = _long_date(cells[0]), _long_date(cells[1])
+            if week and release:
+                moved[week] = release
+    if not moved:
+        raise ValueError("the EIA schedule table wasn't found")
+    last_year = max(d.year for d in moved.values())
+    friday = today - datetime.timedelta(days=(today.weekday() - 4) % 7 + 7)
+    dates = []
+    for _ in range(weeks):
+        release = moved.get(friday, friday + datetime.timedelta(days=5))
+        if release.year <= last_year:
+            dates.append(release)
+        friday += datetime.timedelta(days=7)
+    return dates
 
 
 def init_economic_schema(conn) -> None:
-    """Create economic_indicators table in SQLite and migrate extra columns."""
+    """Tables for the indicator cards and release dates. Rows without a source are removed: they
+    were typed-in placeholders from before the figures were read from FRED."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS economic_indicators (
@@ -200,324 +393,153 @@ def init_economic_schema(conn) -> None:
         );
         """
     )
-    # Ensure history_json and ai_synthesis columns exist for existing tables
-    cursor = conn.execute("PRAGMA table_info(economic_indicators)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if "history_json" not in columns:
-        conn.execute("ALTER TABLE economic_indicators ADD COLUMN history_json TEXT")
-    if "ai_synthesis" not in columns:
-        conn.execute("ALTER TABLE economic_indicators ADD COLUMN ai_synthesis TEXT")
+    columns = [col[1] for col in conn.execute("PRAGMA table_info(economic_indicators)").fetchall()]
+    added = {
+        "history_json": "ALTER TABLE economic_indicators ADD COLUMN history_json TEXT",
+        "ai_synthesis": "ALTER TABLE economic_indicators ADD COLUMN ai_synthesis TEXT",
+        "source_url": "ALTER TABLE economic_indicators ADD COLUMN source_url TEXT",
+        "as_of": "ALTER TABLE economic_indicators ADD COLUMN as_of TEXT",
+        "change_text": "ALTER TABLE economic_indicators ADD COLUMN change_text TEXT",
+    }
+    for column, statement in added.items():
+        if column not in columns:
+            conn.execute(statement)
+    conn.execute("DELETE FROM economic_indicators WHERE source_url IS NULL OR source_url = ''")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS economic_releases (
+            kind TEXT NOT NULL,
+            release_date TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (kind, release_date)
+        );
+        """
+    )
     conn.commit()
 
 
-def generate_economic_synthesis(
-    indicator_id: str,
-    name: str,
-    formatted_val: str,
-    change_dir: str,
-    change_val: float,
-    relevant_tickers: List[str],
-    api_key: Optional[str] = None,
-) -> str:
-    """Generate an AI-driven one-line executive synthesis combining trend direction with watchlist sensitivities."""
-    token = api_key or os.environ.get("GEMINI_API_KEY", "").strip()
-
-    ticker_str = ", ".join(relevant_tickers[:5]) if relevant_tickers else "monitored holdings"
-
-    # 1. Gemini, when a key is set: same model choice, header-only key and number check as story summaries.
-    if token:
-        try:
-            from pipeline.summarize import _gemini_request, _cached_model, grounded, GEMINI_BASE
-            prompt = (
-                f"In one plain sentence of under 25 words, say what the latest reading of '{name}' "
-                f"({formatted_val}, moving {change_dir} by {change_val}) could mean for these companies: {ticker_str}. "
-                f"Use only the numbers given here. No hype, no advice. Output only the sentence."
-            )
-            model = _cached_model(token)
-            res_data = _gemini_request(
-                f"{GEMINI_BASE}/models/{model}:generateContent", token,
-                {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.1}}, timeout=15,
-            )
-            text = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
-            if text and grounded(text, prompt):
-                return text
-        except Exception as e:  # never let the economy page depend on Gemini
-            logger.debug("Gemini economic synthesis fallback: %s", type(e).__name__)
-
-    # 2. Intelligent Contextual Deterministic Fallback
-    if indicator_id == "interest_rates":
-        if change_dir == "down":
-            return f"Rate cuts to {formatted_val} lower debt service overhead and support valuation multiples for {ticker_str}."
-        elif change_dir == "up":
-            return f"Higher policy rates at {formatted_val} increase corporate refinancing costs while enhancing short-term yield on cash balances for {ticker_str}."
-        return f"Policy rates have held steady at {formatted_val}, providing predictable discount rates and stable borrowing costs across {ticker_str}."
-
-    elif indicator_id == "treasury_10y":
-        if change_dir == "up":
-            return f"10-Year Treasury yields expanded +{abs(change_val):.2f}% to {formatted_val}, widening net interest margins for banks ({ticker_str}) while raising capital hurdle rates."
-        elif change_dir == "down":
-            return f"10-Year yields eased to {formatted_val}, lowering long-term project financing costs for utilities and capital-intensive holdings ({ticker_str})."
-        return f"10-Year Treasury yields stabilized near {formatted_val}, preserving steady valuation multiples and funding spreads across {ticker_str}."
-
-    elif indicator_id == "inflation":
-        if change_dir == "down":
-            return f"Headline CPI eased to {formatted_val}, mitigating input cost pressures and protecting operating margins across {ticker_str}."
-        elif change_dir == "up":
-            return f"CPI inflation ticked up to {formatted_val}, maintaining pressure on gross margins and household purchasing power for {ticker_str}."
-        return f"Annual inflation remained stable at {formatted_val}, supporting consumer basket spending and predictable pricing power for {ticker_str}."
-
-    elif indicator_id == "crude_oil":
-        if change_dir == "down":
-            return f"WTI crude eased to {formatted_val}, reducing fuel and logistics overhead for transport and manufacturing ({ticker_str}) while moderating upstream cash flow."
-        elif change_dir == "up":
-            return f"WTI crude advanced to {formatted_val}, boosting upstream exploration cash flow for energy producers ({ticker_str}) while elevating transport costs."
-        return f"WTI crude stabilized near {formatted_val}, maintaining predictable refining crack spreads and manageable energy inputs across {ticker_str}."
-
-    elif indicator_id == "unemployment":
-        if change_dir == "down":
-            return f"Unemployment improved to {formatted_val}, reflecting robust labor demand and underpinning consumer credit quality for {ticker_str}."
-        elif change_dir == "up":
-            return f"Unemployment rose slightly to {formatted_val}, maintaining consumer discretionary caution while reinforcing expectations for Federal Reserve easing."
-        return f"Unemployment held steady at {formatted_val}, supporting resilient consumer spending and healthy loan credit metrics across {ticker_str}."
-
-    return f"Latest trend in {name} ({formatted_val}) provides stable macroeconomic support for {ticker_str}."
-
-
-def get_upcoming_economic_events() -> List[Dict[str, Any]]:
-    """Return schedule of key upcoming macroeconomic releases and central bank decisions."""
-    return [
-        {
-            "event_id": "fomc_decision",
-            "title": "FOMC Interest Rate Decision",
-            "date": "2026-09-17",
-            "display_date": "Sep 17, 2026",
-            "relative_badge": "In 3 days",
-            "authority": "Federal Reserve",
-            "consensus": "Hold (3.50% – 3.75%)",
-            "impact_area": "Monetary Policy & Valuation Multiples",
-        },
-        {
-            "event_id": "eia_petroleum",
-            "title": "EIA Weekly Petroleum Status Report",
-            "date": "2026-09-16",
-            "display_date": "Sep 16, 2026",
-            "relative_badge": "In 2 days",
-            "authority": "U.S. Dept of Energy",
-            "consensus": "-1.5M bbl Crude Draw",
-            "impact_area": "WTI / Refining Crack Spreads",
-        },
-        {
-            "event_id": "bls_jobs",
-            "title": "Employment Situation (Nonfarm Payrolls)",
-            "date": "2026-10-02",
-            "display_date": "Oct 02, 2026",
-            "relative_badge": "In ~2.5 weeks",
-            "authority": "Bureau of Labor Statistics",
-            "consensus": "+155K Payrolls / 4.1% Unemployment",
-            "impact_area": "Consumer Spending & Labor Capacity",
-        },
-        {
-            "event_id": "bls_cpi",
-            "title": "Consumer Price Index (CPI Report)",
-            "date": "2026-10-14",
-            "display_date": "Oct 14, 2026",
-            "relative_badge": "In 4 weeks",
-            "authority": "Bureau of Labor Statistics",
-            "consensus": "3.3% YoY Headline Forecast",
-            "impact_area": "Inflation & Margin Pricing Power",
-        },
-    ]
-
-
-def fetch_fred_api_observations(
-    series_id: str, api_key: str, limit: int = 24
-) -> Optional[List[Dict[str, Any]]]:
-    """Fetch raw observation history for a series from FRED REST API."""
-    url = f"https://api.stlouisfed.org/fred/series/observations?series_id={series_id}&api_key={api_key}&file_type=json&sort_order=desc&limit={limit}"
-    try:
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "StockNewsDashboard/1.0 (Macroeconomic Intelligence Engine)",
-                "Accept": "application/json",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data.get("observations", [])
-    except Exception as e:
-        logger.warning("Error fetching FRED REST API for %s: %s", series_id, e)
-        return None
+def _sensitive_tickers(watchlist: Optional[List[Dict[str, Any]]]) -> Dict[str, List[str]]:
+    if watchlist is None:
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml")
+        watchlist = []
+        if os.path.exists(path):
+            import yaml
+            with open(path, "r", encoding="utf-8") as f:
+                watchlist = (yaml.safe_load(f) or {}).get("tickers", [])
+    found: Dict[str, List[str]] = {spec["indicator_id"]: [] for spec in INDICATORS}
+    for co in watchlist or []:
+        for s in co.get("economic_sensitivities") or []:
+            if s in found and co.get("symbol") not in found[s]:
+                found[s].append(co.get("symbol"))
+    return found
 
 
 def collect_economic_indicators(
     watchlist: Optional[List[Dict[str, Any]]] = None,
-    api_key: Optional[str] = None,
     db_path: Optional[str] = None,
+    fetch: Fetch = http_get,
+    today: Optional[datetime.date] = None,
 ) -> List[Dict[str, Any]]:
-    """Fetch and process 5 live economic indicators, mapping them to watchlist sensitivities."""
-    if api_key is None:
-        api_key = os.environ.get("FRED_API_KEY")
-
-    # Build indicator-to-tickers mapping from watchlist.yaml
-    indicator_tickers_map: Dict[str, List[str]] = {
-        "interest_rates": [],
-        "treasury_10y": [],
-        "inflation": [],
-        "crude_oil": [],
-        "unemployment": [],
-    }
-
-    if watchlist is None:
-        watchlist_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml"
-        )
-        if os.path.exists(watchlist_path):
-            import yaml
-            with open(watchlist_path, "r", encoding="utf-8") as f:
-                cfg = yaml.safe_load(f) or {}
-                watchlist = cfg.get("tickers", [])
-
-    if watchlist:
-        for co in watchlist:
-            sym = co.get("symbol")
-            sensitivities = co.get("economic_sensitivities", [])
-            for s in sensitivities:
-                if s in indicator_tickers_map and sym not in indicator_tickers_map[s]:
-                    indicator_tickers_map[s].append(sym)
-
-    indicators_result: List[Dict[str, Any]] = []
+    """Read the five indicators from FRED and store them. One that can't be read keeps its last
+    stored reading, if there is one. Returns the cards that were read this time."""
+    today = today or datetime.date.today()
+    tickers = _sensitive_tickers(watchlist)
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
-
-    for ind_id, fallback in FALLBACK_INDICATORS.items():
-        co_tickers = indicator_tickers_map.get(ind_id, [])
-        item = dict(fallback)
-        item["relevant_tickers"] = co_tickers
-        item["tickers_list"] = co_tickers
-        series_id = item["series_id"]
-
-        parsed_successfully = False
-
-        # 1. Try Live FRED REST API if key provided
-        if api_key:
-            obs = fetch_fred_api_observations(series_id, api_key=api_key, limit=24)
-            if obs and len(obs) >= 2:
-                try:
-                    if ind_id == "inflation" and len(obs) >= 13:
-                        curr_val = float(obs[0]["value"])
-                        prev_12m = float(obs[12]["value"])
-                        yoy_change = ((curr_val - prev_12m) / prev_12m) * 100.0
-                        prev_yoy = (
-                            (float(obs[1]["value"]) - float(obs[13]["value"]))
-                            / float(obs[13]["value"])
-                        ) * 100.0 if len(obs) >= 14 else yoy_change
-
-                        delta = yoy_change - prev_yoy
-                        item["current_value"] = round(yoy_change, 2)
-                        item["formatted_value"] = f"{yoy_change:.1f}% YoY"
-                        item["previous_value"] = round(prev_yoy, 2)
-                        item["change_value"] = round(delta, 2)
-                        item["change_direction"] = "up" if delta > 0.05 else ("down" if delta < -0.05 else "flat")
-                        item["observation_date"] = obs[0]["date"]
-                        
-                        # Build history points
-                        hist_pts = []
-                        for i in range(min(12, len(obs) - 12)):
-                            c = float(obs[i]["value"])
-                            p = float(obs[i + 12]["value"])
-                            y = round(((c - p) / p) * 100.0, 2)
-                            hist_pts.append({"date": obs[i]["date"], "value": y})
-                        if hist_pts:
-                            item["history"] = list(reversed(hist_pts))
-                        parsed_successfully = True
-
-                    elif ind_id == "crude_oil":
-                        curr_val = float(obs[0]["value"])
-                        prev_val = float(obs[1]["value"])
-                        delta = curr_val - prev_val
-                        item["current_value"] = round(curr_val, 2)
-                        item["formatted_value"] = f"${curr_val:.2f} / bbl"
-                        item["previous_value"] = round(prev_val, 2)
-                        item["change_value"] = round(delta, 2)
-                        item["change_direction"] = "up" if delta > 0.50 else ("down" if delta < -0.50 else "flat")
-                        item["observation_date"] = obs[0]["date"]
-                        item["history"] = [
-                            {"date": o["date"], "value": float(o["value"])}
-                            for o in reversed(obs[:14])
-                            if o.get("value") and o["value"] != "."
-                        ]
-                        parsed_successfully = True
-
-                    else:
-                        curr_val = float(obs[0]["value"])
-                        prev_val = float(obs[1]["value"])
-                        delta = curr_val - prev_val
-                        item["current_value"] = round(curr_val, 2)
-                        if ind_id == "interest_rates":
-                            item["formatted_value"] = f"{curr_val:.2f}% (Effective: 3.63%)"
-                        elif ind_id in ("treasury_10y", "unemployment"):
-                            item["formatted_value"] = f"{curr_val:.2f}%" if ind_id == "treasury_10y" else f"{curr_val:.1f}%"
-                        item["previous_value"] = round(prev_val, 2)
-                        item["change_value"] = round(delta, 2)
-                        item["change_direction"] = "up" if delta > 0.02 else ("down" if delta < -0.02 else "flat")
-                        item["observation_date"] = obs[0]["date"]
-                        item["history"] = [
-                            {"date": o["date"], "value": float(o["value"])}
-                            for o in reversed(obs[:14])
-                            if o.get("value") and o["value"] != "."
-                        ]
-                        parsed_successfully = True
-                except Exception as ex:
-                    logger.warning("Error parsing FRED API observations for %s: %s", ind_id, ex)
-
-        # 2. Generate AI Synthesis
-        synthesis = generate_economic_synthesis(
-            indicator_id=ind_id,
-            name=item["name"],
-            formatted_val=item["formatted_value"],
-            change_dir=item.get("change_direction", "flat"),
-            change_val=item.get("change_value", 0.0),
-            relevant_tickers=co_tickers,
+    read: List[Dict[str, Any]] = []
+    for spec in INDICATORS:
+        try:
+            item = build_indicator(spec, fetch, today)
+        except Exception as exc:
+            logger.warning("Could not read %s from FRED, keeping the last reading: %s", spec["name"], exc)
+            continue
+        item["relevant_tickers"] = item["tickers_list"] = tickers.get(spec["indicator_id"], [])
+        item["ai_synthesis"] = generate_economic_synthesis(
+            spec["indicator_id"], item["name"], item["formatted_value"], item["change_direction"],
+            item["change_value"], item["relevant_tickers"],
         )
-        item["ai_synthesis"] = synthesis
-        item["history_json"] = json.dumps(item.get("history", []))
+        item["history_json"] = json.dumps(item["history"])
+        read.append(item)
 
-        indicators_result.append(item)
-
-    # Persist to SQLite
-    with get_db_connection(db_path) as conn:
+    with closing(get_db_connection(db_path)) as conn:
         init_economic_schema(conn)
-        for it in indicators_result:
+        for it in read:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO economic_indicators (
-                    indicator_id, name, series_id, category,
-                    current_value, formatted_value, unit, previous_value,
-                    change_value, change_direction, observation_date,
-                    updated_at, context_note, relevant_tickers,
-                    history_json, ai_synthesis
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    indicator_id, name, series_id, category, current_value, formatted_value, unit,
+                    previous_value, change_value, change_direction, observation_date, updated_at,
+                    context_note, relevant_tickers, history_json, ai_synthesis, source_url, as_of, change_text
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    it["indicator_id"],
-                    it["name"],
-                    it["series_id"],
-                    it["category"],
-                    it["current_value"],
-                    it["formatted_value"],
-                    it["unit"],
-                    it.get("previous_value"),
-                    it.get("change_value"),
-                    it.get("change_direction"),
-                    it["observation_date"],
-                    now_iso,
-                    it.get("context_note"),
-                    ",".join(it.get("relevant_tickers", [])),
-                    it.get("history_json"),
-                    it.get("ai_synthesis"),
+                    it["indicator_id"], it["name"], it["series_id"], it["category"], it["current_value"],
+                    it["formatted_value"], it["unit"], it.get("previous_value"), it.get("change_value"),
+                    it.get("change_direction"), it["observation_date"], now_iso, it.get("context_note"),
+                    ",".join(it["relevant_tickers"]), it["history_json"], it["ai_synthesis"],
+                    it["source_url"], it["as_of"], it.get("change_text", ""),
                 ),
             )
         conn.commit()
+    logger.info("Economic indicators read from FRED: %d of %d", len(read), len(INDICATORS))
+    return read
 
-    logger.info("Economic intelligence loaded: %d indicators mapped across watchlist", len(indicators_result))
-    return indicators_result
+
+def collect_economic_releases(
+    db_path: Optional[str] = None,
+    fetch: Fetch = http_get,
+    today: Optional[datetime.date] = None,
+) -> Dict[str, int]:
+    """Read release dates from the official calendars and store them. A calendar that can't be
+    read keeps the dates it gave last time. Returns how many dates each calendar gave."""
+    today = today or datetime.date.today()
+    found: Dict[str, List[datetime.date]] = {}
+    try:
+        found["fomc"] = parse_fomc_dates(fetch(FOMC_URL))
+    except Exception as exc:
+        logger.warning("Could not read the Fed's meeting calendar: %s", exc)
+    try:
+        found.update(parse_bls_dates(fetch(BLS_ICS_URL)))
+    except Exception as exc:
+        logger.warning("Could not read the BLS release calendar: %s", exc)
+    try:
+        found["eia"] = parse_eia_dates(fetch(EIA_SCHEDULE_URL), today)
+    except Exception as exc:
+        logger.warning("Could not read the EIA's weekly report schedule: %s", exc)
+
+    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
+    counts = {}
+    with closing(get_db_connection(db_path)) as conn:
+        init_economic_schema(conn)
+        for kind, days in found.items():
+            if not days:
+                logger.warning("The %s calendar had no dates; keeping the last ones", kind)
+                continue
+            conn.execute("DELETE FROM economic_releases WHERE kind = ?", (kind,))
+            conn.executemany(
+                "INSERT INTO economic_releases (kind, release_date, updated_at) VALUES (?, ?, ?)",
+                [(kind, d.isoformat(), now_iso) for d in days],
+            )
+            counts[kind] = len(days)
+        conn.commit()
+    logger.info("Economic release dates read: %s", counts or "none")
+    return counts
+
+
+def get_upcoming_economic_events(
+    db_path: Optional[str] = None, today: Optional[datetime.date] = None
+) -> List[Dict[str, Any]]:
+    """The next date of each release, from the stored calendars. Empty when none is known."""
+    today = today or datetime.date.today()
+    with closing(get_db_connection(db_path)) as conn:
+        if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='economic_releases'").fetchone():
+            return []
+        rows = conn.execute(
+            "SELECT kind, MIN(release_date) AS release_date FROM economic_releases "
+            "WHERE release_date >= ? GROUP BY kind", (today.isoformat(),)
+        ).fetchall()
+    events = []
+    for row in rows:
+        meta = RELEASES.get(row["kind"])
+        if meta:
+            events.append(dict(meta, event_id=row["kind"], date=row["release_date"]))
+    return sorted(events, key=lambda e: e["date"])

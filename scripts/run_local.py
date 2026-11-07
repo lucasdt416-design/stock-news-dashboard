@@ -14,6 +14,7 @@ Executes all 10 pipeline stages:
 """
 
 import argparse
+import json
 import logging
 import os
 from pathlib import Path
@@ -45,7 +46,7 @@ from pipeline.calendar import build_forthcoming_calendar
 from pipeline.crossref import apply_supply_chain_cross_references
 from pipeline.db import init_db
 from pipeline.dedupe import deduplicate_items
-from pipeline.economic import collect_economic_indicators
+from pipeline.economic import collect_economic_indicators, collect_economic_releases
 from pipeline.health import (
     record_pipeline_run_health,
     STATUS_CRITICAL,
@@ -246,12 +247,14 @@ def main() -> None:
     logger.info("Corporate calendar populated: %d upcoming scheduled events", len(calendar_events))
 
     # 12. Stage 10: Macroeconomic Intelligence Engine (Category #15)
-    logger.info("--- Stage 10: FRED Macroeconomic Intelligence Engine ---")
+    logger.info("--- Stage 10: Economy figures (FRED) and release dates ---")
     economic_indicators = collect_economic_indicators(
         watchlist=tickers,
         db_path=str(db_file),
     )
-    logger.info("Macroeconomic indicators updated: %d indicators mapped", len(economic_indicators))
+    releases = collect_economic_releases(db_path=str(db_file))
+    logger.info("Economy: %d of 5 figures read, release dates from %d calendars",
+                len(economic_indicators), len(releases))
 
     # 13. Stage 11: 3-Month Comparative Stock & Peer Performance
     logger.info("--- Stage 11: 3-Month Comparative Stock & Peer Performance Collector ---")
