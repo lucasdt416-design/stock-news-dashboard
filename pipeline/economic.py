@@ -546,12 +546,17 @@ def _time_text(clock: str) -> str:
 
 
 def get_upcoming_economic_events(
-    db_path: Optional[str] = None, now: Optional[datetime.datetime] = None
+    db_path: Optional[str] = None, now: Optional[datetime.datetime] = None, per_kind: int = 2
 ) -> List[Dict[str, Any]]:
-    """The next release of each kind that hasn't come out yet (times are US Eastern)."""
+    """The next releases of each kind that haven't come out yet (times are US Eastern).
+
+    The first of each kind is shown; the rest are marked "later" so the page can move on to them
+    itself when it is read after the first one is out.
+    """
+    from zoneinfo import ZoneInfo
+    eastern = ZoneInfo(EASTERN)
     if now is None:
-        from zoneinfo import ZoneInfo
-        now = datetime.datetime.now(ZoneInfo(EASTERN)).replace(tzinfo=None)
+        now = datetime.datetime.now(eastern).replace(tzinfo=None)
     with closing(get_db_connection(db_path)) as conn:
         if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='economic_releases'").fetchone():
             return []
@@ -559,11 +564,15 @@ def get_upcoming_economic_events(
             "SELECT kind, release_date, release_time FROM economic_releases WHERE release_date >= ? "
             "ORDER BY release_date, release_time", (now.date().isoformat(),)
         ).fetchall()
-    events: Dict[str, Dict[str, Any]] = {}
+    events: List[Dict[str, Any]] = []
+    taken: Dict[str, int] = {}
     for row in rows:
         meta = RELEASES.get(row["kind"])
         when = datetime.datetime.fromisoformat(f"{row['release_date']}T{row['release_time']}")
-        if meta and when > now and row["kind"] not in events:
-            events[row["kind"]] = dict(meta, event_id=row["kind"], date=row["release_date"],
-                                       time_text=_time_text(row["release_time"]))
-    return sorted(events.values(), key=lambda e: e["date"])
+        if not meta or when <= now or taken.get(row["kind"], 0) >= per_kind:
+            continue
+        events.append(dict(meta, event_id=row["kind"], date=row["release_date"],
+                           time_text=_time_text(row["release_time"]), later=row["kind"] in taken,
+                           at=when.replace(tzinfo=eastern).isoformat()))
+        taken[row["kind"]] = taken.get(row["kind"], 0) + 1
+    return events

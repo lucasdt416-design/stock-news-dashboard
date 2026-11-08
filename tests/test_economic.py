@@ -169,16 +169,22 @@ def test_eia_uses_wednesdays_and_the_listed_exceptions():
 def test_next_release_of_each_kind(tmp_path):
     db = str(tmp_path / "e.db")
     assert collect_economic_releases(db_path=db, fetch=fetch(), today=SAVED_ON) == {"fomc": 16, "jobs": 12, "cpi": 12, "eia": 8}
-    early = get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 7, 0))
+    events = get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 7, 0))
+    early = [e for e in events if not e["later"]]
     assert [(e["event_id"], e["date"], e["time_text"]) for e in early] == [
         ("jobs", "2026-11-06", "8:30 a.m. ET"), ("cpi", "2026-11-10", "8:30 a.m. ET"),
         ("eia", "2026-11-12", "12:00 p.m. ET"), ("fomc", "2026-12-09", "2:00 p.m. ET")]
-    later = get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 8, 30))
+    assert sorted((e["event_id"], e["date"]) for e in events if e["later"]) == [
+        ("cpi", "2026-12-10"), ("eia", "2026-11-18"), ("fomc", "2027-01-27"), ("jobs", "2026-12-04")], \
+        "the next one of each kind is in the page too, for when the first is out"
+    assert early[0]["at"] == "2026-11-06T08:30:00-05:00", "Eastern time, with its offset, for the browser"
+    assert [e for e in events if e["event_id"] == "fomc"][0]["at"] == "2026-12-09T14:00:00-05:00"
+    later = [e for e in get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 8, 30)) if not e["later"]]
     assert ("jobs", "2026-12-04") in [(e["event_id"], e["date"]) for e in later], "a report that is out drops off"
     for e in later:
         assert e["title"] and e["authority"] and e["about"] and e["source_url"].startswith("https://www.")
     collect_economic_releases(db_path=db, fetch=broken, today=SAVED_ON)
-    assert len(get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 7, 0))) == 4, "an unreadable calendar keeps its dates"
+    assert len(get_upcoming_economic_events(db_path=db, now=T(2026, 11, 6, 7, 0))) == 8, "an unreadable calendar keeps its dates"
     assert get_upcoming_economic_events(db_path=db, now=T(2029, 1, 1, 0, 0)) == []
 
 

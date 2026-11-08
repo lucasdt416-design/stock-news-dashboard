@@ -13,13 +13,12 @@ import json
 import logging
 import os
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 import yaml
 from jinja2 import Template
 from markupsafe import Markup, escape
-from pipeline.calendar import calculate_relative_badge
 from pipeline.normalize import clean_text
 from pipeline.persist import (
     get_all_news_items,
@@ -1746,7 +1745,7 @@ NAVIGATION_LAYOUT_HTML = """
     {% elif latest_run.status != 'HEALTHY' %}
     <div class="sidebar-status-alert">Last update had problems</div>
     {% endif %}
-    <div>Updated {{ generated_at.rsplit(':', 1)[0] }}</div>
+    <div>Updated <time datetime="{{ generated_iso }}" data-local-time>{{ generated_at }} UTC</time></div>
     <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Dark mode</button>
   </div>
 </aside>
@@ -1947,6 +1946,48 @@ document.addEventListener('keydown', (e) => {
     if (typeof closeSearchDropdown === 'function') closeSearchDropdown();
   }
 });
+
+// ---- Dates that stay right between updates -------------------------------------------------
+// The site is built once a day, so "Today", "In 3 days" and things that are over are worked out
+// again here, from the reader's own clock. The words match _relative_day in render.py.
+function todayKey() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+function daysFromToday(iso) {
+  const [y, m, d] = String(iso || '').slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return NaN;
+  const t = new Date();
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 86400000);
+}
+
+function relativeDay(iso) {
+  const days = daysFromToday(iso);
+  if (Number.isNaN(days)) return '';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  if (days === -1) return 'Yesterday';
+  if (days > 1 && days < 14) return `In ${days} days`;
+  if (days >= 14) return days < 60 ? `In ${Math.round(days / 7)} weeks` : `In about ${Math.round(days / 30)} months`;
+  return `${-days} days ago`;
+}
+
+function refreshDates() {
+  document.querySelectorAll('[data-rel-date]').forEach(el => {
+    const text = relativeDay(el.dataset.relDate);
+    if (text) el.textContent = 'relLower' in el.dataset ? text.toLowerCase() : text;
+  });
+  // A dated item is over once its day has ended where the reader is.
+  document.querySelectorAll('[data-until]').forEach(el => { if (daysFromToday(el.dataset.until) < 0) el.hidden = true; });
+  document.querySelectorAll('time[data-local-time]').forEach(el => {
+    const when = new Date(el.getAttribute('datetime'));
+    if (Number.isNaN(when.getTime())) return;
+    el.textContent = when.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    el.title = 'Your local time';
+  });
+}
+document.addEventListener('DOMContentLoaded', refreshDates);
 
 // ---- Learning from what you read ------------------------------------------------------------
 // Which stories someone opens and which company pages they visit stay in this browser
@@ -4793,7 +4834,7 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       <header class="page-header">
         <h1 class="page-title">Calendar</h1>
         <p class="page-standfirst">
-          {% if agenda.first %}{{ agenda.count }} {{ 'date' if agenda.count == 1 else 'dates' }} ahead. Next: {{ agenda.first.company }} {{ agenda.first.title|lower }}, {{ agenda.first.relative|lower }}.
+          {% if agenda.first %}<span id="calendarSummary">{{ agenda.count }} {{ 'date' if agenda.count == 1 else 'dates' }} ahead. Next: {{ agenda.first.company }} {{ agenda.first.title|lower }}, {{ agenda.first.relative|lower }}.</span>
           {% else %}Nothing scheduled yet.{% endif %}
         </p>
       </header>
@@ -4813,17 +4854,17 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 
       <div id="calendarGrid" class="agenda">
         {% for section in agenda.sections %}
-        <section class="agenda-section">
+        <section class="agenda-section"{% if section.week %} data-week="{{ section.week }}"{% endif %}>
           <h2 class="agenda-heading">{{ section.label }}</h2>
           {% for day in section.days %}
-          <div class="agenda-day{% if day.is_today %} is-today{% endif %}">
+          <div class="agenda-day{% if day.is_today %} is-today{% endif %}" data-date="{{ day.date }}">
             <p class="agenda-date" aria-label="{{ day.weekday }} {{ day.month }} {{ day.day }}"><span class="agenda-wd">{{ day.weekday }}</span><span class="agenda-dn">{{ day.day }}</span><span class="agenda-mo">{{ day.month }}</span></p>
             <ul class="agenda-events">
               {% for ev in day.events %}
-              <li class="agenda-event is-{{ ev.type }}" id="{{ ev.id }}" data-type="{{ ev.type }}" data-ticker="{{ ev.ticker }}">
+              <li class="agenda-event is-{{ ev.type }}" id="{{ ev.id }}" data-type="{{ ev.type }}" data-ticker="{{ ev.ticker }}" data-date="{{ ev.date }}" data-what="{{ ev.company }} {{ ev.title|lower }}">
                 <div class="agenda-main">
                   <p class="agenda-title">{{ ev.title }}{% if ev.estimated %} <span class="agenda-est">estimated</span>{% endif %}</p>
-                  <p class="agenda-co"><a href="{{ company_url(ev.ticker) }}">{{ ev.company }}</a> · {{ ev.ticker }} · {{ ev.relative }}</p>
+                  <p class="agenda-co"><a href="{{ company_url(ev.ticker) }}">{{ ev.company }}</a> · {{ ev.ticker }} · <span data-rel-date="{{ ev.date }}">{{ ev.relative }}</span></p>
                   <p class="agenda-source">{% if ev.estimated %}Worked out from SEC filing deadlines, not announced by the company.{% else %}From “{{ ev.headline }}”{% endif %}{% if ev.url and ev.url.startswith('http') %} <a href="{{ safe_url(ev.url) }}" target="_blank" rel="noopener noreferrer">{% if ev.estimated %}SEC filings{% else %}Source{% endif %}</a>{% endif %}</p>
                   <p class="follow-reason" hidden></p>
                 </div>
@@ -4855,11 +4896,13 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
     function applyCalendar() {
       const forYou = currentView() === 'foryou';
       const follows = followedSet();
+      const today = todayKey();
       let shown = 0;
       document.querySelectorAll('.agenda-event').forEach(ev => {
         const typeOk = calendarType === 'ALL' || ev.dataset.type === calendarType;
         const followOk = !forYou || follows.has(ev.dataset.ticker);
-        ev.hidden = !(typeOk && followOk);
+        const ahead = (ev.dataset.date || '') >= today;  // the page may be a day or two old
+        ev.hidden = !(typeOk && followOk && ahead);
         if (!ev.hidden) shown += 1;
         const why = ev.querySelector('.follow-reason');
         if (why) {
@@ -4869,6 +4912,20 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
       });
       document.querySelectorAll('.agenda-day').forEach(day => { day.hidden = !day.querySelector('.agenda-event:not([hidden])'); });
       document.querySelectorAll('.agenda-section').forEach(sec => { sec.hidden = !sec.querySelector('.agenda-day:not([hidden])'); });
+      document.querySelectorAll('.agenda-day').forEach(day => day.classList.toggle('is-today', day.dataset.date === today));
+      document.querySelectorAll('.agenda-section[data-week]').forEach(sec => {
+        const weeks = Math.round((daysFromToday(sec.dataset.week) + (new Date().getDay() + 6) % 7) / 7);
+        const heading = sec.querySelector('.agenda-heading');
+        if (heading && weeks === 0) heading.textContent = 'This week';
+        if (heading && weeks === 1) heading.textContent = 'Next week';
+      });
+      const ahead = [...document.querySelectorAll('.agenda-event')].filter(ev => (ev.dataset.date || '') >= today);
+      const summary = document.getElementById('calendarSummary');
+      if (summary) {
+        summary.textContent = ahead.length
+          ? `${ahead.length} ${ahead.length === 1 ? 'date' : 'dates'} ahead. Next: ${ahead[0].dataset.what}, ${relativeDay(ahead[0].dataset.date).toLowerCase()}.`
+          : 'Nothing scheduled yet.';
+      }
       const empty = document.getElementById('calendarEmpty');
       if (empty && document.querySelector('.agenda-event')) {
         empty.hidden = shown > 0;
@@ -5045,16 +5102,15 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
         <p class="econ-note">The next date of each release, from the official calendars.</p>
         <ul class="econ-schedule">
           {% for ev in economic_schedule %}
-          <li class="econ-release{% if ev.passed %} is-passed{% endif %}">
-            <span class="cal-when"><span class="cal-date">{{ short_date(ev.date) }}</span><span class="cal-relative">{{ ev.timing }}</span></span>
+          <li class="econ-release" data-kind="{{ ev.event_id }}" data-at="{{ ev.at }}"{% if ev.later %} hidden{% endif %}>
+            <span class="cal-when"><span class="cal-date">{{ short_date(ev.date) }}</span><span class="cal-relative" data-rel-date="{{ ev.date }}">{{ ev.timing }}</span></span>
             <div>
               <h3 class="cal-headline">{{ ev.title }}</h3>
               <p class="cal-details">{{ ev.time_text }} · {{ ev.about }} <a href="{{ safe_url(ev.source_url) }}" target="_blank" rel="noopener noreferrer">{{ ev.authority }} ↗</a></p>
             </div>
           </li>
-          {% else %}
-          <li class="econ-note">No dates to show. The official calendars couldn’t be read on the last update.</li>
           {% endfor %}
+          <li class="econ-note" id="econNoReleases"{% if economic_schedule %} hidden{% endif %}>No dates to show. The official calendars couldn’t be read on the last update.</li>
         </ul>
       </section>
     </main>
@@ -5062,6 +5118,20 @@ ECONOMIC_TEMPLATE = """<!DOCTYPE html>
 
   <script>
     """ + SHARED_MOBILE_JS + """
+
+    // The page can be a day or two old: drop releases that are out and show the next of each kind.
+    function showNextReleases() {
+      const seen = new Set();
+      const now = Date.now();
+      document.querySelectorAll('.econ-release[data-kind]').forEach(li => {
+        const over = Date.parse(li.dataset.at) <= now;
+        li.hidden = over || seen.has(li.dataset.kind);
+        if (!li.hidden) seen.add(li.dataset.kind);
+      });
+      const none = document.getElementById('econNoReleases');
+      if (none) none.hidden = seen.size > 0;
+    }
+    document.addEventListener('DOMContentLoaded', showNextReleases);
 
     let currentEconSector = 'ALL';
     let currentEconTicker = 'ALL';
@@ -5608,7 +5678,7 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
         </p>
 
         {% set week_count = co_news|selectattr('published_date', 'ge', week_ago)|list|length %}
-        <p class="company-glance">{% if week_count %}{{ week_count }} new {{ 'story' if week_count == 1 else 'stories' }} this week{% else %}No new stories this week{% endif %}{% if co_events %} · Next: {{ event_kind(co_events[0].event_type or '') }}, {{ short_date(co_events[0].event_date) }}{% endif %}</p>
+        <p class="company-glance">{% if week_count %}{{ week_count }} new {{ 'story' if week_count == 1 else 'stories' }} this week{% else %}No new stories this week{% endif %}{% if co_events %}<span data-until="{{ co_events[0].event_date }}"> · Next: {{ event_kind(co_events[0].event_type or '') }}, {{ short_date(co_events[0].event_date) }}</span>{% endif %}</p>
       </header>
 
       {% set results = latest_results(co.symbol, co_news) %}
@@ -5684,9 +5754,9 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
             {% if co_events %}
             <ul class="fp-side-list">
               {% for ev in co_events %}
-              <li class="fp-event">
+              <li class="fp-event" data-until="{{ ev.event_date }}">
                 <span class="fp-event-date">{{ short_date(ev.event_date) }}</span>
-                <span class="fp-event-text">{{ event_kind(ev.event_type or '') }}<span class="company-side-sub">{{ ev.relative_badge }} · from “{{ ev.headline }}”</span></span>
+                <span class="fp-event-text">{{ event_kind(ev.event_type or '') }}<span class="company-side-sub"><span data-rel-date="{{ ev.event_date }}">{{ relative_day(ev.event_date) }}</span> · from “{{ ev.headline }}”</span></span>
               </li>
               {% endfor %}
             </ul>
@@ -6208,9 +6278,20 @@ def _relative_day(when: date, today: date) -> str:
     if 1 < days < 14:
         return f"In {days} days"
     if days >= 14:
-        weeks = round(days / 7)
-        return f"In {weeks} weeks" if days < 60 else f"In about {round(days / 30)} months"
+        # Halves round up, as Math.round does in the browser (Python's round() goes to even).
+        weeks = int(days / 7 + 0.5)
+        return f"In {weeks} weeks" if days < 60 else f"In about {int(days / 30 + 0.5)} months"
+    if days == -1:
+        return "Yesterday"
     return f"{-days} days ago"
+
+
+def _relative_day_text(value: Any, today: Optional[date] = None) -> str:
+    """_relative_day for a stored date string; the page works it out again in the browser."""
+    try:
+        return _relative_day(date.fromisoformat(str(value)[:10]), today or date.today())
+    except ValueError:
+        return ""
 
 
 def _calendar_agenda(events: List[Dict[str, Any]], names: Dict[str, str], today: Optional[date] = None) -> Dict[str, Any]:
@@ -6243,16 +6324,17 @@ def _calendar_agenda(events: List[Dict[str, Any]], names: Dict[str, str], today:
             "relative": _relative_day(when, today),
         }
         monday = when - timedelta(days=when.weekday())
+        week = ""
         if monday == this_monday:
-            label = "This week"
+            label, week = "This week", monday.isoformat()
         elif monday == this_monday + timedelta(days=7):
-            label = "Next week"
+            label, week = "Next week", monday.isoformat()
         elif when.month == today.month and when.year == today.year:
             label = f"Later in {when.strftime('%B')}"
         else:
             label = when.strftime("%B") if when.year == today.year else when.strftime("%B %Y")
         if label not in sections:
-            sections[label] = {"label": label, "days": {}}
+            sections[label] = {"label": label, "week": week, "days": {}}
             order.append(label)
         days = sections[label]["days"]
         if when not in days:
@@ -6270,7 +6352,7 @@ def _calendar_agenda(events: List[Dict[str, Any]], names: Dict[str, str], today:
     return {
         "count": count,
         "first": first,
-        "sections": [{"label": sections[k]["label"], "days": [sections[k]["days"][d] for d in sorted(sections[k]["days"])]} for k in order],
+        "sections": [{"label": sections[k]["label"], "week": sections[k]["week"], "days": [sections[k]["days"][d] for d in sorted(sections[k]["days"])]} for k in order],
     }
 
 
@@ -6377,14 +6459,11 @@ def _economic_schedule(events: List[Dict[str, Any]], today: Optional[date] = Non
     today = today or date.today()
     rows = []
     for event in events:
-        row = dict(event, passed=False, timing="")
+        row = dict(event, timing="")
         try:
-            when = date.fromisoformat(str(event.get("date")))
+            row["timing"] = _relative_day(date.fromisoformat(str(event.get("date"))), today)
         except ValueError:
-            rows.append(row)
-            continue
-        row["passed"] = when < today
-        row["timing"] = "Date passed" if row["passed"] else calculate_relative_badge(when.isoformat(), today)
+            pass
         rows.append(row)
     return sorted(rows, key=lambda r: str(r.get("date")))
 
@@ -6774,7 +6853,8 @@ def render_dashboard(
     calendar_events = get_forthcoming_calendar(limit=30, db_path=db_path)
     recent_runs = get_recent_pipeline_runs(limit=5, db_path=db_path)
     latest_run = recent_runs[0] if recent_runs else None
-    now_str = datetime.now().strftime("%b %d, %Y %H:%M:%S")
+    generated = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    now_str = generated.strftime("%b %d, %Y %H:%M")
 
     # 3. Load watchlist and build sector directory
     watchlist_path = watchlist_path or os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "watchlist.yaml")
@@ -6865,6 +6945,7 @@ def render_dashboard(
     common_context = {
         "short_date": _short_date,
         "plain_breakdown": _plain_breakdown,
+        "relative_day": _relative_day_text,
         "safe_url": _safe_url,
         "economic_schedule": _economic_schedule(upcoming_economic_events),
         "event_kind": _event_kind,
@@ -6897,6 +6978,7 @@ def render_dashboard(
         "recent_runs": recent_runs,
         "latest_run": latest_run,
         "generated_at": now_str,
+        "generated_iso": generated.strftime("%Y-%m-%dT%H:%MZ"),
         "watchlist_companies": enriched_watchlist,
         "sector_directory": sector_directory,
         "company_sectors": {c["symbol"]: c["macro_sector"] for c in enriched_watchlist},
