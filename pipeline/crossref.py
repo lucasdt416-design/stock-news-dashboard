@@ -24,8 +24,32 @@ GENERIC_STOPWORDS = {
 }
 
 
-def build_supply_chain_index(watchlist: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Build lookup indexes for customers, suppliers, and ticker/name aliases."""
+TICKER_LIKE = re.compile(r"[A-Z][A-Z0-9.\-]{0,5}")
+NAME_WORDS = re.compile(
+    r"(?<![\w.])(?:Inc|Incorporated|Corporation|Corp|Co|Company|Platforms|Holdings|Group|plc|Ltd|LLC|N\.V|S\.A|L\.P)\.?(?![\w])"
+    r"|^The\s+", re.IGNORECASE)
+
+
+def mentions(text: str, spelling: str) -> bool:
+    """Whether text names this company. Tickers must appear in capitals ("LOW", not "low");
+    names match in any case."""
+    spelling = spelling.strip()
+    if not spelling:
+        return False
+    if TICKER_LIKE.fullmatch(spelling):
+        return bool(re.search(rf"(?<![A-Za-z0-9]){re.escape(spelling)}(?![A-Za-z0-9])", text))
+    return bool(re.search(rf"\b{re.escape(spelling)}\b", text, re.IGNORECASE))
+
+
+def short_name(name: str) -> str:
+    """"Micron Technology, Inc." -> "Micron Technology"."""
+    name = re.sub(r"\s*,\s*(?=,|$)", "", NAME_WORDS.sub("", name))
+    name = re.sub(r"\.com\b", "", name)
+    return re.sub(r"\s{2,}", " ", name).strip(" ,&")
+
+
+def build_supply_chain_index(watchlist: List[Dict[str, Any]], aliases: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """Build lookup indexes for customers, suppliers, and other spellings of the companies named."""
     customers_by_ticker: Dict[str, List[str]] = {}
     suppliers_by_ticker: Dict[str, List[str]] = {}
     ticker_to_name: Dict[str, str] = {}
@@ -36,12 +60,7 @@ def build_supply_chain_index(watchlist: List[Dict[str, Any]]) -> Dict[str, Any]:
         name = co.get("name", "")
         ticker_to_name[sym] = name
 
-        clean_name = re.sub(
-            r"\b(Inc\.|Corporation|Corp\.|Co\.|Company|Platforms|Holdings|The|Group)\b",
-            "",
-            name,
-            flags=re.IGNORECASE,
-        ).strip()
+        clean_name = short_name(name)
         if clean_name:
             name_to_ticker[clean_name.lower()] = sym
         name_to_ticker[sym.lower()] = sym
@@ -61,6 +80,7 @@ def build_supply_chain_index(watchlist: List[Dict[str, Any]]) -> Dict[str, Any]:
         "ticker_to_name": ticker_to_name,
         "name_to_ticker": name_to_ticker,
         "watchlist": watchlist,
+        "aliases": {str(k): [str(a) for a in (v or [])] for k, v in (aliases or {}).items()},
     }
 
 
@@ -89,18 +109,11 @@ def find_supply_chain_matches_for_item(
             continue
 
         target_name = ticker_to_name.get(target_sym, target_sym)
-        target_clean_name = re.sub(
-            r"\b(Inc\.|Corporation|Corp\.|Co\.|Company|Platforms|Holdings|The|Group)\b",
-            "",
-            target_name,
-            flags=re.IGNORECASE,
-        ).strip()
+        target_clean_name = short_name(target_name)
 
         # Target company must be explicitly named in full_text
-        target_mentioned = (
-            bool(re.search(rf"\b{re.escape(target_sym)}\b", full_text, re.IGNORECASE))
-            or (len(target_clean_name) >= 3 and bool(re.search(rf"\b{re.escape(target_clean_name)}\b", full_text, re.IGNORECASE)))
-        )
+        target_mentioned = mentions(full_text, target_sym) or (
+            len(target_clean_name) >= 3 and mentions(full_text, target_clean_name))
 
         if not target_mentioned:
             continue
@@ -160,8 +173,7 @@ def find_supply_chain_matches_for_item(
     for supp_entity in suppliers_by_ticker.get(item_ticker, []):
         if supp_entity.upper() in sc_index["ticker_to_name"]:
             continue
-        pattern = rf"\b{re.escape(supp_entity)}\b"
-        if re.search(pattern, full_text, re.IGNORECASE):
+        if any(mentions(full_text, spelling) for spelling in [supp_entity] + sc_index["aliases"].get(supp_entity, [])):
             link_key = f"{supp_entity}|Supplier"
             if link_key not in seen_links:
                 seen_links.add(link_key)
@@ -178,8 +190,7 @@ def find_supply_chain_matches_for_item(
     for cust_entity in customers_by_ticker.get(item_ticker, []):
         if cust_entity.upper() in sc_index["ticker_to_name"]:
             continue
-        pattern = rf"\b{re.escape(cust_entity)}\b"
-        if re.search(pattern, full_text, re.IGNORECASE):
+        if any(mentions(full_text, spelling) for spelling in [cust_entity] + sc_index["aliases"].get(cust_entity, [])):
             link_key = f"{cust_entity}|Customer"
             if link_key not in seen_links:
                 seen_links.add(link_key)
@@ -198,25 +209,29 @@ def apply_supply_chain_cross_references(
     items: List[Dict[str, Any]],
     watchlist: Optional[List[Dict[str, Any]]] = None,
     watchlist_path: Optional[str] = None,
+    aliases: Optional[Dict[str, List[str]]] = None,
     **kwargs,
 ) -> List[Dict[str, Any]]:
     """Process news items, tagging each with properly labeled supply-chain cross-references."""
     if not items:
         return items
 
-    if watchlist is None and watchlist_path:
+    if (watchlist is None or aliases is None) and watchlist_path:
         import yaml
         try:
             with open(watchlist_path, "r", encoding="utf-8") as f:
                 cfg = yaml.safe_load(f) or {}
-                watchlist = cfg.get("tickers", [])
+                if watchlist is None:
+                    watchlist = cfg.get("tickers", [])
+                if aliases is None:
+                    aliases = cfg.get("aliases") or {}
         except Exception as e:
             logger.warning("Could not load watchlist from %s: %s", watchlist_path, e)
 
     if not watchlist:
         return items
 
-    sc_index = build_supply_chain_index(watchlist)
+    sc_index = build_supply_chain_index(watchlist, aliases)
     cross_ref_count = 0
 
     for it in items:
