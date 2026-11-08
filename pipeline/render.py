@@ -5293,7 +5293,7 @@ ABOUT_TEMPLATE = """<!DOCTYPE html>
 
       <section class="about-section" aria-labelledby="aboutCode">
         <h2 id="aboutCode">Open source</h2>
-        <p>All of the code that collects, checks and shows this is public on <a href="https://github.com/lucasdt416-design/stock-news-dashboard" rel="noopener">GitHub</a>, free to read, run and build on. If something here looks wrong, that's the place to say so.</p>
+        <p>All of the code that collects, checks and shows this is public on <a href="https://github.com/lucasdt416-design/stock-news-dashboard" target="_blank" rel="noopener noreferrer">GitHub</a>, free to read, run and build on. If something here looks wrong, that's the place to say so.</p>
       </section>
     </main>
   </div>
