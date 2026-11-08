@@ -2,8 +2,9 @@ name: Daily Stock News Dashboard Run
 
 on:
   schedule:
-    # Runs Monday through Friday at 11:00 UTC (6:00 AM EST / 7:00 AM EDT)
-    - cron: '0 11 * * 1-5'
+    # Every day at 11:00 UTC (6:00 AM EST / 7:00 AM EDT). Weekends too: news and filings still
+    # arrive, and the pages' dates are only worked out fresh in the browser between updates.
+    - cron: '0 11 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub Actions UI anytime
   push:
     branches:
