@@ -58,3 +58,7 @@ def test_the_about_page_renders(tmp_path):
     about = (out.parent / "about.html").read_text(encoding="utf-8")
     assert '<a class="sidebar-about active" href="about.html"' in about
     assert '<a class="sidebar-about" href="about.html"' in out.read_text(encoding="utf-8")
+
+
+def test_it_links_to_the_code():
+    assert 'href="https://github.com/lucasdt416-design/stock-news-dashboard"' in ABOUT_TEMPLATE

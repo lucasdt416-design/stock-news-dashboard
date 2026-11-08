@@ -5290,6 +5290,11 @@ ABOUT_TEMPLATE = """<!DOCTYPE html>
         <h2 id="aboutHonest">How it stays honest</h2>
         <p>A figure appears only if it was read from its source. When a source can't be reached, the site keeps the last real reading with its date, or shows nothing. It never fills a gap with a guess. Everything updates every morning, US Eastern time.</p>
       </section>
+
+      <section class="about-section" aria-labelledby="aboutCode">
+        <h2 id="aboutCode">Open source</h2>
+        <p>All of the code that collects, checks and shows this is public on <a href="https://github.com/lucasdt416-design/stock-news-dashboard" rel="noopener">GitHub</a>, free to read, run and build on. If something here looks wrong, that's the place to say so.</p>
+      </section>
     </main>
   </div>
 
