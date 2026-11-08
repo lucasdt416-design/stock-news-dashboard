@@ -19,7 +19,7 @@ from pipeline.render import (
 
 TEMPLATES = [INDEX_TEMPLATE, ANALYTICS_TEMPLATE, NEWS_TEMPLATE, CALENDAR_TEMPLATE, ECONOMIC_TEMPLATE, COMPANY_TEMPLATE,
              COMPANY_PAGE_TEMPLATE, SETTINGS_TEMPLATE]
-PAGES = ["index", "news", "calendar", "economic", "company", "analytics", "settings", "company-nvda"]
+PAGES = ["index", "news", "moves", "calendar", "economic", "company", "analytics", "settings", "company-nvda"]
 HOSTILE = '<img src=x onerror="window.__xss=1">'
 
 

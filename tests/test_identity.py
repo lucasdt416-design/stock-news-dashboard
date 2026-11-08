@@ -4,6 +4,7 @@ import re
 
 from pipeline.render import (
     ANALYTICS_TEMPLATE,
+    MOVES_TEMPLATE,
     SETTINGS_TEMPLATE,
     CALENDAR_TEMPLATE,
     COMPANY_TEMPLATE,
@@ -97,7 +98,8 @@ def test_scores_and_counts_do_not_clutter_home_feed_or_nav():
 
 
 def test_every_page_sticks_to_plain_words():
-    pages = INDEX_TEMPLATE + NEWS_TEMPLATE + CALENDAR_TEMPLATE + ECONOMIC_TEMPLATE + COMPANY_TEMPLATE + ANALYTICS_TEMPLATE + SETTINGS_TEMPLATE
+    pages = (INDEX_TEMPLATE + NEWS_TEMPLATE + MOVES_TEMPLATE + CALENDAR_TEMPLATE + ECONOMIC_TEMPLATE + COMPANY_TEMPLATE
+             + ANALYTICS_TEMPLATE + SETTINGS_TEMPLATE)
     for phrase in ("Today's news", "On file", "deserve your time", "Switch to", "Peer Relative Alpha",
                    "Corporate Ecosystem", "Macroeconomic", "Forthcoming", "Pipeline Health", "Top Peers Avg",
                    "3M Return", "AI Macro", "read its file", "Deduplication"):

@@ -275,6 +275,27 @@ async def run(site, out):
                 ics = open(await (await dl.value).path()).read()
                 check(ics.startswith("BEGIN:VCALENDAR") and "DTSTART;VALUE=DATE:" in ics, "Add to calendar downloads an event file")
 
+            await pg.goto(base + "moves.html")
+            await pg.wait_for_timeout(500)
+            if await pg.locator(".move-card[data-ticker]").count():
+                await pg.click(".view-tab[data-view='all']")
+                await pg.wait_for_timeout(150)
+                total = await pg.locator(".move-card[data-ticker]:not([hidden])").count()
+                await pg.click(".view-tab[data-view='foryou']")
+                await pg.wait_for_timeout(150)
+                mine = await pg.eval_on_selector_all(".move-card[data-ticker]:not([hidden])", "els => els.map(e => e.dataset.ticker)")
+                listed = await pg.eval_on_selector_all("#movesStandouts .move-standout-sym", "els => els.map(e => e.textContent)")
+                follows = await pg.evaluate("[...followedSet()]")
+                check(mine and all(t in follows for t in mine) and len(mine) < total, "Moves For you shows only followed companies")
+                check(all(t in mine for t in listed), "the stood-out list follows the view")
+                await pg.click(".view-tab[data-view='all']")
+                await pg.wait_for_timeout(150)
+                first = await pg.eval_on_selector("#movesStandouts a", "a => a.getAttribute('href')")
+                await pg.click("#movesStandouts a")
+                await pg.wait_for_timeout(400)
+                top = await pg.eval_on_selector(first, "el => el.getBoundingClientRect().top")
+                check(-5 < top < 120, "a stood-out company jumps to its card")
+
             # Someone who just wants everything.
             fresh = await browser.new_context(viewport={"width": 1280, "height": 1100})
             pg3 = await fresh.new_page()

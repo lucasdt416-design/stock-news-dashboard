@@ -19,6 +19,7 @@ from urllib.parse import quote
 import yaml
 from jinja2 import Template
 from markupsafe import Markup, escape
+from pipeline.moves import build_deck
 from pipeline.normalize import clean_text
 from pipeline.persist import (
     get_all_news_items,
@@ -1734,6 +1735,7 @@ NAVIGATION_LAYOUT_HTML = """
 
   <nav class="sidebar-nav" aria-label="Pages">
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Home</span></a>
+    <a href="moves.html" class="nav-link {% if active_page == 'moves' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Moves</span></a>
     <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span></a>
     <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span></a>
     <a href="calendar.html" class="nav-link {% if active_page == 'calendar' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Calendar</span></a>
@@ -1755,10 +1757,10 @@ NAVIGATION_LAYOUT_HTML = """
 
 <nav class="mobile-bottom-nav" aria-label="Pages">
   <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+  <a href="moves.html" class="mobile-tab-link {% if active_page == 'moves' %}active{% endif %}">Moves</a>
   <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">Companies</a>
   <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">Feed</a>
   <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">Calendar</a>
-  <a href="economic.html" class="mobile-tab-link {% if active_page == 'economic' %}active{% endif %}">Economy</a>
 </nav>
 """
 
@@ -4990,6 +4992,224 @@ CALENDAR_TEMPLATE = """<!DOCTYPE html>
 """
 
 # ==============================================================================
+# 3b. MOVES (site/moves.html): one card per company, biggest days explained
+# ==============================================================================
+MOVES_CSS = """
+    .page-moves .app-main { max-width: 44rem; }
+    .moves-deck { display: flex; flex-direction: column; }
+    .move-card { padding: 2rem 0 2.25rem; border-bottom: 1px solid var(--border-subtle); scroll-snap-align: start; }
+    .move-lead { padding-top: 0; }
+    .move-eyebrow { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .move-lead-title { font-size: clamp(2rem, 6vw, 2.8rem); line-height: 1.08; letter-spacing: -0.02em; font-weight: 600; margin-bottom: 0.75rem; }
+    .move-lead-line { font-family: var(--font-serif); font-size: 1.12rem; line-height: 1.5; color: var(--text-secondary); margin-bottom: 0.35rem; }
+    .move-lead .view-tabs { margin-top: 1.25rem; }
+    .move-standout-label { margin-top: 1.25rem; }
+    .move-standouts { list-style: none; padding: 0; margin: 0; }
+    .move-standouts a { display: grid; grid-template-columns: 4rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: baseline;
+                        padding: 0.55rem 0; border-top: 1px solid var(--border-subtle); text-decoration: none; color: var(--text-primary); }
+    .move-standout-sym { font-weight: 600; }
+    .move-standout-name { color: var(--text-muted); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .move-standouts .tone-up, .move-standouts .tone-down { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .move-hint { font-size: 0.82rem; color: var(--text-muted); margin-top: 1rem; }
+    .move-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.6rem; }
+    .move-name { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; text-decoration: none; color: var(--text-primary); }
+    .move-sym { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+    .move-co { color: var(--text-muted); font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .move-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.7rem; }
+    .move-last { font-size: clamp(1.9rem, 6vw, 2.4rem); font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .move-day { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .move-when { font-size: 0.88rem; color: var(--text-muted); }
+    .move-context { font-size: 0.92rem; color: var(--text-secondary); margin-top: 0.2rem; font-variant-numeric: tabular-nums; }
+    .move-chart { margin: 1.1rem 0 0.4rem; }
+    .move-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .move-chart .zero { stroke: var(--border-subtle); stroke-width: 1; }
+    .move-chart .market { fill: none; stroke: var(--text-muted); stroke-width: 1.25; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+    .move-chart .stock { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .move-chart .stock.is-up { stroke: var(--pos); }
+    .move-chart .stock.is-down { stroke: var(--neg); }
+    .move-chart .dot circle { fill: var(--text-primary); stroke: var(--bg-base); stroke-width: 2; }
+    .move-chart .dot text { fill: var(--bg-base); font-size: 8px; font-weight: 700; text-anchor: middle; dominant-baseline: central; font-family: var(--font-sans); }
+    .move-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; font-size: 0.78rem; color: var(--text-muted); }
+    .move-legend .key-market::before { content: ""; display: inline-block; width: 1rem; border-top: 1.5px dashed var(--text-muted); margin-right: 0.35rem; vertical-align: middle; }
+    .move-days { list-style: none; margin: 1.1rem 0 0; padding: 0; }
+    .move-days > li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: 0.7rem; padding: 0.75rem 0; border-top: 1px solid var(--border-subtle); }
+    .move-n { display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem; border-radius: 50%;
+              background: var(--text-primary); color: var(--bg-base); font-size: 0.72rem; font-weight: 700; margin-top: 0.1rem; }
+    .move-day-line { font-variant-numeric: tabular-nums; }
+    .move-day-line strong { font-weight: 600; }
+    .move-size { color: var(--text-muted); }
+    .move-why { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.15rem; font-variant-numeric: tabular-nums; }
+    .move-stories { list-style: none; padding: 0; margin: 0.35rem 0 0; }
+    .move-stories li { font-size: 0.9rem; line-height: 1.4; margin-top: 0.25rem; }
+    .move-stories a { color: var(--text-primary); text-decoration: none; }
+    .move-stories a:hover { text-decoration: underline; }
+    .move-kind { color: var(--text-muted); font-size: 0.8rem; margin-right: 0.35rem; }
+    .move-none { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .move-next { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.9rem; }
+    .move-quiet { font-size: 0.9rem; color: var(--text-muted); margin-top: 1rem; }
+    @media (max-width: 1024px) {
+      html:has(body.page-moves) { scroll-snap-type: y proximity; scroll-padding-top: 3.5rem; }
+      .move-card { min-height: calc(100svh - 7.5rem); }
+      .move-lead { min-height: calc(100svh - 9rem); display: flex; flex-direction: column; justify-content: center; }
+    }
+"""
+
+MOVES_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Each company's price over three months, its biggest days, and what was published on them.">
+  <title>StockPulse — Moves</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
+  <script>""" + THEME_BOOT_JS + """</script>
+  <style>
+""" + SHARED_CSS + MOVES_CSS + """
+  </style>
+</head>
+<body class="page-moves">
+  <div class="app-layout">
+    """ + NAVIGATION_LAYOUT_HTML + """
+
+    <main class="app-main">
+      <div class="moves-deck" id="movesDeck">
+        {% set lead = moves.lead %}
+        <section class="move-card move-lead" aria-label="The market">
+          {% if lead %}
+          <h1 class="move-eyebrow">Moves · {{ short_date(lead.date) }} close</h1>
+          <p class="move-lead-title">S&amp;P 500 <span class="{{ 'tone-up' if lead.market_day >= 0 else 'tone-down' }}">{{ pct(lead.market_day) }}</span></p>
+          <p class="move-lead-line" id="movesCount">{{ lead.up }} of {{ lead.count }} companies rose and {{ lead.down }} fell.</p>
+          <p class="move-lead-line" id="movesExtremes">{% if lead.best %}Biggest rise {{ lead.best.symbol }} {{ pct(lead.best.day) }}{% endif %}{% if lead.worst %} · biggest fall {{ lead.worst.symbol }} {{ pct(lead.worst.day) }}{% endif %}.</p>
+          <p class="move-eyebrow move-standout-label">Stood out from the market</p>
+          <ol class="move-standouts" id="movesStandouts">
+            {% for c in moves.cards[:5] %}{% if c.day is not none %}<li><a href="#move-{{ c.symbol }}"><span class="move-standout-sym">{{ c.symbol }}</span><span class="move-standout-name">{{ c.name }}</span><span class="{{ 'tone-up' if c.day >= 0 else 'tone-down' }}">{{ pct(c.day) }}</span></a></li>{% endif %}{% endfor %}
+          </ol>
+          <div class="view-tabs view-tabs-left" role="tablist" aria-label="Which companies to show">
+            <button class="view-tab" role="tab" type="button" data-view="foryou" data-click="setView" aria-selected="false">For you</button>
+            <button class="view-tab active" role="tab" type="button" data-view="all" data-click="setView" aria-selected="true">Everything</button>
+          </div>
+          <p class="move-hint">One company per card, the ones that stood out from the market most first. Each card marks its biggest days and what was published on them.</p>
+          <p class="move-hint" id="movesEmpty" hidden></p>
+          {% else %}
+          <h1 class="move-eyebrow">Moves</h1>
+          <p class="move-lead-title">No prices yet</p>
+          <p class="move-lead-line">Prices are read on each update, and the last one couldn’t get them.</p>
+          {% endif %}
+        </section>
+
+        {% for c in moves.cards %}
+        <article class="move-card" id="move-{{ c.symbol }}" data-ticker="{{ c.symbol }}" data-name="{{ c.name }}" data-day="{{ c.day if c.day is not none else '' }}" aria-label="{{ c.symbol }}">
+          <header class="move-head">
+            <a class="move-name" href="{{ company_url(c.symbol) }}"><span class="move-sym">{{ c.symbol }}</span><span class="move-co">{{ c.name }}</span></a>
+            <button class="follow-btn" type="button" data-click="toggleFollow" data-ticker="{{ c.symbol }}" aria-pressed="false">Follow</button>
+          </header>
+          <p class="move-price"><span class="move-last">${{ "%.2f"|format(c.price) }}</span>{% if c.day is not none %} <span class="move-day {{ 'tone-up' if c.day >= 0 else 'tone-down' }}">{{ pct(c.day) }}</span>{% endif %} <span class="move-when">{{ short_date(c.date) }} close{% if c.market_day is not none %} · S&amp;P 500 {{ pct(c.market_day) }}{% endif %}</span></p>
+          <p class="move-context">3 months {{ pct(c.three_months) }}{% if c.market_three_months is not none %} · S&amp;P 500 {{ pct(c.market_three_months) }}{% endif %} · a usual day moves {{ "%.1f"|format(c.typical) }}%</p>
+          <figure class="move-chart">
+            <svg viewBox="0 0 320 120" preserveAspectRatio="none" role="img" aria-label="{{ c.symbol }} {{ 'rose' if c.three_months >= 0 else 'fell' }} {{ '%.1f'|format(c.three_months|abs) }}% over three months{% if c.market_three_months is not none %}; the S&amp;P 500 {{ 'rose' if c.market_three_months >= 0 else 'fell' }} {{ '%.1f'|format(c.market_three_months|abs) }}%{% endif %}.">
+              <line class="zero" x1="0" x2="320" y1="{{ c.chart.zero }}" y2="{{ c.chart.zero }}"></line>
+              {% if c.chart.market %}<path class="market" d="{{ c.chart.market }}"></path>{% endif %}
+              <path class="stock {{ 'is-up' if c.three_months >= 0 else 'is-down' }}" d="{{ c.chart.stock }}"></path>
+              {% for d in c.chart.dots %}<g class="dot"><circle cx="{{ d.x }}" cy="{{ d.y }}" r="6"></circle><text x="{{ d.x }}" y="{{ d.y }}">{{ d.n }}</text></g>{% endfor %}
+            </svg>
+            <figcaption class="move-legend"><span>{{ short_date(c.chart.first) }}</span><span><span class="key-market">S&amp;P 500</span></span><span>{{ short_date(c.chart.last) }}</span></figcaption>
+          </figure>
+          {% if c.days %}
+          <ol class="move-days" aria-label="Biggest days">
+            {% for d in c.days %}
+            <li>
+              <span class="move-n" aria-hidden="true">{{ d.n }}</span>
+              <div>
+                <p class="move-day-line"><strong>{{ short_date(d.date) }}</strong> <span class="{{ 'tone-up' if d.move >= 0 else 'tone-down' }}">{{ pct(d.move) }}</span>{% if c.typical > 0 %} <span class="move-size">· {{ (d.move|abs / c.typical)|round|int }}× a usual day</span>{% endif %}</p>
+                <p class="move-why">{% if d.verdict == 'market' %}With the market: S&amp;P 500 {{ pct(d.market) }}{% elif d.verdict == 'peers' %}With its peers: {{ d.peer_names|join(', ') }} {{ pct(d.peers) }} on average{% if d.market is not none %}, S&amp;P 500 {{ pct(d.market) }}{% endif %}{% else %}Its own move{% if d.market is not none %}: S&amp;P 500 {{ pct(d.market) }}{% endif %}{% if d.peers is not none %}, peers {{ pct(d.peers) }}{% endif %}{% endif %}</p>
+                {% if d.stories %}
+                <ul class="move-stories">
+                  {% for s in d.stories %}
+                  <li><span class="move-kind">{{ {'results': 'Results', 'filing': 'Filing', 'release': 'Press release'}.get(s.kind, s.source or 'News') }}{% if s.date != d.date %}, day before{% endif %}</span><a href="{{ safe_url(s.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ s.headline }}</a></li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <p class="move-none">No stories saved from that day or the day before.</p>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <p class="move-quiet">No day moved more than {{ "%.1f"|format([2.0, c.typical * 2.5]|max) }}% in three months.</p>
+          {% endif %}
+          {% if c.next %}<p class="move-next" data-until="{{ c.next.event_date }}">Next: {{ event_kind(c.next.event_type or '') }}, {{ short_date(c.next.event_date) }} · <span data-rel-date="{{ c.next.event_date }}">{{ relative_day(c.next.event_date) }}</span></p>{% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+
+  <script>
+    """ + SHARED_MOBILE_JS + """
+
+    // For you shows followed companies; the lead card counts what is shown.
+    function applyMoves() {
+      const forYou = currentView() === 'foryou';
+      const follows = followedSet();
+      const shown = [];
+      document.querySelectorAll('.move-card[data-ticker]').forEach(card => {
+        const on = !forYou || follows.has(card.dataset.ticker);
+        card.hidden = !on;
+        if (on) shown.push(card);
+      });
+      const moved = shown.filter(c => c.dataset.day !== '').map(c => ({ sym: c.dataset.ticker, day: parseFloat(c.dataset.day) }));
+      const count = document.getElementById('movesCount');
+      const extremes = document.getElementById('movesExtremes');
+      const empty = document.getElementById('movesEmpty');
+      if (count) {
+        const up = moved.filter(m => m.day > 0).length;
+        const down = moved.filter(m => m.day < 0).length;
+        count.textContent = forYou
+          ? `${up} of the ${moved.length} ${moved.length === 1 ? 'company' : 'companies'} you follow rose and ${down} fell.`
+          : `${up} of ${moved.length} companies rose and ${down} fell.`;
+      }
+      if (extremes) {
+        const sorted = moved.slice().sort((a, b) => b.day - a.day);
+        const fmt = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(1)}%`;
+        extremes.hidden = sorted.length < 2;
+        if (sorted.length >= 2) extremes.textContent = `Biggest rise ${sorted[0].sym} ${fmt(sorted[0].day)} · biggest fall ${sorted[sorted.length - 1].sym} ${fmt(sorted[sorted.length - 1].day)}.`;
+      }
+      const standouts = document.getElementById('movesStandouts');
+      if (standouts) {
+        const fmt = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(1)}%`;
+        standouts.innerHTML = shown.filter(c => c.dataset.day !== '').slice(0, 5).map(c => {
+          const day = parseFloat(c.dataset.day);
+          return `<li><a href="#move-${escapeHtml(c.dataset.ticker)}"><span class="move-standout-sym">${escapeHtml(c.dataset.ticker)}</span>`
+            + `<span class="move-standout-name">${escapeHtml(c.dataset.name || '')}</span>`
+            + `<span class="${day >= 0 ? 'tone-up' : 'tone-down'}">${fmt(day)}</span></a></li>`;
+        }).join('');
+      }
+      if (empty) {
+        empty.hidden = !(forYou && shown.length === 0);
+        empty.innerHTML = 'You aren’t following anything yet. Follow companies on their cards, or pick them in <a href="settings.html">Your feed</a>.';
+      }
+    }
+
+    // j and k step through the cards, as in a reader.
+    document.addEventListener('keydown', e => {
+      if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== 'j' && e.key !== 'k') return;
+      const cards = [...document.querySelectorAll('.move-card:not([hidden])')];
+      const top = cards.findIndex(c => c.getBoundingClientRect().top > 8);
+      const at = top === -1 ? cards.length : top;
+      const next = e.key === 'j' ? cards[at] : cards[Math.max(0, at - 2)];
+      if (next) next.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    });
+
+    document.addEventListener('followchange', applyMoves);
+    document.addEventListener('DOMContentLoaded', applyMoves);
+  </script>
+</body>
+</html>
+"""
+
+# ==============================================================================
 # 4. MACROECONOMIC INTELLIGENCE TEMPLATE (site/economic.html)
 # ==============================================================================
 ECONOMIC_TEMPLATE = """<!DOCTYPE html>
@@ -6284,6 +6504,15 @@ def _plain_breakdown(text: str) -> str:
     return " · ".join(parts)
 
 
+def _pct(value: Any) -> str:
+    """+2.8% / −9.3% / 0.0%, with a real minus sign."""
+    try:
+        v = round(float(value), 1)
+    except (TypeError, ValueError):
+        return ""
+    return f"{'+' if v > 0 else '−' if v < 0 else ''}{abs(v):.1f}%"
+
+
 def _relative_day(when: date, today: date) -> str:
     days = (when - today).days
     if days == 0:
@@ -6959,6 +7188,9 @@ def render_dashboard(
     feed_items = _feed_window(items)
     common_context = {
         "short_date": _short_date,
+        "pct": _pct,
+        "moves": build_deck(performance_data, items, enriched_watchlist,
+                            get_forthcoming_calendar(limit=1000, db_path=db_path)),
         "plain_breakdown": _plain_breakdown,
         "relative_day": _relative_day_text,
         "safe_url": _safe_url,
@@ -7027,10 +7259,11 @@ def render_dashboard(
         "performance_data_json": _script_json(performance_data or {}),
     }
 
-    # 4. Render and save all 7 pages
+    # 4. Render and save all 8 pages
     pages = [
         ("index.html", INDEX_TEMPLATE, "home"),
         ("news.html", NEWS_TEMPLATE, "news"),
+        ("moves.html", MOVES_TEMPLATE, "moves"),
         ("calendar.html", CALENDAR_TEMPLATE, "calendar"),
         ("economic.html", ECONOMIC_TEMPLATE, "economic"),
         ("company.html", COMPANY_TEMPLATE, "company"),

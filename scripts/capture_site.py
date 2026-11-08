@@ -24,6 +24,7 @@ from playwright.sync_api import sync_playwright
 PAGES = [
     ("home", "index.html"),
     ("news", "news.html"),
+    ("moves", "moves.html"),
     ("calendar", "calendar.html"),
     ("economic", "economic.html"),
     ("directory", "company.html"),
