@@ -70,3 +70,14 @@ def test_without_a_company_name_nothing_is_marked_off_topic():
     item = score_item({"ticker": "BA", "source": "news_media", "category": "Regulation & Policy / Litigation",
                        "headline": "Boeing faces FAA grounding", "summary": ""})
     assert "Not about the company" not in item["score_breakdown"]
+
+
+def test_where_a_story_is_from_reads_plainly():
+    from pipeline.render import _source_line
+    assert _source_line({"source": "sec_edgar", "source_label": "SEC EDGAR", "form_or_type": "4"}) == "SEC filing · Form 4"
+    assert _source_line({"source": "sec_edgar", "form_or_type": "10-Q"}) == "SEC filing · 10-Q"
+    assert _source_line({"source": "sec_edgar", "form_or_type": "SCHEDULE 13G/A"}) == "SEC filing · Schedule 13G/A"
+    assert _source_line({"source": "company_ir", "source_label": "Company Release", "form_or_type": "PRESS_RELEASE"}) == "Press release"
+    assert _source_line({"source": "news_media", "source_label": "News Media", "form_or_type": "Yahoo"}) == "Yahoo"
+    assert _source_line({"source": "news_media", "source_label": "News Media", "form_or_type": "SeekingAlpha"}) == "Seeking Alpha"
+    assert _source_line({"source": "news_media", "source_label": "News Media", "form_or_type": ""}) == "News Media"
