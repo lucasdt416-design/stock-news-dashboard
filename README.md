@@ -1,173 +1,105 @@
-# 📊 Stock News & SEC Intelligence Dashboard
+# StockPulse
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-stock--news--dashboard.pages.dev-blue?style=for-the-badge&logo=cloudflare)](https://stock-news-dashboard.pages.dev)
-[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Gemini](https://img.shields.io/badge/AI-Gemini%20Flash-4E75F6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
-[![Cloudflare Pages](https://img.shields.io/badge/Deployed%20to-Cloudflare%20Pages-F38020?style=for-the-badge&logo=cloudflare)](https://stock-news-dashboard.pages.dev)
-[![Automation](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions%20Cron-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/lucasdt416-design/stock-news-dashboard/actions)
+**A free, calm way to follow companies through what they actually publish:** their SEC filings, results, press releases and the news about them, with every number checked against its source.
 
-An automated financial intelligence engine that ingests corporate disclosures across official **SEC EDGAR submissions** and **Company Investor Relations feeds** (`NVDA`, `AAPL`, `MSFT`), deduplicates cross-source coverage, scores investor importance (0.0–10.0) via transparent arithmetic, generates plain-English *"Why It Matters"* takeaways using the **Gemini API**, and publishes an interactive daily static briefing to **Cloudflare Pages** every weekday morning.
+**Live site: [stock-news-dashboard.pages.dev](https://stock-news-dashboard.pages.dev)**. No accounts, no ads, no tracking.
 
-🔗 **Live Production Dashboard:** [https://stock-news-dashboard.pages.dev](https://stock-news-dashboard.pages.dev)
+<p>
+  <img src="docs/images/moves-desktop.png" alt="The Moves page on a desktop: NVIDIA's price over three months against the S&P 500, with its three biggest days numbered and explained." width="68%">
+  <img src="docs/images/moves-phone.png" alt="A Moves card on a phone, in dark mode: AMD's biggest days, each set against the S&P 500 and its peers." width="28%">
+</p>
 
----
+## What it does
 
+It follows the S&P 100 (100 large US companies) and updates every morning.
 
-## 💡 Why I Built This
+- **Moves** shows one card per company, the ones that stood out from the market most first. Each card marks the company's biggest days and says whether each was **its own move, the market's, or its peers'**, with the numbers, then lists what was published that day. It never claims a story caused a move.
+- **Feed** shows stories from the last 30 days, most important first. News that never names the company it's filed under, and stock-picking listicles, sink to the bottom.
+- **Company pages** show results read straight from 10-Q and 10-K filings, insider trades, press releases, upcoming dates, customers, suppliers and competitors, and three months against peers and the S&P 500.
+- **Calendar** lists earnings calls, dividends and filing deadlines.
+- **Economy** shows the Fed rate, the 10-year yield, inflation, oil and unemployment from FRED, and when the next releases are due.
+- **For you** covers the companies and sectors you follow, and can learn from what you read. All of that stays in your browser.
 
-Financial newsfeeds are flooded with syndicated wire spam, while official filings are obscured behind cryptic form numbers (*Form 4*, *Form 8-K*, *Rule 144*) that give no immediate context on investor impact. 
+## Where the data comes from
 
-I designed this project to act as a **zero-cost, automated personal hedge-fund news desk**:
-- **Filters the noise**: Drops duplicate stories covered by multiple wires and newsrooms.
-- **Translates filings into English**: Replaces raw filing names with concrete investor takeaways (e.g. distinguishing a routine scheduled 10b5-1 executive sale from a major unscheduled material event).
-- **Ranks by true importance**: Surfaces high-impact regulatory and earnings disclosures to the top before you start your trading day.
-- **Zero server overhead & $0 cost**: Runs purely via GitHub Actions, SQLite caching, and Cloudflare Pages.
-
----
-
-## 🏗️ Architecture & Pipeline Flow
-
-```
-┌────────────────────────────────────────────────────────┐
-│                   Data Collectors                      │
-│   • SEC EDGAR Submissions API (Forms 4, 8-K, 10-Q...)  │
-│   • Official Company IR Feeds (RSS / Atom Newsrooms)   │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│              Normalization & Deduplication             │
-│   • Common schema unification                          │
-│   • Multi-tier deduplication (Canonical URL & Fuzzy)   │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│                 Rule-Based Classifier                  │
-│   • 10 Categories (Earnings, Regulatory, Leadership...)│
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│            Transparent Scoring Engine (0.0-10.0)       │
-│   • Category Base (1-8) + Source Authority (+3/+2/+1)  │
-│   • Recency Bonus (+2/+1/-1) + Headline Entity (+1)    │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│         AI 'Why It Matters' Summarizer (Gemini API)     │
-│   • Batched JSON calls (~20 items/batch, $0 cost)      │
-│   • Contextual fallback engine on network/quota error  │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│          SQLite Storage & Static Site Generator        │
-│   • Persistent SQLite DB (preserved via GitHub Cache)  │
-│   • Static HTML compilation with Chart.js analytics    │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│        GitHub Actions CI/CD ➔ Cloudflare Pages         │
-│   • Scheduled cron: Weekdays at 6:00 AM EST (11:00 UTC)│
-│   • Production deploy via Cloudflare Wrangler          │
-└────────────────────────────────────────────────────────┘
-```
-
----
-
-## ✨ Key Features
-
-- **⚡ Priority Intelligence Panel**: Spotlight grid displaying the top 8 highest-scored stories with color-coded score pills and category tags.
-- **🧾 What each filing says**: insider trades (who, shares, price, value, planned or not), planned sales, the text of 8-K announcements, and revenue, profit and EPS from 10-Q and 10-K reports, read from the SEC's free data and cached so each filing is fetched once.
-- **💡 Short AI summaries**: Gemini Flash writes one or two sentences per story. A summary is only shown if every number in it appears in the source text.
-- **📈 Interactive Visual Analytics**:
-  - **Frequency Sparkline**: Tracks multi-company filing and news velocity over time (`NVDA`, `AAPL`, `MSFT`).
-  - **Category Donut Chart**: Breaks down the distribution of disclosures across active categories.
-- **🎯 Transparent Scoring Arithmetic**: Every score displays its full breakdown on hover (e.g. `Base 8 + SEC Edgar 3 + Recency 2 = 10.0`).
-- **🔍 Client-Side Instant Filtering**: Live filter pills by Ticker, Category, and Source with instant full-text search.
-- **🛡️ Resilient Architecture**: Guaranteed uptime with intelligent heuristic fallbacks if external APIs are unavailable.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technologies |
+| What | Source |
 |---|---|
-| **Core & Pipeline** | Python 3.11, Jinja2, PyYAML, Feedparser |
-| **AI / LLM** | Google Gemini API (newest stable Flash model the key can use, batched, cached per story) |
-| **Database** | SQLite3 (indexes on `score DESC`, `published_date DESC`, `ticker`) |
-| **Visualizations** | Chart.js 4.4 (loaded via CDN, zero-build dependency) |
-| **Frontend** | Semantic HTML5, Custom Responsive CSS (Dark Mode Glassmorphism) |
-| **Automation** | GitHub Actions (Weekday morning cron schedule + DB cache restore/save) |
-| **Hosting & CDN** | Cloudflare Pages (Deployed via Wrangler) |
+| Filings, results figures, insider trades, company names | [SEC EDGAR](https://www.sec.gov/edgar) |
+| Press releases | Each company's own newsroom feed |
+| News, earnings dates, ticker lookup | [Finnhub](https://finnhub.io) (free plan) |
+| Stock prices | Yahoo Finance |
+| Economy figures | [FRED](https://fred.stlouisfed.org), Federal Reserve Bank of St. Louis |
+| Economic release dates | Federal Reserve, Bureau of Labor Statistics, Energy Information Administration |
+| One-line summaries | Google Gemini (free tier). A summary is thrown out if it has a number its source doesn't. |
 
----
+A figure only appears if it was read from its source. When a source can't be reached, the site keeps the last real reading with its date, or shows nothing.
 
-## 🚀 Local Development Setup
+## How it works
 
-### 1. Clone & Setup Environment
+A Python pipeline runs on GitHub Actions every morning:
+
+1. **Collect** filings, press releases and news, and read the figures out of each filing.
+2. **Clean up:** remove duplicates, classify and score each story, and link companies to their customers and suppliers.
+3. **Summarise** the important stories with Gemini.
+4. **Build** a static site with Jinja templates and deploy it to Cloudflare Pages.
+
+There's no server, database host or build step. SQLite is carried between runs in the Actions cache, and the pages are plain HTML, CSS and JavaScript under a strict Content Security Policy.
+
+## Run it yourself
 
 ```bash
-# Clone the repository
 git clone https://github.com/lucasdt416-design/stock-news-dashboard.git
 cd stock-news-dashboard
-
-# Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 2. Configure Watchlist & Keys (Optional)
-
-- Edit tickers in `data/watchlist.yaml` (supports any US-listed ticker with CIK and IR feed URL).
-- Add companies by ticker, and the name, SEC number and sector are filled in from the SEC's free lists:
-  ```bash
-  python scripts/add_companies.py PEP NFLX LLY --dry-run   # look first
-  python scripts/add_companies.py PEP NFLX LLY             # then add
-  python scripts/add_companies.py "PEP=PepsiCo, Inc."      # pick the name yourself
-  ```
-  Each company gets its own page (`company-pep.html`), Home and the Feed carry only the last 30 days,
-  and Finnhub calls are paced to the free plan's limit, so the site stays quick with hundreds of companies.
-  A daily run with 300 companies takes roughly 12 extra minutes for that pacing.
-- Set your Gemini API key (optional — includes built-in offline heuristic fallback):
-  ```bash
-  export GEMINI_API_KEY="your-gemini-api-key"
-  ```
-- Optional Gemini settings: `GEMINI_MODEL` pins a model (otherwise the newest stable Flash model your key
-  can use is picked each run, so a retired name can't break summaries), and `GEMINI_MAX_BATCHES`
-  (default 12) caps requests per run to stay inside the free daily quota. Stories already summarized are
-  never sent again.
-
-### 3. Run the End-to-End Pipeline
-
-```bash
-python scripts/run_local.py
-```
-
-### 4. View Dashboard
-
-```bash
+python scripts/run_local.py     # collect, score and build into site/
 open site/index.html
 ```
 
----
+It works without any keys, but some parts fill in only with a key:
 
-## ⚙️ Automated GitHub Actions Workflow
+| Variable | What it adds |
+|---|---|
+| `FINNHUB_API_KEY` | News articles, earnings dates and the live ticker lookup |
+| `GEMINI_API_KEY` | One-line summaries. Optional: `GEMINI_MODEL` pins a model, and `GEMINI_MAX_BATCHES` (default 12) caps requests per run |
+| `SEC_EDGAR_USER_AGENT` | Your contact string for SEC requests, which the SEC asks for |
 
-The pipeline runs automatically via [.github/workflows/daily-run.yml](.github/workflows/daily-run.yml):
-- **Cron Schedule**: Monday–Friday at 11:00 UTC (6:00 AM EST / 7:00 AM EDT).
-- **Manual Trigger**: `workflow_dispatch` button enabled in the Actions tab.
-- **State Persistence**: Uses `actions/cache@v4` to restore and save `data/dashboard.db` between runs, preserving deduplication history and historical scores across builds.
-- **Zero-Friction Deployment**: Deploys directly to Cloudflare Pages on completion.
+`python scripts/build_demo.py` builds a demo site from made-up stories with no network or keys, which is handy for working on the design.
 
----
+### Add companies
 
-## 📄 License
+Names, SEC numbers and sectors come from the SEC's free lists:
 
-MIT License — free to use, modify, and distribute.
+```bash
+python scripts/add_companies.py PEP NFLX LLY --dry-run   # look first
+python scripts/add_companies.py PEP NFLX LLY             # then add to data/watchlist.yaml
+```
+
+Each company gets its own page, and Finnhub calls are paced to the free plan's limit.
+
+### Deploy your own copy
+
+Fork the repo, then add these repository secrets:
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_PROJECT_NAME`
+- optionally, the keys above
+
+[`daily-run.yml`](.github/workflows/daily-run.yml) runs every day at 11:00 UTC and on demand.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest                                   # about 300 tests
+python scripts/check_following.py       # walks through the site in a real browser (Playwright)
+```
+
+## Not investment advice
+
+Everything here is for information only. Prices and figures can be late or wrong, so check the linked source before relying on anything.
+
+## License
+
+[MIT](LICENSE)
