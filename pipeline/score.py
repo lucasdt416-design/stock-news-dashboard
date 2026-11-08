@@ -93,21 +93,60 @@ def calculate_recency_adjustment(pub_date_str: str, pub_time_str: str) -> Tuple[
         return (0.0, "Recency neutral")
 
 
-def is_named_in_headline(headline: str, ticker: str, company_name: str) -> bool:
-    """Check if the ticker symbol or core company name is prominently in the headline."""
-    if not headline:
+# Words that start many company names, so on their own they don't identify one.
+GENERIC_FIRST_WORDS = {"THE", "U.S.", "US", "GENERAL", "AMERICAN", "UNITED", "INTERNATIONAL", "BANK", "NATIONAL",
+                       "FIRST", "TEXAS", "SOUTHERN", "UNION", "CAPITAL", "LAM", "ELI"}
+NAME_WORDS = re.compile(
+    r"(?<![\w.])(?:Inc|Incorporated|Corporation|Corp|Co|Company|Companies|Platforms|Holdings|Group|plc|Ltd|LLC|"
+    r"N\.V|S\.A|L\.P)\.?(?!\w)|^The\s+", re.IGNORECASE)
+
+# Stock-picking lists and market roundups: they name many companies and are opinion, not news.
+STOCK_PICKING = re.compile(
+    r"(?:^|\b(?:these|top|and|are|the)\s+)(?:\d+|two|three|four|five|seven|ten)\s+(?:[\w()'’&.-]+\s+){0,4}(?:stocks?|shares)\b"
+    r"|\bstocks?\s+to\s+(?:buy|sell|watch|own|hold)\b|\bshould you buy\b|\bbuy (?:hand over fist|now)\b"
+    r"|\btoo late to buy\b|\bbetter (?:buy|stock)\b|^prediction:|\bmillionaire\b|\bbillionaire\b"
+    r"|\bjim cramer\b|\bstock market today\b|\bmost[- ]active stocks\b|\bif you invested\b|\$[\d,]+ investment\b"
+    r"|\bis it a buy\b",
+    re.IGNORECASE)
+
+
+def company_spellings(company_name: str) -> list:
+    """How news text names a company: "The Goldman Sachs Group, Inc." -> ["Goldman Sachs", "Goldman"]."""
+    short = re.sub(r"\s*,\s*(?=,|$)", "", NAME_WORDS.sub("", company_name or ""))
+    short = re.sub(r"\.com\b", "", short)
+    short = re.sub(r"\s+(?:and|&)$", "", re.sub(r"\s{2,}", " ", short).strip(" ,&"))
+    if short.upper() in GENERIC_FIRST_WORDS:  # "The Southern Company": "Southern" alone is just a word
+        short = re.sub(r"^The\s+|[\s,]*Inc\.?$", "", company_name or "").strip(" ,")
+    return [short] if len(short) >= 2 else []
+
+
+# How headlines usually write the companies whose formal name they rarely use.
+SHORT_NAMES = {
+    "GOOGL": ["Google"], "META": ["Facebook"], "JPM": ["JPMorgan"], "XOM": ["Exxon", "ExxonMobil"], "DIS": ["Disney"],
+    "AMD": ["AMD"], "GS": ["Goldman"], "PG": ["P&G", "Procter"], "COST": ["Costco"], "VZ": ["Verizon"],
+    "NEE": ["NextEra"], "ABT": ["Abbott"], "BKNG": ["Booking.com"], "BMY": ["Bristol Myers", "Bristol-Myers"],
+    "BNY": ["BNY Mellon"], "BRK-B": ["Berkshire"], "C": ["Citi"], "COF": ["Capital One"], "CSCO": ["Cisco"],
+    "CVS": ["CVS"], "DELL": ["Dell"], "EMR": ["Emerson"], "GE": ["GE"], "GILD": ["Gilead"], "IBM": ["IBM"],
+    "JNJ": ["J&J"], "LLY": ["Lilly"], "LMT": ["Lockheed"], "MDLZ": ["Mondelez"], "MMM": ["3M"], "MU": ["Micron"],
+    "PANW": ["Palo Alto Networks"], "PLTR": ["Palantir"], "PM": ["Philip Morris"], "SCHW": ["Schwab"],
+    "TMO": ["Thermo Fisher"], "TMUS": ["T-Mobile"], "UBER": ["Uber"], "UNH": ["UnitedHealth"], "UPS": ["UPS"],
+    "DUK": ["Duke Energy"], "WMT": ["Walmart"], "AAPL": ["Apple"], "NVDA": ["Nvidia"],
+}
+
+
+def is_named(text: str, ticker: str, company_name: str) -> bool:
+    """Whether text names the company. Tickers count only in capitals ("LOW", not "low")."""
+    if not text:
         return False
-    h = headline.upper()
-    t = ticker.upper()
-    # Check ticker symbol as word
-    if re.search(r"\b" + re.escape(t) + r"\b", h):
+    if ticker and re.search(rf"(?<![A-Za-z0-9]){re.escape(ticker.upper())}(?![A-Za-z0-9])", text):
         return True
-    # Check first word of company name (e.g., "NVIDIA", "APPLE", "MICROSOFT")
-    if company_name:
-        core_name = company_name.split()[0].upper()
-        if len(core_name) > 2 and re.search(r"\b" + re.escape(core_name) + r"\b", h):
-            return True
-    return False
+    names = company_spellings(company_name) + SHORT_NAMES.get((ticker or "").upper(), [])
+    return any(re.search(rf"(?<![\w&]){re.escape(name)}(?![\w&])", text, re.IGNORECASE) for name in names)
+
+
+def is_named_in_headline(headline: str, ticker: str, company_name: str) -> bool:
+    """Check if the ticker symbol or the company's name is in the headline."""
+    return is_named(headline, ticker, company_name)
 
 
 def score_item(item: Dict[str, Any]) -> Dict[str, Any]:
@@ -173,9 +212,19 @@ def score_item(item: Dict[str, Any]) -> Dict[str, Any]:
     ticker = item.get("ticker", "")
     company = item.get("company_name", "")
     headline_adj = 0.0
+    is_news = source in ("news_media", "finnhub") or source_type in ("press", "third_party_journalism")
     if is_named_in_headline(headline, ticker, company):
         headline_adj = 1.0
         breakdown_parts.append("Headline: +1 (Named)")
+    elif is_news and company and not is_named(item.get("summary") or "", ticker, company):
+        # News services tag articles to companies they barely touch; these come last.
+        headline_adj = -4.0
+        breakdown_parts.append("Not about the company: -4 (Not named)")
+
+    # 4b. Stock-picking lists and market roundups are opinion, not news about the company
+    if is_news and STOCK_PICKING.search(headline):
+        headline_adj -= 3.0
+        breakdown_parts.append("Stock picks: -3 (List or roundup)")
 
     # 5. Duplicate Penalty
     dup_adj = 0.0
