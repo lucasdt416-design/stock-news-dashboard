@@ -1,0 +1,23 @@
+name: Wrong number or data
+description: A figure, date, price or company detail on the site looks wrong or out of date.
+labels: ["data"]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Where did you see it?
+      description: The page link, and which company or card.
+      placeholder: https://stock-news-dashboard.pages.dev/company-nvda.html, "Latest results"
+    validations:
+      required: true
+  - type: textarea
+    id: shown
+    attributes:
+      label: What does the site show, and what should it be?
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: A source for the right value
+      description: For example the SEC filing, the company's release, or the agency's page.
