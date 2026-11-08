@@ -1,3 +1,8 @@
 -r requirements.txt
 pytest==8.4.2
 playwright==1.60.0
+# Linter: not needed to run the pipeline. These versions need Python 3.11 or later.
+flake8==7.5.0; python_version >= "3.11"
+mccabe==0.7.0; python_version >= "3.11"
+pycodestyle==2.15.0; python_version >= "3.11"
+pyflakes==4.1.0; python_version >= "3.11"
