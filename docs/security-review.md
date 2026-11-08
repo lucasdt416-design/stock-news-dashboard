@@ -151,7 +151,7 @@ covers `*.log`, `*.bak`, `*.map` and `.env.*`.
 ### 16. Dependencies (None)
 `pip-audit` on `requirements.txt`: no known vulnerabilities on 2026-11-03. Runtime dependencies were
 already pinned, and `pytest` is now pinned in workflows. `requirements.txt` also lists `flake8` and its
-helpers, which the pipeline does not need at run time; harmless, but they could move out.
+helpers, which the pipeline does not need at run time; they moved to `requirements-dev.txt` on 2026-11-08.
 
 ### 17. `javascript:` links on the calendar (Medium)
 - **What:** `{{ ev.source_url }}` went into an `href` unchecked, so a `javascript:` value in the data
