@@ -854,7 +854,7 @@ SHARED_CSS = """
     .feed-detail-label { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.6rem; }
     .feed-refs { list-style: none; }
     .feed-refs li { padding: 0.1rem 0; }
-    .feed-breakdown { font-family: var(--font-mono); font-size: 0.74rem; }
+    .feed-breakdown { font-size: 0.82rem; color: var(--text-secondary); }
     .date-cell { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted); text-align: right; white-space: nowrap; }
 
     @media (max-width: 620px) {
@@ -4440,7 +4440,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
                   {% endfor %}
                 </ul>
                 {% endif %}
-                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored: {{ item.score }}</p><p class="feed-breakdown">{{ item.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                {% if item.score_breakdown %}<p class="feed-detail-label">How it scored: {{ item.score }}</p><p class="feed-breakdown">{{ plain_breakdown(item.score_breakdown) }}</p>{% endif %}
                 <a href="{{ safe_url(item.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if item.source == 'sec_edgar' %}Read the filing{% elif item.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
               </div>
             </details>
@@ -5663,7 +5663,7 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
                       {% endfor %}
                     </ul>
                     {% endif %}
-                    {% if it.score_breakdown %}<p class="feed-detail-label">How it scored: {{ it.score }}</p><p class="feed-breakdown">{{ it.score_breakdown|replace(' | ', ' · ') }}</p>{% endif %}
+                    {% if it.score_breakdown %}<p class="feed-detail-label">How it scored: {{ it.score }}</p><p class="feed-breakdown">{{ plain_breakdown(it.score_breakdown) }}</p>{% endif %}
                     <a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer" class="home-more">{% if it.source == 'sec_edgar' %}Read the filing{% elif it.source == 'company_ir' %}Read the release{% else %}Read the article{% endif %}</a>
                   </div>
                 </details>
@@ -6166,6 +6166,39 @@ def _event_type_key(event_type: str) -> str:
     return "conference"
 
 
+# The scorer's notes ("Source: +3 (Material SEC Filing)") in the words a reader would use.
+BREAKDOWN_WORDS = {
+    "Routine SEC Filing": "a routine SEC filing", "Material SEC Filing": "an SEC filing about results, a deal or leadership",
+    "Capital SEC Filing": "an SEC filing about raising or returning money", "SEC Filing": "an SEC filing",
+    "Material Company Announcement": "the company's own announcement of results, a deal or leadership",
+    "Company Announcement": "the company's own announcement", "News Media / Press": "a news report on results, a deal or leadership",
+    "News Media": "a news report", "Press": "a news report", "Named": "names the company in the headline",
+    "Not named": "doesn't name the company", "List or roundup": "a stock-picking list or market roundup",
+}
+
+
+def _plain_breakdown(text: str) -> str:
+    """"Base: 8 (Earnings & Financials) | Source: +1 (News Media / Press) | … => Score: 10.0" as
+    "Earnings & Financials 8 · a news report on results, a deal or leadership +1 · …"."""
+    parts = []
+    for part in re.split(r"\s*\|\s*|\s*·\s*", re.sub(r"\s*=>.*$", "", text or "")):
+        m = re.match(r"\s*([^:]+):\s*([+-]?[\d.]+)\s*(?:\((.*)\))?\s*$", part)
+        if not m:
+            continue
+        label, value, note = m.group(1).strip(), m.group(2), (m.group(3) or "").strip()
+        number = value.replace("-", "−")
+        if label == "Base":
+            parts.append(f"{note or 'Story'} {number}")
+        elif label == "Recency":
+            age = re.sub(r"\s*\([+-]?[\d.]+\)$", "", note).replace("h old", " hours old").replace("-72", " to 72")
+            parts.append(f"{age} {number}")
+        elif label == "Duplicate":
+            parts.append(f"repeats another story {number}")
+        else:
+            parts.append(f"{BREAKDOWN_WORDS.get(note, note or label.lower())} {number}")
+    return " · ".join(parts)
+
+
 def _relative_day(when: date, today: date) -> str:
     days = (when - today).days
     if days == 0:
@@ -6306,7 +6339,7 @@ def _feed_record(it: Dict[str, Any]) -> Dict[str, Any]:
         "url": it.get("url") or "", "headline": it.get("clean_headline") or it.get("headline") or "",
         "text": it.get("story_text") or "", "ai": it.get("ai_summary") or "",
         "related": [t for t in it.get("related_tickers_list") or [] if t and t != it.get("ticker")],
-        "refs": refs, "breakdown": (it.get("score_breakdown") or "").replace(" | ", " · "),
+        "refs": refs, "breakdown": _plain_breakdown(it.get("score_breakdown") or ""),
     }
 
 
@@ -6831,6 +6864,7 @@ def render_dashboard(
     feed_items = _feed_window(items)
     common_context = {
         "short_date": _short_date,
+        "plain_breakdown": _plain_breakdown,
         "safe_url": _safe_url,
         "economic_schedule": _economic_schedule(upcoming_economic_events),
         "event_kind": _event_kind,
