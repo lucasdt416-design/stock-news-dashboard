@@ -644,6 +644,10 @@ SHARED_CSS = """
 
     .theme-toggle:hover { color: var(--text-primary); }
 
+    .sidebar-about { display: block; width: fit-content; margin-top: 0.35rem; min-height: 24px; line-height: 24px; color: var(--text-muted);
+                     text-decoration: underline; text-decoration-color: var(--border-card); text-underline-offset: 3px; }
+    .sidebar-about:hover, .sidebar-about.active { color: var(--text-primary); }
+
     .catalyst-ticker, .ticker-badge {
       white-space: nowrap !important;
       word-break: keep-all !important;
@@ -1752,6 +1756,7 @@ NAVIGATION_LAYOUT_HTML = """
     {% endif %}
     <div>Updated <time datetime="{{ generated_iso }}" data-local-time>{{ generated_at }} UTC</time></div>
     <button class="theme-toggle" id="themeToggle" type="button" data-click="cycleTheme">Dark mode</button>
+    <a class="sidebar-about{% if active_page == 'about' %} active{% endif %}" href="about.html" data-click="closeMobileNav">About</a>
   </div>
 </aside>
 
@@ -5210,6 +5215,92 @@ MOVES_TEMPLATE = """<!DOCTYPE html>
 """
 
 # ==============================================================================
+# 3c. ABOUT (site/about.html): why the site exists, privacy, sources, not advice
+# ==============================================================================
+ABOUT_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Why StockPulse exists, what it does and doesn't collect, and where its numbers come from.">
+  <title>StockPulse — About</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Cpath d='M6 19h6l3-9 3 13 2-4h6' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E">
+  <script>""" + THEME_BOOT_JS + """</script>
+  <style>
+""" + SHARED_CSS + """
+    .page-about .app-main { max-width: 44rem; }
+    .about-section { margin-top: 2.5rem; }
+    .about-section h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.6rem; }
+    .about-section p, .about-section li { font-size: 1rem; line-height: 1.6; color: var(--text-secondary); }
+    .about-section p + p { margin-top: 0.75rem; }
+    .about-section ul { margin: 0.6rem 0 0; padding-left: 1.15rem; }
+    .about-section li + li { margin-top: 0.45rem; }
+    .about-section strong { color: var(--text-primary); font-weight: 600; }
+    .about-section a { color: var(--accent); text-decoration: none; }
+    .about-section a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body class="page-about">
+  <div class="app-layout">
+    """ + NAVIGATION_LAYOUT_HTML + """
+
+    <main class="app-main">
+      <header class="page-header">
+        <h1 class="page-title">About</h1>
+        <p class="page-standfirst">StockPulse is a free place to follow companies through what they actually publish: their filings, results and announcements, and the news about them.</p>
+      </header>
+
+      <section class="about-section" aria-labelledby="aboutWhy">
+        <h2 id="aboutWhy">Why it exists</h2>
+        <p>Most of what you need to understand a company is already public. Every filing goes to the SEC, every company posts its own announcements, and government agencies publish the economy's numbers. It's just scattered, slow to read and easy to miss.</p>
+        <p>We think that knowledge should be easy for anyone to use, not only people with expensive terminals. So this site gathers it in one calm place, checks the numbers against where they came from, and gives it away. There are no accounts, no ads and no paywall.</p>
+      </section>
+
+      <section class="about-section" aria-labelledby="aboutAdvice">
+        <h2 id="aboutAdvice">Not investment advice</h2>
+        <p>Everything here is for information only. It isn't advice to buy, sell or hold anything, and nothing on the site is a recommendation. Prices and figures can be late or wrong, so check the original before relying on anything; every story links to its source.</p>
+        <p>When <a href="moves.html">Moves</a> lists what was published on a company's big day, it means only that it was published then. It doesn't claim the story caused the move.</p>
+      </section>
+
+      <section class="about-section" aria-labelledby="aboutPrivacy">
+        <h2 id="aboutPrivacy">Your privacy</h2>
+        <p><strong>We don't collect anything about you.</strong> There are no accounts, no cookies, no analytics or tracking, and no ads.</p>
+        <ul>
+          <li><strong>Your choices stay in this browser.</strong> The companies you follow, what you've read (if learning is on in <a href="settings.html">Your feed</a>), your theme and the companies you viewed recently are kept only on this device. They're never sent to us or anyone else. You can clear them in Your feed with “Forget what I read” or “Start over”.</li>
+          <li><strong>The setup link</strong> carries only the companies and sectors you follow, and only goes where you send it.</li>
+          <li><strong>A few services see what any website involves.</strong> Cloudflare hosts the site, so like any host it receives your IP address and the pages you open. On the Analytics and company pages, the chart library comes from jsDelivr, which also receives your IP address.</li>
+          <li><strong>Looking up a ticker that isn't listed</strong> sends what you typed, and nothing about you, to Finnhub to find it. Your IP address is held briefly in memory to stop the lookup being overused, and isn't stored.</li>
+        </ul>
+      </section>
+
+      <section class="about-section" aria-labelledby="aboutSources">
+        <h2 id="aboutSources">Where the numbers come from</h2>
+        <ul>
+          <li><strong>Filings, results figures, insider trades and company names:</strong> the SEC's EDGAR system.</li>
+          <li><strong>Press releases:</strong> each company's own newsroom feed.</li>
+          <li><strong>News, earnings dates and ticker lookups:</strong> Finnhub.</li>
+          <li><strong>Stock prices:</strong> Yahoo Finance.</li>
+          <li><strong>Economy figures:</strong> FRED, from the Federal Reserve Bank of St. Louis. Release dates come from the Federal Reserve, the Bureau of Labor Statistics and the Energy Information Administration.</li>
+          <li><strong>Short summaries on some stories:</strong> written by Google's Gemini. A summary is thrown out if it contains a number the original doesn't.</li>
+        </ul>
+        <p>Headlines and articles belong to their publishers; we show the headline and link to the original.</p>
+      </section>
+
+      <section class="about-section" aria-labelledby="aboutHonest">
+        <h2 id="aboutHonest">How it stays honest</h2>
+        <p>A figure appears only if it was read from its source. When a source can't be reached, the site keeps the last real reading with its date, or shows nothing. It never fills a gap with a guess. Everything updates every morning, US Eastern time.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    """ + SHARED_MOBILE_JS + """
+  </script>
+</body>
+</html>
+"""
+
+# ==============================================================================
 # 4. MACROECONOMIC INTELLIGENCE TEMPLATE (site/economic.html)
 # ==============================================================================
 ECONOMIC_TEMPLATE = """<!DOCTYPE html>
@@ -7259,7 +7350,7 @@ def render_dashboard(
         "performance_data_json": _script_json(performance_data or {}),
     }
 
-    # 4. Render and save all 8 pages
+    # 4. Render and save all 9 pages
     pages = [
         ("index.html", INDEX_TEMPLATE, "home"),
         ("news.html", NEWS_TEMPLATE, "news"),
@@ -7269,6 +7360,7 @@ def render_dashboard(
         ("company.html", COMPANY_TEMPLATE, "company"),
         ("analytics.html", ANALYTICS_TEMPLATE, "analytics"),
         ("settings.html", SETTINGS_TEMPLATE, "settings"),
+        ("about.html", ABOUT_TEMPLATE, "about"),
     ]
 
     policies: Dict[str, str] = {}

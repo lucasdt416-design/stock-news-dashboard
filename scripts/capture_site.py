@@ -31,6 +31,7 @@ PAGES = [
     ("company", "company-nvda.html"),
     ("analytics", "analytics.html"),
     ("settings", "settings.html"),
+    ("about", "about.html"),
 ]
 
 SNAPSHOT_JS = """() => {
