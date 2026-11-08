@@ -45,7 +45,7 @@ def test_every_feed_is_a_feed_not_a_web_page():
 
 def test_new_companies_link_to_the_feeds_own_site():
     for c in WATCHLIST:
-        if c.get("ir_page_url"):
+        if c.get("ir_page_url") and c.get("ir_feed_url"):
             page = urlparse(c["ir_page_url"])
             assert page.path in ("", "/") and page.netloc == urlparse(c["ir_feed_url"]).netloc, c["symbol"]
 
@@ -75,3 +75,9 @@ def test_an_abandoned_feed_is_reported(mock_urlopen, caplog):
     with caplog.at_level("WARNING"):
         fetch_ir_feed("https://example.com/rss", "MSFT", "Microsoft")
     assert "looks abandoned: its newest item is from 2025-05-07" in caplog.text
+
+
+def test_feeds_blocked_from_github_are_not_listed():
+    """RTX's feed answered here but returned 403 Forbidden to GitHub's servers on 2026-11-07."""
+    rtx = next(c for c in WATCHLIST if c["symbol"] == "RTX")
+    assert "ir_feed_url" not in rtx and rtx["ir_page_url"] == "https://www.rtx.com"

@@ -1,3 +1,52 @@
+# Other spellings of companies named in key_customers / key_suppliers below, used only to spot
+# them in news text. Each company is listed once in those lists, by ticker if it is on the watchlist.
+aliases:
+  ASE Technology: [ASX]
+  American Airlines: [AAL]
+  Archer-Daniels-Midland: [ADM]
+  Baker Hughes: [BKR]
+  Ball Corporation: [BALL]
+  Cardinal Health: [CAH]
+  Cencora: [COR, AmerisourceBergen]
+  Coca-Cola FEMSA: [KOF]
+  Corning: [GLW]
+  Crown Holdings: [CCK]
+  Delta Air Lines: [DAL]
+  Ericsson: [ERIC]
+  First Solar: [FSLR]
+  Fortune Brands: [FBIN]
+  Foxconn: [Hon Hai]
+  HP: [HPQ, HP Inc]
+  Halliburton: [HAL]
+  Hewlett Packard Enterprise: [HPE]
+  Honeywell: [HON]
+  Howmet Aerospace: [HWM, Howmet]
+  KLA: [KLAC]
+  Kraft Heinz: [KHC]
+  Kroger: [KR]
+  LG Energy Solution: [LGES]
+  Labcorp: [LH]
+  Lamb Weston: [LW]
+  Masco: [MAS]
+  McKesson: [MCK]
+  Nokia: [NOK]
+  Owens Corning: [OC]
+  Quest Diagnostics: [DGX]
+  Restaurant Brands International: [QSR, Burger King]
+  SLB: [Schlumberger]
+  Southwest Airlines: [LUV]
+  "Stanley Black & Decker": [SWK]
+  Super Micro: [Supermicro, SMCI]
+  TSMC: [TSM, Taiwan Semiconductor]
+  Target: [TGT]
+  TechnipFMC: [FTI]
+  Tyson Foods: [TSN, Tyson]
+  US Department of Defense: [Department of Defense, Pentagon]
+  Unilever: [UL]
+  United Airlines: [UAL]
+  Woodward: [WWD]
+  XPeng: [XPEV]
+
 tickers:
   - symbol: NVDA
     name: NVIDIA Corporation
@@ -6,12 +55,11 @@ tickers:
     newsroom_url: "https://nvidianews.nvidia.com"
     sector: semiconductors
     regulators: [BIS, SEC]
-    key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Supermicro, SMCI, Tesla, TSLA, XPeng, XPEV, Rivian, RIVN, BYD]
-    key_suppliers: [TSM, TSMC, Taiwan Semiconductor, ASML, SK Hynix, Micron, Samsung Foundry]
+    key_customers: [MSFT, META, AMZN, GOOGL, ORCL, DELL, Super Micro, TSLA, XPeng, BYD]
+    key_suppliers: [TSMC, SK Hynix, MU]
     competitors: [AMD, INTC, AVGO]
     macro_sensitivities: [export_controls_china, datacenter_capex]
     economic_sensitivities: [interest_rates]
-    notes: "Watch hyperscaler capital spending guidance and automotive AI chip adoption (DRIVE platform)."
 
   - symbol: AAPL
     name: Apple Inc.
@@ -20,12 +68,10 @@ tickers:
     newsroom_url: "https://www.apple.com/newsroom"
     sector: consumer_electronics
     regulators: [DOJ, FTC, EU_EC, SEC]
-    key_customers: [Global Consumers, Enterprise Fleet]
-    key_suppliers: [TSM, TSMC, Taiwan Semiconductor, Foxconn, Hon Hai, Qualcomm, QCOM, Broadcom, AVGO, Sony, LG Display]
+    key_suppliers: [TSMC, Foxconn, QCOM, AVGO, Sony, LG Display]
     competitors: [MSFT, GOOGL, DELL]
     macro_sensitivities: [china_demand, consumer_spending]
     economic_sensitivities: [inflation, unemployment]
-    notes: "Monitor services revenue growth and AI feature rollouts."
 
   - symbol: MSFT
     name: Microsoft Corporation
@@ -34,12 +80,11 @@ tickers:
     newsroom_url: "https://news.microsoft.com"
     sector: software_cloud
     regulators: [FTC, CMA, EU_EC, SEC]
-    key_customers: [Enterprise Cloud, Fortune 500, US Department of Defense]
-    key_suppliers: [NVDA, NVIDIA, AMD, Intel, INTC]
+    key_customers: [OpenAI, US Department of Defense]
+    key_suppliers: [NVDA, AMD, INTC]
     competitors: [GOOGL, AMZN, AAPL]
     macro_sensitivities: [cloud_growth, enterprise_it_spend]
     economic_sensitivities: [interest_rates]
-    notes: "Key focus on Azure growth and Copilot monetization."
 
   - symbol: GOOGL
     name: Alphabet Inc.
@@ -48,12 +93,10 @@ tickers:
     newsroom_url: "https://blog.google"
     sector: search_cloud_ai
     regulators: [DOJ, FTC, EU_EC, SEC]
-    key_customers: [Digital Advertisers, Enterprise Cloud, Android Ecosystem]
-    key_suppliers: [NVDA, NVIDIA, Broadcom, AVGO, TSM, TSMC, Samsung]
+    key_suppliers: [NVDA, AVGO, TSMC]
     competitors: [MSFT, META, AMZN]
     macro_sensitivities: [digital_ad_spending, antitrust_remedies, ai_search_competition]
     economic_sensitivities: [interest_rates]
-    notes: "Track Google Search ad growth, GCP cloud margins, and antitrust ruling outcomes."
 
   - symbol: AMZN
     name: Amazon.com, Inc.
@@ -62,12 +105,10 @@ tickers:
     newsroom_url: "https://www.aboutamazon.com/news"
     sector: ecommerce_cloud
     regulators: [FTC, DOJ, EU_EC, SEC]
-    key_customers: [Retail Consumers, AWS Enterprise Clients, Prime Members]
-    key_suppliers: [NVDA, NVIDIA, Intel, INTC, AMD, FedEx, UPS]
+    key_suppliers: [NVDA, INTC, AMD, UPS]
     competitors: [MSFT, GOOGL, WMT]
     macro_sensitivities: [consumer_discretionary_spending, enterprise_cloud_budget, fuel_logistics_costs]
     economic_sensitivities: [inflation, unemployment]
-    notes: "Monitor AWS revenue growth, operating margins, and retail fulfillment efficiency."
 
   - symbol: META
     name: Meta Platforms, Inc.
@@ -76,12 +117,10 @@ tickers:
     newsroom_url: "https://about.fb.com/news"
     sector: social_media_digital_ads
     regulators: [FTC, EU_EC, SEC]
-    key_customers: [Digital Advertisers, App Developers, Content Creators]
-    key_suppliers: [NVDA, NVIDIA, AMD, Arista Networks, ANET]
+    key_suppliers: [NVDA, AMD, ANET]
     competitors: [GOOGL, SNAP, PINS]
     macro_sensitivities: [digital_ad_pricing, ai_capex_spend, privacy_regulations]
     economic_sensitivities: [inflation]
-    notes: "Watch AI-driven ad conversion improvements and Reality Labs operating losses."
 
   - symbol: TSLA
     name: Tesla, Inc.
@@ -90,12 +129,10 @@ tickers:
     newsroom_url: "https://ir.tesla.com/press-releases"
     sector: automotive_clean_energy
     regulators: [NHTSA, SEC, EPA, EU_EC]
-    key_customers: [Retail Drivers, Fleet Operators, Hertz]
-    key_suppliers: [Panasonic, CATL, NVDA, NVIDIA, LG Energy Solution]
+    key_suppliers: [Panasonic, CATL, LG Energy Solution, NVDA]
     competitors: [RIVN, F, GM]
     macro_sensitivities: [ev_subsidies, lithium_prices, interest_rates_auto_loans, china_ev_competition]
     economic_sensitivities: [interest_rates, inflation]
-    notes: "Track vehicle deliveries, Full Self-Driving (FSD) regulatory milestones, and energy storage deployments."
 
   - symbol: JPM
     name: JPMorgan Chase & Co.
@@ -103,12 +140,9 @@ tickers:
     newsroom_url: "https://www.jpmorganchase.com/news-stories"
     sector: financial_banking
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
-    key_customers: [Institutional Asset Managers, Corporate Borrowers, Retail Depositors]
-    key_suppliers: [Bloomberg, S&P Global, Amazon AWS, Microsoft Azure]
     competitors: [BAC, MS, GS]
     macro_sensitivities: [fed_interest_rates, yield_curve_inversion, credit_default_rates, investment_banking_m_and_a_volume]
     economic_sensitivities: [interest_rates, treasury_10y, unemployment]
-    notes: "Key bellwether for net interest income (NII), credit reserves, and macroeconomic lending health."
 
   - symbol: JNJ
     name: Johnson & Johnson
@@ -117,12 +151,10 @@ tickers:
     newsroom_url: "https://www.jnj.com/media-center/press-releases"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
-    key_customers: [Hospital Systems, McKesson, AmerisourceBergen, Cardinal Health, Global Health Agencies]
-    key_suppliers: [Lonza, Catalent, Samsung Biologics, West Pharmaceutical]
+    key_customers: [McKesson, Cencora, Cardinal Health]
     competitors: [PFE, MRK, ABBV]
     macro_sensitivities: [drug_price_negotiations_medicare, patent_cliff_expirations, litigation_liabilities]
     economic_sensitivities: [inflation]
-    notes: "Focus on oncology/immunology pipeline readouts and MedTech device segment growth."
 
   - symbol: XOM
     name: Exxon Mobil Corporation
@@ -131,12 +163,10 @@ tickers:
     newsroom_url: "https://corporate.exxonmobil.com/news"
     sector: energy_oil_gas
     regulators: [EPA, DOE, SEC, FTC]
-    key_customers: [Refineries, Industrial Manufacturers, Aviation Fuel Buyers]
-    key_suppliers: [SLB, Schlumberger, Halliburton, HAL, Baker Hughes, BKR, Enterprise Products]
+    key_suppliers: [SLB, Halliburton, Baker Hughes]
     competitors: [CVX, COP, BP]
     macro_sensitivities: [brent_wti_crude_prices, opec_production_quotas, refining_crack_spreads]
     economic_sensitivities: [inflation, crude_oil]
-    notes: "Monitor Permian basin production volumes, Pioneer integration synergies, and capital returns."
 
   - symbol: WMT
     name: Walmart Inc.
@@ -144,12 +174,10 @@ tickers:
     newsroom_url: "https://corporate.walmart.com/news"
     sector: retail_consumer_staples
     regulators: [FTC, DOJ, SEC, OSHA]
-    key_customers: [Retail Shoppers, Sam's Club Members, Walmart+ Subscribers]
-    key_suppliers: [Procter & Gamble, PG, Coca-Cola, KO, PepsiCo, PEP, Unilever, Tyson Foods, TSN, Kraft Heinz, KHC]
+    key_suppliers: [PG, KO, PEP, Unilever, Tyson Foods, Kraft Heinz]
     competitors: [TGT, COST, AMZN]
     macro_sensitivities: [inflation_food_prices, consumer_real_wage_growth, supply_chain_tariffs]
     economic_sensitivities: [inflation, unemployment]
-    notes: "Benchmark for grocery market share, Walmart+ membership growth, and high-margin advertising revenue."
 
   - symbol: DIS
     name: The Walt Disney Company
@@ -158,12 +186,9 @@ tickers:
     newsroom_url: "https://thewaltdisneycompany.com/news"
     sector: entertainment_media
     regulators: [FCC, FTC, SEC, DOJ]
-    key_customers: [Park Guests, Streaming Subscribers, Moviegoers, Linear Advertisers]
-    key_suppliers: [Sony Pictures, IMAX, Dolby Laboratories, Amazon AWS]
     competitors: [NFLX, CMCSA, WBD]
     macro_sensitivities: [theme_park_discretionary_spend, linear_tv_cord_cutting, streaming_subscriber_growth]
     economic_sensitivities: [inflation, unemployment]
-    notes: "Track direct-to-consumer (Disney+/Hulu) profitability, box office performance, and Experiences segment margins."
 
   - symbol: KO
     name: The Coca-Cola Company
@@ -172,12 +197,11 @@ tickers:
     newsroom_url: "https://www.coca-colacompany.com/media-center"
     sector: consumer_staples_beverages
     regulators: [FDA, FTC, SEC, International_Food_Agencies]
-    key_customers: [Coca-Cola FEMSA, McDonald's, MCD, Walmart, WMT, Target, TGT, Restaurant Brands]
-    key_suppliers: [Ball Corporation, BLL, Crown Holdings, CCK, Archer-Daniels-Midland, ADM]
-    competitors: [PEP, KDP, MNST]
+    key_customers: [Coca-Cola FEMSA, MCD, WMT, Target, Restaurant Brands International]
+    key_suppliers: [Ball Corporation, Crown Holdings, Archer-Daniels-Midland]
+    competitors: [PEP, KDP]
     macro_sensitivities: [fx_dollar_strength, packaging_commodity_costs, emerging_market_demand]
     economic_sensitivities: [inflation]
-    notes: "Defensive consumer staple focus on pricing power, unit case volume growth, and refranchising margins."
 
   - symbol: PFE
     name: Pfizer Inc.
@@ -186,12 +210,10 @@ tickers:
     newsroom_url: "https://www.pfizer.com/news/press-releases"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
-    key_customers: [Governments, McKesson, MCK, Cardinal Health, CAH, Hospital Networks]
-    key_suppliers: [BioNTech, BNTX, Lonza, Catalent, Thermo Fisher Scientific, TMO]
+    key_customers: [McKesson, Cardinal Health]
     competitors: [JNJ, MRK, BMY]
     macro_sensitivities: [patent_expirations_loes, clinical_trial_success_rates, post_covid_demand_normalization]
     economic_sensitivities: [inflation]
-    notes: "Monitor Seagen oncology integration pipeline, cost realignment program, and commercial execution."
 
   - symbol: BA
     name: The Boeing Company
@@ -200,12 +222,11 @@ tickers:
     newsroom_url: "https://boeing.mediaroom.com/news-releases-statements"
     sector: aerospace_defense
     regulators: [FAA, DOD, SEC, EASA]
-    key_customers: [United Airlines, UAL, Delta Air Lines, DAL, American Airlines, AAL, Southwest Airlines, LUV, Ryanair, RYAAY, US Air Force]
-    key_suppliers: [Spirit AeroSystems, SPR, GE Aerospace, GE, Raytheon, Safran, Honeywell, HON]
-    competitors: [LMT, NOC, GD]
+    key_customers: [United Airlines, Delta Air Lines, American Airlines, Southwest Airlines, Ryanair, US Air Force]
+    key_suppliers: [GE, RTX, Safran, Honeywell]
+    competitors: [LMT, NOC, GD, Airbus]
     macro_sensitivities: [commercial_aviation_passenger_traffic, defense_budget_allocations, supply_chain_manufacturing_quality]
     economic_sensitivities: [interest_rates, inflation, crude_oil]
-    notes: "Crucial scrutiny on 737 MAX production rate recovery, FAA quality audits, and free cash flow generation."
 
   - symbol: AMD
     name: Advanced Micro Devices, Inc.
@@ -214,12 +235,11 @@ tickers:
     newsroom_url: "https://ir.amd.com/news-events/press-releases"
     sector: semiconductors
     regulators: [BIS, SEC, FTC]
-    key_customers: [MSFT, Microsoft, META, Meta, AMZN, Amazon, GOOGL, Alphabet, Google, Oracle, ORCL, Dell, DELL, Lenovo, Sony]
-    key_suppliers: [TSM, TSMC, Taiwan Semiconductor, ASML, ASE Technology]
+    key_customers: [MSFT, META, AMZN, GOOGL, ORCL, DELL, Lenovo, Sony, OpenAI]
+    key_suppliers: [TSMC, ASE Technology]
     competitors: [NVDA, INTC, AVGO]
     macro_sensitivities: [datacenter_capex, pc_market_demand, export_controls_china]
     economic_sensitivities: [interest_rates]
-    notes: "Track MI300/MI325 AI GPU accelerator ramp, datacenter EPYC CPU market share gains against Intel, and client AI PC adoption."
 
   - symbol: INTC
     name: Intel Corporation
@@ -228,12 +248,11 @@ tickers:
     newsroom_url: "https://newsroom.intel.com"
     sector: semiconductors
     regulators: [BIS, SEC, FTC, EU_EC]
-    key_customers: [Dell, DELL, HP, HPE, Lenovo, Microsoft, MSFT, Amazon, AMZN, Alphabet, GOOGL]
-    key_suppliers: [ASML, Applied Materials, AMAT, Lam Research, LRCX, KLA, TSMC, TSM]
+    key_customers: [DELL, HP, Hewlett Packard Enterprise, Lenovo, MSFT, AMZN, GOOGL]
+    key_suppliers: [ASML, AMAT, LRCX, KLA, TSMC]
     competitors: [AMD, NVDA, QCOM, TSM, AVGO]
     macro_sensitivities: [pc_market_demand, datacenter_capex, chips_act_subsidies, foundry_transition]
     economic_sensitivities: [interest_rates]
-    notes: "Track Intel Foundry Services (IFS) customer commitments, 18A process node ramp, and x86 market share defense against AMD."
 
   - symbol: BAC
     name: Bank of America Corporation
@@ -242,12 +261,9 @@ tickers:
     newsroom_url: "https://newsroom.bankofamerica.com"
     sector: financial_banking
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
-    key_customers: [Retail Depositors, Middle Market Enterprises, Global Institutional Borrowers]
-    key_suppliers: [Microsoft, MSFT, Amazon AWS, AMZN, Cisco, CSCO, S&P Global, SPGI]
     competitors: [JPM, WFC, C, GS, MS]
     macro_sensitivities: [fed_interest_rates, net_interest_income, consumer_credit_charge_offs, commercial_real_estate]
     economic_sensitivities: [interest_rates, treasury_10y, unemployment]
-    notes: "Monitor consumer deposit repricing beta, net interest income (NII) trajectory, and asset management inflows."
 
   - symbol: GS
     name: The Goldman Sachs Group, Inc.
@@ -255,12 +271,9 @@ tickers:
     newsroom_url: "https://www.goldmansachs.com/news-and-insights"
     sector: financial_investment_banking
     regulators: [Federal_Reserve, SEC, FINRA, CFTC, FCA]
-    key_customers: [Institutional Asset Managers, Private Equity Sponsors, Corporate Issuers, Sovereign Wealth Funds]
-    key_suppliers: [Bloomberg, London Stock Exchange, Amazon AWS, AMZN, Snowflake, SNOW]
     competitors: [MS, JPM, BAC, C, LAZ]
     macro_sensitivities: [investment_banking_m_and_a_volume, ipo_equity_underwriting, fixed_income_currency_commodities_ficc, private_credit_expansion]
     economic_sensitivities: [interest_rates, treasury_10y, unemployment]
-    notes: "Key bellwether for global dealmaking, M&A advisory pipelines, and Alternative Asset Management fee growth."
 
   - symbol: UNH
     name: UnitedHealth Group Incorporated
@@ -268,12 +281,10 @@ tickers:
     newsroom_url: "https://www.unitedhealthgroup.com/newsroom"
     sector: healthcare_managed_care
     regulators: [CMS, HHS, FTC, DOJ, SEC]
-    key_customers: [Employer Health Plans, Medicare Advantage Beneficiaries, Medicaid State Programs]
-    key_suppliers: [Hospital Networks, Quest Diagnostics, DGX, Labcorp, LH, Pfizer, PFE, Johnson & Johnson, JNJ]
+    key_suppliers: [Quest Diagnostics, Labcorp]
     competitors: [CVS, ELV, CI, HUM]
     macro_sensitivities: [medical_care_ratio_mcr, medicare_advantage_rate_notices, optum_value_based_care_growth, pbm_reform_legislation]
     economic_sensitivities: [inflation, unemployment]
-    notes: "Benchmark for healthcare utilization trends, Optum Health segment expansion, and medical loss ratio (MLR) discipline."
 
   - symbol: ABBV
     name: AbbVie Inc.
@@ -282,12 +293,10 @@ tickers:
     newsroom_url: "https://news.abbvie.com"
     sector: healthcare_pharmaceuticals
     regulators: [FDA, EMA, SEC, FTC]
-    key_customers: [McKesson, MCK, Cencora, COR, Cardinal Health, CAH, Global Health Systems]
-    key_suppliers: [Lonza, Catalent, Thermo Fisher Scientific, TMO, Samsung Biologics]
+    key_customers: [McKesson, Cencora, Cardinal Health]
     competitors: [JNJ, PFE, MRK, BMY, LLY]
     macro_sensitivities: [humira_biosimilar_erosion, skyrizi_rinvoq_revenue_ramp, oncology_neuroscience_pipeline, medicare_drug_price_negotiations]
     economic_sensitivities: [inflation]
-    notes: "Focus on immunology post-Humira growth trajectory driven by Skyrizi and Rinvoq, plus Immuno-oncology and neuroscience assets."
 
   - symbol: PG
     name: The Procter & Gamble Company
@@ -296,12 +305,10 @@ tickers:
     newsroom_url: "https://news.pg.com"
     sector: consumer_staples_household
     regulators: [FDA, FTC, SEC, EPA]
-    key_customers: [Walmart, WMT, Target, TGT, Costco, COST, Amazon, AMZN, Kroger, KR]
-    key_suppliers: [Dow, DOW, International Paper, IP, Berry Global, BERY]
-    competitors: [UL, CL, KMB, JNJ]
+    key_customers: [WMT, Target, COST, AMZN, Kroger]
+    competitors: [UL, CL, KMB]
     macro_sensitivities: [commodity_pulp_resin_input_costs, organic_volume_growth, consumer_elasticity, dollar_fx_headwinds]
     economic_sensitivities: [inflation]
-    notes: "Defensive consumer staple bellwether tracking price/mix realizations, volume elasticity, and productivity cost savings."
 
   - symbol: MCD
     name: McDonald's Corporation
@@ -309,12 +316,10 @@ tickers:
     newsroom_url: "https://corporate.mcdonalds.com/corpmcd/en-us/news-center"
     sector: consumer_discretionary_restaurants
     regulators: [FDA, FTC, SEC, NLRB]
-    key_customers: [Global Fast-Food Consumers, Franchisee Operators]
-    key_suppliers: [Tyson Foods, TSN, Coca-Cola, KO, Lamb Weston, LW, Kerry Group, Bunge, BG]
+    key_suppliers: [Tyson Foods, KO, Lamb Weston]
     competitors: [QSR, YUM, WEN, SBUX, CMG]
     macro_sensitivities: [low_income_consumer_traffic, value_meal_competition, beef_chicken_input_inflation, franchisee_operating_margins]
     economic_sensitivities: [inflation, unemployment]
-    notes: "Barometer for middle- and lower-income discretionary dining demand, global comparable store sales, and digital loyalty growth."
 
   - symbol: CAT
     name: Caterpillar Inc.
@@ -323,12 +328,9 @@ tickers:
     newsroom_url: "https://www.caterpillar.com/en/news"
     sector: industrials_heavy_machinery
     regulators: [EPA, OSHA, SEC, DOJ]
-    key_customers: [Global Construction Contractors, Mining Operators, Energy Exploration Drillers, Dealer Network]
-    key_suppliers: [Nucor, NUE, Steel Dynamics, STLD, Parker-Hannifin, PH, Eaton, ETN, Donaldson, DCI]
     competitors: [DE, CNH, Komatsu]
     macro_sensitivities: [us_infrastructure_act_capex, mining_commodity_prices, dealer_machine_inventory_backlog, global_manufacturing_pmi]
     economic_sensitivities: [interest_rates, inflation, crude_oil]
-    notes: "Primary cyclical bellwether for non-residential construction, energy infrastructure investments, and dealer order backlogs."
 
   - symbol: GE
     name: GE Aerospace
@@ -336,12 +338,11 @@ tickers:
     newsroom_url: "https://www.geaerospace.com/news"
     sector: aerospace_defense
     regulators: [FAA, DOD, SEC, EASA]
-    key_customers: [Boeing, BA, Airbus, AIR, Delta Air Lines, DAL, United Airlines, UAL, American Airlines, AAL, US Military]
-    key_suppliers: [Precision Castparts, Howmet Aerospace, HWM, ATI, Spirit AeroSystems, SPR, Woodward, WWD]
-    competitors: [RTX, Safran, Honeywell, HON, MTU]
+    key_customers: [BA, Airbus, United Airlines, Delta Air Lines, American Airlines, US military]
+    key_suppliers: [Howmet Aerospace, ATI, Woodward, Precision Castparts]
+    competitors: [RTX, HON, Rolls-Royce]
     macro_sensitivities: [commercial_aftermarket_shop_visits, leap_engine_production_ramp, commercial_aviation_flight_hours, defense_appropriations]
     economic_sensitivities: [interest_rates, inflation, crude_oil]
-    notes: "Pure-play commercial and defense propulsion leader. Track commercial engine shop visits, LEAP delivery rates, and services margins."
 
   - symbol: CVX
     name: Chevron Corporation
@@ -349,12 +350,10 @@ tickers:
     newsroom_url: "https://www.chevron.com/newsroom"
     sector: energy_oil_gas
     regulators: [EPA, DOE, SEC, FTC, DOI]
-    key_customers: [Commercial Refineries, Wholesale Fuel Distributors, Petrochemical Manufacturers]
-    key_suppliers: [SLB, Schlumberger, Baker Hughes, BKR, Halliburton, HAL, TechnipFMC, FTI]
+    key_suppliers: [SLB, Baker Hughes, Halliburton, TechnipFMC]
     competitors: [XOM, COP, BP, SHEL, TTE]
-    macro_sensitivities: [brent_wti_crude_prices, permian_basin_production_growth, hess_acquisition_arbitration, refining_crack_margins]
+    macro_sensitivities: [brent_wti_crude_prices, permian_basin_production_growth, refining_crack_margins]
     economic_sensitivities: [inflation, crude_oil]
-    notes: "Focus on Permian basin capital efficiency, Tengizchevroil (TCO) expansion ramp, and shareholder capital return yield."
 
   - symbol: HD
     name: The Home Depot, Inc.
@@ -363,12 +362,10 @@ tickers:
     newsroom_url: "https://corporate.homedepot.com/newsroom"
     sector: retail_home_improvement
     regulators: [FTC, SEC, OSHA, EPA, CPSC]
-    key_customers: [Pro Contractors, DIY Homeowners, Property Maintenance Managers]
-    key_suppliers: [Stanley Black & Decker, SWK, Masco, MAS, Owens Corning, OC, Fortune Brands, FBIN, Trex, TREX]
+    key_suppliers: ["Stanley Black & Decker", Masco, Owens Corning, Fortune Brands, Trex]
     competitors: [LOW, BLDR, SHW]
     macro_sensitivities: [existing_home_sales_turnover, 30_year_mortgage_rates, home_equity_renovation_spend, pro_contractor_backlogs]
     economic_sensitivities: [interest_rates, treasury_10y, inflation]
-    notes: "Direct barometer of housing turnover and consumer renovation spend. Monitor Pro vs. DIY ticket sizes and comp transactions."
 
   - symbol: COST
     name: Costco Wholesale Corporation
@@ -377,12 +374,10 @@ tickers:
     newsroom_url: "https://investor.costco.com"
     sector: retail_consumer_staples
     regulators: [FTC, SEC, FDA, USDA, OSHA]
-    key_customers: [Costco Gold Star & Executive Members, Small Business Commercial Accounts]
-    key_suppliers: [Procter & Gamble, PG, Tyson Foods, TSN, PepsiCo, PEP, Kraft Heinz, KHC, Apple, AAPL]
+    key_suppliers: [PG, Tyson Foods, PEP, Kraft Heinz, AAPL]
     competitors: [WMT, TGT, BJ, AMZN]
     macro_sensitivities: [membership_renewal_rates, monthly_traffic_comp_sales, kirkland_signature_penetration, supply_chain_freight_logistics]
     economic_sensitivities: [inflation, unemployment]
-    notes: "Top-tier retail compounder with industry-leading membership retention (>90%), volume-driven traffic, and high-margin membership revenue."
 
   - symbol: VZ
     name: Verizon Communications Inc.
@@ -391,12 +386,10 @@ tickers:
     newsroom_url: "https://www.verizon.com/about/newsroom"
     sector: telecommunications
     regulators: [FCC, FTC, SEC, DOJ]
-    key_customers: [Consumer Wireless Subscribers, Enterprise Broadband Clients, US Federal & State Agencies]
-    key_suppliers: [Apple, AAPL, Samsung, Qualcomm, QCOM, Ericsson, ERIC, Nokia, NOK, Corning, GLW]
+    key_suppliers: [AAPL, Samsung, Ericsson, Nokia, Corning]
     competitors: [T, TMUS, CMCSA, CHTR]
     macro_sensitivities: [postpaid_phone_net_adds, fixed_wireless_access_fwa_adoption, wireless_service_revenue_growth, high_dividend_coverage]
     economic_sensitivities: [interest_rates, unemployment]
-    notes: "Defensive cash generator tracking broadband / Fixed Wireless Access (FWA) additions, postpaid phone churn, and deleveraging."
 
   - symbol: NEE
     name: NextEra Energy, Inc.
@@ -405,12 +398,10 @@ tickers:
     newsroom_url: "https://newsroom.nexteraenergy.com"
     sector: utilities_clean_energy
     regulators: [FERC, Florida_PSC, SEC, EPA, DOE, NERC]
-    key_customers: [Florida Power & Light Retail Ratepayers, Hyperscale Datacenter Offtakers, Corporate PPA Buyers]
-    key_suppliers: [GE Vernova, GEV, Siemens Energy, First Solar, FSLR, Vestas, Fluence, FLNC]
+    key_suppliers: [GEV, First Solar]
     competitors: [SO, DUK, AEP, EXC]
     macro_sensitivities: [ai_datacenter_power_demand, interest_rates_project_financing, clean_energy_ira_tax_credits, florida_grid_capex]
     economic_sensitivities: [interest_rates, treasury_10y, inflation]
-    notes: "Premier clean energy utility and renewable project developer. Key beneficiary of skyrocketing AI datacenter electricity demand and Florida population growth."
 
 
   - symbol: ABT
@@ -555,7 +546,7 @@ tickers:
     ir_feed_url: "https://investors.cvshealth.com/rss/pressrelease.aspx"
     ir_page_url: "https://investors.cvshealth.com"
     sector: healthcare_services
-    competitors: [UNH, WBA, CI]
+    competitors: [UNH, CI, ELV]
 
   - symbol: DE
     name: "Deere & Company"
@@ -804,7 +795,6 @@ tickers:
   - symbol: RTX
     name: "RTX Corporation"
     cik: "0000101829"
-    ir_feed_url: "https://www.rtx.com/rss-feeds/news"
     ir_page_url: "https://www.rtx.com"
     sector: aerospace_defense
     competitors: [LMT, GD, BA]
