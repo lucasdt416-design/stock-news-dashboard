@@ -4493,7 +4493,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}{% if item.ai_summary %}<p class="feed-takeaway">{{ figures(item.ai_summary) }}</p>{% endif %}
             <p class="follow-reason" hidden></p>
             <details class="feed-details">
-              <summary><span class="feed-meta">{{ item.category }} · {{ item.source_label }}{% if item.form_or_type %} · {{ item.form_or_type }}{% endif %}</span></summary>
+              <summary><span class="feed-meta">{{ item.category }} · {{ source_line(item) }}</span></summary>
               <div class="feed-details-body">
                 {% if item.cross_references_list %}
                 <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
@@ -4691,7 +4691,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const reason = forYou ? forYouReason(it.ticker, it.tickers, it.read && it.read.often) : '';
       const refs = it.refs || [];
       const read = it.source === 'sec_edgar' ? 'Read the filing' : (it.source === 'company_ir' ? 'Read the release' : 'Read the article');
-      const meta = [it.category, it.source_label, it.form].filter(Boolean).join(' · ');
+      const meta = [it.category, it.via].filter(Boolean).join(' · ');
       return `
         <article class="news-row${it.score >= 7 ? ' is-high' : ''}${lead ? ' is-lead' : ''}" data-match="1" data-score="${escapeHtml(it.score)}" data-date="${escapeHtml(it.date)}" data-ticker="${escapeHtml(it.ticker)}" data-tickers="${escapeHtml(it.tickers.join(','))}" data-sector="${escapeHtml(it.sector)}" data-source="${escapeHtml(it.source)}" data-category="${escapeHtml(it.category)}">
           <a href="${companyHref(it.ticker)}" class="ticker-badge" title="${escapeHtml(it.company)}">${escapeHtml(it.ticker)}</a>
@@ -6049,7 +6049,7 @@ COMPANY_PAGE_TEMPLATE = """<!DOCTYPE html>
                 <h4 class="feed-headline"><a href="{{ safe_url(it.url, '#') }}" target="_blank" rel="noopener noreferrer">{{ it.clean_headline }}</a></h4>
                 {% if it.story_text %}<p class="feed-summary">{{ figures(it.story_text) }}</p>{% endif %}
                 <details class="feed-details">
-                  <summary><span class="feed-meta">{{ it.category }} · {{ it.source_label }}{% if it.form_or_type %} · {{ it.form_or_type }}{% endif %}</span></summary>
+                  <summary><span class="feed-meta">{{ it.category }} · {{ source_line(it) }}</span></summary>
                   <div class="feed-details-body">
                     {% if it.cross_references_list %}
                     <p class="feed-detail-label">Also relevant to {{ it.cross_references_list|length }} {{ 'company' if it.cross_references_list|length == 1 else 'companies' }}</p>
@@ -6595,6 +6595,26 @@ def _plain_breakdown(text: str) -> str:
     return " · ".join(parts)
 
 
+OUTLET_NAMES = {"SeekingAlpha": "Seeking Alpha", "MarketWatch": "MarketWatch", "Fintel": "Fintel"}
+
+
+def _source_line(item: Dict[str, Any]) -> str:
+    """Where a story is from, as a reader would say it: "SEC filing · Form 4", "Press release", "Yahoo"."""
+    source = item.get("source") or ""
+    form = str(item.get("form_or_type") or item.get("form") or "").strip()
+    if source == "sec_edgar":
+        if re.fullmatch(r"\d+", form):
+            form = f"Form {form}"
+        elif form.upper().startswith("SCHEDULE "):
+            form = "Schedule " + form[9:]
+        return f"SEC filing · {form}" if form else "SEC filing"
+    if source == "company_ir":
+        return "Press release"
+    if form and form.upper() not in ("NEWS MEDIA", "PRESS_RELEASE"):
+        return OUTLET_NAMES.get(form, form)
+    return item.get("source_label") or "News"
+
+
 def _pct(value: Any) -> str:
     """+2.8% / −9.3% / 0.0%, with a real minus sign."""
     try:
@@ -6752,7 +6772,7 @@ def _feed_record(it: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "ticker": it.get("ticker") or "", "company": it.get("company_name") or "", "sector": it.get("macro_sector") or "",
         "category": it.get("category") or "", "source": it.get("source") or "", "source_label": it.get("source_label") or "",
-        "form": it.get("form_or_type") or "", "score": it.get("score") or 0, "date": str(it.get("published_date") or ""),
+        "form": it.get("form_or_type") or "", "via": _source_line(it), "score": it.get("score") or 0, "date": str(it.get("published_date") or ""),
         "url": it.get("url") or "", "headline": it.get("clean_headline") or it.get("headline") or "",
         "text": it.get("story_text") or "", "ai": it.get("ai_summary") or "",
         "related": [t for t in it.get("related_tickers_list") or [] if t and t != it.get("ticker")],
@@ -7279,6 +7299,7 @@ def render_dashboard(
     feed_items = _feed_window(items)
     common_context = {
         "short_date": _short_date,
+        "source_line": _source_line,
         "pct": _pct,
         "moves": build_deck(performance_data, items, enriched_watchlist,
                             get_forthcoming_calendar(limit=1000, db_path=db_path)),
