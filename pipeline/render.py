@@ -249,6 +249,7 @@ SHARED_CSS = """
       --series-4: #00899f;
       --series-5: #bc5a1e;
       --series-6: #7a4fbf;
+      --series-other: #aeaeb2;
       /* The watchlist map: three strengths each way, with a grey middle. Ink is chosen per step. */
       --heat-u1: #d9f2e0; --heat-u1-ink: #0d3b1c;
       --heat-u2: #8fd6a4; --heat-u2-ink: #0d3b1c;
@@ -325,6 +326,7 @@ SHARED_CSS = """
       --series-4: #16a2ae;
       --series-5: #d9642b;
       --series-6: #9b78d0;
+      --series-other: #636366;
       --heat-u1: #10331c; --heat-u1-ink: #d9f2e0;
       --heat-u2: #17572b; --heat-u2-ink: #ffffff;
       --heat-u3: #1e7f38; --heat-u3-ink: #ffffff;
@@ -997,6 +999,7 @@ SHARED_CSS = """
     .cat-stat-left { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
     .category-legend-dot { width: 8px; height: 8px; flex-shrink: 0; }
     .cat-stat-name { overflow-wrap: anywhere; }
+    .category-stat-row.is-folded { padding-left: calc(8px + 0.5rem); font-size: 0.8rem; color: var(--text-secondary); }
     .cat-stat-right { display: flex; gap: 0.75rem; flex-shrink: 0; font-family: var(--font-mono); font-size: 0.78rem; }
     .cat-stat-pct { width: 2.5rem; text-align: right; color: var(--text-muted); }
     .analytics-perf-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.25rem 2rem; }
@@ -3965,17 +3968,27 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
       const catCounts = (rawChartData && rawChartData.category_counts) || [];
 
       if (ctxCat && catLabels.length > 0) {
-        // Color follows the category, not its rank. Beyond the six series colors, categories
-        // share a neutral, and the list below names every one.
+        // Color follows the category, not its rank. The six usually largest categories get the six
+        // series colors, arranged so neighbouring slices stay apart for color-blind readers; the
+        // rest fold into one "Other" slice, and the list beside it still names each of them.
         const categoryColors = {
+          'Company Announcement': '--series-2',
           'Earnings & Financials': '--series-1',
-          'M&A & Strategic Deals': '--series-2',
-          'Regulation & Policy / Litigation': '--series-3',
-          'Leadership & Governance': '--series-4',
+          'Product Launches & Technology': '--series-3',
+          'Guidance & Commentary': '--series-6',
           'Insider Transactions': '--series-5',
-          'Capital Structure & Offerings': '--series-6',
+          'Capital Structure & Offerings': '--series-4',
         };
-        const sliceColors = catLabels.map(label => cssColor(categoryColors[label] || '--text-muted'));
+        const folded = [];
+        const sliceLabels = [];
+        const sliceCounts = [];
+        catLabels.forEach((label, idx) => {
+          if (categoryColors[label]) { sliceLabels.push(label); sliceCounts.push(catCounts[idx] || 0); }
+          else folded.push({ label, count: catCounts[idx] || 0 });
+        });
+        const otherCount = folded.reduce((a, f) => a + f.count, 0);
+        if (otherCount > 0) { sliceLabels.push('Other'); sliceCounts.push(otherCount); }
+        const sliceColors = sliceLabels.map(label => cssColor(categoryColors[label] || '--series-other'));
 
         const totalCount = catCounts.reduce((a, b) => a + b, 0) || 1;
 
@@ -4035,9 +4048,9 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
         new Chart(ctxCat, {
           type: 'doughnut',
           data: {
-            labels: catLabels,
+            labels: sliceLabels,
             datasets: [{
-              data: catCounts,
+              data: sliceCounts,
               backgroundColor: sliceColors,
               borderWidth: 2,
               borderColor: cssColor('--bg-base'),
@@ -4076,15 +4089,12 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
 
         const legList = document.getElementById('categoryLegendList');
         if (legList) {
-          let legHtml = '';
-          catLabels.forEach((label, idx) => {
-            const count = catCounts[idx] || 0;
+          const row = (label, count, color, sub) => {
             const pct = Math.round((count / totalCount) * 100);
-            const color = sliceColors[idx];
-            legHtml += `
-              <div class="category-stat-row" title="${escapeHtml(label)}: ${count} (${pct}%)">
+            return `
+              <div class="category-stat-row${sub ? ' is-folded' : ''}" title="${escapeHtml(label)}: ${count} (${pct}%)">
                 <div class="cat-stat-left">
-                  <span class="category-legend-dot" data-color="${escapeHtml(color)}"></span>
+                  ${sub ? '' : `<span class="category-legend-dot" data-color="${escapeHtml(color)}"></span>`}
                   <span class="cat-stat-name">${escapeHtml(label)}</span>
                 </div>
                 <div class="cat-stat-right">
@@ -4093,6 +4103,11 @@ ANALYTICS_TEMPLATE = """<!DOCTYPE html>
                 </div>
               </div>
             `;
+          };
+          let legHtml = '';
+          sliceLabels.forEach((label, idx) => {
+            legHtml += row(label, sliceCounts[idx], sliceColors[idx], false);
+            if (label === 'Other') folded.forEach(f => { legHtml += row(f.label, f.count, '', true); });
           });
           legList.innerHTML = legHtml;
           legList.querySelectorAll('[data-color]').forEach(dot => { dot.style.background = dot.dataset.color; });
