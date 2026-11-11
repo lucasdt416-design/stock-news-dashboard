@@ -327,6 +327,7 @@ def build_forthcoming_calendar(
     watchlist: Optional[List[Dict[str, Any]]] = None,
     db_path: Optional[str] = None,
     api_key: Optional[str] = None,
+    today: Optional[datetime.date] = None,
 ) -> List[Dict[str, Any]]:
     """Build and persist forthcoming calendar events for all watchlist companies.
 
@@ -337,7 +338,8 @@ def build_forthcoming_calendar(
 
     Sorts strictly by soonest date first.
     """
-    today = datetime.date.today()
+    # today can be passed in so a test doesn't depend on the day it runs.
+    today = today or datetime.date.today()
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
     # Load watchlist if not passed

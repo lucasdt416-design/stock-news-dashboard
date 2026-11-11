@@ -223,6 +223,7 @@ def test_build_forthcoming_calendar_integration(mock_finnhub):
             watchlist=watchlist,
             db_path=db_path,
             api_key="mock_key",
+            today=today,
         )
 
         assert len(events) >= 2
