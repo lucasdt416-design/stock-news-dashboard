@@ -1390,6 +1390,8 @@ SHARED_CSS = """
     .orbit-dust { display: none; }
     .hero-headline { font-size: clamp(3.25rem, 8vw, 6.5rem); font-weight: 600; line-height: 1; letter-spacing: -0.03em; margin-top: 0; }
     .hero-sub { margin-top: 0.9rem; font-size: clamp(1.1rem, 2vw, 1.6rem); line-height: 1.35; letter-spacing: -0.01em; color: var(--text-muted); }
+    .hero-portfolio { display: inline-block; position: relative; z-index: 70; margin-top: 0.9rem; padding: 0.3rem 0; color: var(--accent); font-size: 1rem; text-decoration: none; }
+    .hero-portfolio:hover { text-decoration: underline; }
     .sidebar-footer { font-size: 0.78rem; }
     .theme-toggle { text-decoration: none; color: var(--text-muted); font-size: 0.78rem; }
     .mobile-tab-link { font-size: 0.76rem; border-top: 0; margin-top: 0; }
@@ -1741,6 +1743,7 @@ NAVIGATION_LAYOUT_HTML = """
 
   <nav class="sidebar-nav" aria-label="Pages">
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Home</span></a>
+    <a href="portfolio.html" class="nav-link {% if active_page == 'portfolio' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Portfolio</span></a>
     <a href="moves.html" class="nav-link {% if active_page == 'moves' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Moves</span></a>
     <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span></a>
     <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span></a>
@@ -1764,10 +1767,10 @@ NAVIGATION_LAYOUT_HTML = """
 
 <nav class="mobile-bottom-nav" aria-label="Pages">
   <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+  <a href="portfolio.html" class="mobile-tab-link {% if active_page == 'portfolio' %}active{% endif %}">Portfolio</a>
   <a href="moves.html" class="mobile-tab-link {% if active_page == 'moves' %}active{% endif %}">Moves</a>
   <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">Companies</a>
   <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">Feed</a>
-  <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">Calendar</a>
 </nav>
 """
 
@@ -2481,6 +2484,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <h1 class="hero-headline">Welcome!</h1>
           <p class="hero-sub" id="heroSub">We keep you informed about the stocks you follow.</p>
           <p class="hero-since" id="heroSince" hidden></p>
+          <a class="hero-portfolio" href="portfolio.html">Your portfolio: see what you’re invested in</a>
         </div>
 
         <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">

@@ -76,3 +76,28 @@ def test_the_scripts_build_the_page_without_innerhtml():
     for unsafe in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "new Function"):
         assert unsafe not in script, unsafe
     assert "textContent" in script
+
+
+def test_the_page_is_in_the_menu_the_phone_tab_bar_and_on_home(tmp_path):
+    from pipeline.render import INDEX_TEMPLATE, NAVIGATION_LAYOUT_HTML
+    side = NAVIGATION_LAYOUT_HTML[NAVIGATION_LAYOUT_HTML.index('class="sidebar-nav"'):NAVIGATION_LAYOUT_HTML.index('class="sidebar-footer"')]
+    links = re.findall(r'<a href="([a-z]+\.html)" class="nav-link', side)
+    assert links[:2] == ["index.html", "portfolio.html"], "second in the menu, after Home"
+    assert "calendar.html" in links, "Calendar stays in the menu"
+    bottom = NAVIGATION_LAYOUT_HTML[NAVIGATION_LAYOUT_HTML.index('class="mobile-bottom-nav"'):]
+    tabs = re.findall(r'<a href="([a-z]+\.html)" class="mobile-tab-link', bottom)
+    assert tabs == ["index.html", "portfolio.html", "moves.html", "company.html", "news.html"], "five tabs fit a phone"
+    assert 'href="portfolio.html"' in INDEX_TEMPLATE[INDEX_TEMPLATE.index('class="hero-copy"'):INDEX_TEMPLATE.index('id="heroOrbitStage"')]
+
+
+def test_the_menu_marks_the_page_as_open(page):
+    assert re.search(r'<a href="portfolio\.html" class="nav-link active"', page)
+    assert re.search(r'<a href="portfolio\.html" class="mobile-tab-link active"', page)
+
+
+def test_following_from_the_page_shares_companies_not_amounts():
+    script = portfolio_scripts()
+    body = script[script.index("function pfFollowHeld()"):script.index("function pfEditOne(")]
+    assert "updateFollowState({ symbols:" in body
+    for field in (".sh", ".usd", ".paid", ".bought"):
+        assert field not in body, field

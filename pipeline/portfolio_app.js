@@ -671,7 +671,33 @@ function pfRender() {
   note.textContent = PF.dropped ? `${plural(PF.dropped, 'saved holding', 'saved holdings')} couldn’t be read and ${PF.dropped === 1 ? 'was' : 'were'} left out.` : '';
   const failed = document.getElementById('pfPricesFailed');
   failed.hidden = !PF.indexFailed;
+  pfSyncFollow();
   PF.listeners.forEach(fn => { try { fn(); } catch (e) { /* one section failing must not blank the page */ } });
+}
+
+// "Follow these companies": the companies held that StockPulse follows go into the existing For you
+// settings. Only which companies, never how much: the same list the Follow buttons elsewhere keep.
+function pfUnfollowedHeld() {
+  const direct = new Set(followState().symbols);
+  return [...new Set(PF.holdings.map(h => pfCompany(h.t)).filter(sym => sym && !direct.has(sym)))];
+}
+
+function pfSyncFollow() {
+  const box = document.getElementById('pfFollowBox');
+  const held = [...new Set(PF.holdings.map(h => pfCompany(h.t)).filter(Boolean))];
+  const todo = pfUnfollowedHeld();
+  box.hidden = held.length === 0;
+  document.getElementById('pfFollow').hidden = todo.length === 0;
+  document.getElementById('pfFollowNote').textContent = todo.length
+    ? `Adds ${todo.length === 1 ? todo[0] : `${todo.length} companies`} to For you, so their stories come first. It doesn’t share what you hold.`
+    : `You follow ${held.length === 1 ? 'this company' : `all ${held.length} of these companies`} in For you.`;
+}
+
+function pfFollowHeld() {
+  const todo = pfUnfollowedHeld();
+  if (!todo.length) return;
+  updateFollowState({ symbols: [...new Set([...followState().symbols, ...todo])] });
+  pfSay(`Now following ${todo.length <= 4 ? todo.join(', ') : `${todo.length} more companies`}. Change this any time in Your feed.`, 'good');
 }
 
 function pfEditOne(ticker) {
@@ -741,6 +767,7 @@ Object.assign(PAGE_ACTIONS.click, {
   pfRemoveOne: el => pfRemoveOne(el.dataset.ticker),
   pfRemoveAll: () => pfRemoveAll(),
   pfShowAll: () => { PF.showAll = !PF.showAll; pfRenderHoldings(); },
+  pfFollowHeld: () => pfFollowHeld(),
 });
 Object.assign(PAGE_ACTIONS.change, {
   pfReadFile: el => pfReadFile(el),
@@ -755,6 +782,8 @@ document.addEventListener('keydown', event => {
     if (save) pfSaveEdit(save.dataset.ticker);
   }
 });
+
+document.addEventListener('followchange', () => pfSyncFollow());
 
 // Another tab changed the list: pick that up here too.
 window.addEventListener('storage', event => {

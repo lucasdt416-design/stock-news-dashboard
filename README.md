@@ -18,6 +18,7 @@ It follows the S&P 100 (100 large US companies) and updates every morning.
 - **Company pages** show results read straight from 10-Q and 10-K filings, insider trades, press releases, upcoming dates, customers, suppliers and competitors, and three months against peers and the S&P 500.
 - **Calendar** lists earnings calls, dividends and filing deadlines.
 - **Economy** shows the Fed rate, the 10-year yield, inflation, oil and unemployment from FRED, and when the next releases are due.
+- **Your portfolio** is where you put in the stocks you own. It shows which sectors you're in, where the money is concentrated, bets your holdings share (the same customers, suppliers or themes), and gain or loss against the S&P 500. A calculator answers "what if I'd put $1,000 into this five years ago?". Your holdings stay in your browser.
 - **For you** covers the companies and sectors you follow, and can learn from what you read. All of that stays in your browser.
 
 ## Where the data comes from
@@ -27,7 +28,7 @@ It follows the S&P 100 (100 large US companies) and updates every morning.
 | Filings, results figures, insider trades, company names | [SEC EDGAR](https://www.sec.gov/edgar) |
 | Press releases | Each company's own newsroom feed |
 | News, earnings dates, ticker lookup | [Finnhub](https://finnhub.io) (free plan) |
-| Stock prices | Yahoo Finance |
+| Stock prices, and the monthly price history behind Your portfolio | Yahoo Finance |
 | Economy figures | [FRED](https://fred.stlouisfed.org), Federal Reserve Bank of St. Louis |
 | Economic release dates | Federal Reserve, Bureau of Labor Statistics, Energy Information Administration |
 | One-line summaries | Google Gemini (free tier). A summary is thrown out if it has a number its source doesn't. |
@@ -92,8 +93,10 @@ Fork the repo, then add these repository secrets:
 
 ```bash
 pip install -r requirements-dev.txt
-pytest                                   # about 300 tests
+pytest                                   # about 360 tests
 python scripts/check_following.py       # walks through the site in a real browser (Playwright)
+python scripts/check_portfolio.py       # the same for Your portfolio, and checks what it sends
+node --test tests/node/*.test.mjs       # the site's two functions and the portfolio page's sums
 ```
 
 ## Not investment advice

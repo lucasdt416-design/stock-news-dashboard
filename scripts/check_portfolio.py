@@ -27,7 +27,7 @@ MONTHS = [["2019-01", 20.0], ["2020-01", 25.0], ["2021-10", 40.0], ["2024-01", 8
 HISTORY = {
     "VOO": {"name": "Demo 500 Fund", "kind": "fund", "price": 500.0, "sector": None, "industry": None},
     "RDDT": {"name": "Demo Software Co", "kind": "stock", "price": 50.0, "sector": None, "industry": "Something New"},
-    "NFLX": {"name": "Demo Streaming Co", "kind": "stock", "price": 100.0, "sector": "Consumer Staples", "industry": "Media"},
+    "SPOT": {"name": "Demo Streaming Co", "kind": "stock", "price": 100.0, "sector": "Consumer Staples", "industry": "Media"},
     "GOOG": {"name": "Demo Search Co Class C", "kind": "stock", "price": 200.0, "sector": "Technology", "industry": "Technology"},
 }
 
@@ -64,7 +64,7 @@ async def run(site, out):
 
     async def api_lookup(route):
         q = parse_qs(urlparse(route.request.url).query).get("q", [""])[0]
-        body = {"found": True, "symbol": "NFLX"} if q.lower() == "netflix" else {"found": False}
+        body = {"found": True, "symbol": "SPOT"} if q.lower() == "spotify" else {"found": False}
         await route.fulfill(status=200 if body["found"] else 404, content_type="application/json", body=json.dumps(body))
 
     try:
@@ -117,8 +117,8 @@ async def run(site, out):
             check(abs(shares - 2000 / aapl) < 1e-5, "dollars become shares at the latest price (a company name works too)")
             await add("VOO", "4")
             check("Fund" in await row_text("VOO") and "2,000.00" in await row_text("VOO"), "a fund outside the watchlist is priced by the server and marked Fund")
-            await add("Netflix", "3")
-            check("NFLX" in await pg.inner_text("#pfList") and "Consumer Staples" in await row_text("NFLX"), "a company name outside the watchlist is found through lookup, with its sector")
+            await add("Spotify", "3")
+            check("SPOT" in await pg.inner_text("#pfList") and "Consumer Staples" in await row_text("SPOT"), "a company name outside the watchlist is found through lookup, with its sector")
             await add("ZZZZQ", "1")
             check("couldn’t find" in await status() and "ZZZZQ" not in await pg.inner_text("#pfList"), "a ticker that doesn't exist is refused in plain words")
             await add("NVDA", "-3")
@@ -138,13 +138,13 @@ async def run(site, out):
             check("couldn’t find this ticker" in preview, "a ticker that doesn't exist is flagged, not dropped")
             check("2 lines couldn’t be read" in preview and "no amount" in preview, "lines that couldn't be read are shown with the reason")
             check(await pg.locator("#pfPreview img").count() == 0, "pasted markup stays text")
-            check((await stored())["holdings"][-1]["t"] == "NFLX", "nothing is saved before Add")
+            check((await stored())["holdings"][-1]["t"] == "SPOT", "nothing is saved before Add")
             await pg.screenshot(path=f"{out}/preview.png", full_page=True)
             check(await pg.inner_text('[data-click="pfAcceptPreview"]') == "Add these 3", "the button says how many will be added")
             await pg.click('[data-click="pfAcceptPreview"]')
             await pg.wait_for_timeout(300)
             tickers = [h["t"] for h in (await stored())["holdings"]]
-            check(tickers == ["NVDA", "AAPL", "VOO", "NFLX", "MSFT", "RDDT", "GOOG"], f"the readable rows are saved {tickers}")
+            check(tickers == ["NVDA", "AAPL", "VOO", "SPOT", "MSFT", "RDDT", "GOOG"], f"the readable rows are saved {tickers}")
             await pg.click("#pfShowAll")
             check("Sector unknown" in await row_text("RDDT"), "an industry that isn't in the table shows as Sector unknown")
             check("Technology" in await row_text("GOOG") and await pg.get_attribute('.pf-row[data-ticker="GOOG"] a.pf-ticker', "href") == "company-googl.html",
@@ -322,7 +322,30 @@ async def run(site, out):
             check("Everything here is a fund" in await pg.inner_text("#pfConcentrationLead") and await pg.locator("#pfConcentration .pf-stat").count() == 0,
                   "a portfolio of only funds gets one sentence, not numbers")
             await pg.evaluate("h => localStorage.setItem('stockpulse_portfolio', JSON.stringify({v: 1, holdings: h}))",
-                              [{"t": t, "sh": 3} for t in ["NVDA", "AAPL", "VOO", "NFLX", "RDDT", "GOOG", "JPM"]])
+                              [{"t": t, "sh": 3} for t in ["NVDA", "AAPL", "VOO", "SPOT", "RDDT", "GOOG", "JPM"]])
+
+            # Follow these companies, and what a setup link then carries
+            await pg.reload()
+            await pg.wait_for_timeout(600)
+            note = await pg.inner_text("#pfFollowNote")
+            check("to For you" in note and "doesn’t share what you hold" in note, "following is offered, and says it doesn't share holdings")
+            await pg.click("#pfFollow")
+            await pg.wait_for_timeout(300)
+            followed = await pg.evaluate("JSON.parse(localStorage.getItem('stockpulse_follow')).symbols.sort()")
+            check(followed == ["AAPL", "GOOGL", "JPM", "NVDA"], f"only companies StockPulse follows are followed, GOOG as GOOGL ({followed})")
+            check(not await pg.is_visible("#pfFollow") and "You follow all 4" in await pg.inner_text("#pfFollowNote"), "the button goes once they're followed")
+            link = await pg.evaluate("setupLinkUrl()")
+            check("follow=" in link and not any(t in link for t in ("VOO", "SPOT", "RDDT")) and not any(c.isdigit() for c in link.split("#")[1]),
+                  "a setup link carries the followed companies only: no other holding, no amounts")
+            reading = await pg.evaluate("localStorage.getItem('stockpulse_reading') || ''")
+            check(not any(t in reading for t in ("VOO", "SPOT", "RDDT")), "holdings don't go into the reading history")
+            check(await pg.get_attribute('.sidebar-nav a[href="portfolio.html"]', "class") is not None
+                  and "active" in await pg.get_attribute('.sidebar-nav a[href="portfolio.html"]', "class"), "the menu shows Portfolio as the open page")
+            await pg.goto(base + "index.html")
+            await pg.wait_for_timeout(500)
+            check(await pg.is_visible('.hero-copy a[href="portfolio.html"]'), "Home links to the page")
+            await pg.goto(base + "portfolio.html")
+            await pg.wait_for_timeout(500)
 
             # Survives a reload; bad stored data is dropped and said
             await pg.reload()
@@ -364,6 +387,10 @@ async def run(site, out):
             await small.wait_for_timeout(700)
             overflow = await small.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
             check(overflow <= 0, f"no sideways scrolling at 390 px ({overflow}px)")
+            tabs = await small.eval_on_selector_all(".mobile-bottom-nav a", "els => els.map(e => e.textContent.trim())")
+            check(tabs == ["Home", "Portfolio", "Moves", "Companies", "Feed"], f"the phone tab bar has Portfolio and still five tabs ({tabs})")
+            fits = await small.evaluate("(() => { const n = document.querySelector('.mobile-bottom-nav'); return n.scrollWidth <= n.clientWidth + 1; })()")
+            check(fits, "and they fit")
             await small.screenshot(path=f"{out}/phone.png", full_page=True)
             await browser.close()
     finally:

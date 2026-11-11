@@ -122,6 +122,8 @@ PORTFOLIO_CSS = """
     .pf-total { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 1rem 0 0.25rem; }
     .pf-total-label { color: var(--text-secondary); }
     .pf-total-value { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+    .pf-follow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; margin-top: 0.75rem; }
+    .pf-follow .pf-note { margin: 0; }
     .pf-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.5rem; }
     .pf-lead { margin: 0 0 0.75rem; font-size: 1.02rem; line-height: 1.5; color: var(--text-primary); max-width: 42rem; }
     .pf-lead .pos { color: var(--pos); }
@@ -228,6 +230,10 @@ PORTFOLIO_BODY = """
         <div class="pf-total"><span class="pf-total-label">Total</span><span class="pf-total-value" id="pfTotal"></span></div>
         <p class="pf-note" id="pfTotalNote"></p>
         <p class="pf-note" id="pfDropped" hidden></p>
+        <div class="pf-follow" id="pfFollowBox" hidden>
+          <button type="button" class="pf-link" id="pfFollow" data-click="pfFollowHeld">Follow these companies</button>
+          <span class="pf-note" id="pfFollowNote"></span>
+        </div>
       </section>
 {{ portfolio_sections }}
       <section class="pf-section pf-foot">
