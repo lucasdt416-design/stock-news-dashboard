@@ -1,6 +1,6 @@
 # Your portfolio: plan
 
-**Status: plan only, no code yet.** Written 2026-11-11 against `main` at `776c1af`, after reading the
+**Status: approved 2026-11-11; being built in the pull requests listed below.** Written 2026-11-11 against `main` at `776c1af`, after reading the
 files the task names. Things I checked are marked "checked"; things I could not check are in
 "Not verified".
 
@@ -414,13 +414,12 @@ capture already does.
 - **Yahoo's terms.** The site already shows Yahoo prices. This adds 27 years of monthly values per
   ticker as downloadable files. That is your call to make, not mine.
 
-## Decisions I need from you
+## Decisions
 
-1. **Phone tab bar:** Portfolio replaces Calendar (my suggestion), or replaces something else, or
-   stays in the drawer only.
-2. **Hidden overlap:** ship it with today's thin data and an honest coverage line (my suggestion),
-   or hold it until the watchlist has more tags.
-3. **`lookup.js`:** share the hardening code through `functions/_shared/guard.js` (my suggestion),
-   or leave `lookup.js` untouched and copy.
-4. **Other tickers before Yahoo is proven on Cloudflare:** build (b) anyway and find out on first
-   deploy (my suggestion), or keep v1 to watchlist tickers and SPY.
+The owner said to go with the suggestions, so:
+
+1. **Phone tab bar:** Portfolio takes Calendar's slot; Calendar stays in the drawer.
+2. **Hidden overlap:** ships with today's data and an honest coverage line.
+3. **`lookup.js`:** the hardening code is shared through `functions/_shared/guard.js`.
+4. **Other tickers:** the history function is built now, and Yahoo-from-Cloudflare is found out on
+   the first deploy. Until then other tickers fail with a plain message.
