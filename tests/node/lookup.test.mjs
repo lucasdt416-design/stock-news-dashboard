@@ -1,15 +1,17 @@
 // Run with: node --test tests/node/lookup.test.mjs
-// lookup.js is an ES module without a package.json saying so, so tests load a temporary .mjs copy.
+// The functions are ES modules without a package.json saying so, so tests load a temporary copy
+// of functions/ that has one (see helpers.mjs).
 import assert from "node:assert/strict";
-import { copyFileSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { after, beforeEach, test } from "node:test";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
+
+import { copyFunctions } from "./helpers.mjs";
 
 const SECRET = "not-a-real-key-0123456789";
 const ORIGIN = "https://stocks.example";
-const here = dirname(fileURLToPath(import.meta.url));
 const tempDir = mkdtempSync(join(tmpdir(), "lookup-test-"));
 const realFetch = globalThis.fetch;
 let loadCount = 0;
@@ -24,9 +26,7 @@ after(() => {
 /** A fresh copy each time, so the module's in-memory limits and cache start empty. */
 async function loadModule() {
   loadCount += 1;
-  const copy = join(tempDir, `lookup-${loadCount}.mjs`);
-  copyFileSync(join(here, "..", "..", "functions", "api", "lookup.js"), copy);
-  return import(pathToFileURL(copy).href);
+  return import(pathToFileURL(join(copyFunctions(tempDir, `copy-${loadCount}`), "api", "lookup.js")).href);
 }
 
 function goodUpstream(url) {

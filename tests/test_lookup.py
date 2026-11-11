@@ -36,7 +36,10 @@ class TestQuickLookupFeature(unittest.TestCase):
         self.assertIn("FINNHUB_API_KEY", content)
         self.assertIn("https://finnhub.io/api/v1/quote", content)
         self.assertIn("https://finnhub.io/api/v1/company-news", content)
-        self.assertIn("Access-Control-Allow-Origin", content)
+        # The CORS and rate-limit code is shared with /api/history, in functions/_shared/guard.js.
+        self.assertIn('from "../_shared/guard.js"', content)
+        guard = (self.project_root / "functions" / "_shared" / "guard.js").read_text(encoding="utf-8")
+        self.assertIn("Access-Control-Allow-Origin", guard)
 
     def test_format_time_ago(self):
         """Verify human-readable relative time formatting."""

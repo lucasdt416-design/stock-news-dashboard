@@ -85,9 +85,12 @@ def test_headers_file_has_the_required_headers():
         assert needed in text
 
 
-def test_only_the_lookup_route_is_deployed():
-    routes = sorted(str(p.relative_to(ROOT / "functions")) for p in (ROOT / "functions").rglob("*") if p.is_file())
-    assert routes == [os.path.join("api", "lookup.js")]
+def test_only_the_lookup_and_history_routes_are_deployed():
+    files = sorted(str(p.relative_to(ROOT / "functions")) for p in (ROOT / "functions").rglob("*") if p.is_file())
+    # _shared/guard.js is imported by both routes. It exports no request handler, so it answers nothing itself.
+    assert files == [os.path.join("_shared", "guard.js"), os.path.join("api", "history.js"), os.path.join("api", "lookup.js")]
+    guard = (ROOT / "functions" / "_shared" / "guard.js").read_text(encoding="utf-8")
+    assert "onRequest" not in guard
 
 
 def test_rendered_site_contains_only_intended_files():
@@ -162,7 +165,7 @@ def test_hostile_text_is_stored_as_plain_data():
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_lookup_function_node_suite():
-    result = subprocess.run(["node", "--test", "tests/node/lookup.test.mjs"], cwd=ROOT,
+def test_function_node_suites():
+    result = subprocess.run(["node", "--test", "tests/node/lookup.test.mjs", "tests/node/history.test.mjs"], cwd=ROOT,
                             capture_output=True, text=True, timeout=120)
     assert result.returncode == 0, result.stdout[-2000:]

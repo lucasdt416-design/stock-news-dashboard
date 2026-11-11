@@ -39,6 +39,7 @@ No secret values appear in this document, in the code, or in the pull requests.
 | 21 | Low | URL parameters and stored data trusted too readily | Fixed in the stack and `security/02-csp` |
 | 22 | Low | No script or style restrictions, no integrity check on Chart.js | Fixed in `security/02-csp` |
 | 23 | Low | Search crashed on first-run data | Fixed in `security/02-csp` |
+| 24 | Low | New price history endpoint spends an upstream quota for anonymous visitors | Built with lookup's protection |
 
 ## Findings
 
@@ -145,7 +146,8 @@ in `pipeline/persist.py:366,446`, and `query` plus `conditions`, whose values ar
 
 ### 15. Deployment exposure (None)
 `site/` holds only the rendered pages, and `.db`, `.env`, source maps, logs and backups are not there.
-`functions/` has only `api/lookup.js`, with no debug routes. Both are now tested. `.gitignore` also now
+`functions/` has only `api/lookup.js` (and, since finding 24, `api/history.js` and the shared
+`_shared/guard.js`), with no debug routes. Both are now tested. `.gitignore` also now
 covers `*.log`, `*.bak`, `*.map` and `.env.*`.
 
 ### 16. Dependencies (None)
@@ -195,6 +197,31 @@ the page. Now escaped, along with U+2028 and U+2029.
 `relevant_tickers` can be a list when indicators are freshly seeded, which threw an error on every search.
 Not a security issue, found by the hostile-data run.
 
+### 24. The price history endpoint (added 2026-11-11)
+`functions/api/history.js` returns long monthly prices for one ticker that isn't on the watchlist, for
+the portfolio page. It is a second endpoint that spends someone else's quota for anonymous visitors, so
+it has the same protection as lookup, from the same code:
+- **Shared code:** the origin check, method check, rate limits and cache moved from `lookup.js` into
+  `functions/_shared/guard.js`, and both endpoints use it. Each gets its own counters and cache, so one
+  can't use up the other's allowance. Lookup's 15 tests pass unchanged. The pinned wrangler bundles the
+  folder and routes only `/api/lookup` and `/api/history`; `_shared` answers nothing itself (tested).
+- **Input:** a ticker of up to 10 characters only. No company names here.
+- **Limits:** 60 requests a minute per visitor (a portfolio is priced one ticker at a time), 60 upstream
+  price requests a minute overall, and 10 sector lookups a minute, because Finnhub's allowance is shared
+  with lookup.
+- **Cache:** 6 hours for a ticker that was found, 1 hour for one that wasn't or whose sector lookup failed.
+- **Upstreams:** Yahoo Finance for prices, with no key. Finnhub's company profile for the sector, only
+  when `FINNHUB_API_KEY` is set, with the key in a header. With no key the prices still come back and the
+  sector is left empty.
+- **Errors** are fixed messages that never name a provider, a URL or the key.
+- **What it learns about a visitor:** the ticker, and their IP address held briefly in memory for the
+  rate limit. Never how much of anything they hold: the page keeps shares, amounts, dates and costs in
+  the browser. Nothing is logged; a test fails if either file gains a `console` call. A run of requests
+  from one visitor does show the server which tickers they asked about, so the page says tickers are
+  sent, and watchlist tickers never come here because their prices are static files.
+- **Same limit as finding 2:** the counters are per Cloudflare isolate, and `Origin` can be forged
+  outside a browser. The WAF rule in owner action 7 should cover `/api/history` as well as `/api/lookup`.
+
 ### How the frontend was tested
 `scripts/check_security.py` builds a database of hostile text and URLs (`<img onerror>`, `"><script>`,
 `</script>`, `<!--<script>`, `javascript:` in mixed case, `data:`, 20,000-character strings, control
@@ -205,6 +232,15 @@ it reported 97 problems. `scripts/capture_site.py` also serves `_headers` locall
 under the real policy: 7 pages at 3 widths in both themes, 0 problems.
 
 ## Not verified
+- **Yahoo answering from Cloudflare.** `/api/history` was run in Cloudflare's local runtime (workerd,
+  through `wrangler pages dev`) against the real Yahoo, from a home connection: VOO, NVDA, BRK.B, PLTR and
+  RDDT came back, and a made-up ticker was a 404. Yahoo may still refuse Cloudflare's own addresses. If it
+  does, the endpoint returns its plain 502 and the portfolio page says it couldn't get prices for that
+  ticker; watchlist tickers are unaffected because they are static files. Check after the first deploy:
+  open `/api/history?ticker=VOO` on the live site.
+- **Finnhub's industry words.** The table in `history.js` that turns them into the site's sector names
+  was written without a key to test against. An industry that isn't in it shows as not known, never as a
+  guess, so a wrong or missing row costs a blank, not a wrong sector.
 - **The CSP on real Cloudflare.** Tested with a local server that applies `_headers`. Anything that rewrites
   HTML at the edge would break the hashes. See owner action 10.
 - **Deploy with `wrangler@4.151.2` on Node 22.** Not run. Watch the first deploy after merging. If it
@@ -230,8 +266,8 @@ Only you can do these, in GitHub or Cloudflare settings.
 
 **Cloudflare**
 6. **Scope the API token** to Cloudflare Pages: Edit on this account only, with an expiry date.
-7. **Add a rate-limiting rule** (Security, WAF) for `/api/lookup`, for example 30 requests a minute per
-   IP. This is the hard limit behind finding 2. It requires a custom domain on the zone; a `pages.dev`
+7. **Add a rate-limiting rule** (Security, WAF) for `/api/lookup` and `/api/history`, for example 60
+   requests a minute per IP. This is the hard limit behind finding 2. It requires a custom domain on the zone; a `pages.dev`
    address alone can't have one.
 8. **Enable 2FA** on your Cloudflare account, if it isn't already.
 9. **If the site uses more than one hostname** and lookups are called across them, set `ALLOWED_ORIGINS`
