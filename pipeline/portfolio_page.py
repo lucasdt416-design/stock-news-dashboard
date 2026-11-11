@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 _HERE = os.path.dirname(__file__)
 
 # In the order they run. Each later file may use what the earlier ones define.
-PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_math.js", "portfolio_app.js", "portfolio_xray.js")
+PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_math.js", "portfolio_app.js", "portfolio_xray.js", "portfolio_whatif.js")
 
 
 def _script(name: str) -> str:
@@ -141,6 +141,27 @@ PORTFOLIO_CSS = """
     .pf-stat-detail { grid-column: 1 / -1; margin: 0; font-size: 0.84rem; color: var(--text-muted); max-width: 38rem; }
     .pf-sectors > li:last-child, .pf-stats > .pf-stat:last-child, .pf-lines > li:last-child { border-bottom: none; }
     .pf-overlap-line { padding: 0.65rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.97rem; line-height: 1.45; max-width: 44rem; }
+    .wi-form { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; }
+    .wi-picks { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+    .wi-picks .chip { min-height: 36px; padding: 0.3rem 0.85rem; font-size: 0.88rem; }
+    .wi-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; margin-top: 1rem; }
+    .wi-result { margin-top: 0.5rem; }
+    .wi-answer { margin: 0 0 0.6rem; font-size: 1.2rem; line-height: 1.4; max-width: 42rem; }
+    .wi-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .wi-chart { display: block; width: 100%; max-width: 46rem; height: auto; margin-top: 1rem; }
+    .wi-grid { stroke: var(--border-subtle); stroke-width: 1; }
+    .wi-axis { fill: var(--text-muted); font-size: 11px; font-family: var(--font-sans); }
+    .wi-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .wi-line.wi-line-main { stroke: var(--series-1); }
+    .wi-line.wi-line-spy { stroke: var(--series-other); }
+    .wi-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; margin: 0.4rem 0 0.25rem; font-size: 0.86rem; color: var(--text-secondary); }
+    .wi-key::before { content: ""; display: inline-block; width: 1.1rem; height: 2px; margin-right: 0.45rem; vertical-align: middle; background: var(--series-other); }
+    .wi-key.wi-line-main::before { background: var(--series-1); }
+    .wi-table-wrap { max-height: 22rem; overflow: auto; margin-top: 0.5rem; max-width: 34rem; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); }
+    .wi-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+    .wi-table th, .wi-table td { padding: 0.35rem 0.5rem 0.35rem 0; text-align: right; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+    .wi-table th:first-child, .wi-table td:first-child { text-align: left; }
+    .wi-table th { position: sticky; top: 0; background: var(--bg-base); font-weight: 600; color: var(--text-secondary); }
     @media (max-width: 640px) {
       .pf-row { grid-template-columns: minmax(0, 1fr) auto; }
       .pf-row-weight { grid-column: 2; grid-row: 2; font-size: 0.84rem; }
@@ -254,8 +275,34 @@ PORTFOLIO_XRAY = """
       </div>
 """
 
+PORTFOLIO_WHAT_IF = """
+      <section class="pf-section" id="what-if" aria-labelledby="wiHeading">
+        <h2 class="settings-heading" id="wiHeading">What if I’d invested…</h2>
+        <p class="pf-lead">Put an amount into any US stock or fund at some point in the past and see what it would be worth now, next to the same money in the S&amp;P 500.</p>
+        <div class="wi-form" id="wiForm">
+          <label class="pf-field"><span class="pf-field-label">Ticker or company</span><input class="pf-input" id="wiTicker" type="text" list="pfTickers" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="60" placeholder="e.g. NVDA"></label>
+          <label class="pf-field"><span class="pf-field-label">Amount ($)</span><input class="pf-input" id="wiAmount" type="text" inputmode="decimal" autocomplete="off" maxlength="20" value="1000"></label>
+          <label class="pf-field"><span class="pf-field-label">Starting at the end of</span><input class="pf-input" id="wiFrom" type="month" data-input="wiClearPicks"></label>
+          <label class="pf-field"><span class="pf-field-label">Plus every month ($), optional</span><input class="pf-input" id="wiMonthly" type="text" inputmode="decimal" autocomplete="off" maxlength="20"></label>
+        </div>
+        <div class="wi-picks" role="group" aria-label="Quick picks for the start">
+          <button type="button" class="chip" data-click="wiPick" data-wi-years="1" aria-pressed="false">1 year ago</button>
+          <button type="button" class="chip" data-click="wiPick" data-wi-years="3" aria-pressed="false">3 years ago</button>
+          <button type="button" class="chip" data-click="wiPick" data-wi-years="5" aria-pressed="false">5 years ago</button>
+          <button type="button" class="chip" data-click="wiPick" data-wi-years="10" aria-pressed="false">10 years ago</button>
+          <button type="button" class="chip" data-click="wiPick" data-wi-years="first" aria-pressed="false">From its first month</button>
+        </div>
+        <div class="wi-actions">
+          <button type="button" class="setup-yes" data-click="wiRun">Work it out</button>
+          <button type="button" class="pf-link" id="wiPortfolio" data-click="wiRunPortfolio" hidden>Or use my whole portfolio</button>
+        </div>
+        <p class="pf-status" id="wiStatus" role="status" aria-live="polite"></p>
+        <div class="wi-result" id="wiResult" hidden></div>
+      </section>
+"""
+
 # Sections added by later parts of the page (the X-ray, the what-if calculator), in page order.
-PORTFOLIO_SECTIONS = PORTFOLIO_XRAY
+PORTFOLIO_SECTIONS = PORTFOLIO_XRAY + PORTFOLIO_WHAT_IF
 
 
 def build_portfolio_template(shared_css: str, navigation_html: str, shared_js: str, theme_boot_js: str) -> str:

@@ -191,3 +191,108 @@ test("a line's percentage is of the whole portfolio, funds included", () => {
   const out = M.overlap([stock("NVDA", 300, "Technology"), stock("AMD", 200, "Technology"), fund("VOO", 500)], DETAILS);
   near(out.lines.find((l) => l.kind === "theme").weight, 0.5);
 });
+
+// ---- "What if I'd invested" ----------------------------------------------------------------
+
+test("months are counted the way a calendar counts them", () => {
+  assert.equal(M.addMonths("2021-11", -1), "2021-10");
+  assert.equal(M.addMonths("2021-01", -1), "2020-12");
+  assert.equal(M.addMonths("2020-12", 1), "2021-01");
+  assert.equal(M.addMonths("2026-11", -61), "2021-10");
+  assert.equal(M.monthsApart("2021-10", "2026-10"), 60);
+  // "5 years ago" from 11 Nov 2026 is 11 Nov 2021; the last finished month on or before it is October 2021.
+  assert.equal(M.monthYearsAgo("2026-11-11", 5), "2021-10");
+  assert.equal(M.monthYearsAgo("2026-01-05", 1), "2024-12");
+  // 31 Oct 2021 to 31 Oct 2026 is 1826 days = 4.99932 years of 365.25 days.
+  near(M.yearsSince("2021-10", "2026-10-31"), 1826 / 365.25);
+  near(M.yearsSince("2024-02", "2024-03-01"), 1 / 365.25);   // a leap-year February ends on the 29th
+});
+
+const H = { months: [["2020-12", 50], ["2021-01", 100], ["2021-02", 110], ["2021-03", 121]], price: 121, date: "2021-03-31" };
+
+test("a lump sum: value is the amount times the price now over the price then", () => {
+  // $1,000 at 100 buys 10 shares; at 121 they're worth $1,210: +21%.
+  const r = M.whatIf(H, 1000, "2021-01", 0);
+  assert.equal(r.from, "2021-01");
+  near(r.value, 1210);
+  assert.equal(r.putIn, 1000);
+  near(r.pct, 0.21);
+  assert.equal(r.contributions, 0);
+  assert.equal(r.perYear, null, "under a year, no yearly rate is quoted");
+  assert.deepEqual(r.series.map(([m, v]) => [m, Math.round(v)]), [["2021-01", 1000], ["2021-02", 1100], ["2021-03", 1210], ["2021-03-31", 1210]]);
+});
+
+test("the plan's worked example with a monthly amount", () => {
+  // $1,000 at 100, then $100 at 110 and $100 at 121; latest price 121.
+  // shares = 10 + 100/110 + 100/121 = 10 + 0.909091 + 0.826446 = 11.735537
+  // value  = 11.735537 x 121 = 1,420.00;  put in 1,200;  gain 220 = 18.33%
+  const r = M.whatIf(H, 1000, "2021-01", 100);
+  near(r.value, 1420);
+  assert.equal(r.putIn, 1200);
+  assert.equal(r.contributions, 2);
+  near(r.gain, 220);
+  near(r.pct, 220 / 1200);
+  // After February: (10 + 0.909091) x 110 = 1,200.00
+  near(r.series[1][1], 1200);
+});
+
+test("the yearly rate of a lump sum is the compound rate, checked by compounding it back", () => {
+  // 100 -> 200 over exactly 4 years (31 Dec 2016 to 31 Dec 2020 = 1461 days): 2^(1/4) - 1 = 18.92%
+  const h = { months: [["2016-12", 100], ["2020-11", 190]], price: 200, date: "2020-12-31" };
+  const r = M.whatIf(h, 5000, "2016-12", 0);
+  near(r.years, 4);
+  near(r.perYear, Math.pow(2, 0.25) - 1);
+  near(5000 * Math.pow(1 + r.perYear, 4), r.value);
+});
+
+test("the yearly rate with contributions is the rate that grows each payment to today's value", () => {
+  // $1,200 a year ago and $1,200 six months ago, worth $2,640 now.
+  // At 1% a month: 1200 x 1.01^12 + 1200 x 1.01^6 = 1352.19 + 1273.82 = 2626.01 (a little low)
+  // The answer must grow both payments to exactly 2,640.
+  const rate = M.yearlyRate([{ months: 12, amount: 1200 }, { months: 6, amount: 1200 }], 2640);
+  const monthly = Math.pow(1 + rate, 1 / 12) - 1;
+  near(1200 * Math.pow(1 + monthly, 12) + 1200 * Math.pow(1 + monthly, 6), 2640);
+  assert.ok(monthly > 0.01 && monthly < 0.011);
+  // One payment a year ago that doubled is +100% a year; one that halved is -50%.
+  near(M.yearlyRate([{ months: 12, amount: 100 }], 200), 1);
+  near(M.yearlyRate([{ months: 12, amount: 100 }], 50), -0.5);
+  assert.equal(M.yearlyRate([{ months: 12, amount: 100 }], 0), null);
+});
+
+test("a start before the first month isn't guessed: it says so and offers the first month", () => {
+  assert.deepEqual(M.whatIf(H, 1000, "2019-06", 0), { error: "before", first: "2020-12" });
+  assert.deepEqual(M.whatIf({ months: [], price: 5, date: "2021-03-31" }, 1000, "2019-06", 0), { error: "noHistory" });
+});
+
+test("a month with no price uses the nearest earlier real month and says which", () => {
+  const gap = { months: [["2021-01", 100], ["2021-03", 121]], price: 121, date: "2021-03-31" };
+  const r = M.whatIf(gap, 1000, "2021-02", 0);
+  assert.equal(r.asked, "2021-02");
+  assert.equal(r.from, "2021-01");
+  near(r.value, 1210);
+  assert.deepEqual(r.series.map(([m]) => m), ["2021-01", "2021-03", "2021-03-31"], "February isn't drawn");
+});
+
+test("a whole portfolio is split by today's weights, each part bought the same month", () => {
+  // 60% in A (100 -> 150, +50%), 40% in B (10 -> 30, +200%)
+  const a = { t: "A", weight: 0.6, months: [["2021-01", 100], ["2021-02", 120]], price: 150, date: "2021-03-10" };
+  const b = { t: "B", weight: 0.4, months: [["2021-01", 10], ["2021-02", 20]], price: 30, date: "2021-03-10" };
+  const r = M.whatIfPortfolio([a, b], 1000, "2021-01");
+  // A: 600 x 150/100 = 900.  B: 400 x 30/10 = 1,200.  Together 2,100: +110%.
+  near(r.value, 2100);
+  near(r.pct, 1.1);
+  assert.deepEqual(r.leftOut, []);
+  assert.deepEqual(r.included.map((p) => [p.t, p.share, Math.round(p.value)]), [["A", 0.6, 900], ["B", 0.4, 1200]]);
+  // February: 600 x 1.2 + 400 x 2 = 720 + 800 = 1,520
+  assert.deepEqual(r.series.map(([m, v]) => [m, Math.round(v)]), [["2021-01", 1000], ["2021-02", 1520], ["2021-03-10", 2100]]);
+});
+
+test("a holding that wasn't trading yet is left out, named, and the rest rescaled to 100%", () => {
+  const a = { t: "A", weight: 0.3, months: [["2021-01", 100], ["2021-02", 120]], price: 150, date: "2021-03-10" };
+  const young = { t: "NEW", weight: 0.7, months: [["2021-02", 10]], price: 30, date: "2021-03-10" };
+  const r = M.whatIfPortfolio([a, young], 1000, "2021-01");
+  assert.deepEqual(r.leftOut, ["NEW"]);
+  assert.deepEqual(r.included.map((p) => [p.t, p.share]), [["A", 1]]);
+  near(r.value, 1500);   // all 1,000 in A: 1000 x 150/100
+  assert.deepEqual(M.whatIfPortfolio([young], 1000, "2021-01"), { error: "none", leftOut: ["NEW"] });
+});

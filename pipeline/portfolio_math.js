@@ -190,5 +190,115 @@ const PortfolioMath = (() => {
     };
   }
 
-  return { total, positions, sectors, concentration, monthAtOrBefore, gains, overlap };
+  // ---- "What if I'd invested" --------------------------------------------------------------
+  // Prices are month-end adjusted closes, so every date here is a month. Nothing is estimated
+  // between two real readings.
+
+  function addMonths(month, n) {
+    const index = Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7)) - 1 + n;
+    return `${String(Math.floor(index / 12)).padStart(4, '0')}-${String((index % 12) + 1).padStart(2, '0')}`;
+  }
+
+  function monthsApart(from, to) {
+    return (Number(to.slice(0, 4)) - Number(from.slice(0, 4))) * 12 + Number(to.slice(5, 7)) - Number(from.slice(5, 7));
+  }
+
+  // Days from the last day of a month to a date, as years.
+  function yearsSince(month, isoDate) {
+    const end = Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0);
+    const then = Date.UTC(Number(isoDate.slice(0, 4)), Number(isoDate.slice(5, 7)) - 1, Number(isoDate.slice(8, 10)));
+    return (then - end) / 86400000 / 365.25;
+  }
+
+  // The last finished month on or before the day n years before a date: for 2026-11-11 and
+  // 5 years, the day is 2021-11-11 and the month is 2021-10.
+  function monthYearsAgo(isoDate, years) {
+    return addMonths(isoDate.slice(0, 7), -12 * years - 1);
+  }
+
+  // The yearly rate that turns the money put in, when it was put in, into the value today.
+  // flows: [{ months: how long ago in months, amount }]. Found by bisection on the monthly rate.
+  function yearlyRate(flows, value) {
+    const worth = rate => sum(flows.map(f => f.amount * Math.pow(1 + rate, f.months)));
+    let low = -0.99;
+    let high = 1;
+    if (!(value > 0) || !flows.length || worth(high) < value) return null;
+    for (let i = 0; i < 200; i += 1) {
+      const mid = (low + high) / 2;
+      if (worth(mid) < value) low = mid; else high = mid;
+    }
+    return Math.pow(1 + (low + high) / 2, 12) - 1;
+  }
+
+  // What an amount put in at the end of a month, plus an optional amount at the end of every
+  // finished month after it, is worth at the latest price.
+  //   history: { months: [[month, adjusted close]], price: latest price, date: its date }
+  //   value = shares x latest price, where shares = amount / close(start) + sum(monthly / close(m))
+  function whatIf(history, amount, fromMonth, monthly) {
+    const months = history.months || [];
+    if (!months.length) return { error: 'noHistory' };
+    if (fromMonth < months[0][0]) return { error: 'before', first: months[0][0] };
+    const start = monthAtOrBefore(months, fromMonth);
+    const extra = monthly > 0 ? monthly : 0;
+    let shares = amount / start[1];
+    let putIn = amount;
+    const totalMonths = yearsSince(start[0], history.date) * 12;
+    const flows = [{ months: totalMonths, amount }];
+    const series = [[start[0], amount]];
+    let contributions = 0;
+    months.forEach(([month, close]) => {
+      if (month <= start[0]) return;
+      if (extra) {
+        shares += extra / close;
+        putIn += extra;
+        contributions += 1;
+        flows.push({ months: Math.max(0, totalMonths - monthsApart(start[0], month)), amount: extra });
+      }
+      series.push([month, shares * close]);
+    });
+    const value = shares * history.price;
+    series.push([history.date, value]);
+    const years = totalMonths / 12;
+    let perYear = null;
+    if (years >= 1) perYear = extra ? yearlyRate(flows, value) : Math.pow(value / amount, 1 / years) - 1;
+    return { from: start[0], asked: fromMonth, value, putIn, gain: value - putIn, pct: (value - putIn) / putIn, years, perYear, contributions, series };
+  }
+
+  // The same amount split across a portfolio by today's weights, each part bought at the end of
+  // the same month. A holding that wasn't trading yet is left out and named, and the others'
+  // weights are rescaled to add to 100%.
+  //   parts: [{ t, weight, months, price, date }]
+  function whatIfPortfolio(parts, amount, fromMonth) {
+    const included = [];
+    const leftOut = [];
+    parts.forEach(p => {
+      const months = p.months || [];
+      if (!months.length || fromMonth < months[0][0]) leftOut.push(p.t); else included.push(p);
+    });
+    const weight = sum(included.map(p => p.weight));
+    if (!included.length || !(weight > 0)) return { error: 'none', leftOut };
+    const runs = included.map(p => ({ t: p.t, share: p.weight / weight, run: whatIf(p, amount * p.weight / weight, fromMonth, 0) }));
+    const from = runs.map(r => r.run.from).sort()[0];
+    const value = sum(runs.map(r => r.run.value));
+    const date = included.map(p => p.date).sort()[0];
+    const years = yearsSince(from, date);
+    // One point per month from the start to the latest finished month any part has.
+    const lastMonth = included.map(p => p.months[p.months.length - 1][0]).sort().pop();
+    const series = [];
+    for (let month = from; month <= lastMonth; month = addMonths(month, 1)) {
+      series.push([month, sum(runs.map(r => {
+        const at = monthAtOrBefore(r.run.series.slice(0, -1), month);
+        return at ? at[1] : amount * r.share;
+      }))]);
+    }
+    series.push([date, value]);
+    return {
+      from, asked: fromMonth, value, putIn: amount, gain: value - amount, pct: (value - amount) / amount, years,
+      perYear: years >= 1 ? Math.pow(value / amount, 1 / years) - 1 : null,
+      included: runs.map(r => ({ t: r.t, share: r.share, value: r.run.value })), leftOut, series,
+    };
+  }
+
+  return { total, positions, sectors, concentration, monthAtOrBefore, gains, overlap,
+    addMonths, monthsApart, yearsSince, monthYearsAgo, yearlyRate, whatIf, whatIfPortfolio };
 })();

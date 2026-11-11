@@ -224,6 +224,97 @@ async def run(site, out):
             check(f"${same:,.2f}" in await pg.inner_text("#pfGainSpy"), f"the same money in the S&P 500 is cost times its rise since that month (${same:,.2f})")
             check("dividends" in await pg.inner_text("#pfGainNote"), "the comparison says what it includes")
 
+            # What if: the page's answers against the same sums done here from the price files
+            def load(t):
+                with open(os.path.join(site, "data", "prices", f"{t}.json"), encoding="utf-8") as f:
+                    return json.load(f)
+
+            nv, sp = load("NVDA"), load("SPY")
+            start_month, start_price = nv["months"][-37]
+            spy_start = dict(sp["months"])[start_month]
+
+            async def what_if(ticker, amount, month, monthly=""):
+                await pg.fill("#wiTicker", ticker)
+                await pg.fill("#wiAmount", amount)
+                await pg.fill("#wiFrom", month)
+                await pg.fill("#wiMonthly", monthly)
+                await pg.click('[data-click="wiRun"]')
+                await pg.wait_for_timeout(500)
+                return await pg.inner_text("#wiResult") if await pg.is_visible("#wiResult") else ""
+
+            check(await pg.input_value("#wiFrom") != "" and await pg.get_attribute('[data-wi-years="5"]', "aria-pressed") == "true", "the form starts on 5 years ago")
+            result = await what_if("NVDA", "1000", start_month)
+            value = 1000 * nv["price"]["value"] / start_price
+            check(f"${value:,.2f}" in result, f"a lump sum is the amount times price now over price then (${value:,.2f})")
+            same = 1000 * sp["price"]["value"] / spy_start
+            check(f"${same:,.2f}" in result and "S&P 500" in result, f"the same money in the S&P 500 is worked the same way (${same:,.2f})")
+            check("a year" in result and "dividends were reinvested" in result and "Ignores taxes and fees" in result, "it gives a yearly rate and says what it assumes")
+            check("demo prices" in result, "on the demo site the result says the prices aren't real")
+            check(await pg.locator("#wiResult svg.wi-chart path.wi-line").count() == 2, "the chart draws the stock and the S&P 500")
+            query = urlparse(pg.url).query
+            check(parse_qs(query) == {"t": ["NVDA"], "a": ["1000"], "from": [start_month]}, f"the address holds the ticker, amount and month and nothing else ({query})")
+            await pg.click('[data-click="wiToggleNumbers"]')
+            check(await pg.locator(".wi-table tbody tr").count() == 38, "the numbers behind the chart can be shown: 37 months and now")
+            await pg.screenshot(path=f"{out}/what-if.png", full_page=True)
+
+            shares = 1000 / start_price + sum(100 / price for month, price in nv["months"][-36:])
+            result = await what_if("NVDA", "1000", start_month, "100")
+            check(f"${shares * nv['price']['value']:,.2f}" in result and "$4,600.00" in result, "monthly amounts are bought at each month's real price (36 of them: $4,600 put in)")
+            check("m=100" in pg.url, "the monthly amount is in the link")
+
+            first_month = nv["months"][0][0]
+            await pg.fill("#wiMonthly", "")
+            result = await what_if("NVDA", "1000", "1980-01")
+            check(result == "" or "started trading" in await pg.inner_text("#wiStatus"), "a start before the first month isn't guessed")
+            check("started trading" in await pg.inner_text("#wiStatus"), "it says when the stock started trading")
+            await pg.click('[data-click="wiUseFirst"]')
+            await pg.wait_for_timeout(500)
+            check(f"from={first_month}" in pg.url, "and offers the first month, which then runs")
+            await pg.click('[data-wi-years="first"]')
+            await pg.fill("#wiTicker", "RDDT")
+            await pg.click('[data-click="wiRun"]')
+            await pg.wait_for_timeout(500)
+            # RDDT is answered by the made-up server reply: 20.0 in 2019-01, 50.0 now -> $1,000 becomes $2,500
+            check("$2,500.00" in await pg.inner_text("#wiResult") and "January 2019" in await pg.inner_text("#wiResult"), "a ticker outside the watchlist works, from its first month")
+            await what_if("ZZZZQ", "1000", start_month)
+            check("couldn’t find" in await pg.inner_text("#wiStatus"), "a ticker that doesn't exist is refused in plain words")
+            await what_if("NVDA", "abc", start_month)
+            check("Type an amount" in await pg.inner_text("#wiStatus"), "a bad amount is refused")
+
+            # A shared link, including a hostile one
+            await pg.goto(base + f"portfolio.html?t=AAPL&a=250&from={start_month}")
+            await pg.wait_for_timeout(700)
+            ap = load("AAPL")
+            check(f"${250 * ap['price']['value'] / dict(ap['months'])[start_month]:,.2f}" in await pg.inner_text("#wiResult"), "a shared link fills the form and shows the result")
+            await pg.goto(base + "portfolio.html?t=%3Cimg%20src%3Dx%20onerror%3Dwindow.__xss%3D1%3E&a=1e99&from=x")
+            await pg.wait_for_timeout(500)
+            check(not await pg.is_visible("#wiResult") and await pg.input_value("#wiTicker") == "", "a link with bad values is ignored")
+
+            # The whole portfolio: NVDA 4000, AMD 2000, MSFT 2000, VOO 1500, RDDT 500 of 10,000
+            await pg.goto(base + "portfolio.html")
+            await pg.wait_for_timeout(600)
+            await pg.fill("#wiAmount", "10000")
+            await pg.fill("#wiFrom", start_month)
+            await pg.click('[data-click="wiRunPortfolio"]')
+            await pg.wait_for_timeout(700)
+
+            def grown(t, dollars):
+                if t in HISTORY:
+                    then = [v for m, v in MONTHS if m <= start_month][-1]
+                    return dollars * HISTORY[t]["price"] / then
+                data = load(t)
+                return dollars * data["price"]["value"] / dict(data["months"])[start_month]
+
+            young = [t for t in want if t not in HISTORY and load(t)["months"][0][0] > start_month]
+            kept = {t: v for t, v in want.items() if t not in young}
+            expected = sum(grown(t, 10000 * v / sum(kept.values())) for t, v in kept.items())
+            result = await pg.inner_text("#wiResult")
+            check(f"${expected:,.2f}" in result or f"${expected:,.0f}" in result, f"the portfolio run splits the amount by today's weights (${expected:,.2f})")
+            check("Uses today’s mix" in result, "it says it uses today's mix")
+            check(urlparse(pg.url).query == "", "a portfolio run puts nothing in the address")
+            check(await pg.locator('[data-click="wiCopyLink"]').count() == 0, "and offers no link to share")
+            await pg.screenshot(path=f"{out}/what-if-portfolio.png", full_page=True)
+
             # Only funds
             await pg.evaluate("localStorage.setItem('stockpulse_portfolio', JSON.stringify({v: 1, holdings: [{t: 'VOO', sh: 2}, {t: 'SPY', sh: 1}]}))")
             await pg.reload()
