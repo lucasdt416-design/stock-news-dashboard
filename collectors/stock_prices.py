@@ -8,11 +8,12 @@ Fetches 3-month daily close prices for:
 Computes normalized % change series (Day 0 = 0.0%) and peer relative alpha metrics.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
+from urllib.parse import quote
 import urllib.request
 import yaml
 
@@ -25,14 +26,12 @@ USER_AGENT = (
 )
 
 
-def fetch_ticker_historical_closes(
-    symbol: str,
-    range_str: str = "3mo",
-    interval: str = "1d",
-    timeout: int = 10,
-) -> Optional[Dict[str, Any]]:
-    """Fetch historical daily close prices for a single ticker."""
-    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?range={range_str}&interval={interval}&includePrePost=false"
+def _fetch_chart(symbol: str, range_str: str, interval: str, timeout: int = 10) -> Optional[Dict[str, Any]]:
+    """One Yahoo chart answer for a ticker, or None. Every price request goes through here."""
+    url = (
+        f"https://query2.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}"
+        f"?range={range_str}&interval={interval}&includePrePost=false"
+    )
     req = urllib.request.Request(
         url,
         headers={
@@ -42,46 +41,140 @@ def fetch_ticker_historical_closes(
             "Referer": "https://finance.yahoo.com/",
         },
     )
-
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            result = data.get("chart", {}).get("result", [])
-            if not result:
-                return None
+    except Exception as e:
+        logger.warning("Failed to fetch %s prices for %s: %s", interval, symbol, e)
+        return None
+    result = (data.get("chart") or {}).get("result") or []
+    return result[0] if result else None
 
-            chart = result[0]
-            timestamps = chart.get("timestamp", [])
-            indicators = chart.get("indicators", {}).get("quote", [{}])[0]
-            raw_closes = indicators.get("close", [])
 
-            # Filter valid (timestamp, close) pairs
-            series = []
-            for ts, cl in zip(timestamps, raw_closes):
-                if cl is not None:
-                    dt = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
-                    series.append({"date": dt, "timestamp": ts, "close": round(float(cl), 2)})
+def fetch_ticker_historical_closes(
+    symbol: str,
+    range_str: str = "3mo",
+    interval: str = "1d",
+    timeout: int = 10,
+) -> Optional[Dict[str, Any]]:
+    """Fetch historical daily close prices for a single ticker."""
+    chart = _fetch_chart(symbol, range_str, interval, timeout)
+    if not chart:
+        return None
+    try:
+        timestamps = chart.get("timestamp", [])
+        indicators = chart.get("indicators", {}).get("quote", [{}])[0]
+        raw_closes = indicators.get("close", [])
 
-            if len(series) < 5:
-                return None
+        # Filter valid (timestamp, close) pairs
+        series = []
+        for ts, cl in zip(timestamps, raw_closes):
+            if cl is not None:
+                dt = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+                series.append({"date": dt, "timestamp": ts, "close": round(float(cl), 2)})
 
-            base_price = series[0]["close"]
-            for pt in series:
-                pt["pct_change"] = round(((pt["close"] - base_price) / base_price) * 100.0, 2)
+        if len(series) < 5:
+            return None
 
-            total_pct_change = series[-1]["pct_change"]
-            latest_price = series[-1]["close"]
+        base_price = series[0]["close"]
+        for pt in series:
+            pt["pct_change"] = round(((pt["close"] - base_price) / base_price) * 100.0, 2)
 
-            return {
-                "symbol": symbol,
-                "latest_price": latest_price,
-                "base_price": base_price,
-                "total_pct_change": total_pct_change,
-                "series": series,
-            }
+        total_pct_change = series[-1]["pct_change"]
+        latest_price = series[-1]["close"]
+
+        return {
+            "symbol": symbol,
+            "latest_price": latest_price,
+            "base_price": base_price,
+            "total_pct_change": total_pct_change,
+            "series": series,
+        }
     except Exception as e:
         logger.warning("Failed to fetch historical prices for %s: %s", symbol, e)
         return None
+
+
+FUND_TYPES = {"ETF", "MUTUALFUND"}
+
+
+def _six_figures(value: float) -> float:
+    return float(f"{value:.6g}")
+
+
+def parse_monthly_history(symbol: str, chart: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Month-end adjusted closes and the latest price from one Yahoo monthly chart answer.
+
+    Only finished months are kept: the month in progress is a part-month, so it is left out and
+    the latest price is reported on its own with its date. A month Yahoo has no value for is
+    simply absent. Anything that doesn't look right returns None, so the caller keeps what it had.
+    """
+    try:
+        meta = chart.get("meta") or {}
+        kind = "fund" if meta.get("instrumentType") in FUND_TYPES else "stock" if meta.get("instrumentType") == "EQUITY" else None
+        price, price_time = meta.get("regularMarketPrice"), meta.get("regularMarketTime")
+        if kind is None or meta.get("currency") != "USD":
+            return None
+        if not isinstance(price, (int, float)) or price <= 0 or not isinstance(price_time, (int, float)):
+            return None
+        offset = timedelta(seconds=int(meta.get("gmtoffset") or 0))
+        price_day = datetime.fromtimestamp(price_time, tz=timezone.utc) + offset
+        current_month = price_day.strftime("%Y-%m")
+
+        timestamps = chart.get("timestamp") or []
+        adjusted = ((chart.get("indicators") or {}).get("adjclose") or [{}])[0].get("adjclose") or []
+        months: List[List[Any]] = []
+        for ts, value in zip(timestamps, adjusted):
+            if value is None:
+                continue
+            # A bar is stamped at midnight in New York on the 1st, which is 04:00 or 05:00 UTC
+            # depending on daylight saving, so the UTC date names the month either way.
+            month = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m")
+            if month >= current_month:
+                continue
+            if not isinstance(value, (int, float)) or value <= 0 or (months and month <= months[-1][0]):
+                return None
+            months.append([month, _six_figures(float(value))])
+
+        return {
+            "symbol": symbol,
+            "name": str(meta.get("longName") or meta.get("shortName") or symbol)[:120],
+            "kind": kind,
+            "currency": "USD",
+            "months": months,
+            "price": round(float(price), 4),
+            "price_date": price_day.strftime("%Y-%m-%d"),
+        }
+    except Exception as e:
+        logger.warning("Could not read monthly history for %s: %s", symbol, e)
+        return None
+
+
+def fetch_ticker_monthly_history(symbol: str, timeout: int = 15) -> Optional[Dict[str, Any]]:
+    """Every finished month's adjusted close since a ticker started trading, plus its latest price."""
+    chart = _fetch_chart(symbol, "max", "1mo", timeout)
+    return parse_monthly_history(symbol, chart) if chart else None
+
+
+def collect_price_history(
+    watchlist_path: str = "data/watchlist.yaml",
+    fetch: Callable[[str], Optional[Dict[str, Any]]] = fetch_ticker_monthly_history,
+    pause: float = 0.08,
+) -> Dict[str, Dict[str, Any]]:
+    """Long monthly history for every watchlist company and the S&P 500 fund.
+
+    Only tickers that answered are returned, so a failed fetch never replaces a stored reading."""
+    with open(watchlist_path, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f) or {}
+    symbols = sorted({BENCHMARK_TICKER} | {co["symbol"] for co in config.get("tickers", []) if co.get("symbol")})
+    logger.info("Collecting monthly price history for %d symbols...", len(symbols))
+    out: Dict[str, Dict[str, Any]] = {}
+    for sym in symbols:
+        record = fetch(sym)
+        if record:
+            out[sym] = record
+        time.sleep(pause)
+    return out
 
 
 def collect_comparative_performance(

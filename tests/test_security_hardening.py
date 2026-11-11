@@ -98,7 +98,12 @@ def test_rendered_site_contains_only_intended_files():
         render_dashboard(output_path=os.path.join(site, "index.html"), db_path=db, performance_data={})
         files = [p for p in Path(site).rglob("*") if p.is_file()]
         assert files
+        prices = Path(site) / "data" / "prices"
         for path in files:
+            if path.parent == prices:
+                # Price history for the portfolio page: plain JSON, and nowhere else.
+                assert path.suffix == ".json", path.name
+                continue
             assert path.suffix in {".html", ".woff2", ""}, path.name
             assert path.suffix or path.name == "_headers", path.name
             assert not re.search(r"\.(db|sqlite|env|map|log|bak)$", path.name)

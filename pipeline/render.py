@@ -21,6 +21,7 @@ from jinja2 import Template
 from markupsafe import Markup, escape
 from pipeline.moves import build_deck
 from pipeline.normalize import clean_text
+from pipeline.prices import write_price_files
 from pipeline.persist import (
     get_all_news_items,
     get_chart_data,
@@ -7421,5 +7422,8 @@ def render_dashboard(
 
     with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
         f.write(_headers_file(policies, pattern_policies))
+
+    # Long price history for the portfolio page, as static files read from the database.
+    logger.info("Wrote price history for %d tickers", write_price_files(site_dir, db_path))
 
     return primary_output

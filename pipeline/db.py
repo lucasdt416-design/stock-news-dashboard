@@ -82,6 +82,23 @@ def init_db(db_path: Optional[str] = None) -> None:
             """
         )
 
+        # Long monthly price history, one row per ticker, replaced whole on each good fetch
+        # (see pipeline/prices.py).
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS price_history (
+                symbol TEXT PRIMARY KEY,
+                name TEXT,
+                kind TEXT NOT NULL,
+                months_json TEXT NOT NULL,
+                price REAL NOT NULL,
+                price_date TEXT NOT NULL,
+                fetched_at TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'yahoo'
+            )
+            """
+        )
+
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_news_published_date ON news_items(published_date DESC);"
         )

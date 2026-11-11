@@ -41,10 +41,11 @@ from collectors.company_ir import collect_company_ir
 from collectors.edgar import collect_sec_edgar
 from collectors.edgar_details import enrich_filings
 from collectors.finnhub_news import collect_finnhub_news
-from collectors.stock_prices import collect_comparative_performance
+from collectors.stock_prices import collect_comparative_performance, collect_price_history
 from pipeline.calendar import build_forthcoming_calendar
 from pipeline.crossref import apply_supply_chain_cross_references
 from pipeline.db import init_db
+from pipeline.prices import save_price_history
 from pipeline.dedupe import deduplicate_items
 from pipeline.economic import collect_economic_indicators, collect_economic_releases
 from pipeline.health import (
@@ -260,6 +261,12 @@ def main() -> None:
     logger.info("--- Stage 11: 3-Month Comparative Stock & Peer Performance Collector ---")
     performance_data = collect_comparative_performance(watchlist_path=str(watchlist_path))
     logger.info("Stock performance collected for %d companies", len(performance_data.get("companies", {})))
+
+    # Long monthly history for the portfolio page. Tickers that didn't answer keep what is stored.
+    logger.info("--- Stage 11b: Monthly price history ---")
+    history = collect_price_history(watchlist_path=str(watchlist_path))
+    stored = save_price_history(history.values(), db_path=str(db_file))
+    logger.info("Monthly price history stored for %d tickers", stored)
 
     # 14. Stage 12: Render Static Dashboard (6 Static Pages)
     logger.info("--- Stage 12: Render Static Site (6 Pages: Home, Feed, Calendar, Economic, Company, Analytics) ---")

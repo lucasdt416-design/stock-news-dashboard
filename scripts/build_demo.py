@@ -2,7 +2,7 @@
 """Build a synthetic demo database and render the site from it, with no API keys or network.
 
 Everything here is invented for visual review. Headlines are deliberately generic, news items
-are credited to "Demo Wire", links point at example.com, and prices are a seeded random walk.
+are credited to "Demo Wire", links point at example.com, and prices (daily and the long monthly history) are a seeded random walk.
 Economy figures and release dates come from saved copies of the real sources in tests/fixtures/economy.
 
 Usage:
@@ -26,6 +26,7 @@ from pipeline.db import get_db_connection, init_db  # noqa: E402
 from pipeline.economic import collect_economic_indicators, collect_economic_releases, snapshot_fetch  # noqa: E402
 from pipeline.health import init_health_schema  # noqa: E402
 from pipeline.persist import save_news_items  # noqa: E402
+from pipeline.prices import save_price_history  # noqa: E402
 from pipeline.render import render_dashboard  # noqa: E402
 from pipeline.score import score_item  # noqa: E402
 
@@ -187,6 +188,34 @@ def walk(symbol, today, rng, days=64):
             "total_pct_change": series[-1]["pct_change"], "series": series}
 
 
+def make_price_history(companies, today, rng):
+    """Made-up monthly history in the shape collectors.stock_prices.fetch_ticker_monthly_history returns.
+
+    Stored with source "demo", so every file carries "demo": true and the page says the prices aren't real."""
+    def months_back(n):
+        year, month = today.year, today.month
+        out = []
+        for _ in range(n):
+            month -= 1
+            if month == 0:
+                year, month = year - 1, 12
+            out.append(f"{year:04d}-{month:02d}")
+        return out[::-1]
+
+    records = []
+    for sym, name, kind in [("SPY", "Demo S&P 500 fund", "fund")] + [(c["symbol"], c["name"], "stock") for c in companies]:
+        length = 240 if sym == "SPY" else rng.choice([60, 96, 150, 240])
+        value, drift = rng.uniform(2, 40), rng.uniform(0.004, 0.016)
+        months = []
+        for month in months_back(length):
+            value *= 1 + rng.gauss(drift, 0.02 if sym == "SPY" else 0.07)
+            months.append([month, float(f"{max(value, 0.05):.6g}")])
+        records.append({"symbol": sym, "name": name, "kind": kind, "months": months,
+                        "price": round(months[-1][1] * (1 + rng.gauss(0, 0.02)), 2),
+                        "price_date": (today - dt.timedelta(days=1)).isoformat()})
+    return records
+
+
 def make_performance(companies, today, rng):
     """Same shape as collectors.stock_prices.collect_comparative_performance, but synthetic."""
     spy = walk("SPY", today, rng)
@@ -236,6 +265,7 @@ def build(db_path, site_dir):
     collect_economic_indicators(db_path=db_path, fetch=economy)
     collect_economic_releases(db_path=db_path, fetch=economy, today=dt.date(2026, 11, 6))
     perf = make_performance(companies, today, rng)
+    save_price_history(make_price_history(companies, today, rng), db_path=db_path, source="demo", today=today)
     os.makedirs(site_dir, exist_ok=True)
     render_dashboard(output_path=os.path.join(site_dir, "index.html"), db_path=db_path, performance_data=perf)
     return json.dumps({"db": db_path, "site": site_dir, "companies": len(companies)})
