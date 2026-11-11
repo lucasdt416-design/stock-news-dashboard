@@ -18,8 +18,10 @@ pip install -r requirements-dev.txt
 # The browser checks use your installed Google Chrome, through Playwright.
 
 pytest                                  # all tests
+node --test tests/node/*.test.mjs       # the site's functions and the portfolio page's scripts
 python scripts/build_demo.py            # a demo site in .capture/site, no network or keys
 python scripts/check_following.py       # walks through the site in a real browser
+python scripts/check_portfolio.py       # the same for Your portfolio, and checks what it sends
 python scripts/capture_site.py          # screenshots every page, light and dark, and flags layout problems
 ```
 

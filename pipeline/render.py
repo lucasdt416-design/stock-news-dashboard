@@ -21,6 +21,7 @@ from jinja2 import Template
 from markupsafe import Markup, escape
 from pipeline.moves import build_deck
 from pipeline.normalize import clean_text
+from pipeline.portfolio_page import build_portfolio_template, portfolio_data
 from pipeline.prices import write_price_files
 from pipeline.persist import (
     get_all_news_items,
@@ -2441,6 +2442,10 @@ window.addEventListener('storage', e => {
   document.dispatchEvent(new Event('followchange'));
 });
 """
+
+
+# Your portfolio (site/portfolio.html) is put together in pipeline/portfolio_page.py from these shared pieces.
+PORTFOLIO_TEMPLATE = build_portfolio_template(SHARED_CSS, NAVIGATION_LAYOUT_HTML, SHARED_MOBILE_JS, THEME_BOOT_JS)
 
 
 # ==============================================================================
@@ -5270,6 +5275,7 @@ ABOUT_TEMPLATE = """<!DOCTYPE html>
           <li><strong>Your choices stay in this browser.</strong> The companies you follow, what you've read (if learning is on in <a href="settings.html">Your feed</a>), your theme and the companies you viewed recently are kept only on this device. They're never sent to us or anyone else. You can clear them in Your feed with “Forget what I read” or “Start over”.</li>
           <li><strong>The setup link</strong> carries only the companies and sectors you follow, and only goes where you send it.</li>
           <li><strong>A few services see what any website involves.</strong> Cloudflare hosts the site, so like any host it receives your IP address and the pages you open. On the Analytics and company pages, the chart library comes from jsDelivr, which also receives your IP address.</li>
+          <li><strong>Your portfolio stays in this browser too.</strong> The stocks you hold, how many shares, what you paid and when are kept only on this device, along with the prices fetched for them, and are never sent to us. “Remove everything” on <a href="portfolio.html">Your portfolio</a> clears them. To price a stock we don't list, its ticker (not how much you hold) is sent to our own server, which asks Yahoo Finance for its prices and Finnhub for its sector. That does show our server which tickers were asked about, though not by whom: it keeps no record, and your IP address is held briefly in memory only to stop overuse.</li>
           <li><strong>Looking up a ticker that isn't listed</strong> sends what you typed, and nothing about you, to Finnhub to find it. Your IP address is held briefly in memory to stop the lookup being overused, and isn't stored.</li>
         </ul>
       </section>
@@ -7368,6 +7374,7 @@ def render_dashboard(
                 ]
             } for s in sector_directory
         ]),
+        "portfolio_json": _script_json(portfolio_data(enriched_watchlist, list(SECTOR_METADATA))),
         "performance_data": performance_data,
         "performance_data_json": _script_json(performance_data or {}),
     }
@@ -7382,6 +7389,7 @@ def render_dashboard(
         ("company.html", COMPANY_TEMPLATE, "company"),
         ("analytics.html", ANALYTICS_TEMPLATE, "analytics"),
         ("settings.html", SETTINGS_TEMPLATE, "settings"),
+        ("portfolio.html", PORTFOLIO_TEMPLATE, "portfolio"),
         ("about.html", ABOUT_TEMPLATE, "about"),
     ]
 

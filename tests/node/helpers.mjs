@@ -1,5 +1,5 @@
 // Shared by the function tests. Not a test file itself.
-import { cpSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,4 +12,10 @@ export function copyFunctions(parent, name) {
   cpSync(join(here, "..", "..", "functions"), target, { recursive: true });
   writeFileSync(join(target, "package.json"), '{"type":"module"}');
   return target;
+}
+
+/** Loads one of the page's plain script files (pipeline/portfolio_*.js) and returns the object it defines. */
+export function loadPageScript(file, name) {
+  const source = readFileSync(join(here, "..", "..", "pipeline", file), "utf8");
+  return new Function(`${source}\nreturn ${name};`)();
 }

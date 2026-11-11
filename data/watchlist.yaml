@@ -89,6 +89,9 @@ tickers:
   - symbol: GOOGL
     name: Alphabet Inc.
     cik: "0001652044"
+    # Class C shares of the same company. The portfolio page prices GOOG as itself and gives it
+    # this entry's sector and details.
+    other_tickers: [GOOG]
     ir_feed_url: "https://blog.google/rss/"
     newsroom_url: "https://blog.google"
     sector: search_cloud_ai

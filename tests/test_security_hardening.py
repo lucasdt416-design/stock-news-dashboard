@@ -166,6 +166,8 @@ def test_hostile_text_is_stored_as_plain_data():
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
 def test_function_node_suites():
-    result = subprocess.run(["node", "--test", "tests/node/lookup.test.mjs", "tests/node/history.test.mjs"], cwd=ROOT,
+    suites = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "tests" / "node").glob("*.test.mjs"))
+    assert len(suites) >= 3
+    result = subprocess.run(["node", "--test", *suites], cwd=ROOT,
                             capture_output=True, text=True, timeout=120)
     assert result.returncode == 0, result.stdout[-2000:]
