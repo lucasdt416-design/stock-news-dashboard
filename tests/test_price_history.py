@@ -1,6 +1,7 @@
 """Long monthly price history: read from Yahoo's answer, kept between runs, written as static files."""
 
 import json
+import re
 from datetime import date, datetime, timezone
 
 import pytest
@@ -21,6 +22,7 @@ def _chart(bars, price=12.5, price_day="2026-03-10", kind="EQUITY", currency="US
     """A Yahoo monthly chart answer: bars are (first day of month, adjusted close)."""
     return {
         "meta": {"currency": currency, "instrumentType": kind, "longName": "Test Co", "gmtoffset": -18000,
+                 "dataGranularity": "1mo",
                  "regularMarketPrice": price, "regularMarketTime": _ts(price_day) + 16 * 3600},
         "timestamp": [_ts(d) for d, _ in bars],
         "indicators": {"quote": [{"close": [v for _, v in bars]}], "adjclose": [{"adjclose": [v for _, v in bars]}]},
@@ -90,14 +92,23 @@ def test_a_brand_new_listing_has_a_price_and_no_months():
 def test_one_request_helper_serves_both_daily_and_monthly(monkeypatch):
     calls = []
 
-    def fake(symbol, range_str, interval, timeout=10):
-        calls.append((symbol, range_str, interval))
+    def fake(symbol, span, interval, timeout=10):
+        calls.append((symbol, span, interval))
         return _chart(BARS)
 
     monkeypatch.setattr(stock_prices, "_fetch_chart", fake)
     assert stock_prices.fetch_ticker_monthly_history("TEST")["price"] == 12.5
     stock_prices.fetch_ticker_historical_closes("TEST")
-    assert calls == [("TEST", "max", "1mo"), ("TEST", "3mo", "1d")]
+    (_, span, interval), daily = calls
+    # An explicit start and end, never range=max, which Yahoo answers in weeks for newer companies.
+    assert re.fullmatch(r"period1=0&period2=\d{10}", span) and interval == "1mo"
+    assert daily == ("TEST", "range=3mo", "1d")
+
+
+def test_weekly_prices_passed_off_as_monthly_are_refused():
+    chart = _chart(BARS)
+    chart["meta"]["dataGranularity"] = "1wk"
+    assert parse_monthly_history("TEST", chart) is None
 
 
 def test_collects_the_watchlist_and_spy_and_skips_what_fails(tmp_path):

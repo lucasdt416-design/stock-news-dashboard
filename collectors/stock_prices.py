@@ -26,11 +26,13 @@ USER_AGENT = (
 )
 
 
-def _fetch_chart(symbol: str, range_str: str, interval: str, timeout: int = 10) -> Optional[Dict[str, Any]]:
-    """One Yahoo chart answer for a ticker, or None. Every price request goes through here."""
+def _fetch_chart(symbol: str, span: str, interval: str, timeout: int = 10) -> Optional[Dict[str, Any]]:
+    """One Yahoo chart answer for a ticker, or None. Every price request goes through here.
+
+    span is the part of the query that says how far back: "range=3mo", or "period1=0&period2=<now>"."""
     url = (
         f"https://query2.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}"
-        f"?range={range_str}&interval={interval}&includePrePost=false"
+        f"?{span}&interval={interval}&includePrePost=false"
     )
     req = urllib.request.Request(
         url,
@@ -58,7 +60,7 @@ def fetch_ticker_historical_closes(
     timeout: int = 10,
 ) -> Optional[Dict[str, Any]]:
     """Fetch historical daily close prices for a single ticker."""
-    chart = _fetch_chart(symbol, range_str, interval, timeout)
+    chart = _fetch_chart(symbol, f"range={range_str}", interval, timeout)
     if not chart:
         return None
     try:
@@ -115,6 +117,9 @@ def parse_monthly_history(symbol: str, chart: Dict[str, Any]) -> Optional[Dict[s
         price, price_time = meta.get("regularMarketPrice"), meta.get("regularMarketTime")
         if kind is None or meta.get("currency") != "USD":
             return None
+        # Asked for months, Yahoo sometimes answers in weeks. A week isn't a month-end, so refuse it.
+        if meta.get("dataGranularity") != "1mo":
+            return None
         if not isinstance(price, (int, float)) or price <= 0 or not isinstance(price_time, (int, float)):
             return None
         offset = timedelta(seconds=int(meta.get("gmtoffset") or 0))
@@ -152,7 +157,9 @@ def parse_monthly_history(symbol: str, chart: Dict[str, Any]) -> Optional[Dict[s
 
 def fetch_ticker_monthly_history(symbol: str, timeout: int = 15) -> Optional[Dict[str, Any]]:
     """Every finished month's adjusted close since a ticker started trading, plus its latest price."""
-    chart = _fetch_chart(symbol, "max", "1mo", timeout)
+    # Not range=max: for a company listed in the last few years Yahoo answers that with weekly
+    # prices. An explicit start and end gets months for every ticker, including its first month.
+    chart = _fetch_chart(symbol, f"period1=0&period2={int(time.time())}", "1mo", timeout)
     return parse_monthly_history(symbol, chart) if chart else None
 
 
