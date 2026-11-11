@@ -34,11 +34,27 @@ def test_page_data_names_the_site_sectors_and_other_share_classes(page):
     data = json.loads(re.search(r"const PF_DATA = (\{.*?\});\n", page).group(1))
     assert data["sectors"] == list(SECTOR_METADATA)
     assert data["other"] == {"GOOG": "GOOGL"}
+    nvda = data["companies"]["NVDA"]
+    assert "datacenter_capex" in nvda["th"] and "MSFT" in nvda["cu"] and "TSMC" in nvda["su"] and "AMD" in nvda["co"]
+    assert len(data["companies"]) >= 100, "every followed company has an entry, even an empty one"
 
 
 def test_other_tickers_never_shadow_a_listed_company():
     companies = [{"symbol": "AAA", "other_tickers": ["bbb", "CCC", ""]}, {"symbol": "CCC"}, {"symbol": "DDD", "other_tickers": None}]
-    assert portfolio_data(companies, ["X"]) == {"sectors": ["X"], "other": {"BBB": "AAA"}}
+    data = portfolio_data(companies, ["X"])
+    assert data["sectors"] == ["X"] and data["other"] == {"BBB": "AAA"}
+
+
+def test_only_what_the_watchlist_says_reaches_the_page():
+    companies = [
+        {"symbol": "AAA", "macro_sensitivities": ["oil"], "economic_sensitivities": ["inflation"],
+         "key_customers": ["bbb", "Outside Co", 7, ""], "key_suppliers": None, "competitors": ["BBB", "ZZZ"]},
+        {"symbol": "BBB"},
+    ]
+    assert portfolio_data(companies, [])["companies"] == {
+        "AAA": {"th": ["oil"], "ec": ["inflation"], "cu": ["BBB", "Outside Co"], "co": ["BBB"]},
+        "BBB": {},
+    }
 
 
 def test_every_watchlist_company_can_be_picked_and_names_are_escaped(page):

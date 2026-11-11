@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 _HERE = os.path.dirname(__file__)
 
 # In the order they run. Each later file may use what the earlier ones define.
-PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_app.js")
+PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_math.js", "portfolio_app.js", "portfolio_xray.js")
 
 
 def _script(name: str) -> str:
@@ -38,7 +38,26 @@ def portfolio_data(companies: List[Dict[str, Any]], sectors: List[str]) -> Dict[
             ticker = str(ticker).upper().strip()
             if ticker and ticker not in known:
                 other[ticker] = co["symbol"]
-    return {"sectors": list(sectors), "other": other}
+    def strings(co, field):
+        return [str(v).strip() for v in (co.get(field) or []) if isinstance(v, str) and str(v).strip()]
+
+    def entities(co, field):
+        # A customer or supplier the site follows is named by its ticker, however the list spells it.
+        return [v.upper() if v.upper() in known else v for v in strings(co, field)]
+
+    details = {}
+    for co in companies:
+        entry = {
+            "th": strings(co, "macro_sensitivities"),
+            "ec": strings(co, "economic_sensitivities"),
+            "cu": entities(co, "key_customers"),
+            "su": entities(co, "key_suppliers"),
+            "co": [v.upper() for v in strings(co, "competitors") if v.upper() in known],
+        }
+        # Every followed company has an entry, even an empty one: that is how the page tells
+        # "nothing noted about it" from "not a company we follow".
+        details[co["symbol"]] = {k: v for k, v in entry.items() if v}
+    return {"sectors": list(sectors), "other": other, "companies": details}
 
 
 PORTFOLIO_CSS = """
@@ -104,6 +123,24 @@ PORTFOLIO_CSS = """
     .pf-total-label { color: var(--text-secondary); }
     .pf-total-value { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
     .pf-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.5rem; }
+    .pf-lead { margin: 0 0 0.75rem; font-size: 1.02rem; line-height: 1.5; color: var(--text-primary); max-width: 42rem; }
+    .pf-lead .pos { color: var(--pos); }
+    .pf-lead .neg { color: var(--neg); }
+    .pf-sectors, .pf-lines { list-style: none; margin: 0; padding: 0; }
+    .pf-sector { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 3.5rem; align-items: center; gap: 0.15rem 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .pf-sector-name { font-size: 0.95rem; }
+    .pf-sector-pct { text-align: right; font-variant-numeric: tabular-nums; }
+    .pf-sector-tickers { grid-column: 1 / -1; font-size: 0.84rem; color: var(--text-muted); overflow-wrap: anywhere; }
+    .pf-bar { display: block; width: 100%; height: 6px; }
+    .pf-bar-track { fill: var(--bg-surface-highlight); }
+    .pf-bar-fill { fill: var(--text-primary); }
+    .pf-stats { margin: 0; }
+    .pf-stat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .pf-stat-label { font-size: 0.95rem; }
+    .pf-stat-value { margin: 0; text-align: right; font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pf-stat-detail { grid-column: 1 / -1; margin: 0; font-size: 0.84rem; color: var(--text-muted); max-width: 38rem; }
+    .pf-sectors > li:last-child, .pf-stats > .pf-stat:last-child, .pf-lines > li:last-child { border-bottom: none; }
+    .pf-overlap-line { padding: 0.65rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.97rem; line-height: 1.45; max-width: 44rem; }
     @media (max-width: 640px) {
       .pf-row { grid-template-columns: minmax(0, 1fr) auto; }
       .pf-row-weight { grid-column: 2; grid-row: 2; font-size: 0.84rem; }
@@ -113,6 +150,8 @@ PORTFOLIO_CSS = """
       .pf-field .pf-input { width: 100%; }
       .pf-field { flex: 1 1 9rem; }
       .pf-preview-row { grid-template-columns: 4rem minmax(0, 1fr); }
+      .pf-sector { grid-template-columns: minmax(0, 1fr) 3.5rem; }
+      .pf-sector .pf-bar { grid-column: 1 / -1; grid-row: 2; }
     }
 """
 
@@ -176,8 +215,47 @@ PORTFOLIO_BODY = """
       </section>
 """
 
+PORTFOLIO_XRAY = """
+      <div id="pfXray" hidden>
+        <section class="pf-section" aria-labelledby="pfSectorHeading">
+          <h2 class="settings-heading" id="pfSectorHeading">Sectors</h2>
+          <p class="pf-lead" id="pfSectorLead"></p>
+          <ul class="pf-sectors" id="pfSectors"></ul>
+        </section>
+
+        <section class="pf-section" aria-labelledby="pfConcentrationHeading">
+          <h2 class="settings-heading" id="pfConcentrationHeading">Where it’s concentrated</h2>
+          <p class="pf-lead" id="pfConcentrationLead"></p>
+          <dl class="pf-stats" id="pfConcentration"></dl>
+          <p class="pf-note" id="pfConcentrationNote"></p>
+        </section>
+
+        <section class="pf-section" aria-labelledby="pfOverlapHeading">
+          <h2 class="settings-heading" id="pfOverlapHeading">Shared bets</h2>
+          <p class="pf-lead" id="pfOverlapLead"></p>
+          <ul class="pf-lines" id="pfOverlap"></ul>
+          <button type="button" class="pf-link" id="pfOverlapAll" data-click="pfOverlapAll" hidden>Show all</button>
+          <p class="pf-note" id="pfOverlapNote"></p>
+        </section>
+
+        <section class="pf-section" id="pfFundsSection" aria-labelledby="pfFundsHeading" hidden>
+          <h2 class="settings-heading" id="pfFundsHeading">Funds</h2>
+          <p class="pf-lead" id="pfFunds"></p>
+        </section>
+
+        <section class="pf-section" id="pfGainSection" aria-labelledby="pfGainHeading" hidden>
+          <h2 class="settings-heading" id="pfGainHeading">Gain and loss</h2>
+          <p class="pf-lead" id="pfGainLead"></p>
+          <p class="pf-lead" id="pfGainSpy"></p>
+          <ul class="pf-lines" id="pfGainRows"></ul>
+          <button type="button" class="pf-link" id="pfGainAll" data-click="pfGainAll" hidden>Show all</button>
+          <p class="pf-note" id="pfGainNote"></p>
+        </section>
+      </div>
+"""
+
 # Sections added by later parts of the page (the X-ray, the what-if calculator), in page order.
-PORTFOLIO_SECTIONS = ""
+PORTFOLIO_SECTIONS = PORTFOLIO_XRAY
 
 
 def build_portfolio_template(shared_css: str, navigation_html: str, shared_js: str, theme_boot_js: str) -> str:

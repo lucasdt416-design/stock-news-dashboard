@@ -56,7 +56,8 @@ def test_the_portfolio_note_says_what_is_and_is_not_sent():
     script = portfolio_scripts()
     targets = set(re.findall(r"fetch\(\s*'([^']+)'", script))
     assert targets == {"data/prices/index.json", "data/prices/", "/api/history?ticker=", "/api/lookup?q="}, targets
-    assert not re.search(r"https?://", script), "the page's scripts name no outside address"
+    # (The SVG namespace is a name for drawing the charts, not an address anything is fetched from.)
+    assert not re.search(r"https?://", script.replace("http://www.w3.org/2000/svg", "")), "the page's scripts name no outside address"
     # Only the ticker goes into a request: no shares, dollars, dates or costs.
     for call in re.findall(r"fetch\(([^;]+);", script):
         assert not re.search(r"\.(sh|usd|paid|bought)\b|holdings", call), call

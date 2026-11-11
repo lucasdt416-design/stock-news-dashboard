@@ -64,7 +64,8 @@ function pfShares(value) {
 function pfPercent(fraction, digits) {
   if (!Number.isFinite(fraction)) return '';
   const pct = fraction * 100;
-  const places = digits !== undefined ? digits : Math.abs(pct) < 10 ? 1 : 0;
+  // One decimal below 10%, none from 10% up (so 9.96% reads "10%", not "10.0%").
+  const places = digits !== undefined ? digits : Math.abs(Number(pct.toFixed(1))) < 10 ? 1 : 0;
   return `${pct.toFixed(places)}%`;
 }
 

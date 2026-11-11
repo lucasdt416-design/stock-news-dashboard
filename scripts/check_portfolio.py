@@ -182,6 +182,57 @@ async def run(site, out):
             check(abs(sum(weights) - 100) < 1.5, f"the shares of the total add up to 100% ({sum(weights):.1f})")
             await pg.screenshot(path=f"{out}/holdings.png", full_page=True)
 
+            # The X-ray, on a portfolio whose answers can be worked out by hand
+            price = lambda t: HISTORY[t]["price"] if t in HISTORY else index[t]["price"]["value"]  # noqa: E731
+            want = {"NVDA": 4000, "AMD": 2000, "MSFT": 2000, "VOO": 1500, "RDDT": 500}  # dollars of each, 10,000 in all
+            await pg.evaluate("h => localStorage.setItem('stockpulse_portfolio', JSON.stringify({v: 1, holdings: h}))",
+                              [{"t": t, "sh": v / price(t)} for t, v in want.items()])
+            await pg.reload()
+            await pg.wait_for_timeout(700)
+            sectors = await pg.inner_text("#pfSectors")
+            check("80% of your money is in Technology" in await pg.inner_text("#pfSectorLead"), "the largest sector is stated as a fact")
+            check("Funds (contents not broken out)" in sectors and "15%" in sectors and "Sector unknown" in sectors and "5.0%" in sectors,
+                  "funds and unknown sectors are their own groups")
+            conc = await pg.inner_text("#pfConcentration")
+            # Stocks: 4000, 2000, 2000, 500 of 8500 -> largest 47%; 1 / (0.4706^2 + 2 * 0.2353^2 + 0.0588^2) = 2.98
+            check("47%" in conc and "NVDA" in conc, "largest holding is its share of the stocks, funds left out")
+            check("behave like about 3 equal-sized ones" in await pg.inner_text("#pfConcentrationLead"), "the effective number matches the hand calculation (2.98)")
+            check("Funds are 15% of your portfolio and aren’t counted here" in await pg.inner_text("#pfConcentrationNote"), "the funds' share is said beside it")
+            overlap = await pg.inner_text("#pfOverlap")
+            check("60% of your portfolio is sensitive to spending on data centers: NVDA and AMD." in overlap, "a shared theme names its holdings and sums their shares")
+            check("RDDT" in await pg.inner_text("#pfOverlapNote") and "Funds aren’t looked into" in await pg.inner_text("#pfOverlapNote"),
+                  "it says which holdings it couldn't see")
+            check("15% of your portfolio is in a fund: VOO" in await pg.inner_text("#pfFunds"), "funds are shown as not broken out")
+            check(not await pg.is_visible("#pfGainSection"), "no gain section without a cost")
+            await pg.screenshot(path=f"{out}/xray.png", full_page=True)
+
+            # Cost without a date: gain, but no S&P 500 comparison. With a date: the comparison.
+            await pg.click('.pf-row[data-ticker="NVDA"] [data-click="pfEditOne"]')
+            await pg.fill("#pfEditPaid", "1000")
+            await pg.click('[data-click="pfSaveEdit"]')
+            await pg.wait_for_timeout(300)
+            check("+$3,000.00 (+300%)" in await pg.inner_text("#pfGainLead"), "gain is value against cost")
+            check("Add the month you bought" in await pg.inner_text("#pfGainSpy"), "a cost with no date gets no S&P 500 comparison")
+            with open(os.path.join(site, "data", "prices", "SPY.json"), encoding="utf-8") as f:
+                spy = json.load(f)
+            month, start = spy["months"][-37]
+            await pg.click('.pf-row[data-ticker="NVDA"] [data-click="pfEditOne"]')
+            await pg.fill("#pfEditBought", month)
+            await pg.click('[data-click="pfSaveEdit"]')
+            await pg.wait_for_timeout(600)
+            same = 1000 * spy["price"]["value"] / start
+            check(f"${same:,.2f}" in await pg.inner_text("#pfGainSpy"), f"the same money in the S&P 500 is cost times its rise since that month (${same:,.2f})")
+            check("dividends" in await pg.inner_text("#pfGainNote"), "the comparison says what it includes")
+
+            # Only funds
+            await pg.evaluate("localStorage.setItem('stockpulse_portfolio', JSON.stringify({v: 1, holdings: [{t: 'VOO', sh: 2}, {t: 'SPY', sh: 1}]}))")
+            await pg.reload()
+            await pg.wait_for_timeout(600)
+            check("Everything here is a fund" in await pg.inner_text("#pfConcentrationLead") and await pg.locator("#pfConcentration .pf-stat").count() == 0,
+                  "a portfolio of only funds gets one sentence, not numbers")
+            await pg.evaluate("h => localStorage.setItem('stockpulse_portfolio', JSON.stringify({v: 1, holdings: h}))",
+                              [{"t": t, "sh": 3} for t in ["NVDA", "AAPL", "VOO", "NFLX", "RDDT", "GOOG", "JPM"]])
+
             # Survives a reload; bad stored data is dropped and said
             await pg.reload()
             await pg.wait_for_timeout(600)
@@ -203,6 +254,7 @@ async def run(site, out):
             check(not any(n in u for u in sent for n in numbers), "no share count, amount or cost appears in any request")
             first = len([u for u in sent if "ticker=VOO" in u])
             check(first == 1, f"a ticker outside the watchlist is asked for once, then kept in the browser ({first})")
+            check(not any("ticker=SPY" in u for u in sent), "the S&P 500 comparison reads a static file, not the server")
 
             # Remove everything
             await pg.click('[data-click="pfRemoveAll"]')
