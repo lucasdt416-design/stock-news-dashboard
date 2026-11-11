@@ -13,3 +13,4 @@ data/demo.db
 *.bak
 *.map
 .env.*
+.wrangler/

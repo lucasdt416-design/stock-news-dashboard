@@ -21,6 +21,8 @@ from jinja2 import Template
 from markupsafe import Markup, escape
 from pipeline.moves import build_deck
 from pipeline.normalize import clean_text
+from pipeline.portfolio_page import build_portfolio_template, portfolio_data
+from pipeline.prices import write_price_files
 from pipeline.persist import (
     get_all_news_items,
     get_chart_data,
@@ -1388,6 +1390,8 @@ SHARED_CSS = """
     .orbit-dust { display: none; }
     .hero-headline { font-size: clamp(3.25rem, 8vw, 6.5rem); font-weight: 600; line-height: 1; letter-spacing: -0.03em; margin-top: 0; }
     .hero-sub { margin-top: 0.9rem; font-size: clamp(1.1rem, 2vw, 1.6rem); line-height: 1.35; letter-spacing: -0.01em; color: var(--text-muted); }
+    .hero-portfolio { display: inline-block; position: relative; z-index: 70; margin-top: 0.9rem; padding: 0.3rem 0; color: var(--accent); font-size: 1rem; text-decoration: none; }
+    .hero-portfolio:hover { text-decoration: underline; }
     .sidebar-footer { font-size: 0.78rem; }
     .theme-toggle { text-decoration: none; color: var(--text-muted); font-size: 0.78rem; }
     .mobile-tab-link { font-size: 0.76rem; border-top: 0; margin-top: 0; }
@@ -1739,6 +1743,7 @@ NAVIGATION_LAYOUT_HTML = """
 
   <nav class="sidebar-nav" aria-label="Pages">
     <a href="index.html" class="nav-link {% if active_page == 'home' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Home</span></a>
+    <a href="portfolio.html" class="nav-link {% if active_page == 'portfolio' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Portfolio</span></a>
     <a href="moves.html" class="nav-link {% if active_page == 'moves' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Moves</span></a>
     <a href="company.html" class="nav-link {% if active_page == 'company' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Companies</span></a>
     <a href="news.html" class="nav-link {% if active_page == 'news' %}active{% endif %}" data-click="closeMobileNav"><span class="nav-text">Feed</span></a>
@@ -1762,10 +1767,10 @@ NAVIGATION_LAYOUT_HTML = """
 
 <nav class="mobile-bottom-nav" aria-label="Pages">
   <a href="index.html" class="mobile-tab-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+  <a href="portfolio.html" class="mobile-tab-link {% if active_page == 'portfolio' %}active{% endif %}">Portfolio</a>
   <a href="moves.html" class="mobile-tab-link {% if active_page == 'moves' %}active{% endif %}">Moves</a>
   <a href="company.html" class="mobile-tab-link {% if active_page == 'company' %}active{% endif %}">Companies</a>
   <a href="news.html" class="mobile-tab-link {% if active_page == 'news' %}active{% endif %}">Feed</a>
-  <a href="calendar.html" class="mobile-tab-link {% if active_page == 'calendar' %}active{% endif %}">Calendar</a>
 </nav>
 """
 
@@ -2442,6 +2447,10 @@ window.addEventListener('storage', e => {
 """
 
 
+# Your portfolio (site/portfolio.html) is put together in pipeline/portfolio_page.py from these shared pieces.
+PORTFOLIO_TEMPLATE = build_portfolio_template(SHARED_CSS, NAVIGATION_LAYOUT_HTML, SHARED_MOBILE_JS, THEME_BOOT_JS)
+
+
 # ==============================================================================
 # 1. HOME / OVERVIEW TEMPLATE (site/index.html)
 # ==============================================================================
@@ -2475,6 +2484,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <h1 class="hero-headline">Welcome!</h1>
           <p class="hero-sub" id="heroSub">We keep you informed about the stocks you follow.</p>
           <p class="hero-since" id="heroSince" hidden></p>
+          <a class="hero-portfolio" href="portfolio.html">Your portfolio: see what you’re invested in</a>
         </div>
 
         <div class="hero-orbit-stage orbit-static" id="heroOrbitStage">
@@ -5269,6 +5279,7 @@ ABOUT_TEMPLATE = """<!DOCTYPE html>
           <li><strong>Your choices stay in this browser.</strong> The companies you follow, what you've read (if learning is on in <a href="settings.html">Your feed</a>), your theme and the companies you viewed recently are kept only on this device. They're never sent to us or anyone else. You can clear them in Your feed with “Forget what I read” or “Start over”.</li>
           <li><strong>The setup link</strong> carries only the companies and sectors you follow, and only goes where you send it.</li>
           <li><strong>A few services see what any website involves.</strong> Cloudflare hosts the site, so like any host it receives your IP address and the pages you open. On the Analytics and company pages, the chart library comes from jsDelivr, which also receives your IP address.</li>
+          <li><strong>Your portfolio stays in this browser too.</strong> The stocks you hold, how many shares, what you paid and when are kept only on this device, along with the prices fetched for them, and are never sent to us. “Remove everything” on <a href="portfolio.html">Your portfolio</a> clears them. To price a stock we don't list, its ticker (not how much you hold) is sent to our own server, which asks Yahoo Finance for its prices and Finnhub for its sector. That does show our server which tickers were asked about, though not by whom: it keeps no record, and your IP address is held briefly in memory only to stop overuse.</li>
           <li><strong>Looking up a ticker that isn't listed</strong> sends what you typed, and nothing about you, to Finnhub to find it. Your IP address is held briefly in memory to stop the lookup being overused, and isn't stored.</li>
         </ul>
       </section>
@@ -7367,6 +7378,7 @@ def render_dashboard(
                 ]
             } for s in sector_directory
         ]),
+        "portfolio_json": _script_json(portfolio_data(enriched_watchlist, list(SECTOR_METADATA))),
         "performance_data": performance_data,
         "performance_data_json": _script_json(performance_data or {}),
     }
@@ -7381,6 +7393,7 @@ def render_dashboard(
         ("company.html", COMPANY_TEMPLATE, "company"),
         ("analytics.html", ANALYTICS_TEMPLATE, "analytics"),
         ("settings.html", SETTINGS_TEMPLATE, "settings"),
+        ("portfolio.html", PORTFOLIO_TEMPLATE, "portfolio"),
         ("about.html", ABOUT_TEMPLATE, "about"),
     ]
 
@@ -7421,5 +7434,8 @@ def render_dashboard(
 
     with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
         f.write(_headers_file(policies, pattern_policies))
+
+    # Long price history for the portfolio page, as static files read from the database.
+    logger.info("Wrote price history for %d tickers", write_price_files(site_dir, db_path))
 
     return primary_output

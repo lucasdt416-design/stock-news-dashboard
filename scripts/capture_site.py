@@ -31,8 +31,21 @@ PAGES = [
     ("company", "company-nvda.html"),
     ("analytics", "analytics.html"),
     ("settings", "settings.html"),
+    ("portfolio", "portfolio.html"),
     ("about", "about.html"),
 ]
+
+# Made up, and only companies the site follows, so capturing the page calls no function.
+DEMO_PORTFOLIO = {"v": 1, "holdings": [
+    {"t": "NVDA", "sh": 40, "paid": 900, "bought": "2021-06"},
+    {"t": "AMD", "sh": 25},
+    {"t": "MSFT", "sh": 12, "paid": 300, "bought": "2019-03"},
+    {"t": "AMZN", "sh": 30},
+    {"t": "JPM", "sh": 20, "paid": 500, "bought": "2018-01"},
+    {"t": "XOM", "sh": 35},
+    {"t": "KO", "sh": 50},
+    {"t": "SPY", "sh": 15, "paid": 400, "bought": "2017-05"},
+]}
 
 SNAPSHOT_JS = """() => {
   const clone = document.body.cloneNode(true);
@@ -175,6 +188,14 @@ def capture(site, out, widths, schemes, pages):
                 ctx.route("**/api/lookup*", lambda route: route.fulfill(
                     status=200, content_type="application/json",
                     body=json.dumps({"found": False, "message": "No demo data for this ticker."})))
+                # Same for functions/api/history.js. The demo portfolio below holds watchlist companies
+                # only, so the page never needs it; this answers anything else the way it would.
+                ctx.route("**/api/history*", lambda route: route.fulfill(
+                    status=404, content_type="application/json",
+                    body=json.dumps({"found": False, "error": "No demo data for this ticker."})))
+                # A made-up portfolio, so the portfolio page is captured with something on it.
+                ctx.add_init_script("try{if(!localStorage.getItem('stockpulse_portfolio'))localStorage.setItem("
+                                    "'stockpulse_portfolio'," + json.dumps(json.dumps(DEMO_PORTFOLIO)) + ")}catch(e){}")
                 for name, path in pages:
                     page = ctx.new_page()
                     page.set_default_timeout(TIMEOUT_MS)

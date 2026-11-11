@@ -39,9 +39,28 @@ def test_the_privacy_note_matches_the_code():
     # What is kept in the browser is what the page lists.
     keys = set(re.findall(r"stockpulse_[a-z_]+", code))
     assert keys <= {"stockpulse_follow", "stockpulse_reading", "stockpulse_theme", "stockpulse_recently_viewed",
-                    "stockpulse_last_visit", "stockpulse_prev_visit", "stockpulse_probe"}, keys - {"x"}
-    for words in ("companies you follow", "what you've read", "your theme", "viewed recently"):
+                    "stockpulse_last_visit", "stockpulse_prev_visit", "stockpulse_probe",
+                    "stockpulse_portfolio", "stockpulse_prices"}, keys - {"x"}
+    for words in ("companies you follow", "what you've read", "your theme", "viewed recently",
+                  "stocks you hold", "prices fetched for them"):
         assert words in ABOUT_TEMPLATE, words
+
+
+def test_the_portfolio_note_says_what_is_and_is_not_sent():
+    from pipeline.portfolio_page import PORTFOLIO_BODY, portfolio_scripts
+    # The page and the About page tell the same story: holdings stay put, a ticker we don't list is sent.
+    for text in (ABOUT_TEMPLATE, PORTFOLIO_BODY):
+        assert "not how much you hold" in text
+    assert "never sent to us" in PORTFOLIO_BODY and "not advice" in PORTFOLIO_BODY
+    # The only requests the page makes are to this site: its price files and its own two functions.
+    script = portfolio_scripts()
+    targets = set(re.findall(r"fetch\(\s*'([^']+)'", script))
+    assert targets == {"data/prices/index.json", "data/prices/", "/api/history?ticker=", "/api/lookup?q="}, targets
+    # (The SVG namespace is a name for drawing the charts, not an address anything is fetched from.)
+    assert not re.search(r"https?://", script.replace("http://www.w3.org/2000/svg", "")), "the page's scripts name no outside address"
+    # Only the ticker goes into a request: no shares, dollars, dates or costs.
+    for call in re.findall(r"fetch\(([^;]+);", script):
+        assert not re.search(r"\.(sh|usd|paid|bought)\b|holdings", call), call
 
 
 def test_every_source_is_credited():

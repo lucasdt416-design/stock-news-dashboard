@@ -85,9 +85,12 @@ def test_headers_file_has_the_required_headers():
         assert needed in text
 
 
-def test_only_the_lookup_route_is_deployed():
-    routes = sorted(str(p.relative_to(ROOT / "functions")) for p in (ROOT / "functions").rglob("*") if p.is_file())
-    assert routes == [os.path.join("api", "lookup.js")]
+def test_only_the_lookup_and_history_routes_are_deployed():
+    files = sorted(str(p.relative_to(ROOT / "functions")) for p in (ROOT / "functions").rglob("*") if p.is_file())
+    # _shared/guard.js is imported by both routes. It exports no request handler, so it answers nothing itself.
+    assert files == [os.path.join("_shared", "guard.js"), os.path.join("api", "history.js"), os.path.join("api", "lookup.js")]
+    guard = (ROOT / "functions" / "_shared" / "guard.js").read_text(encoding="utf-8")
+    assert "onRequest" not in guard
 
 
 def test_rendered_site_contains_only_intended_files():
@@ -98,7 +101,12 @@ def test_rendered_site_contains_only_intended_files():
         render_dashboard(output_path=os.path.join(site, "index.html"), db_path=db, performance_data={})
         files = [p for p in Path(site).rglob("*") if p.is_file()]
         assert files
+        prices = Path(site) / "data" / "prices"
         for path in files:
+            if path.parent == prices:
+                # Price history for the portfolio page: plain JSON, and nowhere else.
+                assert path.suffix == ".json", path.name
+                continue
             assert path.suffix in {".html", ".woff2", ""}, path.name
             assert path.suffix or path.name == "_headers", path.name
             assert not re.search(r"\.(db|sqlite|env|map|log|bak)$", path.name)
@@ -157,7 +165,9 @@ def test_hostile_text_is_stored_as_plain_data():
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
-def test_lookup_function_node_suite():
-    result = subprocess.run(["node", "--test", "tests/node/lookup.test.mjs"], cwd=ROOT,
+def test_function_node_suites():
+    suites = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "tests" / "node").glob("*.test.mjs"))
+    assert len(suites) >= 3
+    result = subprocess.run(["node", "--test", *suites], cwd=ROOT,
                             capture_output=True, text=True, timeout=120)
     assert result.returncode == 0, result.stdout[-2000:]
