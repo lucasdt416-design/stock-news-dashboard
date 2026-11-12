@@ -48,7 +48,7 @@ def portfolio_data(companies: List[Dict[str, Any]], sectors: List[str]) -> Dict[
     details = {}
     for co in companies:
         entry = {
-            "th": strings(co, "macro_sensitivities"),
+            "th": strings(co, "themes"),
             "ec": strings(co, "economic_sensitivities"),
             "cu": entities(co, "key_customers"),
             "su": entities(co, "key_suppliers"),

@@ -176,7 +176,7 @@ Finnhub's `finnhubIndustry` words map to the site's sector names through one tab
 | Chemicals, Metals & Mining, Packaging, Paper & Forest | Materials |
 | Real Estate | Real Estate |
 | Automobiles, Auto Components, Textiles, Apparel & Luxury Goods, Leisure Products, Hotels, Restaurants & Leisure, Diversified Consumer Services | Consumer Goods |
-| Media | Consumer Staples (where the site already puts DIS) |
+| Media | Sector unknown. Finnhub uses it for Meta and Alphabet (Technology here) as well as Disney and Netflix (Consumer Staples here), so it can't be mapped without guessing. |
 | anything else, or "N/A" | Sector unknown |
 
 Note: I wrote this list from memory of Finnhub's values and have no key on this machine. In PR (b)
@@ -337,7 +337,8 @@ reinvested. Ignores taxes and fees. Monthly prices, so dates are to the month."
 
 Each line is a count or a percentage the watchlist states, with the holdings named:
 
-1. **Shared themes** (`macro_sensitivities`): shown when two or more holdings carry the same tag.
+1. **Shared themes** (`themes`, a fixed list of 27 added after launch; the free-text
+   `macro_sensitivities` are no longer used here): shown when two or more holdings carry the same tag.
    "38% of your portfolio is exposed to datacenter spending (NVDA, AMD)."
 2. **Shared economy links** (`economic_sensitivities`): "5 of your holdings, 44% of your portfolio,
    are marked as sensitive to interest rates (…)". These link to the Economy page.

@@ -27,7 +27,7 @@ MONTHS = [["2019-01", 20.0], ["2020-01", 25.0], ["2021-10", 40.0], ["2024-01", 8
 HISTORY = {
     "VOO": {"name": "Demo 500 Fund", "kind": "fund", "price": 500.0, "sector": None, "industry": None},
     "RDDT": {"name": "Demo Software Co", "kind": "stock", "price": 50.0, "sector": None, "industry": "Something New"},
-    "SPOT": {"name": "Demo Streaming Co", "kind": "stock", "price": 100.0, "sector": "Consumer Staples", "industry": "Media"},
+    "SPOT": {"name": "Demo Streaming Co", "kind": "stock", "price": 100.0, "sector": "Consumer Staples", "industry": "Consumer products"},
     "GOOG": {"name": "Demo Search Co Class C", "kind": "stock", "price": 200.0, "sector": "Technology", "industry": "Technology"},
 }
 
@@ -199,7 +199,10 @@ async def run(site, out):
             check("behave like about 3 equal-sized ones" in await pg.inner_text("#pfConcentrationLead"), "the effective number matches the hand calculation (2.98)")
             check("Funds are 15% of your portfolio and aren’t counted here" in await pg.inner_text("#pfConcentrationNote"), "the funds' share is said beside it")
             overlap = await pg.inner_text("#pfOverlap")
-            check("60% of your portfolio is sensitive to spending on data centers: NVDA and AMD." in overlap, "a shared theme names its holdings and sums their shares")
+            # NVDA 4000 + AMD 2000 + MSFT 2000 of 10,000 share the data center theme; only the first two share the China one.
+            check("80% of your portfolio is sensitive to spending on AI and data centers: NVDA, AMD and MSFT." in overlap
+                  and "60% of your portfolio is sensitive to US export controls on China: NVDA and AMD." in overlap,
+                  "a shared theme names its holdings and sums their shares")
             check("RDDT" in await pg.inner_text("#pfOverlapNote") and "Funds aren’t looked into" in await pg.inner_text("#pfOverlapNote"),
                   "it says which holdings it couldn't see")
             check("15% of your portfolio is in a fund: VOO" in await pg.inner_text("#pfFunds"), "funds are shown as not broken out")

@@ -4,14 +4,37 @@
 const PF_SPY = 'SPY';
 const XRAY = { showAllOverlap: false, showAllGains: false };
 
-// Plain words for the themes more than one company shares. Others are shown as written, with spaces.
+// Plain words for every theme in the watchlist (`themes:` in data/watchlist.yaml). Each one finishes
+// the sentence "X% of your portfolio is sensitive to ...". tests/test_portfolio_page.py keeps the
+// two lists in step.
 const THEME_WORDS = {
-  datacenter_capex: 'spending on data centers',
-  export_controls_china: 'US export controls on China',
-  fed_interest_rates: 'the Fed’s interest rates',
-  investment_banking_m_and_a_volume: 'how many mergers and deals are being done',
-  brent_wti_crude_prices: 'crude oil prices',
-  pc_market_demand: 'demand for PCs',
+  data_center_spending: 'spending on AI and data centers',
+  china_export_controls: 'US export controls on China',
+  pc_demand: 'demand for PCs',
+  smartphone_demand: 'demand for smartphones',
+  memory_chip_prices: 'memory chip prices',
+  bank_interest_income: 'what banks earn on loans as interest rates move',
+  dealmaking: 'how many mergers and share sales are being done',
+  card_spending: 'how much people spend on cards',
+  market_levels: 'how high stock and bond markets are, which sets the fees they earn',
+  oil_prices: 'crude oil prices',
+  drug_pricing_rules: 'US rules on drug prices',
+  medical_procedures: 'how many operations and procedures hospitals do',
+  health_insurance_rules: 'Medicare and health insurance rules',
+  lab_research_spending: 'spending on drug research and lab work',
+  defense_budgets: 'government defense budgets',
+  air_travel: 'how much people fly',
+  housing_market: 'the housing market and mortgage rates',
+  online_ads: 'spending on online ads',
+  cloud_computing: 'business spending on cloud computing',
+  business_tech_spending: 'how much businesses spend on software and IT',
+  streaming: 'the streaming business',
+  electric_cars: 'the electric car market',
+  electricity_demand: 'growing demand for electricity',
+  tobacco_rules: 'rules on tobacco and nicotine',
+  strong_dollar: 'a strong dollar, which shrinks what overseas sales are worth',
+  shipping_volumes: 'how much freight is being shipped',
+  heavy_machinery_demand: 'demand for heavy machinery',
 };
 const ECONOMY_WORDS = {
   inflation: 'inflation',

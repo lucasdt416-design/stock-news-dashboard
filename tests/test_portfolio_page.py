@@ -35,7 +35,7 @@ def test_page_data_names_the_site_sectors_and_other_share_classes(page):
     assert data["sectors"] == list(SECTOR_METADATA)
     assert data["other"] == {"GOOG": "GOOGL"}
     nvda = data["companies"]["NVDA"]
-    assert "datacenter_capex" in nvda["th"] and "MSFT" in nvda["cu"] and "TSMC" in nvda["su"] and "AMD" in nvda["co"]
+    assert "data_center_spending" in nvda["th"] and "datacenter_capex" not in nvda["th"] and "MSFT" in nvda["cu"] and "TSMC" in nvda["su"] and "AMD" in nvda["co"]
     assert len(data["companies"]) >= 100, "every followed company has an entry, even an empty one"
 
 
@@ -47,7 +47,7 @@ def test_other_tickers_never_shadow_a_listed_company():
 
 def test_only_what_the_watchlist_says_reaches_the_page():
     companies = [
-        {"symbol": "AAA", "macro_sensitivities": ["oil"], "economic_sensitivities": ["inflation"],
+        {"symbol": "AAA", "themes": ["oil"], "macro_sensitivities": ["not used"], "economic_sensitivities": ["inflation"],
          "key_customers": ["bbb", "Outside Co", 7, ""], "key_suppliers": None, "competitors": ["BBB", "ZZZ"]},
         {"symbol": "BBB"},
     ]
@@ -101,3 +101,21 @@ def test_following_from_the_page_shares_companies_not_amounts():
     assert "updateFollowState({ symbols:" in body
     for field in (".sh", ".usd", ".paid", ".bought"):
         assert field not in body, field
+
+
+def test_every_theme_is_shared_and_has_plain_words():
+    import yaml
+    companies = yaml.safe_load(open("data/watchlist.yaml", encoding="utf-8"))["tickers"]
+    holders = {}
+    for co in companies:
+        themes = co.get("themes") or []
+        assert len(themes) == len(set(themes)), co["symbol"]
+        for theme in themes:
+            holders.setdefault(theme, []).append(co["symbol"])
+    source = open("pipeline/portfolio_xray.js", encoding="utf-8").read()
+    block = re.search(r"const THEME_WORDS = \{(.*?)\n\};", source, re.S).group(1)
+    words = dict(re.findall(r"^\s*(\w+): '([^']+)',$", block, re.M))
+    assert set(holders) == set(words), "a theme without plain words, or words for a theme nobody has"
+    for theme, symbols in holders.items():
+        assert len(symbols) >= 2, f"{theme} is on one company only, so it can never be a shared bet"
+    assert sum(1 for co in companies if co.get("themes")) >= 80

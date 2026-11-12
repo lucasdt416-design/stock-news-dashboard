@@ -54,6 +54,7 @@ tickers:
     ir_feed_url: "https://nvidianews.nvidia.com/releases.xml"
     newsroom_url: "https://nvidianews.nvidia.com"
     sector: semiconductors
+    themes: [data_center_spending, china_export_controls]
     regulators: [BIS, SEC]
     key_customers: [MSFT, META, AMZN, GOOGL, ORCL, DELL, Super Micro, TSLA, XPeng, BYD]
     key_suppliers: [TSMC, SK Hynix, MU]
@@ -67,6 +68,7 @@ tickers:
     ir_feed_url: "https://www.apple.com/newsroom/rss-feed.rss"
     newsroom_url: "https://www.apple.com/newsroom"
     sector: consumer_electronics
+    themes: [smartphone_demand]
     regulators: [DOJ, FTC, EU_EC, SEC]
     key_suppliers: [TSMC, Foxconn, QCOM, AVGO, Sony, LG Display]
     competitors: [MSFT, GOOGL, DELL]
@@ -79,6 +81,7 @@ tickers:
     ir_feed_url: "https://news.microsoft.com/source/feed/"
     newsroom_url: "https://news.microsoft.com"
     sector: software_cloud
+    themes: [data_center_spending, cloud_computing, business_tech_spending]
     regulators: [FTC, CMA, EU_EC, SEC]
     key_customers: [OpenAI, US Department of Defense]
     key_suppliers: [NVDA, AMD, INTC]
@@ -95,6 +98,7 @@ tickers:
     ir_feed_url: "https://blog.google/rss/"
     newsroom_url: "https://blog.google"
     sector: search_cloud_ai
+    themes: [data_center_spending, online_ads, cloud_computing]
     regulators: [DOJ, FTC, EU_EC, SEC]
     key_suppliers: [NVDA, AVGO, TSMC]
     competitors: [MSFT, META, AMZN]
@@ -107,6 +111,7 @@ tickers:
     ir_feed_url: "https://www.aboutamazon.com/news/rss"
     newsroom_url: "https://www.aboutamazon.com/news"
     sector: ecommerce_cloud
+    themes: [data_center_spending, online_ads, cloud_computing]
     regulators: [FTC, DOJ, EU_EC, SEC]
     key_suppliers: [NVDA, INTC, AMD, UPS]
     competitors: [MSFT, GOOGL, WMT]
@@ -119,6 +124,7 @@ tickers:
     ir_feed_url: "https://about.fb.com/news/feed/"
     newsroom_url: "https://about.fb.com/news"
     sector: social_media_digital_ads
+    themes: [data_center_spending, online_ads]
     regulators: [FTC, EU_EC, SEC]
     key_suppliers: [NVDA, AMD, ANET]
     competitors: [GOOGL, SNAP, PINS]
@@ -131,6 +137,7 @@ tickers:
     ir_feed_url: "https://ir.tesla.com/rss.xml"
     newsroom_url: "https://ir.tesla.com/press-releases"
     sector: automotive_clean_energy
+    themes: [electric_cars]
     regulators: [NHTSA, SEC, EPA, EU_EC]
     key_suppliers: [Panasonic, CATL, LG Energy Solution, NVDA]
     competitors: [RIVN, F, GM]
@@ -142,6 +149,7 @@ tickers:
     cik: "0000019617"
     newsroom_url: "https://www.jpmorganchase.com/news-stories"
     sector: financial_banking
+    themes: [bank_interest_income, dealmaking]
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
     competitors: [BAC, MS, GS]
     macro_sensitivities: [fed_interest_rates, yield_curve_inversion, credit_default_rates, investment_banking_m_and_a_volume]
@@ -153,6 +161,7 @@ tickers:
     ir_feed_url: "https://investor.jnj.com/rss/pressrelease.aspx"
     newsroom_url: "https://www.jnj.com/media-center/press-releases"
     sector: healthcare_pharmaceuticals
+    themes: [drug_pricing_rules, medical_procedures]
     regulators: [FDA, EMA, SEC, FTC]
     key_customers: [McKesson, Cencora, Cardinal Health]
     competitors: [PFE, MRK, ABBV]
@@ -165,6 +174,7 @@ tickers:
     ir_feed_url: "https://investor.exxonmobil.com/company-information/press-releases/rss"
     newsroom_url: "https://corporate.exxonmobil.com/news"
     sector: energy_oil_gas
+    themes: [oil_prices]
     regulators: [EPA, DOE, SEC, FTC]
     key_suppliers: [SLB, Halliburton, Baker Hughes]
     competitors: [CVX, COP, BP]
@@ -188,6 +198,7 @@ tickers:
     ir_feed_url: "https://thewaltdisneycompany.com/feed/"
     newsroom_url: "https://thewaltdisneycompany.com/news"
     sector: entertainment_media
+    themes: [streaming]
     regulators: [FCC, FTC, SEC, DOJ]
     competitors: [NFLX, CMCSA, WBD]
     macro_sensitivities: [theme_park_discretionary_spend, linear_tv_cord_cutting, streaming_subscriber_growth]
@@ -199,6 +210,7 @@ tickers:
     ir_feed_url: "https://investors.coca-colacompany.com/news-events/press-releases/rss"
     newsroom_url: "https://www.coca-colacompany.com/media-center"
     sector: consumer_staples_beverages
+    themes: [strong_dollar]
     regulators: [FDA, FTC, SEC, International_Food_Agencies]
     key_customers: [Coca-Cola FEMSA, MCD, WMT, Target, Restaurant Brands International]
     key_suppliers: [Ball Corporation, Crown Holdings, Archer-Daniels-Midland]
@@ -212,6 +224,7 @@ tickers:
     ir_feed_url: "https://investors.pfizer.com/rss/pressrelease.aspx"
     newsroom_url: "https://www.pfizer.com/news/press-releases"
     sector: healthcare_pharmaceuticals
+    themes: [drug_pricing_rules]
     regulators: [FDA, EMA, SEC, FTC]
     key_customers: [McKesson, Cardinal Health]
     competitors: [JNJ, MRK, BMY]
@@ -224,6 +237,7 @@ tickers:
     ir_feed_url: "https://investors.boeing.com/rss/pressrelease.aspx"
     newsroom_url: "https://boeing.mediaroom.com/news-releases-statements"
     sector: aerospace_defense
+    themes: [defense_budgets, air_travel]
     regulators: [FAA, DOD, SEC, EASA]
     key_customers: [United Airlines, Delta Air Lines, American Airlines, Southwest Airlines, Ryanair, US Air Force]
     key_suppliers: [GE, RTX, Safran, Honeywell]
@@ -237,6 +251,7 @@ tickers:
     ir_feed_url: "https://ir.amd.com/rss/news-releases.xml"
     newsroom_url: "https://ir.amd.com/news-events/press-releases"
     sector: semiconductors
+    themes: [data_center_spending, china_export_controls, pc_demand]
     regulators: [BIS, SEC, FTC]
     key_customers: [MSFT, META, AMZN, GOOGL, ORCL, DELL, Lenovo, Sony, OpenAI]
     key_suppliers: [TSMC, ASE Technology]
@@ -250,6 +265,7 @@ tickers:
     ir_feed_url: "https://www.intc.com/news-events/press-releases/rss"
     newsroom_url: "https://newsroom.intel.com"
     sector: semiconductors
+    themes: [data_center_spending, pc_demand]
     regulators: [BIS, SEC, FTC, EU_EC]
     key_customers: [DELL, HP, Hewlett Packard Enterprise, Lenovo, MSFT, AMZN, GOOGL]
     key_suppliers: [ASML, AMAT, LRCX, KLA, TSMC]
@@ -263,6 +279,7 @@ tickers:
     ir_feed_url: "https://newsroom.bankofamerica.com/rssfeed"
     newsroom_url: "https://newsroom.bankofamerica.com"
     sector: financial_banking
+    themes: [bank_interest_income]
     regulators: [Federal_Reserve, OCC, FDIC, CFPB, SEC]
     competitors: [JPM, WFC, C, GS, MS]
     macro_sensitivities: [fed_interest_rates, net_interest_income, consumer_credit_charge_offs, commercial_real_estate]
@@ -273,6 +290,7 @@ tickers:
     cik: "0000886982"
     newsroom_url: "https://www.goldmansachs.com/news-and-insights"
     sector: financial_investment_banking
+    themes: [dealmaking]
     regulators: [Federal_Reserve, SEC, FINRA, CFTC, FCA]
     competitors: [MS, JPM, BAC, C, LAZ]
     macro_sensitivities: [investment_banking_m_and_a_volume, ipo_equity_underwriting, fixed_income_currency_commodities_ficc, private_credit_expansion]
@@ -283,6 +301,7 @@ tickers:
     cik: "0000731766"
     newsroom_url: "https://www.unitedhealthgroup.com/newsroom"
     sector: healthcare_managed_care
+    themes: [health_insurance_rules]
     regulators: [CMS, HHS, FTC, DOJ, SEC]
     key_suppliers: [Quest Diagnostics, Labcorp]
     competitors: [CVS, ELV, CI, HUM]
@@ -295,6 +314,7 @@ tickers:
     ir_feed_url: "https://news.abbvie.com/index.php?s=2429&pagetemplate=rss"
     newsroom_url: "https://news.abbvie.com"
     sector: healthcare_pharmaceuticals
+    themes: [drug_pricing_rules]
     regulators: [FDA, EMA, SEC, FTC]
     key_customers: [McKesson, Cencora, Cardinal Health]
     competitors: [JNJ, PFE, MRK, BMY, LLY]
@@ -307,6 +327,7 @@ tickers:
     ir_feed_url: "https://www.pginvestor.com/rss/pressrelease.aspx"
     newsroom_url: "https://news.pg.com"
     sector: consumer_staples_household
+    themes: [strong_dollar]
     regulators: [FDA, FTC, SEC, EPA]
     key_customers: [WMT, Target, COST, AMZN, Kroger]
     competitors: [UL, CL, KMB]
@@ -330,6 +351,7 @@ tickers:
     ir_feed_url: "https://investors.caterpillar.com/rss/pressrelease.aspx"
     newsroom_url: "https://www.caterpillar.com/en/news"
     sector: industrials_heavy_machinery
+    themes: [heavy_machinery_demand]
     regulators: [EPA, OSHA, SEC, DOJ]
     competitors: [DE, CNH, Komatsu]
     macro_sensitivities: [us_infrastructure_act_capex, mining_commodity_prices, dealer_machine_inventory_backlog, global_manufacturing_pmi]
@@ -340,6 +362,7 @@ tickers:
     cik: "0000040545"
     newsroom_url: "https://www.geaerospace.com/news"
     sector: aerospace_defense
+    themes: [defense_budgets, air_travel]
     regulators: [FAA, DOD, SEC, EASA]
     key_customers: [BA, Airbus, United Airlines, Delta Air Lines, American Airlines, US military]
     key_suppliers: [Howmet Aerospace, ATI, Woodward, Precision Castparts]
@@ -352,6 +375,7 @@ tickers:
     cik: "0000093410"
     newsroom_url: "https://www.chevron.com/newsroom"
     sector: energy_oil_gas
+    themes: [oil_prices]
     regulators: [EPA, DOE, SEC, FTC, DOI]
     key_suppliers: [SLB, Baker Hughes, Halliburton, TechnipFMC]
     competitors: [XOM, COP, BP, SHEL, TTE]
@@ -364,6 +388,7 @@ tickers:
     ir_feed_url: "https://ir.homedepot.com/rss/news-releases.xml"
     newsroom_url: "https://corporate.homedepot.com/newsroom"
     sector: retail_home_improvement
+    themes: [housing_market]
     regulators: [FTC, SEC, OSHA, EPA, CPSC]
     key_suppliers: ["Stanley Black & Decker", Masco, Owens Corning, Fortune Brands, Trex]
     competitors: [LOW, BLDR, SHW]
@@ -400,6 +425,7 @@ tickers:
     ir_feed_url: "https://investor.nexteraenergy.com/rss/news-releases.xml"
     newsroom_url: "https://newsroom.nexteraenergy.com"
     sector: utilities_clean_energy
+    themes: [data_center_spending, electricity_demand]
     regulators: [FERC, Florida_PSC, SEC, EPA, DOE, NERC]
     key_suppliers: [GEV, First Solar]
     competitors: [SO, DUK, AEP, EXC]
@@ -413,30 +439,35 @@ tickers:
     ir_feed_url: "https://abbott.mediaroom.com/press-releases?pagetemplate=rss"
     ir_page_url: "https://abbott.mediaroom.com"
     sector: healthcare_pharmaceuticals
+    themes: [medical_procedures]
     competitors: [MDT, TMO, JNJ]
 
   - symbol: ACN
     name: "Accenture plc"
     cik: "0001467373"
     sector: software_it_services
+    themes: [business_tech_spending]
     competitors: [IBM, ORCL, CRM]
 
   - symbol: ADBE
     name: "Adobe Inc."
     cik: "0000796343"
     sector: software_cloud
+    themes: [business_tech_spending]
     competitors: [CRM, MSFT, INTU]
 
   - symbol: AMAT
     name: "Applied Materials, Inc."
     cik: "0000006951"
     sector: semiconductors
+    themes: [data_center_spending, china_export_controls]
     competitors: [LRCX, KLAC, ASML]
 
   - symbol: AMGN
     name: "Amgen Inc."
     cik: "0000318154"
     sector: healthcare_pharmaceuticals
+    themes: [drug_pricing_rules]
     competitors: [GILD, LLY, BMY]
 
   - symbol: AMT
@@ -451,12 +482,14 @@ tickers:
     ir_feed_url: "https://investors.arista.com/rss/pressrelease.aspx"
     ir_page_url: "https://investors.arista.com"
     sector: tech_hardware
+    themes: [data_center_spending]
     competitors: [CSCO, DELL, AVGO]
 
   - symbol: AVGO
     name: "Broadcom Inc."
     cik: "0001730168"
     sector: semiconductors
+    themes: [data_center_spending]
     competitors: [NVDA, QCOM, AMD]
 
   - symbol: AXP
@@ -465,6 +498,7 @@ tickers:
     ir_feed_url: "https://ir.americanexpress.com/rss/pressrelease.aspx"
     ir_page_url: "https://ir.americanexpress.com"
     sector: financial_banking
+    themes: [card_spending]
     competitors: [V, MA, COF]
 
   - symbol: BKNG
@@ -481,6 +515,7 @@ tickers:
     ir_feed_url: "https://ir.blackrock.com/rss/pressrelease.aspx"
     ir_page_url: "https://ir.blackrock.com"
     sector: financial_investment_banking
+    themes: [market_levels]
     competitors: [SCHW, MS, GS]
 
   - symbol: BMY
@@ -489,12 +524,14 @@ tickers:
     ir_feed_url: "https://news.bms.com/rss/pressrelease.aspx"
     ir_page_url: "https://news.bms.com"
     sector: healthcare_pharmaceuticals
+    themes: [drug_pricing_rules]
     competitors: [MRK, PFE, ABBV]
 
   - symbol: BNY
     name: "The Bank of New York Mellon Corporation"
     cik: "0001390777"
     sector: financial_banking
+    themes: [market_levels]
     competitors: [STT, NTRS, JPM]
 
   - symbol: BRK-B
@@ -507,24 +544,28 @@ tickers:
     name: "Citigroup Inc."
     cik: "0000831001"
     sector: financial_banking
+    themes: [bank_interest_income, dealmaking]
     competitors: [JPM, BAC, WFC]
 
   - symbol: CMCSA
     name: "Comcast Corporation"
     cik: "0001166691"
     sector: telecommunications
+    themes: [streaming]
     competitors: [CHTR, DIS, T]
 
   - symbol: COF
     name: "Capital One Financial Corporation"
     cik: "0000927628"
     sector: financial_banking
+    themes: [bank_interest_income, card_spending]
     competitors: [AXP, JPM, USB]
 
   - symbol: COP
     name: "ConocoPhillips"
     cik: "0001163165"
     sector: energy_oil_gas
+    themes: [oil_prices]
     competitors: [XOM, CVX, EOG]
 
   - symbol: CRM
@@ -533,6 +574,7 @@ tickers:
     ir_feed_url: "https://www.salesforce.com/news/feed/"
     ir_page_url: "https://www.salesforce.com"
     sector: software_cloud
+    themes: [business_tech_spending]
     competitors: [ORCL, MSFT, NOW]
 
   - symbol: CSCO
@@ -541,6 +583,7 @@ tickers:
     ir_feed_url: "https://investor.cisco.com/rss/pressrelease.aspx"
     ir_page_url: "https://investor.cisco.com"
     sector: tech_hardware
+    themes: [business_tech_spending]
     competitors: [ANET, IBM, DELL]
 
   - symbol: CVS
@@ -549,12 +592,14 @@ tickers:
     ir_feed_url: "https://investors.cvshealth.com/rss/pressrelease.aspx"
     ir_page_url: "https://investors.cvshealth.com"
     sector: healthcare_services
+    themes: [health_insurance_rules]
     competitors: [UNH, CI, ELV]
 
   - symbol: DE
     name: "Deere & Company"
     cik: "0000315189"
     sector: industrials_machinery
+    themes: [heavy_machinery_demand]
     competitors: [CAT, CNH, AGCO]
 
   - symbol: DELL
@@ -563,6 +608,7 @@ tickers:
     ir_feed_url: "https://investors.delltechnologies.com/news-events/press-releases/rss"
     ir_page_url: "https://investors.delltechnologies.com"
     sector: tech_hardware
+    themes: [data_center_spending, pc_demand]
     competitors: [HPQ, HPE, CSCO]
 
   - symbol: DHR
@@ -571,6 +617,7 @@ tickers:
     ir_feed_url: "https://investors.danaher.com/press-releases?pagetemplate=rss"
     ir_page_url: "https://investors.danaher.com"
     sector: healthcare_life_sciences
+    themes: [lab_research_spending]
     competitors: [TMO, ABT, A]
 
   - symbol: DUK
@@ -579,6 +626,7 @@ tickers:
     ir_feed_url: "https://investors.duke-energy.com/rss/pressrelease.aspx"
     ir_page_url: "https://investors.duke-energy.com"
     sector: utilities_power
+    themes: [electricity_demand]
     competitors: [SO, NEE, D]
 
   - symbol: EMR
@@ -595,6 +643,7 @@ tickers:
     ir_feed_url: "https://newsroom.fedex.com/index.rss"
     ir_page_url: "https://newsroom.fedex.com"
     sector: industrials_transport
+    themes: [shipping_volumes]
     competitors: [UPS, UNP, AMZN]
 
   - symbol: GD
@@ -603,12 +652,14 @@ tickers:
     ir_feed_url: "https://investorrelations.gd.com/rss/pressrelease.aspx"
     ir_page_url: "https://investorrelations.gd.com"
     sector: aerospace_defense
+    themes: [defense_budgets]
     competitors: [LMT, RTX, NOC]
 
   - symbol: GEV
     name: "GE Vernova Inc."
     cik: "0001996810"
     sector: industrials_electrical
+    themes: [data_center_spending, electricity_demand]
     competitors: [GE, EMR, ETN]
 
   - symbol: GILD
@@ -623,6 +674,7 @@ tickers:
     name: "General Motors Company"
     cik: "0001467858"
     sector: consumer_goods_autos
+    themes: [electric_cars]
     competitors: [F, TSLA, TM]
 
   - symbol: IBM
@@ -631,6 +683,7 @@ tickers:
     ir_feed_url: "https://newsroom.ibm.com/announcements?pagetemplate=rss"
     ir_page_url: "https://newsroom.ibm.com"
     sector: tech_hardware
+    themes: [business_tech_spending]
     competitors: [ACN, MSFT, ORCL]
 
   - symbol: INTU
@@ -645,6 +698,7 @@ tickers:
     name: "Intuitive Surgical, Inc."
     cik: "0001035267"
     sector: healthcare_medical_devices
+    themes: [medical_procedures]
     competitors: [MDT, ABT, SYK]
 
   - symbol: LIN
@@ -657,6 +711,7 @@ tickers:
     name: "Eli Lilly and Company"
     cik: "0000059478"
     sector: healthcare_pharmaceuticals
+    themes: [drug_pricing_rules]
     competitors: [NVO, MRK, PFE]
 
   - symbol: LMT
@@ -665,12 +720,14 @@ tickers:
     ir_feed_url: "https://news.lockheedmartin.com/news-releases?pagetemplate=rss"
     ir_page_url: "https://news.lockheedmartin.com"
     sector: aerospace_defense
+    themes: [defense_budgets]
     competitors: [RTX, GD, NOC]
 
   - symbol: LOW
     name: "Lowe's Companies, Inc."
     cik: "0000060667"
     sector: retail_home_improvement
+    themes: [housing_market]
     competitors: [HD, WMT, COST]
 
   - symbol: LRCX
@@ -679,6 +736,7 @@ tickers:
     ir_feed_url: "https://newsroom.lamresearch.com/press-releases?pagetemplate=rss"
     ir_page_url: "https://newsroom.lamresearch.com"
     sector: semiconductors
+    themes: [data_center_spending, china_export_controls]
     competitors: [AMAT, KLAC, ASML]
 
   - symbol: MA
@@ -687,12 +745,14 @@ tickers:
     ir_feed_url: "https://investor.mastercard.com/rss/pressrelease.aspx"
     ir_page_url: "https://investor.mastercard.com"
     sector: financial_payments
+    themes: [card_spending]
     competitors: [V, AXP, PYPL]
 
   - symbol: MDLZ
     name: "Mondelez International, Inc."
     cik: "0001103982"
     sector: consumer_staples_food
+    themes: [strong_dollar]
     competitors: [PEP, KO, HSY]
 
   - symbol: MDT
@@ -701,6 +761,7 @@ tickers:
     ir_feed_url: "https://news.medtronic.com/press-releases?pagetemplate=rss"
     ir_page_url: "https://news.medtronic.com"
     sector: healthcare_medical_devices
+    themes: [medical_procedures]
     competitors: [ABT, ISRG, BSX]
 
   - symbol: MMM
@@ -717,18 +778,21 @@ tickers:
     ir_feed_url: "https://investor.altria.com/rss/pressrelease.aspx"
     ir_page_url: "https://investor.altria.com"
     sector: consumer_staples_tobacco
+    themes: [tobacco_rules]
     competitors: [PM, BTI]
 
   - symbol: MRK
     name: "Merck & Co., Inc."
     cik: "0000310158"
     sector: healthcare_pharmaceuticals
+    themes: [drug_pricing_rules]
     competitors: [PFE, LLY, BMY]
 
   - symbol: MS
     name: "Morgan Stanley"
     cik: "0000895421"
     sector: financial_investment_banking
+    themes: [dealmaking, market_levels]
     competitors: [GS, JPM, SCHW]
 
   - symbol: MU
@@ -737,6 +801,7 @@ tickers:
     ir_feed_url: "https://investors.micron.com/rss/pressrelease.aspx"
     ir_page_url: "https://investors.micron.com"
     sector: semiconductors
+    themes: [data_center_spending, memory_chip_prices]
     competitors: [SNDK, WDC, INTC]
 
   - symbol: NFLX
@@ -745,6 +810,7 @@ tickers:
     ir_feed_url: "https://ir.netflix.net/rss/pressrelease.aspx"
     ir_page_url: "https://ir.netflix.net"
     sector: entertainment_media
+    themes: [streaming]
     competitors: [DIS, CMCSA, GOOGL]
 
   - symbol: NOW
@@ -753,6 +819,7 @@ tickers:
     ir_feed_url: "https://newsroom.servicenow.com/rss/pressrelease.aspx"
     ir_page_url: "https://newsroom.servicenow.com"
     sector: software_cloud
+    themes: [business_tech_spending]
     competitors: [CRM, ORCL, MSFT]
 
   - symbol: ORCL
@@ -761,12 +828,14 @@ tickers:
     ir_feed_url: "https://investor.oracle.com/rss/pressrelease.aspx"
     ir_page_url: "https://investor.oracle.com"
     sector: software_cloud
+    themes: [data_center_spending, cloud_computing, business_tech_spending]
     competitors: [MSFT, CRM, AMZN]
 
   - symbol: PANW
     name: "Palo Alto Networks, Inc."
     cik: "0001327567"
     sector: software_security
+    themes: [business_tech_spending]
     competitors: [CRWD, FTNT, CSCO]
 
   - symbol: PEP
@@ -785,6 +854,7 @@ tickers:
     name: "Philip Morris International Inc."
     cik: "0001413329"
     sector: consumer_staples_tobacco
+    themes: [tobacco_rules, strong_dollar]
     competitors: [MO, BTI]
 
   - symbol: QCOM
@@ -793,6 +863,7 @@ tickers:
     ir_feed_url: "https://investor.qualcomm.com/rss/pressrelease.aspx"
     ir_page_url: "https://investor.qualcomm.com"
     sector: semiconductors
+    themes: [smartphone_demand]
     competitors: [AVGO, AMD, TXN]
 
   - symbol: RTX
@@ -800,6 +871,7 @@ tickers:
     cik: "0000101829"
     ir_page_url: "https://www.rtx.com"
     sector: aerospace_defense
+    themes: [defense_budgets, air_travel]
     competitors: [LMT, GD, BA]
 
   - symbol: SBUX
@@ -816,18 +888,21 @@ tickers:
     ir_feed_url: "https://pressroom.aboutschwab.com/rss/pressrelease.aspx"
     ir_page_url: "https://pressroom.aboutschwab.com"
     sector: financial_investment_banking
+    themes: [bank_interest_income, market_levels]
     competitors: [MS, BLK, IBKR]
 
   - symbol: SNDK
     name: "Sandisk Corporation"
     cik: "0002023554"
     sector: semiconductors
+    themes: [memory_chip_prices]
     competitors: [MU, WDC, STX]
 
   - symbol: SO
     name: "The Southern Company"
     cik: "0000092122"
     sector: utilities_power
+    themes: [electricity_demand]
     competitors: [DUK, NEE, D]
 
   - symbol: T
@@ -842,6 +917,7 @@ tickers:
     ir_feed_url: "https://ir.thermofisher.com/rss/pressrelease.aspx"
     ir_page_url: "https://ir.thermofisher.com"
     sector: healthcare_life_sciences
+    themes: [lab_research_spending]
     competitors: [DHR, ABT, A]
 
   - symbol: TMUS
@@ -870,6 +946,7 @@ tickers:
     ir_feed_url: "https://www.up.com/news/rss.xml"
     ir_page_url: "https://www.up.com"
     sector: industrials_transport
+    themes: [shipping_volumes]
     competitors: [CSX, NSC, FDX]
 
   - symbol: UPS
@@ -878,6 +955,7 @@ tickers:
     ir_feed_url: "https://investors.ups.com/news-events/press-releases/rss"
     ir_page_url: "https://investors.ups.com"
     sector: industrials_transport
+    themes: [shipping_volumes]
     competitors: [FDX, UNP, AMZN]
 
   - symbol: USB
@@ -886,6 +964,7 @@ tickers:
     ir_feed_url: "https://ir.usbank.com/rss/pressrelease.aspx"
     ir_page_url: "https://ir.usbank.com"
     sector: financial_banking
+    themes: [bank_interest_income]
     competitors: [WFC, PNC, COF]
 
   - symbol: V
@@ -894,6 +973,7 @@ tickers:
     ir_feed_url: "https://investor.visa.com/rss/pressrelease.aspx"
     ir_page_url: "https://investor.visa.com"
     sector: financial_payments
+    themes: [card_spending]
     competitors: [MA, AXP, PYPL]
 
   - symbol: WFC
@@ -902,4 +982,5 @@ tickers:
     ir_feed_url: "https://newsroom.wf.com/rss/pressrelease.aspx"
     ir_page_url: "https://newsroom.wf.com"
     sector: financial_banking
+    themes: [bank_interest_income]
     competitors: [JPM, BAC, C]
