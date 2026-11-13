@@ -24,6 +24,7 @@ const PF = {
   editing: null,
   pending: null,      // a pasted or imported list waiting for "Add these"
   mode: 'shares',
+  before: [],         // run before the holdings are drawn
   listeners: [],
 };
 
@@ -624,18 +625,23 @@ function pfRenderHoldings() {
     if (row.fund) tags.push('Fund');
     else if (row.sector) tags.push(row.sector + (h.sector && !row.company ? ' (set by you)' : ''));
     else if (info.status === 'ok') tags.push('Sector unknown');
+    const share = row.weight !== null
+      ? pfEl('span', {}, [tags.length ? ' · ' : '', pfEl('span', { class: 'pf-row-weight', text: pfPercent(row.weight) }), ' of your portfolio'])
+      : null;
+    const paidGain = gain !== null ? pfEl('div', { class: 'pf-gain ' + (gain > 0 ? 'pos' : gain < 0 ? 'neg' : ''),
+      text: `${gain > 0 ? '+' : gain < 0 ? '−' : ''}${pfMoney(Math.abs(gain))} since you bought` }) : null;
     const item = pfEl('li', { class: 'pf-row' + (row.priced || h.sh === null ? '' : ' pf-row-out'), data: { ticker: h.t } }, [
       pfEl('div', { class: 'pf-row-main' }, [
         pfEl('div', { class: 'pf-row-title' }, [title, name ? pfEl('span', { class: 'pf-row-name', text: name }) : null]),
         pfEl('div', { class: 'pf-row-meta' + (old ? ' pf-old' : ''), text: pfMeta(row) + (old ? ' (an old price)' : '') }),
-        tags.length ? pfEl('div', { class: 'pf-row-meta', text: tags.join(' · ') }) : null,
+        tags.length || share ? pfEl('div', { class: 'pf-row-meta' }, [tags.join(' · '), share]) : null,
       ]),
+      pfEl('div', { class: 'pf-row-spark' }, [row.priced ? pfSparkline(info) : null]),
       pfEl('div', { class: 'pf-row-value' }, [
         pfEl('div', { class: 'pf-value', text: row.value !== null ? pfMoney(row.value) : '—' }),
-        gain !== null ? pfEl('div', { class: 'pf-gain ' + (gain > 0 ? 'pos' : gain < 0 ? 'neg' : ''),
-          text: `${gain > 0 ? '+' : gain < 0 ? '−' : ''}${pfMoney(Math.abs(gain))} (${pfSigned(gain / h.paid)})` }) : null,
+        row.priced ? pfRowMove(h.t) : null,
+        paidGain,
       ]),
-      pfEl('div', { class: 'pf-row-weight', text: row.weight !== null ? pfPercent(row.weight) : '' }),
       pfEl('button', { type: 'button', class: 'pf-link', data: { click: 'pfEditOne', ticker: h.t }, 'aria-label': `Edit ${h.t}`,
         'aria-expanded': String(PF.editing === h.t), text: 'Edit' }),
     ]);
@@ -660,11 +666,12 @@ function pfRenderHoldings() {
   if (stale.length) notes.push(`Old ${stale.length === 1 ? 'price' : 'prices'}: ${stale.join(', ')}.`);
   if (out.length) notes.push(`Not counted: ${out.join(', ')}.`);
   if (rows.some(r => r.info.status === 'loading')) notes.push('Still getting some prices…');
-  if (anyPaid) notes.push('Gain is today’s value against what you paid.');
+  if (anyPaid) notes.push('“Since you bought” is today’s value against what you paid.');
   document.getElementById('pfTotalNote').textContent = notes.join(' ');
 }
 
 function pfRender() {
+  PF.before.forEach(fn => { try { fn(); } catch (e) { /* the holdings still show */ } });
   pfRenderHoldings();
   const note = document.getElementById('pfDropped');
   note.hidden = PF.dropped === 0;

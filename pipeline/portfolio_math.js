@@ -299,6 +299,56 @@ const PortfolioMath = (() => {
     };
   }
 
+  // ---- Value over time ----------------------------------------------------------------------
+  // What the shares held today were worth at the end of each month: shares x that month's adjusted
+  // close, added up. A month is only shown if every holding has a real price for it, so the line
+  // starts when the youngest holding began trading, and nothing is filled in. The last point is
+  // today's prices.
+  //   items: [{ t, sh, months: [[YYYY-MM, adjusted close]], price, date }]
+  function valueSeries(items) {
+    const usable = (items || []).filter(i => i.sh > 0 && i.price > 0 && Array.isArray(i.months) && i.months.length);
+    if (!usable.length) return null;
+    const start = usable.map(i => i.months[0][0]).sort().pop();
+    const earliest = usable.map(i => i.months[0][0]).sort()[0];
+    const lookups = usable.map(i => ({ sh: i.sh, byMonth: new Map(i.months) }));
+    const points = [];
+    usable[0].months.forEach(([month]) => {
+      if (month < start || !lookups.every(l => l.byMonth.has(month))) return;
+      points.push([month, sum(lookups.map(l => l.sh * l.byMonth.get(month)))]);
+    });
+    const date = usable.map(i => i.date).sort().pop();
+    points.push([date, sum(usable.map(i => i.sh * i.price))]);
+    return {
+      points,
+      from: points[0][0],
+      // The holdings that set where the line starts, when others go back further.
+      limitedBy: start > earliest ? usable.filter(i => i.months[0][0] === start).map(i => i.t) : [],
+    };
+  }
+
+  // The last `months` finished months of a series, plus today. Null when there aren't that many,
+  // so a "5 years" view is never drawn from 3 years of prices. No `months` means all of it.
+  function lastMonths(series, months) {
+    if (!series || series.points.length < 2) return null;
+    if (!months) return series.points;
+    if (series.points.length - 1 < months) return null;
+    return series.points.slice(series.points.length - 1 - months);
+  }
+
+  // How much each holding's shares gained or lost in dollars since the end of a month:
+  //   shares x (today's price - that month's adjusted close). They add up to the whole change.
+  function changeSince(items, month) {
+    const out = [];
+    (items || []).forEach(i => {
+      if (!(i.sh > 0) || !(i.price > 0) || !Array.isArray(i.months)) return;
+      const then = i.months.find(pair => pair[0] === month);
+      if (!then) return;
+      out.push({ t: i.t, then: i.sh * then[1], now: i.sh * i.price, change: i.sh * (i.price - then[1]) });
+    });
+    return out.sort((a, b) => b.change - a.change || a.t.localeCompare(b.t));
+  }
+
   return { total, positions, sectors, concentration, monthAtOrBefore, gains, overlap,
-    addMonths, monthsApart, yearsSince, monthYearsAgo, yearlyRate, whatIf, whatIfPortfolio };
+    addMonths, monthsApart, yearsSince, monthYearsAgo, yearlyRate, whatIf, whatIfPortfolio,
+    valueSeries, lastMonths, changeSince };
 })();

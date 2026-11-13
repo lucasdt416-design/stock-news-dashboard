@@ -424,3 +424,13 @@ The owner said to go with the suggestions, so:
 3. **`lookup.js`:** the hardening code is shared through `functions/_shared/guard.js`.
 4. **Other tickers:** the history function is built now, and Yahoo-from-Cloudflare is found out on
    the first deploy. Until then other tickers fail with a plain message.
+
+## The summary and charts (added after launch)
+
+The page now opens with what the portfolio is worth and a line of what today's shares were worth
+at the end of each month (`PortfolioMath.valueSeries`): shares held now × that month's adjusted
+close, added up. A month is drawn only if every holding has a real price for it, so the line
+starts when the youngest holding began trading. A range (1Y, 3Y, 5Y) is offered only when the
+prices cover it. The same range drives each holding's dollar change in its row and the "What moved
+your money" bars (`changeSince`), which add up to the headline change. It is not a record of what
+was held in the past, and the page says so under the chart.

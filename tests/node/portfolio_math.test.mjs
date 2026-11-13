@@ -296,3 +296,41 @@ test("a holding that wasn't trading yet is left out, named, and the rest rescale
   near(r.value, 1500);   // all 1,000 in A: 1000 x 150/100
   assert.deepEqual(M.whatIfPortfolio([young], 1000, "2021-01"), { error: "none", leftOut: ["NEW"] });
 });
+
+// ---- Value over time ----------------------------------------------------------------------------
+
+const held = [
+  { t: "A", sh: 10, price: 30, date: "2026-11-10", months: [["2026-07", 10], ["2026-08", 20], ["2026-09", 25], ["2026-10", 28]] },
+  { t: "B", sh: 2, price: 100, date: "2026-11-11", months: [["2026-08", 50], ["2026-09", 60], ["2026-10", 90]] },
+];
+
+test("value over time is today's shares at each month's real price, starting when all were trading", () => {
+  const s = M.valueSeries(held);
+  // Aug: 10x20 + 2x50 = 300. Sep: 10x25 + 2x60 = 370. Oct: 10x28 + 2x90 = 460. Now: 10x30 + 2x100 = 500.
+  assert.deepEqual(s.points, [["2026-08", 300], ["2026-09", 370], ["2026-10", 460], ["2026-11-11", 500]]);
+  assert.equal(s.from, "2026-08");
+  assert.deepEqual(s.limitedBy, ["B"], "B began later than A, so it sets the start");
+  assert.deepEqual(M.valueSeries([held[0]]).limitedBy, []);
+  assert.equal(M.valueSeries([]), null);
+  assert.equal(M.valueSeries([{ t: "X", sh: 1, price: 5, date: "2026-11-11", months: null }]), null);
+});
+
+test("a month one holding has no price for is left out, never filled in", () => {
+  const gap = [held[0], { ...held[1], months: [["2026-08", 50], ["2026-10", 90]] }];
+  assert.deepEqual(M.valueSeries(gap).points.map((p) => p[0]), ["2026-08", "2026-10", "2026-11-11"]);
+});
+
+test("a range is only given when there are that many months of prices", () => {
+  const s = M.valueSeries(held);
+  assert.deepEqual(M.lastMonths(s, 2), [["2026-09", 370], ["2026-10", 460], ["2026-11-11", 500]]);
+  assert.equal(M.lastMonths(s, 12), null);
+  assert.equal(M.lastMonths(s, 0).length, 4);
+});
+
+test("each holding's dollar change since a month adds up to the whole change", () => {
+  const rows = M.changeSince(held, "2026-08");
+  // A: 10 x (30 - 20) = +100. B: 2 x (100 - 50) = +100. Whole: 500 - 300 = +200.
+  assert.deepEqual(rows.map((r) => [r.t, r.change]), [["A", 100], ["B", 100]]);
+  near(rows.reduce((a, r) => a + r.change, 0), 200);
+  assert.deepEqual(M.changeSince(held, "2026-07").map((r) => r.t), ["A"], "B has no price for July, so it isn't guessed");
+});

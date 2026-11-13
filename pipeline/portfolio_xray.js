@@ -83,14 +83,16 @@ function pfRenderSectors(rows) {
   const list = document.getElementById('pfSectors');
   list.replaceChildren();
   const real = sectors.filter(s => s.name !== 'Funds' && s.name !== 'Sector unknown');
+  const all = PortfolioMath.total(rows);
   document.getElementById('pfSectorLead').textContent = real.length
-    ? `${pfPercent(real[0].weight, 0)} of your money is in ${real[0].name}${real.length > 1 ? `, across ${real.length} sectors in all` : ''}.`
+    ? `${pfMoney(real[0].weight * all)} of your ${pfMoney(all)} is in ${real[0].name} (${pfPercent(real[0].weight, 0)})${real.length > 1 ? `, across ${real.length} sectors in all` : ''}.`
     : 'None of your money is in a stock with a known sector.';
   sectors.forEach(sector => {
     const label = sector.name === 'Funds' ? 'Funds (contents not broken out)' : sector.name;
     list.append(pfEl('li', { class: 'pf-sector' }, [
       pfEl('span', { class: 'pf-sector-name', text: label }),
       pfBar(sector.weight),
+      pfEl('span', { class: 'pf-sector-money', text: pfMoney(sector.weight * all) }),
       pfEl('span', { class: 'pf-sector-pct', text: pfPercent(sector.weight) }),
       pfEl('span', { class: 'pf-sector-tickers', text: sector.tickers.join(', ') }),
     ]));
@@ -117,9 +119,11 @@ function pfRenderConcentration(rows) {
     pfEl('dd', { class: 'pf-stat-detail', text: detail }),
   ]);
   const base = c.fundWeight > 0 ? 'of the money you have in individual stocks' : 'of your portfolio';
-  list.append(stat('Largest holding', pfPercent(c.largest.weight, 0), `${c.largest.name}, ${base}`));
-  if (c.stocks > 3) list.append(stat('Top three', pfPercent(c.topThree.weight, 0), `${c.topThree.names.join(', ')}, ${base}`));
-  list.append(stat('Largest sector', pfPercent(c.largestSector.weight, 0), `${c.largestSector.name}, ${base}`));
+  const inStocks = PortfolioMath.total(rows.filter(r => !r.fund));
+  const part = (names, weight) => `${names}: ${pfPercent(weight, 0)} ${base}`;
+  list.append(stat('Largest holding', pfMoney(c.largest.weight * inStocks), part(c.largest.name, c.largest.weight)));
+  if (c.stocks > 3) list.append(stat('Top three together', pfMoney(c.topThree.weight * inStocks), part(c.topThree.names.join(', '), c.topThree.weight)));
+  list.append(stat('Largest sector', pfMoney(c.largestSector.weight * inStocks), part(c.largestSector.name, c.largestSector.weight)));
   const effective = c.effective < 9.95 ? c.effective.toFixed(1).replace(/\.0$/, '') : String(Math.round(c.effective));
   if (c.stocks === 1) {
     lead.textContent = 'You hold one stock, so all of it rides on that one.';
@@ -162,7 +166,11 @@ function pfRenderOverlap(rows) {
   const more = document.getElementById('pfOverlapAll');
   list.replaceChildren();
   const shown = XRAY.showAllOverlap ? result.lines : result.lines.slice(0, FIRST_ROWS);
-  shown.forEach(line => list.append(pfEl('li', { class: 'pf-overlap-line', text: pfOverlapWords(line) })));
+  const all = PortfolioMath.total(rows);
+  shown.forEach(line => list.append(pfEl('li', { class: 'pf-overlap-line' }, [
+    pfEl('strong', { class: 'pf-line-amount', text: pfMoney(line.weight * all) }),
+    pfEl('span', { class: 'pf-line-words', text: pfOverlapWords(line) }),
+  ])));
   document.getElementById('pfOverlapLead').textContent = result.lines.length
     ? 'Where several of your holdings depend on the same thing. These overlap, so they don’t add up.'
     : result.covered >= 2
@@ -204,6 +212,18 @@ function pfRenderGains(rows) {
     pfEl('span', { class: g.gain > 0 ? 'pos' : g.gain < 0 ? 'neg' : '', text: `${signed(g.gain)} (${pfSigned(g.pct)})` }),
     '.' + (g.without ? ` ${plural(g.without, 'holding has', 'holdings have')} no cost, so ${g.without === 1 ? 'it isn’t' : 'they aren’t'} in this.` : ''));
 
+  // Paid, worth now and (once the comparison is known) the same money in the S&P 500, as bars.
+  const bars = document.getElementById('pfGainBars');
+  bars.replaceChildren();
+  const drawBars = items => {
+    const top = Math.max(...items.map(i => i[1]));
+    items.forEach(([label, amount, cls]) => bars.append(pfEl('li', { class: 'pf-money-row' }, [
+      pfEl('span', { class: 'pf-money-label', text: label }),
+      pfSvg('svg', { class: 'pf-bar', viewBox: '0 0 100 4', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
+        [pfSvg('rect', { class: cls, x: 0, y: 0, width: ((amount / top) * 100).toFixed(2), height: 4 })]),
+      pfEl('span', { class: 'pf-money-amount', text: pfMoney(amount) }),
+    ])));
+  };
   const versus = document.getElementById('pfGainSpy');
   const list = document.getElementById('pfGainRows');
   const more = document.getElementById('pfGainAll');
@@ -211,6 +231,7 @@ function pfRenderGains(rows) {
   list.replaceChildren();
   const wantsSpy = rows.some(r => r.paid && r.bought);
   if (!g.spy) {
+    drawBars([['You paid', g.paid, 'pf-bar-quiet'], ['Worth now', g.value, 'pf-bar-fill']]);
     more.hidden = true;
     versus.textContent = !wantsSpy
       ? 'Add the month you bought to compare with the S&P 500 over the same time. Without a date there’s no period to compare.'
@@ -220,6 +241,7 @@ function pfRenderGains(rows) {
     return;
   }
   const s = g.spy;
+  drawBars([['You paid', s.paid, 'pf-bar-quiet'], ['Worth now', s.value, 'pf-bar-fill'], ['Same money in the S&P 500', s.same, 'pf-bar-other']]);
   versus.textContent = `For the ${s.rows.length === 1 ? 'one' : s.rows.length} with a buy month: the same ${pfMoney(s.paid)} put into the S&P 500 in ${s.rows.length === 1 ? 'that month' : 'those months'} would be worth ${pfMoney(s.same)} now (${pfSigned(s.spyPct)}). Yours ${s.rows.length === 1 ? 'is' : 'are'} worth ${pfMoney(s.value)} (${pfSigned(s.pct)}).`;
   const ordered = s.rows.slice().sort((a, b) => b.value - a.value);
   (XRAY.showAllGains ? ordered : ordered.slice(0, FIRST_ROWS)).forEach(r => {

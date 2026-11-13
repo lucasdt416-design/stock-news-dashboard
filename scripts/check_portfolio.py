@@ -189,8 +189,22 @@ async def run(site, out):
                               [{"t": t, "sh": v / price(t)} for t, v in want.items()])
             await pg.reload()
             await pg.wait_for_timeout(700)
+            # The summary: the big number, the line, and each holding's dollars over the same range
+            money = lambda text: float(text.replace("−", "-").replace("$", "").replace(",", "").replace("+", "").split()[0])  # noqa: E731
+            check(await pg.inner_text("#pfHeroValue") == "$10,000.00", "the big number is the total")
+            check(await pg.locator("#pfValueChart .pf-line").count() == 1, "the value over time is drawn as one line")
+            check(await pg.locator(".pf-row .pf-spark").count() >= 3, "holdings with a year of prices get a small line")
+            moved = [money(t) for t in await pg.locator(".pf-move-amount").all_inner_texts()]
+            headline = money(await pg.inner_text("#pfHeroChange"))
+            check(len(moved) >= 2 and abs(sum(moved) - headline) < 0.05, f"the holdings' dollar changes add up to the headline change ({sum(moved):.2f} vs {headline:.2f})")
+            box = await pg.locator("#pfValueChart svg").bounding_box()
+            await pg.mouse.move(box["x"] + box["width"] * 0.3, box["y"] + box["height"] / 2)
+            check("were worth at the end of" in await pg.inner_text("#pfHeroLabel") and await pg.inner_text("#pfHeroValue") != "$10,000.00",
+                  "pointing at the line shows that month's value")
+            await pg.mouse.move(2, 2)
+            check(await pg.inner_text("#pfHeroValue") == "$10,000.00", "and moving away shows today's again")
             sectors = await pg.inner_text("#pfSectors")
-            check("80% of your money is in Technology" in await pg.inner_text("#pfSectorLead"), "the largest sector is stated as a fact")
+            check("$8,000.00 of your $10,000.00 is in Technology (80%)" in await pg.inner_text("#pfSectorLead"), "the largest sector is stated as a fact, in dollars")
             check("Funds (contents not broken out)" in sectors and "15%" in sectors and "Sector unknown" in sectors and "5.0%" in sectors,
                   "funds and unknown sectors are their own groups")
             conc = await pg.inner_text("#pfConcentration")

@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 _HERE = os.path.dirname(__file__)
 
 # In the order they run. Each later file may use what the earlier ones define.
-PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_math.js", "portfolio_app.js", "portfolio_xray.js", "portfolio_whatif.js")
+PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_math.js", "portfolio_app.js", "portfolio_xray.js", "portfolio_summary.js", "portfolio_whatif.js")
 
 
 def _script(name: str) -> str:
@@ -104,7 +104,43 @@ PORTFOLIO_CSS = """
     .pf-preview-actions { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
     .pf-ticker { font-weight: 600; color: var(--text-primary); text-decoration: none; }
     a.pf-ticker:hover { color: var(--accent); }
-    .pf-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 3.5rem auto; align-items: start; gap: 0.2rem 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .pf-hero { padding: 0.25rem 0 2rem; }
+    .pf-hero-label { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
+    .pf-hero-value { margin: 0.1rem 0 0.15rem; font-size: clamp(2.2rem, 7vw, 3.1rem); line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .pf-hero-change { margin: 0; min-height: 1.5rem; font-size: 1.02rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .pf-hero-change .pos, .pf-tile-value.pos, .pf-move-amount.pos { color: var(--pos); }
+    .pf-hero-change .neg, .pf-tile-value.neg, .pf-move-amount.neg { color: var(--neg); }
+    .pf-ranges { margin: 1.1rem 0 0.6rem; }
+    .pf-seg button:disabled { opacity: 0.35; cursor: default; }
+    .pf-chart { min-height: 0; touch-action: pan-y; }
+    .pf-chart-svg { display: block; width: 100%; height: auto; cursor: crosshair; }
+    .pf-line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+    .pf-cross { stroke: var(--text-muted); stroke-width: 1; }
+    .pf-dot { fill: var(--series-1); stroke: var(--bg-base); stroke-width: 2; }
+    .pf-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 1.1rem 2rem; margin: 1.25rem 0 0.75rem; }
+    .pf-tile-label { font-size: 0.84rem; color: var(--text-muted); }
+    .pf-tile-value { margin: 0.1rem 0 0; font-size: 1.2rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pf-tile-detail { margin: 0; font-size: 0.84rem; color: var(--text-muted); }
+    .pf-add-section > .settings-heading { margin-bottom: 0.75rem; }
+    .pf-move { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) 7.5rem; align-items: center; gap: 0.1rem 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .pf-movebar { display: block; width: 100%; height: 14px; }
+    .pf-bar-pos { fill: var(--pos); }
+    .pf-bar-neg { fill: var(--neg); }
+    .pf-zero { stroke: var(--text-muted); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .pf-move-amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pf-move-detail { grid-column: 2 / -1; font-size: 0.84rem; color: var(--text-muted); }
+    .pf-money-bars { margin: 0.25rem 0 1rem; max-width: 42rem; }
+    .pf-money-row { display: grid; grid-template-columns: 11rem minmax(0, 1fr) 7rem; align-items: center; gap: 0.15rem 1rem; padding: 0.45rem 0; }
+    .pf-money-label { font-size: 0.92rem; color: var(--text-secondary); }
+    .pf-money-amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pf-bar-quiet { fill: var(--series-other); }
+    .pf-bar-other { fill: var(--text-muted); }
+    .pf-row { display: grid; grid-template-columns: minmax(0, 1fr) 96px 13rem auto; align-items: center; gap: 0.2rem 1.25rem; padding: 0.9rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .pf-row-spark { height: 30px; }
+    .pf-spark { display: block; }
+    .pf-spark path { fill: none; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+    .pf-spark-up path { stroke: var(--pos); }
+    .pf-spark-down path { stroke: var(--neg); }
     .pf-row-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.6rem; }
     .pf-row-name { color: var(--text-secondary); font-size: 0.95rem; overflow-wrap: anywhere; min-width: 0; }
     .pf-row-meta { margin-top: 0.15rem; font-size: 0.84rem; color: var(--text-muted); }
@@ -114,7 +150,7 @@ PORTFOLIO_CSS = """
     .pf-gain { font-size: 0.84rem; color: var(--text-muted); }
     .pf-gain.pos { color: var(--pos); }
     .pf-gain.neg { color: var(--neg); }
-    .pf-row-weight { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .pf-row-weight { font-variant-numeric: tabular-nums; }
     .pf-row-out .pf-value { color: var(--text-muted); font-weight: 400; }
     .pf-row-edit { padding: 0.25rem 0 1rem; border-bottom: 1px solid var(--border-subtle); }
     .pf-edit { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem 1rem; }
@@ -129,19 +165,21 @@ PORTFOLIO_CSS = """
     .pf-lead .pos { color: var(--pos); }
     .pf-lead .neg { color: var(--neg); }
     .pf-sectors, .pf-lines { list-style: none; margin: 0; padding: 0; }
-    .pf-sector { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 3.5rem; align-items: center; gap: 0.15rem 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .pf-sector { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 6.5rem 3rem; align-items: center; gap: 0.15rem 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle); }
     .pf-sector-name { font-size: 0.95rem; }
-    .pf-sector-pct { text-align: right; font-variant-numeric: tabular-nums; }
+    .pf-sector-money { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pf-sector-pct { text-align: right; font-size: 0.86rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
     .pf-sector-tickers { grid-column: 1 / -1; font-size: 0.84rem; color: var(--text-muted); overflow-wrap: anywhere; }
     .pf-bar { display: block; width: 100%; height: 6px; }
     .pf-bar-track { fill: var(--bg-surface-highlight); }
-    .pf-bar-fill { fill: var(--text-primary); }
+    .pf-bar-fill { fill: var(--series-1); }
     .pf-stats { margin: 0; }
     .pf-stat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.1rem 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--border-subtle); }
     .pf-stat-label { font-size: 0.95rem; }
     .pf-stat-value { margin: 0; text-align: right; font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
     .pf-stat-detail { grid-column: 1 / -1; margin: 0; font-size: 0.84rem; color: var(--text-muted); max-width: 38rem; }
     .pf-sectors > li:last-child, .pf-stats > .pf-stat:last-child, .pf-lines > li:last-child { border-bottom: none; }
+    .pf-line-amount { display: block; font-variant-numeric: tabular-nums; }
     .pf-overlap-line { padding: 0.65rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.97rem; line-height: 1.45; max-width: 44rem; }
     .wi-form { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; }
     .wi-picks { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
@@ -165,15 +203,19 @@ PORTFOLIO_CSS = """
     .wi-table th:first-child, .wi-table td:first-child { text-align: left; }
     .wi-table th { position: sticky; top: 0; background: var(--bg-base); font-weight: 600; color: var(--text-secondary); }
     @media (max-width: 640px) {
-      .pf-row { grid-template-columns: minmax(0, 1fr) auto; }
-      .pf-row-weight { grid-column: 2; grid-row: 2; font-size: 0.84rem; }
-      .pf-row > .pf-link { grid-column: 1; grid-row: 2; justify-self: start; }
+      .pf-row { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
       .pf-row-main { grid-column: 1; grid-row: 1; }
-      .pf-row-value { grid-column: 2; grid-row: 1; }
+      .pf-row-spark { grid-column: 2; grid-row: 1; justify-self: end; }
+      .pf-row-value { grid-column: 1 / -1; grid-row: 2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.9rem; text-align: left; margin-top: 0.35rem; }
+      .pf-row-value .pf-value { font-size: 1.1rem; }
+      .pf-row > .pf-link { grid-column: 1 / -1; grid-row: 3; justify-self: start; }
+      .pf-move { grid-template-columns: 3.75rem minmax(0, 1fr) 6.5rem; gap: 0.1rem 0.6rem; }
+      .pf-money-row { grid-template-columns: minmax(0, 1fr) 6.5rem; }
+      .pf-money-row .pf-bar { grid-column: 1 / -1; grid-row: 2; }
       .pf-field .pf-input { width: 100%; }
       .pf-field { flex: 1 1 9rem; }
       .pf-preview-row { grid-template-columns: 4rem minmax(0, 1fr); }
-      .pf-sector { grid-template-columns: minmax(0, 1fr) 3.5rem; }
+      .pf-sector { grid-template-columns: minmax(0, 1fr) 6rem 3rem; }
       .pf-sector .pf-bar { grid-column: 1 / -1; grid-row: 2; }
     }
 """
@@ -181,13 +223,45 @@ PORTFOLIO_CSS = """
 PORTFOLIO_BODY = """
       <header class="page-header">
         <h1 class="page-title">Your portfolio</h1>
-        <p class="page-standfirst">Put in the stocks you own and see what you’re actually invested in. Your holdings stay in this browser.</p>
+        <p class="page-standfirst">Put in the stocks you own to see what they’re worth, how that has changed and what you’re actually invested in. Your holdings stay in this browser.</p>
       </header>
 
       <p class="pf-banner" id="pfDemo" hidden>Demo prices, not real. This copy of the site was built from made-up data.</p>
       <p class="pf-banner" id="pfPricesFailed" hidden>Prices couldn’t be loaded just now. Your holdings are still here; try again in a little while.</p>
 
-      <section class="pf-section" aria-labelledby="pfAddHeading">
+      <section class="pf-hero" id="pfSummary" aria-label="Your portfolio at a glance" hidden>
+        <p class="pf-hero-label" id="pfHeroLabel">Your portfolio is worth</p>
+        <p class="pf-hero-value" id="pfHeroValue"></p>
+        <p class="pf-hero-change" id="pfHeroChange"></p>
+        <div class="pf-seg pf-ranges" id="pfRanges" role="group" aria-label="How far back the chart goes" hidden>
+          <button type="button" data-click="pfSetRange" data-months="12" aria-pressed="false">1Y</button>
+          <button type="button" data-click="pfSetRange" data-months="36" aria-pressed="false">3Y</button>
+          <button type="button" data-click="pfSetRange" data-months="60" aria-pressed="false">5Y</button>
+          <button type="button" data-click="pfSetRange" data-months="0" aria-pressed="false">All</button>
+        </div>
+        <div class="pf-chart" id="pfValueChart"></div>
+        <dl class="pf-tiles" id="pfTiles" hidden></dl>
+        <button type="button" class="pf-link" id="pfValueNumbers" data-click="pfValueNumbers" aria-expanded="false" aria-controls="pfValueTable" hidden>Show the numbers</button>
+        <div class="wi-table-wrap" id="pfValueTable" hidden></div>
+        <p class="pf-note" id="pfValueNote"></p>
+      </section>
+
+      <p class="pf-note" id="pfEmpty">Nothing here yet. Add what you hold above: a ticker and either how many shares or what it’s worth today. A file exported from your broker works too; it’s read here, in your browser, and isn’t uploaded.</p>
+
+      <section class="pf-section" id="pfHoldings" aria-labelledby="pfHoldingsHeading" hidden>
+        <h2 class="settings-heading" id="pfHoldingsHeading">Your holdings</h2>
+        <ul class="pf-list" id="pfList"></ul>
+        <button type="button" class="pf-link" id="pfShowAll" data-click="pfShowAll" hidden>Show all</button>
+        <div class="pf-total"><span class="pf-total-label">Total</span><span class="pf-total-value" id="pfTotal"></span></div>
+        <p class="pf-note" id="pfTotalNote"></p>
+        <p class="pf-note" id="pfDropped" hidden></p>
+        <div class="pf-follow" id="pfFollowBox" hidden>
+          <button type="button" class="pf-link" id="pfFollow" data-click="pfFollowHeld">Follow these companies</button>
+          <span class="pf-note" id="pfFollowNote"></span>
+        </div>
+      </section>
+
+      <section class="pf-section pf-add-section" aria-labelledby="pfAddHeading">
         <h2 class="settings-heading" id="pfAddHeading">Add a holding</h2>
         <div class="pf-add" id="pfAddRow">
           <input class="pf-input" id="pfTicker" type="text" list="pfTickers" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="60" placeholder="Ticker, e.g. NVDA" aria-label="Ticker or company name">
@@ -221,19 +295,11 @@ PORTFOLIO_BODY = """
         <div class="pf-preview" id="pfPreview" hidden></div>
       </section>
 
-      <p class="pf-note" id="pfEmpty">Nothing here yet. Add what you hold above: a ticker and either how many shares or what it’s worth today. A file exported from your broker works too; it’s read here, in your browser, and isn’t uploaded.</p>
-
-      <section class="pf-section" id="pfHoldings" aria-labelledby="pfHoldingsHeading" hidden>
-        <h2 class="settings-heading" id="pfHoldingsHeading">What you hold</h2>
-        <ul class="pf-list" id="pfList"></ul>
-        <button type="button" class="pf-link" id="pfShowAll" data-click="pfShowAll" hidden>Show all</button>
-        <div class="pf-total"><span class="pf-total-label">Total</span><span class="pf-total-value" id="pfTotal"></span></div>
-        <p class="pf-note" id="pfTotalNote"></p>
-        <p class="pf-note" id="pfDropped" hidden></p>
-        <div class="pf-follow" id="pfFollowBox" hidden>
-          <button type="button" class="pf-link" id="pfFollow" data-click="pfFollowHeld">Follow these companies</button>
-          <span class="pf-note" id="pfFollowNote"></span>
-        </div>
+      <section class="pf-section" id="pfMovesSection" aria-labelledby="pfMovesHeading" hidden>
+        <h2 class="settings-heading" id="pfMovesHeading">What moved your money</h2>
+        <p class="pf-lead" id="pfMovesLead"></p>
+        <ul class="pf-lines" id="pfMoves"></ul>
+        <button type="button" class="pf-link" id="pfMovesAll" data-click="pfMovesAll" hidden>Show all</button>
       </section>
 {{ portfolio_sections }}
       <section class="pf-section pf-foot">
@@ -245,7 +311,7 @@ PORTFOLIO_BODY = """
 PORTFOLIO_XRAY = """
       <div id="pfXray" hidden>
         <section class="pf-section" aria-labelledby="pfSectorHeading">
-          <h2 class="settings-heading" id="pfSectorHeading">Sectors</h2>
+          <h2 class="settings-heading" id="pfSectorHeading">Where the money is</h2>
           <p class="pf-lead" id="pfSectorLead"></p>
           <ul class="pf-sectors" id="pfSectors"></ul>
         </section>
@@ -273,6 +339,7 @@ PORTFOLIO_XRAY = """
         <section class="pf-section" id="pfGainSection" aria-labelledby="pfGainHeading" hidden>
           <h2 class="settings-heading" id="pfGainHeading">Gain and loss</h2>
           <p class="pf-lead" id="pfGainLead"></p>
+          <ul class="pf-lines pf-money-bars" id="pfGainBars"></ul>
           <p class="pf-lead" id="pfGainSpy"></p>
           <ul class="pf-lines" id="pfGainRows"></ul>
           <button type="button" class="pf-link" id="pfGainAll" data-click="pfGainAll" hidden>Show all</button>
