@@ -828,6 +828,14 @@ SHARED_CSS = """
     .filter-btn { background: none; border: none; padding: 0; min-height: 32px; font-size: 0.84rem; font-weight: 400; color: var(--text-secondary); cursor: pointer; border-radius: 0; display: inline-flex; align-items: baseline; gap: 0.3rem; }
     .filter-btn:hover { color: var(--text-primary); background: none; }
     .filter-btn.active { color: var(--text-primary); font-weight: 600; background: none; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+    /* A row of choices that is always on show: the kind of story on the feed, the sector on Companies. */
+    .kind-bar { display: flex; flex-wrap: wrap; gap: 0 1.25rem; padding: 0.45rem 0 0; }
+    .kind-bar .filter-btn { flex: none; min-height: 36px; font-size: 0.9rem; }
+    .kind-bar .pill-count { display: inline-block; }
+    .kind-bar .filter-btn[hidden] { display: none; }
+    .company-tools { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 1.25rem; padding-top: 0.25rem; }
+    .company-tools .econ-note { padding: 0; margin: 0; }
+    .sort-label { font-size: 0.84rem; color: var(--text-muted); }
     .pill-count { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); background: none; padding: 0; font-weight: 400; }
 
     .feed-ticker-picker-wrap { position: relative; display: inline-block; max-width: 100%; }
@@ -871,6 +879,10 @@ SHARED_CSS = """
       .filter-row { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; padding: 0.55rem 0; }
       .filter-options, .feed-sector-bar { gap: 0 1.1rem; }
       .filter-btn, .feed-ticker-picker-btn { min-height: 40px; }
+      /* On a phone the row scrolls sideways inside itself, so it stays one line. */
+      .kind-bar { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+      .kind-bar::-webkit-scrollbar { display: none; }
+      .kind-bar .filter-btn { min-height: 44px; }
       .feed-ticker-dropdown-menu { max-width: calc(100vw - 2rem); }
       .feed-details summary { min-height: 32px; }
     }
@@ -931,6 +943,11 @@ SHARED_CSS = """
     .company-directory-browser .econ-note { padding-bottom: 0; }
     .company-browser-grid { columns: 2; column-gap: 3rem; margin-top: 0.75rem; }
     .company-browser-sector { break-inside: avoid; padding-bottom: 1.25rem; }
+    /* One sector on its own fills both columns, with its name across the top. */
+    .company-browser-grid.is-one-sector .company-browser-sector { break-inside: auto; }
+    .company-browser-grid.is-one-sector .company-browser-sector-name { column-span: all; margin-bottom: 0.25rem; }
+    .company-browser-grid.is-one-sector .company-browser-card { break-inside: avoid; }
+    .company-none { font-size: 0.92rem; color: var(--text-muted); padding: 1rem 0; }
     .company-browser-sector-name { font-size: 0.98rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--text-primary); }
     .company-browser-card { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; width: 100%; background: none; border: none; border-bottom: 1px solid var(--border-subtle); padding: 0.5rem 0; text-align: left; color: inherit; cursor: pointer; }
     .company-browser-card:hover .company-browser-card-name { color: var(--accent); }
@@ -1797,6 +1814,9 @@ const PAGE_ACTIONS = {
     focusMobileSearch: () => focusMobileSearch(),
     selectFeedTicker: el => selectFeedTicker(el.dataset.ticker),
     setCategoryFilter: el => setCategoryFilter(el.dataset.val, el),
+    setFeedKind: el => setFeedKind(el.dataset.kind, el),
+    setCompanySector: el => setCompanySector(el.dataset.sector, el),
+    sortCompanies: el => sortCompanies(el.dataset.sort, el),
     setFeedSectorFilter: el => setFeedSectorFilter(el.dataset.sector, el),
     setSourceFilter: el => setSourceFilter(el.dataset.val, el),
     sortRows: el => sortRows(el.dataset.sort),
@@ -4415,6 +4435,12 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
       <div class="feed-toolbar">
         <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and summaries" data-input="filterItems">
+        <div class="kind-bar" id="feedKinds" role="group" aria-label="Kind of story">
+          <button class="filter-btn active" type="button" data-kind="ALL" data-click="setFeedKind">All</button>
+          {% for key, label in [('results', 'Results'), ('news', 'News'), ('releases', 'Press releases'), ('insider', 'Insider trades'), ('filings', 'Other filings')] %}
+          <button class="filter-btn" type="button" data-kind="{{ key }}" data-click="setFeedKind">{{ label }} <span class="pill-count" data-kind-count="{{ key }}"></span></button>
+          {% endfor %}
+        </div>
         <div class="feed-toolbar-row">
           <div class="feed-sort" role="group" aria-label="Order">
             <button class="feed-sort-btn active" id="sortScoreBtn" type="button" data-click="sortRows" data-sort="score">By importance</button>
@@ -4426,7 +4452,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       </div>
 
       <details class="controls-panel" id="feedFilters">
-        <summary class="feed-filters-toggle">Filters</summary>
+        <summary class="feed-filters-toggle">More filters</summary>
         <div class="filter-row">
           <span class="filter-label">Sector</span>
           <div class="feed-sector-bar">
@@ -4544,6 +4570,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     let currentTicker = 'ALL';
     let currentCategory = 'ALL';
     let currentSource = 'ALL';
+    let currentKind = 'ALL';
     let currentOrder = 'score';
     // How many extra rows each group shows after "Show more", and the same for the whole list
     // when it isn't split into bands.
@@ -4641,6 +4668,30 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       filterItems();
     }
 
+    // The kind of story: the same five kinds Your feed uses, always on show above the list.
+    function setFeedKind(kind, btn) {
+      currentKind = kind === 'ALL' || Object.prototype.hasOwnProperty.call(STORY_TYPES, kind) ? kind : 'ALL';
+      document.querySelectorAll('#feedKinds .filter-btn').forEach(b => {
+        const on = b.dataset.kind === currentKind;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      filterItems();
+    }
+
+    // How many stories of each kind the feed holds, beside each choice.
+    function showKindCounts() {
+      const counts = {};
+      FEED.forEach(it => { const kind = storyType(it.source, it.category); counts[kind] = (counts[kind] || 0) + 1; });
+      document.querySelectorAll('[data-kind-count]').forEach(el => {
+        const count = counts[el.dataset.kindCount] || 0;
+        el.textContent = String(count);
+        // A kind with nothing in it right now isn't offered.
+        el.closest('.filter-btn').hidden = count === 0;
+      });
+    }
+    document.addEventListener('DOMContentLoaded', showKindCounts);
+
     function setSourceFilter(src, btn) {
       currentSource = src;
       document.querySelectorAll('[data-filter-type="source"]').forEach(b => b.classList.remove('active'));
@@ -4650,7 +4701,8 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
     function filtersActive() {
       const q = (document.getElementById('searchInput')?.value || '').trim();
-      return Boolean(q) || currentSector !== 'ALL' || currentTicker !== 'ALL' || currentCategory !== 'ALL' || currentSource !== 'ALL';
+      return Boolean(q) || currentSector !== 'ALL' || currentTicker !== 'ALL' || currentCategory !== 'ALL' || currentSource !== 'ALL'
+        || currentKind !== 'ALL';
     }
 
     function clearFeedFilters() {
@@ -4658,8 +4710,9 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       if (box) box.value = '';
       currentCategory = 'ALL';
       currentSource = 'ALL';
+      currentKind = 'ALL';
       document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.val === 'ALL' || b.dataset.sector === 'ALL');
+        b.classList.toggle('active', b.dataset.val === 'ALL' || b.dataset.sector === 'ALL' || b.dataset.kind === 'ALL');
       });
       currentSector = 'ALL';
       setTickerFilter('ALL');
@@ -4681,6 +4734,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         && (currentTicker === 'ALL' || it.tickers.includes(currentTicker))
         && (currentCategory === 'ALL' || it.category === currentCategory)
         && (currentSource === 'ALL' || it.source === currentSource)
+        && (currentKind === 'ALL' || storyType(it.source, it.category) === currentKind)
         && (!q || it.search.includes(q))
         && (!forYou || (it.tickers.some(t => follows.has(t)) && !hidden.has(storyType(it.source, it.category)))));
       // For you leans toward what this browser has seen you read; Everything never does.
@@ -5870,18 +5924,36 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
       <section class="company-directory-browser" id="companyDirectory" aria-label="All companies">
         <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
+        <div class="kind-bar" id="companySectors" role="group" aria-label="Sector">
+          <button class="filter-btn active" type="button" data-sector="ALL" data-click="setCompanySector" aria-pressed="true">All <span class="pill-count">{{ watchlist_companies|length }}</span></button>
+          {% for sec in sector_directory %}
+          <button class="filter-btn" type="button" data-sector="{{ sec.name }}" data-click="setCompanySector" aria-pressed="false">{{ sec.name }} <span class="pill-count">{{ sec.companies|length }}</span></button>
+          {% endfor %}
+        </div>
+        <div class="company-tools">
+          <span class="sort-label" id="companySortLabel">Order</span>
+          <div class="feed-sort" role="group" aria-labelledby="companySortLabel">
+            <button class="feed-sort-btn active" type="button" data-click="sortCompanies" data-sort="listed" aria-pressed="true">Watchlist</button>
+            <button class="feed-sort-btn" type="button" data-click="sortCompanies" data-sort="name" aria-pressed="false">A to Z</button>
+            <button class="feed-sort-btn" type="button" data-click="sortCompanies" data-sort="stories" aria-pressed="false">Most stories</button>
+            {% if performance_data %}<button class="feed-sort-btn" type="button" data-click="sortCompanies" data-sort="ahead" aria-pressed="false">Furthest ahead</button>{% endif %}
+          </div>
+        </div>
         <p class="econ-note">Percentages show how far each stock is ahead of or behind the S&amp;P 500 over 3 months.</p>
+        <p class="company-none" id="companyNone" role="status" hidden>No company matches that.</p>
         <div class="company-browser-grid company-strip" id="companyStripContainer">
           <section class="company-browser-sector" id="followingSection" hidden>
             <h2 class="company-browser-sector-name">Following</h2>
             <div id="followingCards"></div>
           </section>
           {% for sec in sector_directory %}
-          <section class="company-browser-sector">
+          <section class="company-browser-sector" data-sector="{{ sec.name }}">
             <h2 class="company-browser-sector-name">{{ sec.name }}</h2>
             {% for co in sec.companies %}
             <a class="company-browser-card company-strip-pill" href="{{ company_url(co.symbol) }}"
                     data-ticker="{{ co.symbol }}"
+                    data-stories="{{ co.story_count }}"
+                    data-ahead="{% if performance_data and co.symbol in (performance_data.companies or {}) %}{{ co.alpha_vs_spy }}{% endif %}"
                     data-name="{{ co.name|lower }}"
                     data-sector="{{ co.macro_sector|lower }} {{ co.sector|replace('_', ' ')|lower }}"
                     data-follow-mark="{{ co.symbol }}">
@@ -5910,15 +5982,76 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
   <script>
     """ + SHARED_MOBILE_JS + COMPANY_SHARED_JS + """
-    function filterCompanyStrip(rawVal) {
-      const q = (rawVal || '').toLowerCase().trim();
+    let companySector = 'ALL';
+    let companyOrder = 'listed';
+
+    // Which companies show: the ones matching the search box, in the chosen sector.
+    function applyCompanyView() {
+      const q = (document.getElementById('companyStripFilter')?.value || '').toLowerCase().trim();
       document.querySelectorAll('.company-strip-pill').forEach(pill => {
         const haystack = [pill.dataset.ticker, pill.dataset.name, pill.dataset.sector].join(' ').toLowerCase();
         pill.hidden = Boolean(q) && !haystack.includes(q);
       });
+      let shown = 0;
       document.querySelectorAll('.company-browser-sector').forEach(group => {
-        group.hidden = !group.querySelector('.company-strip-pill:not([hidden])');
+        // The Following group has no sector of its own, so it steps aside when one is chosen.
+        const inSector = companySector === 'ALL' || group.dataset.sector === companySector;
+        group.hidden = !inSector || !group.querySelector('.company-strip-pill:not([hidden])');
+        if (!group.hidden) shown += 1;
       });
+      document.getElementById('companyStripContainer')?.classList.toggle('is-one-sector', companySector !== 'ALL');
+      const none = document.getElementById('companyNone');
+      if (none) none.hidden = shown > 0;
+    }
+
+    function markCompanySector() {
+      document.querySelectorAll('#companySectors .filter-btn').forEach(b => {
+        const on = b.dataset.sector === companySector;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+    }
+
+    // Searching looks across every sector, so it goes back to All.
+    function filterCompanyStrip(rawVal) {
+      if ((rawVal || '').trim() && companySector !== 'ALL') {
+        companySector = 'ALL';
+        markCompanySector();
+      }
+      applyCompanyView();
+    }
+
+    function setCompanySector(name) {
+      const known = [...document.querySelectorAll('#companySectors .filter-btn')].some(b => b.dataset.sector === name);
+      companySector = known ? name : 'ALL';
+      const box = document.getElementById('companyStripFilter');
+      if (box && companySector !== 'ALL') box.value = '';
+      markCompanySector();
+      applyCompanyView();
+    }
+
+    // The order inside each sector. Followed companies still come first.
+    function sortCompanies(order) {
+      const number = (el, key) => { const v = parseFloat(el.dataset[key]); return Number.isFinite(v) ? v : -Infinity; };
+      const orders = {
+        listed: (a, b) => Number(a.dataset.listed) - Number(b.dataset.listed),
+        name: (a, b) => a.dataset.name.localeCompare(b.dataset.name),
+        stories: (a, b) => number(b, 'stories') - number(a, 'stories') || Number(a.dataset.listed) - Number(b.dataset.listed),
+        ahead: (a, b) => number(b, 'ahead') - number(a, 'ahead') || Number(a.dataset.listed) - Number(b.dataset.listed),
+      };
+      companyOrder = Object.prototype.hasOwnProperty.call(orders, order) ? order : 'listed';
+      document.querySelectorAll('.company-tools .feed-sort-btn').forEach(b => {
+        const on = b.dataset.sort === companyOrder;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
+        const cards = [...sec.querySelectorAll(':scope > .company-strip-pill')];
+        // The watchlist's own order is remembered the first time, so it can be put back.
+        cards.forEach((el, i) => { if (!el.dataset.listed) el.dataset.listed = el.dataset.order || String(i); });
+        cards.sort(orders[companyOrder]).forEach((el, i) => { el.dataset.order = String(i); sec.append(el); });
+      });
+      renderFollowingCompanies();
     }
 
     // Followed companies: the strip at the very top, a Following group first in the directory,
@@ -5940,6 +6073,7 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
       document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
         followedFirst(sec, '.company-strip-pill', el => el.dataset.ticker);
       });
+      applyCompanyView();
     }
 
     document.addEventListener('followchange', renderFollowingCompanies);

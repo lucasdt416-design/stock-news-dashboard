@@ -203,3 +203,30 @@ def test_a_new_company_shows_no_empty_sections(tmp_path):
                   "comparative-perf-card", 'class="company-tabs', "company-feed-search-input"):
         assert empty not in body, empty
     assert "No stories recorded for BRK.B in this period." in body
+
+
+def test_a_long_watchlist_can_be_narrowed_to_one_sector_and_put_in_order(tmp_path):
+    site = _big_site(tmp_path)
+    directory = (site / "company.html").read_text(encoding="utf-8")
+    # One choice per sector that has companies, each with how many, and they add up to the whole list.
+    choices = re.findall(r'data-sector="([^"]+)" data-click="setCompanySector"[^>]*>[^<]*<span class="pill-count">(\d+)</span>', directory)
+    counts = dict(choices)
+    assert counts.pop("ALL") == "122"
+    assert sum(int(n) for n in counts.values()) == 122
+    for name, count in counts.items():
+        section = re.search(rf'<section class="company-browser-sector" data-sector="{re.escape(name)}">(.*?)</section>', directory, re.S)
+        assert section and section.group(1).count('<a class="company-browser-card ') == int(count), name
+    # Every company carries what the orders need.
+    cards = re.findall(r'<a class="company-browser-card [^>]*>', directory)
+    assert len(cards) == 122 and all('data-stories="' in c and 'data-ahead="' in c and 'data-name="' in c for c in cards)
+    for order in ("listed", "name", "stories"):
+        assert f'data-click="sortCompanies" data-sort="{order}"' in directory
+
+
+def test_the_feed_offers_each_kind_of_story_up_front(tmp_path):
+    site = _big_site(tmp_path)
+    feed = (site / "news.html").read_text(encoding="utf-8")
+    bar = re.search(r'<div class="kind-bar" id="feedKinds".*?</div>', feed, re.S).group(0)
+    assert re.findall(r'data-kind="(\w+)"', bar) == ["ALL", "results", "news", "releases", "insider", "filings"]
+    # The row is outside the folded-away filters, so it is on show without a click.
+    assert feed.index('id="feedKinds"') < feed.index('id="feedFilters"')
