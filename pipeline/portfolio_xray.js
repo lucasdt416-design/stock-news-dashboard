@@ -4,14 +4,37 @@
 const PF_SPY = 'SPY';
 const XRAY = { showAllOverlap: false, showAllGains: false };
 
-// Plain words for the themes more than one company shares. Others are shown as written, with spaces.
+// Plain words for every theme in the watchlist (`themes:` in data/watchlist.yaml). Each one finishes
+// the sentence "X% of your portfolio is sensitive to ...". tests/test_portfolio_page.py keeps the
+// two lists in step.
 const THEME_WORDS = {
-  datacenter_capex: 'spending on data centers',
-  export_controls_china: 'US export controls on China',
-  fed_interest_rates: 'the Fed’s interest rates',
-  investment_banking_m_and_a_volume: 'how many mergers and deals are being done',
-  brent_wti_crude_prices: 'crude oil prices',
-  pc_market_demand: 'demand for PCs',
+  data_center_spending: 'spending on AI and data centers',
+  china_export_controls: 'US export controls on China',
+  pc_demand: 'demand for PCs',
+  smartphone_demand: 'demand for smartphones',
+  memory_chip_prices: 'memory chip prices',
+  bank_interest_income: 'what banks earn on loans as interest rates move',
+  dealmaking: 'how many mergers and share sales are being done',
+  card_spending: 'how much people spend on cards',
+  market_levels: 'how high stock and bond markets are, which sets the fees they earn',
+  oil_prices: 'crude oil prices',
+  drug_pricing_rules: 'US rules on drug prices',
+  medical_procedures: 'how many operations and procedures hospitals do',
+  health_insurance_rules: 'Medicare and health insurance rules',
+  lab_research_spending: 'spending on drug research and lab work',
+  defense_budgets: 'government defense budgets',
+  air_travel: 'how much people fly',
+  housing_market: 'the housing market and mortgage rates',
+  online_ads: 'spending on online ads',
+  cloud_computing: 'business spending on cloud computing',
+  business_tech_spending: 'how much businesses spend on software and IT',
+  streaming: 'the streaming business',
+  electric_cars: 'the electric car market',
+  electricity_demand: 'growing demand for electricity',
+  tobacco_rules: 'rules on tobacco and nicotine',
+  strong_dollar: 'a strong dollar, which shrinks what overseas sales are worth',
+  shipping_volumes: 'how much freight is being shipped',
+  heavy_machinery_demand: 'demand for heavy machinery',
 };
 const ECONOMY_WORDS = {
   inflation: 'inflation',
@@ -60,14 +83,16 @@ function pfRenderSectors(rows) {
   const list = document.getElementById('pfSectors');
   list.replaceChildren();
   const real = sectors.filter(s => s.name !== 'Funds' && s.name !== 'Sector unknown');
+  const all = PortfolioMath.total(rows);
   document.getElementById('pfSectorLead').textContent = real.length
-    ? `${pfPercent(real[0].weight, 0)} of your money is in ${real[0].name}${real.length > 1 ? `, across ${real.length} sectors in all` : ''}.`
+    ? `${pfMoney(real[0].weight * all)} of your ${pfMoney(all)} is in ${real[0].name} (${pfPercent(real[0].weight, 0)})${real.length > 1 ? `, across ${real.length} sectors in all` : ''}.`
     : 'None of your money is in a stock with a known sector.';
   sectors.forEach(sector => {
     const label = sector.name === 'Funds' ? 'Funds (contents not broken out)' : sector.name;
     list.append(pfEl('li', { class: 'pf-sector' }, [
       pfEl('span', { class: 'pf-sector-name', text: label }),
       pfBar(sector.weight),
+      pfEl('span', { class: 'pf-sector-money', text: pfMoney(sector.weight * all) }),
       pfEl('span', { class: 'pf-sector-pct', text: pfPercent(sector.weight) }),
       pfEl('span', { class: 'pf-sector-tickers', text: sector.tickers.join(', ') }),
     ]));
@@ -94,9 +119,11 @@ function pfRenderConcentration(rows) {
     pfEl('dd', { class: 'pf-stat-detail', text: detail }),
   ]);
   const base = c.fundWeight > 0 ? 'of the money you have in individual stocks' : 'of your portfolio';
-  list.append(stat('Largest holding', pfPercent(c.largest.weight, 0), `${c.largest.name}, ${base}`));
-  if (c.stocks > 3) list.append(stat('Top three', pfPercent(c.topThree.weight, 0), `${c.topThree.names.join(', ')}, ${base}`));
-  list.append(stat('Largest sector', pfPercent(c.largestSector.weight, 0), `${c.largestSector.name}, ${base}`));
+  const inStocks = PortfolioMath.total(rows.filter(r => !r.fund));
+  const part = (names, weight) => `${names}: ${pfPercent(weight, 0)} ${base}`;
+  list.append(stat('Largest holding', pfMoney(c.largest.weight * inStocks), part(c.largest.name, c.largest.weight)));
+  if (c.stocks > 3) list.append(stat('Top three together', pfMoney(c.topThree.weight * inStocks), part(c.topThree.names.join(', '), c.topThree.weight)));
+  list.append(stat('Largest sector', pfMoney(c.largestSector.weight * inStocks), part(c.largestSector.name, c.largestSector.weight)));
   const effective = c.effective < 9.95 ? c.effective.toFixed(1).replace(/\.0$/, '') : String(Math.round(c.effective));
   if (c.stocks === 1) {
     lead.textContent = 'You hold one stock, so all of it rides on that one.';
@@ -139,7 +166,11 @@ function pfRenderOverlap(rows) {
   const more = document.getElementById('pfOverlapAll');
   list.replaceChildren();
   const shown = XRAY.showAllOverlap ? result.lines : result.lines.slice(0, FIRST_ROWS);
-  shown.forEach(line => list.append(pfEl('li', { class: 'pf-overlap-line', text: pfOverlapWords(line) })));
+  const all = PortfolioMath.total(rows);
+  shown.forEach(line => list.append(pfEl('li', { class: 'pf-overlap-line' }, [
+    pfEl('strong', { class: 'pf-line-amount', text: pfMoney(line.weight * all) }),
+    pfEl('span', { class: 'pf-line-words', text: pfOverlapWords(line) }),
+  ])));
   document.getElementById('pfOverlapLead').textContent = result.lines.length
     ? 'Where several of your holdings depend on the same thing. These overlap, so they don’t add up.'
     : result.covered >= 2
@@ -181,6 +212,18 @@ function pfRenderGains(rows) {
     pfEl('span', { class: g.gain > 0 ? 'pos' : g.gain < 0 ? 'neg' : '', text: `${signed(g.gain)} (${pfSigned(g.pct)})` }),
     '.' + (g.without ? ` ${plural(g.without, 'holding has', 'holdings have')} no cost, so ${g.without === 1 ? 'it isn’t' : 'they aren’t'} in this.` : ''));
 
+  // Paid, worth now and (once the comparison is known) the same money in the S&P 500, as bars.
+  const bars = document.getElementById('pfGainBars');
+  bars.replaceChildren();
+  const drawBars = items => {
+    const top = Math.max(...items.map(i => i[1]));
+    items.forEach(([label, amount, cls]) => bars.append(pfEl('li', { class: 'pf-money-row' }, [
+      pfEl('span', { class: 'pf-money-label', text: label }),
+      pfSvg('svg', { class: 'pf-bar', viewBox: '0 0 100 4', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
+        [pfSvg('rect', { class: cls, x: 0, y: 0, width: ((amount / top) * 100).toFixed(2), height: 4 })]),
+      pfEl('span', { class: 'pf-money-amount', text: pfMoney(amount) }),
+    ])));
+  };
   const versus = document.getElementById('pfGainSpy');
   const list = document.getElementById('pfGainRows');
   const more = document.getElementById('pfGainAll');
@@ -188,6 +231,7 @@ function pfRenderGains(rows) {
   list.replaceChildren();
   const wantsSpy = rows.some(r => r.paid && r.bought);
   if (!g.spy) {
+    drawBars([['You paid', g.paid, 'pf-bar-quiet'], ['Worth now', g.value, 'pf-bar-fill']]);
     more.hidden = true;
     versus.textContent = !wantsSpy
       ? 'Add the month you bought to compare with the S&P 500 over the same time. Without a date there’s no period to compare.'
@@ -197,6 +241,7 @@ function pfRenderGains(rows) {
     return;
   }
   const s = g.spy;
+  drawBars([['You paid', s.paid, 'pf-bar-quiet'], ['Worth now', s.value, 'pf-bar-fill'], ['Same money in the S&P 500', s.same, 'pf-bar-other']]);
   versus.textContent = `For the ${s.rows.length === 1 ? 'one' : s.rows.length} with a buy month: the same ${pfMoney(s.paid)} put into the S&P 500 in ${s.rows.length === 1 ? 'that month' : 'those months'} would be worth ${pfMoney(s.same)} now (${pfSigned(s.spyPct)}). Yours ${s.rows.length === 1 ? 'is' : 'are'} worth ${pfMoney(s.value)} (${pfSigned(s.pct)}).`;
   const ordered = s.rows.slice().sort((a, b) => b.value - a.value);
   (XRAY.showAllGains ? ordered : ordered.slice(0, FIRST_ROWS)).forEach(r => {

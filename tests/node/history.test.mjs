@@ -170,6 +170,8 @@ test("an industry that isn't in the table is not guessed", async () => {
   assert.equal(body.industry, "Something New");
   assert.equal(sectorForIndustry("constructor"), null);
   assert.equal(sectorForIndustry("N/A"), null);
+  // Finnhub files Meta and Disney alike under "Media"; the site puts them in different sectors.
+  assert.equal(sectorForIndustry("Media"), null);
   assert.equal(sectorForIndustry("Aerospace & Defense"), "Aerospace");
 });
 

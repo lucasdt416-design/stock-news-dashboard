@@ -86,6 +86,27 @@ FULL_PAGE_CSS = """
 """
 
 
+# A JPEG can be no taller than 65,535 pixels, and a long page (Moves on a phone) is taller than
+# that, so the browser refuses to encode it. Such a page is saved in parts: name.jpg, name-2.jpg, ...
+MAX_SHOT_PIXELS = 60000
+
+
+def full_page_shots(page, stem):
+    size = page.evaluate("""() => ({ width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight, scale: window.devicePixelRatio || 1 })""")
+    step = int(MAX_SHOT_PIXELS / size["scale"])
+    if size["height"] <= step:
+        page.screenshot(path=f"{stem}.jpg", full_page=True, type="jpeg", quality=82)
+        return 1
+    parts = 0
+    for top in range(0, size["height"], step):
+        parts += 1
+        suffix = "" if parts == 1 else f"-{parts}"
+        page.screenshot(path=f"{stem}{suffix}.jpg", full_page=True, type="jpeg", quality=82,
+                        clip={"x": 0, "y": top, "width": size["width"], "height": min(step, size["height"] - top)})
+    return parts
+
+
 # Chart.js can report a legend entry it never painted, so count the pixels it actually drew.
 UNDRAWN_LEGEND_JS = """() => {
   if (!window.Chart) return [];
@@ -225,7 +246,7 @@ def capture(site, out, widths, schemes, pages):
                     # Through the stylesheet API, because the page's CSP correctly blocks an injected <style>.
                     page.evaluate("""css => { const sheet = new CSSStyleSheet(); sheet.replaceSync(css);
                         document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]; }""", FULL_PAGE_CSS)
-                    page.screenshot(path=os.path.join(out, f"{label}.jpg"), full_page=True, type="jpeg", quality=82)
+                    full_page_shots(page, os.path.join(out, label))
                     if label not in report["pages"] and width == widths[0] and scheme == schemes[0]:
                         report["pages"][name] = snap
                     page.close()

@@ -46,7 +46,9 @@ let sectorWindow = { windowStart: 0, count: 0 };
 /**
  * Finnhub's industry words, mapped to the sector names the site already uses
  * (SECTOR_METADATA in pipeline/render.py; tests/test_history_sectors.py keeps the two in step).
- * An industry that isn't here is "not known", never a best guess.
+ * An industry that isn't here is "not known", never a best guess. "Media" is left out on purpose:
+ * Finnhub uses it for Meta and Alphabet (Technology here) as well as Disney and Netflix (Consumer
+ * Staples here), so one word can't say which.
  */
 export const INDUSTRY_SECTORS = {
   "Semiconductors": "Technology",
@@ -79,7 +81,6 @@ export const INDUSTRY_SECTORS = {
   "Food Products": "Consumer Staples",
   "Tobacco": "Consumer Staples",
   "Consumer products": "Consumer Staples",
-  "Media": "Consumer Staples",
   "Telecommunication": "Telecom",
   "Communications": "Telecom",
   "Utilities": "Utilities",
