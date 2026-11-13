@@ -5290,7 +5290,7 @@ ABOUT_TEMPLATE = """<!DOCTYPE html>
           <li><strong>Filings, results figures, insider trades and company names:</strong> the SEC's EDGAR system.</li>
           <li><strong>Press releases:</strong> each company's own newsroom feed.</li>
           <li><strong>News, earnings dates and ticker lookups:</strong> Finnhub.</li>
-          <li><strong>Stock prices:</strong> Yahoo Finance.</li>
+          <li><strong>Stock prices and dividends:</strong> Yahoo Finance.</li>
           <li><strong>Economy figures:</strong> FRED, from the Federal Reserve Bank of St. Louis. Release dates come from the Federal Reserve, the Bureau of Labor Statistics and the Energy Information Administration.</li>
           <li><strong>Short summaries on some stories:</strong> written by Google's Gemini. A summary is thrown out if it contains a number the original doesn't.</li>
         </ul>

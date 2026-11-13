@@ -10,6 +10,7 @@ but a ticker ever leaves it.
 
 import argparse
 import asyncio
+import datetime
 import json
 import os
 import sys
@@ -25,7 +26,9 @@ failures = []
 # Made-up answers from /api/history for tickers outside the watchlist.
 MONTHS = [["2019-01", 20.0], ["2020-01", 25.0], ["2021-10", 40.0], ["2024-01", 80.0], ["2026-10", 100.0]]
 HISTORY = {
-    "VOO": {"name": "Demo 500 Fund", "kind": "fund", "price": 500.0, "sector": None, "industry": None},
+    # VOO has a close the day before and four dividends; the others have neither, so they're "not known".
+    "VOO": {"name": "Demo 500 Fund", "kind": "fund", "price": 500.0, "sector": None, "industry": None,
+            "previous": 495.0, "dividends": [1.5, 1.5, 1.75, 1.75]},
     "RDDT": {"name": "Demo Software Co", "kind": "stock", "price": 50.0, "sector": None, "industry": "Something New"},
     "SPOT": {"name": "Demo Streaming Co", "kind": "stock", "price": 100.0, "sector": "Consumer Staples", "industry": "Consumer products"},
     "GOOG": {"name": "Demo Search Co Class C", "kind": "stock", "price": 200.0, "sector": "Technology", "industry": "Technology"},
@@ -36,9 +39,14 @@ def history_reply(ticker, day):
     known = HISTORY.get(ticker)
     if not known:
         return 404, {"found": False, "symbol": ticker, "error": f"No price history found for {ticker}."}
-    return 200, {"found": True, "symbol": ticker, "name": known["name"], "kind": known["kind"], "currency": "USD",
-                 "first_month": MONTHS[0][0], "months": MONTHS, "price": {"value": known["price"], "date": day},
-                 "fetched": day, "sector": known["sector"], "industry": known["industry"]}
+    body = {"found": True, "symbol": ticker, "name": known["name"], "kind": known["kind"], "currency": "USD",
+            "first_month": MONTHS[0][0], "months": MONTHS, "price": {"value": known["price"], "date": day},
+            "fetched": day, "sector": known["sector"], "industry": known["industry"]}
+    if "previous" in known:
+        before = lambda n: (datetime.date.fromisoformat(day) - datetime.timedelta(days=n)).isoformat()  # noqa: E731
+        body["previous"] = {"value": known["previous"], "date": before(1)}
+        body["dividends"] = [[before(n), amount] for n, amount in zip((300, 210, 120, 30), known["dividends"])]
+    return 200, body
 
 
 def check(ok, label):
@@ -213,6 +221,33 @@ async def run(site, out):
                   "pointing at the line shows that month's value")
             await pg.mouse.move(2, 2)
             check(await pg.inner_text("#pfHeroValue") == "$10,000.00", "and moving away shows today's again")
+
+            # The latest day's change and the year's dividends, against the same sums done here.
+            shares = {t: v / price(t) for t, v in want.items()}
+            files = {t: json.load(open(os.path.join(site, "data", "prices", f"{t}.json"), encoding="utf-8")) for t in ("NVDA", "AMD", "MSFT")}
+            day_change = sum(shares[t] * (f["price"]["value"] - f["previous"]["value"]) for t, f in files.items()) + shares["VOO"] * (500.0 - 495.0)
+            day_line = await pg.inner_text("#pfHeroDay")
+            check(abs(money(day_line) - day_change) < 0.02, f"the day's change is shares times each move from the close before ({money(day_line):.2f} vs {day_change:.2f})")
+            check("not counting RDDT" in day_line, "a holding with no close for the day before is named, not counted as zero")
+            earned = sum(shares[t] * sum(a for _, a in f["dividends"]) for t, f in files.items()) + shares["VOO"] * 6.5
+            income = await pg.inner_text("#pfIncomeLead")
+            check(f"earned ${earned:,.2f} in dividends" in income, f"dividends are shares times each dividend of the past year (${earned:,.2f})")
+            check(f"about ${earned / 12:,.2f} a month" in income, "and the monthly figure is a twelfth of it")
+            known_value = sum(v for t, v in want.items() if t != "RDDT")
+            check(f"{earned / known_value * 100:.1f}% of what" in income, "the yield leaves out the holding whose dividends aren't known")
+            bars = [money(t) for t in await pg.locator("#pfIncomeBars .pf-money-amount").all_inner_texts()]
+            check(abs(sum(bars) - earned) < 0.03, f"the bars add up to the total ({sum(bars):.2f})")
+            note = await pg.inner_text("#pfIncomeNote")
+            check("Not known, so not counted: RDDT." in note, "an unknown dividend is said, not shown as zero")
+            payers = [t for t, f in files.items() if f["dividends"]]
+            check(all(t in note for t in files if t not in payers) if len(payers) < 3 else "No dividend" not in note, "holdings that paid nothing are listed as such")
+            check("Dividends, past 12 months" in await pg.inner_text("#pfTiles"), "and the total is one of the figures under the chart")
+            await show("holdings")
+            nvda = files["NVDA"]
+            diff = nvda["price"]["value"] - nvda["previous"]["value"]
+            check(f"{'up' if diff > 0 else 'down'} ${abs(diff):,.2f} that day" in await row_text("NVDA"), "a holding's row says how far its price moved that day")
+            check("that day" not in await row_text("RDDT"), "and says nothing where the close before isn't known")
+            await show("overview")
             sectors = await pg.inner_text("#pfSectors")
             check("$8,000.00 of your $10,000.00 is in Technology (80%)" in await pg.inner_text("#pfSectorLead"), "the largest sector is stated as a fact, in dollars")
             check("Funds (contents not broken out)" in sectors and "15%" in sectors and "Sector unknown" in sectors and "5.0%" in sectors,

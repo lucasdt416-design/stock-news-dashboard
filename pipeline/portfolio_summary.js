@@ -6,6 +6,7 @@ const SUM = {
   picked: false,      // true once the visitor chooses a range themselves
   showNumbers: false,
   showAllMoves: false,
+  showAllIncome: false,
   asked: new Set(),   // tickers whose monthly prices have been asked for
   noHistory: new Set(),
   hover: null,
@@ -13,6 +14,7 @@ const SUM = {
 const SUM_RANGES = [[12, '1Y', 'in the past year', 'a year ago'], [36, '3Y', 'in the past 3 years', '3 years ago'],
   [60, '5Y', 'in the past 5 years', '5 years ago'], [0, 'All', '', '']];
 const MOVES_FIRST = 8;
+const INCOME_FIRST = 6;
 
 function pfSignedMoney(value) {
   return `${value > 0 ? '+' : value < 0 ? '−' : ''}${pfMoney(Math.abs(value))}`;
@@ -138,6 +140,15 @@ function pfRenderHeadline() {
   const value = document.getElementById('pfHeroValue');
   const change = document.getElementById('pfHeroChange');
   const points = state && state.points;
+  const dayLine = document.getElementById('pfHeroDay');
+  const day = SUM.day;
+  dayLine.hidden = !day || (points && SUM.hover !== null && SUM.hover < points.length - 1);
+  if (day) {
+    // Holdings with an older price or no close before it are named, so this never passes for all of it.
+    dayLine.replaceChildren(
+      pfEl('span', { class: pfTone(day.change), text: `${pfSignedMoney(day.change)} (${pfSigned(day.pct)})` }),
+      ` on ${pfDay(day.date)}${day.missing.length ? `, not counting ${pfList(day.missing)}` : ''}`);
+  }
   if (points && SUM.hover !== null && SUM.hover < points.length - 1) {
     const point = points[SUM.hover];
     const diff = points[points.length - 1][1] - point[1];
@@ -189,7 +200,41 @@ function pfRenderTiles(state, moves) {
     tiles.append(pfTile(best.change >= 0 ? 'Added the most' : 'Lost the least', `${best.t} ${pfSignedMoney(best.change)}`, words, pfTone(best.change)));
     tiles.append(pfTile(worst.change < 0 ? 'Lost the most' : 'Added the least', `${worst.t} ${pfSignedMoney(worst.change)}`, words, pfTone(worst.change)));
   }
+  const income = SUM.income;
+  if (income && income.total > 0) {
+    tiles.append(pfTile('Dividends, past 12 months', pfMoney(income.total), `${pfPercent(income.yield, 1)} of today’s value`));
+  }
   tiles.hidden = !tiles.children.length;
+}
+
+// What the shares held now earned in dividends over the past year, a bar for each holding.
+function pfRenderIncome() {
+  const section = document.getElementById('pfIncomeSection');
+  const income = SUM.income;
+  section.hidden = !(income && income.total > 0);
+  if (section.hidden) return;
+  document.getElementById('pfIncomeLead').textContent =
+    `The shares you hold now earned ${pfMoney(income.total)} in dividends over the past 12 months, about ${pfMoney(income.total / 12)} a month. `
+    + `That is ${pfPercent(income.yield, 1)} of what ${income.rows.length + income.none.length === 1 ? 'they are' : 'those holdings are'} worth today.`;
+  const bars = document.getElementById('pfIncomeBars');
+  bars.replaceChildren();
+  const top = income.rows[0].amount;
+  (SUM.showAllIncome ? income.rows : income.rows.slice(0, INCOME_FIRST)).forEach(r => {
+    bars.append(pfEl('li', { class: 'pf-money-row' }, [
+      pfEl('span', { class: 'pf-money-label' }, [pfEl('span', { class: 'pf-ticker', text: r.t }), ` ${pfMoney(r.perShare)} a share`]),
+      pfSvg('svg', { class: 'pf-bar', viewBox: '0 0 100 4', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
+        [pfSvg('rect', { class: 'pf-bar-fill', x: 0, y: 0, width: ((r.amount / top) * 100).toFixed(2), height: 4 })]),
+      pfEl('span', { class: 'pf-money-amount', text: pfMoney(r.amount) }),
+    ]));
+  });
+  const more = document.getElementById('pfIncomeAll');
+  more.hidden = income.rows.length <= INCOME_FIRST;
+  more.textContent = SUM.showAllIncome ? 'Show fewer' : `Show all ${income.rows.length}`;
+  const notes = ['Each dividend is counted on the day the shares stopped carrying it (the ex-dividend date), for the number of shares you hold now. You may have held a different number then, and tax isn’t taken off.'];
+  if (income.none.length) notes.push(`No dividend in the past 12 months: ${pfList(income.none)}.`);
+  if (income.unknown.length) notes.push(`Not known, so not counted: ${pfList(income.unknown)}.`);
+  if (PF.demo) notes.push('These are demo figures, not real ones.');
+  document.getElementById('pfIncomeNote').textContent = notes.join(' ');
 }
 
 // One bar per holding, growing right from the zero line for a gain and left for a loss.
@@ -236,7 +281,11 @@ function pfRenderSummary() {
   const box = document.getElementById('pfSummary');
   const any = rows.some(r => r.value !== null);
   box.hidden = !any;
-  if (!any) { document.getElementById('pfMovesSection').hidden = true; return; }
+  if (!any) {
+    document.getElementById('pfMovesSection').hidden = true;
+    document.getElementById('pfIncomeSection').hidden = true;
+    return;
+  }
   pfAskForHistory();
   if (!SUM.asked.has('spy:compare')) {
     SUM.asked.add('spy:compare');
@@ -253,6 +302,9 @@ function pfRenderSummary() {
   const items = pfSeriesItems();
   const moves = state.points ? PortfolioMath.changeSince(items, state.points[0][0]) : [];
   SUM.moves = new Map(moves.map(m => [m.t, m]));
+  const priced = rows.filter(r => r.priced);
+  SUM.day = PortfolioMath.dayChange(priced.map(r => ({ t: r.h.t, sh: r.h.sh, price: r.info.price.value, date: r.info.price.date, previous: r.info.previous })));
+  SUM.income = PortfolioMath.dividendIncome(priced.map(r => ({ t: r.h.t, sh: r.h.sh, value: r.value, dividends: r.info.dividends })));
 
   const ranges = document.getElementById('pfRanges');
   ranges.hidden = !state.range;
@@ -283,6 +335,7 @@ function pfRenderSummary() {
   pfRenderHeadline();
   pfRenderTiles(state, moves);
   pfRenderMoves(state, moves);
+  pfRenderIncome();
 
   const notes = [];
   if (state.points) {
@@ -290,9 +343,8 @@ function pfRenderSummary() {
     if (!state.range[0] && state.series.limitedBy.length) {
       notes.push(`It starts in ${pfMonth(state.series.from)}, when ${pfList(state.series.limitedBy)} began trading.`);
     }
-    const priced = rows.filter(r => r.priced).map(r => r.h.t);
     const charted = new Set(items.map(i => i.t));
-    const left = priced.filter(t => !charted.has(t) && SUM.noHistory.has(t));
+    const left = priced.map(r => r.h.t).filter(t => !charted.has(t) && SUM.noHistory.has(t));
     if (left.length) notes.push(`Not in the line, because their price history couldn’t be loaded: ${pfList(left)}.`);
     const short = SUM_RANGES.filter(([months]) => months && !state.available.some(([m]) => m === months)).map(r => r[1]);
     if (short.length && state.series.limitedBy.length) notes.push(`${pfList(short)} ${short.length === 1 ? 'isn’t' : 'aren’t'} offered because ${pfList(state.series.limitedBy)} ${state.series.limitedBy.length === 1 ? 'hasn’t' : 'haven’t'} traded that long.`);
@@ -336,6 +388,7 @@ Object.assign(PAGE_ACTIONS.click, {
   pfSetRange: el => { SUM.range = Number(el.dataset.months); SUM.picked = true; pfRender(); },
   pfValueNumbers: () => { SUM.showNumbers = !SUM.showNumbers; pfRenderSummary(); },
   pfMovesAll: () => { SUM.showAllMoves = !SUM.showAllMoves; pfRenderSummary(); },
+  pfIncomeAll: () => { SUM.showAllIncome = !SUM.showAllIncome; pfRenderSummary(); },
 });
 
 let pfResizeTimer = null;

@@ -346,3 +346,52 @@ test("the same money in a fund starts level and follows the fund's real prices",
   assert.equal(M.sameMoneyIn(points, fund.slice(2), 120), null, "no fund price for the first month");
   assert.equal(M.sameMoneyIn(points, null, 120), null);
 });
+
+// ---- The latest day's change and dividends ---------------------------------------------------
+
+test("the day's change is shares times the move from the close before, and adds up", () => {
+  const day = M.dayChange([
+    { t: "A", sh: 10, price: 30, date: "2026-11-11", previous: { value: 29, date: "2026-11-10" } },
+    { t: "B", sh: 2, price: 100, date: "2026-11-11", previous: { value: 104, date: "2026-11-10" } },
+  ]);
+  // A: 10 x (30 - 29) = +10. B: 2 x (100 - 104) = -8. Whole: +2 on 290 + 208 = 498.
+  assert.equal(day.date, "2026-11-11");
+  assert.deepEqual(day.rows.map((r) => [r.t, r.change]), [["A", 10], ["B", -8]]);
+  near(day.change, 2);
+  near(day.before, 498);
+  near(day.pct, 2 / 498);
+  near(day.rows[1].each, -4);
+  assert.deepEqual(day.missing, []);
+});
+
+test("a holding with no close before, or an older price, is named and not counted", () => {
+  const day = M.dayChange([
+    { t: "A", sh: 10, price: 30, date: "2026-11-11", previous: { value: 29, date: "2026-11-10" } },
+    { t: "OLD", sh: 5, price: 10, date: "2026-11-06", previous: { value: 9, date: "2026-11-05" } },
+    { t: "NONE", sh: 5, price: 10, date: "2026-11-11", previous: null },
+    { t: "SAME", sh: 5, price: 10, date: "2026-11-11", previous: { value: 9, date: "2026-11-11" } },
+  ]);
+  near(day.change, 10);
+  assert.deepEqual(day.missing, ["NONE", "OLD", "SAME"]);
+  assert.equal(M.dayChange([{ t: "NONE", sh: 5, price: 10, date: "2026-11-11", previous: null }]), null);
+  assert.equal(M.dayChange([]), null);
+});
+
+test("dividend income is shares times each dividend, and nothing unknown is counted as zero", () => {
+  const income = M.dividendIncome([
+    { t: "A", sh: 10, value: 300, dividends: [["2026-02-09", 0.25], ["2026-05-11", 0.25], ["2026-08-10", 0.25], ["2026-11-09", 0.25]] },
+    { t: "B", sh: 2, value: 200, dividends: [["2026-06-01", 3]] },
+    { t: "C", sh: 4, value: 500, dividends: [] },
+    { t: "D", sh: 1, value: 1000, dividends: null },
+  ]);
+  // A: 10 x 1.00 = 10. B: 2 x 3 = 6. C pays nothing. Total 16 on 300 + 200 + 500 = 1000, so 1.6%.
+  // D isn't known, so its 1000 is not in the yield.
+  near(income.total, 16);
+  near(income.yield, 0.016);
+  assert.deepEqual(income.rows.map((r) => [r.t, r.amount, r.payments]), [["A", 10, 4], ["B", 6, 1]]);
+  near(income.rows[0].perShare, 1);
+  near(income.rows[1].yield, 0.03);
+  assert.deepEqual(income.none, ["C"]);
+  assert.deepEqual(income.unknown, ["D"]);
+  assert.equal(M.dividendIncome([{ t: "D", sh: 1, value: 1000, dividends: null }]), null);
+});
