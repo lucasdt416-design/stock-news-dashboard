@@ -334,3 +334,15 @@ test("each holding's dollar change since a month adds up to the whole change", (
   near(rows.reduce((a, r) => a + r.change, 0), 200);
   assert.deepEqual(M.changeSince(held, "2026-07").map((r) => r.t), ["A"], "B has no price for July, so it isn't guessed");
 });
+
+test("the same money in a fund starts level and follows the fund's real prices", () => {
+  const points = [["2026-08", 300], ["2026-09", 370], ["2026-10", 460], ["2026-11-11", 500]];
+  const fund = [["2026-07", 90], ["2026-08", 100], ["2026-09", 110], ["2026-10", 105]];
+  // 300 x 110/100 = 330. 300 x 105/100 = 315. Today at 120: 300 x 120/100 = 360.
+  const same = M.sameMoneyIn(points, fund, 120);
+  assert.deepEqual(same.map((p) => p[0]), points.map((p) => p[0]));
+  [300, 330, 315, 360].forEach((want, i) => near(same[i][1], want));
+  assert.equal(M.sameMoneyIn(points, fund.slice(0, 3), 120), null, "no fund price for October, so no comparison");
+  assert.equal(M.sameMoneyIn(points, fund.slice(2), 120), null, "no fund price for the first month");
+  assert.equal(M.sameMoneyIn(points, null, 120), null);
+});

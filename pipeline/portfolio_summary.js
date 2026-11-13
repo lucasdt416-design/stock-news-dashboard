@@ -54,7 +54,12 @@ function pfRangeState() {
   let range = available.find(([months]) => months === SUM.range);
   if (!range) range = available.find(([months]) => months === 12) || available[available.length - 1] || null;
   const points = range ? PortfolioMath.lastMonths(series, range[0]) : null;
-  return { series, available, range, points };
+  // The same money in the S&P 500 fund over the same months, unless that fund is all there is.
+  const spyInfo = PF.info.get(PF_SPY);
+  const onlySpy = pfSeriesItems().every(i => i.t === PF_SPY);
+  const spy = points && !onlySpy && spyInfo && spyInfo.status === 'ok' && spyInfo.months
+    ? PortfolioMath.sameMoneyIn(points, spyInfo.months, spyInfo.price.value) : null;
+  return { series, available, range, points, spy };
 }
 
 // "in the past year", or "since the end of March 2021" for all of it.
@@ -67,13 +72,14 @@ function pfPointLabel(point, last) {
   return last ? `Now (${pfDay(point[0])})` : `End of ${pfMonth(point[0])}`;
 }
 
-function pfValueChart(points) {
+function pfValueChart(points, spy) {
   const host = document.getElementById('pfValueChart');
   const W = Math.max(280, Math.round(host.clientWidth || 640));
   const H = W < 480 ? 200 : 260;
   const left = 8, right = 62, top = 12, bottom = 24;
   const values = points.map(p => p[1]);
-  const hi = Math.max(...values), lo = Math.min(...values);
+  const every = values.concat(spy ? spy.map(p => p[1]) : []);
+  const hi = Math.max(...every), lo = Math.min(...every);
   const pad = (hi - lo || hi || 1) * 0.08;
   const max = hi + pad, min = Math.max(0, lo - pad);
   const x = i => left + (points.length <= 1 ? 0 : (i / (points.length - 1)) * (W - left - right));
@@ -94,6 +100,7 @@ function pfValueChart(points) {
     label.textContent = stamp(i);
     svg.append(label);
   });
+  if (spy) svg.append(pfSvg('path', { class: 'pf-line pf-line-spy', d: spy.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join('') }));
   svg.append(pfSvg('path', { class: 'pf-line', d: points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join('') }));
   const cross = pfSvg('line', { class: 'pf-cross', y1: top, y2: H - bottom, x1: 0, x2: 0, visibility: 'hidden' });
   const dot = pfSvg('circle', { class: 'pf-dot', r: 4.5, cx: x(points.length - 1).toFixed(1), cy: y(values[values.length - 1]).toFixed(1) });
@@ -141,6 +148,13 @@ function pfRenderHeadline() {
   }
   label.textContent = 'Your portfolio is worth';
   value.textContent = pfMoney(total);
+  const versus = document.getElementById('pfHeroSpy');
+  versus.hidden = !(state && state.spy);
+  if (state && state.spy) {
+    const diff = state.spy[state.spy.length - 1][1] - state.spy[0][1];
+    versus.replaceChildren('The same money in the S&P 500: ',
+      pfEl('span', { class: pfTone(diff), text: `${pfSignedMoney(diff)} (${pfSigned(diff / state.spy[0][1])})` }));
+  }
   if (!points) {
     change.textContent = pfRows().rows.some(r => r.priced && !r.info.months && !SUM.noHistory.has(r.h.t)) ? 'Getting price history…' : '';
     return;
@@ -224,6 +238,14 @@ function pfRenderSummary() {
   box.hidden = !any;
   if (!any) { document.getElementById('pfMovesSection').hidden = true; return; }
   pfAskForHistory();
+  if (!SUM.asked.has('spy:compare')) {
+    SUM.asked.add('spy:compare');
+    const before = PF.info.get(PF_SPY);
+    pfInfo(PF_SPY, true).then(info => {
+      if (info.status !== 'ok' && before) PF.info.set(PF_SPY, before);
+      pfRender();
+    });
+  }
 
   const state = pfRangeState();
   SUM.state = state;
@@ -251,9 +273,13 @@ function pfRenderSummary() {
   numbers.setAttribute('aria-expanded', String(SUM.showNumbers));
   table.hidden = !(state.points && SUM.showNumbers);
   if (state.points) {
-    host.append(pfValueChart(state.points));
-    if (SUM.showNumbers) table.append(wiTable([{ label: 'Your shares were worth', points: state.points }]));
+    host.append(pfValueChart(state.points, state.spy));
+    if (SUM.showNumbers) {
+      table.append(wiTable([{ label: 'Your shares were worth', points: state.points }]
+        .concat(state.spy ? [{ label: 'Same money in the S&P 500', points: state.spy }] : [])));
+    }
   }
+  document.getElementById('pfValueKey').hidden = !state.spy;
   pfRenderHeadline();
   pfRenderTiles(state, moves);
   pfRenderMoves(state, moves);
@@ -270,6 +296,7 @@ function pfRenderSummary() {
     if (left.length) notes.push(`Not in the line, because their price history couldn’t be loaded: ${pfList(left)}.`);
     const short = SUM_RANGES.filter(([months]) => months && !state.available.some(([m]) => m === months)).map(r => r[1]);
     if (short.length && state.series.limitedBy.length) notes.push(`${pfList(short)} ${short.length === 1 ? 'isn’t' : 'aren’t'} offered because ${pfList(state.series.limitedBy)} ${state.series.limitedBy.length === 1 ? 'hasn’t' : 'haven’t'} traded that long.`);
+    if (state.spy) notes.push('The grey line is the same starting amount in the SPY fund, which tracks the S&P 500.');
     if (PF.demo) notes.push('These are demo prices, not real ones.');
   } else if (rows.some(r => r.priced) && rows.filter(r => r.priced).every(r => SUM.noHistory.has(r.h.t))) {
     notes.push('Price history couldn’t be loaded just now, so there’s no chart.');

@@ -97,9 +97,13 @@ async def run(site, out):
             async def row_text(ticker):
                 return await pg.inner_text(f'.pf-row[data-ticker="{ticker}"]')
 
+            async def show(view):
+                await pg.click(f'#pfTabs [data-view="{view}"]')
+
             await pg.goto(base + "portfolio.html")
             await pg.wait_for_timeout(500)
-            check(await pg.is_visible("#pfEmpty") and not await pg.is_visible("#pfHoldings"), "a new visitor sees the empty state")
+            check(await pg.is_visible("#pfEmpty") and not await pg.is_visible("#pfHoldings") and not await pg.is_visible("#pfTabs"),
+                  "a new visitor sees the empty state, with no tabs yet")
             check(await pg.is_visible("#pfDemo"), "the demo site says its prices aren't real")
             check("not advice" in await pg.inner_text(".pf-foot"), "the page says it isn't advice")
             await pg.screenshot(path=f"{out}/empty.png")
@@ -107,6 +111,8 @@ async def run(site, out):
             # One at a time
             await add("nvda", "10")
             check("Added NVDA" in await status(), "a watchlist ticker is added in any case")
+            check(await pg.is_visible("#pfTabs") and await pg.is_visible("#pfHoldings") and not await pg.is_visible("#pfSummary"),
+                  "after the first holding the tabs appear, on Holdings")
             text = await row_text("NVDA")
             check("10 shares" in text and f"{nvda * 10:,.2f}" in text, "its value is shares times the price in the price file")
             check(await pg.get_attribute('.pf-row[data-ticker="NVDA"] a.pf-ticker', "href") == "company-nvda.html", "it links to the company page")
@@ -192,7 +198,11 @@ async def run(site, out):
             # The summary: the big number, the line, and each holding's dollars over the same range
             money = lambda text: float(text.replace("−", "-").replace("$", "").replace(",", "").replace("+", "").split()[0])  # noqa: E731
             check(await pg.inner_text("#pfHeroValue") == "$10,000.00", "the big number is the total")
-            check(await pg.locator("#pfValueChart .pf-line").count() == 1, "the value over time is drawn as one line")
+            check(await pg.is_visible("#pfSummary") and not await pg.is_visible("#pfHoldings") and not await pg.is_visible("#what-if"),
+                  "a returning visitor lands on Overview, and the other parts are out of the way")
+            check(await pg.locator("#pfValueChart .pf-line:not(.pf-line-spy)").count() == 1, "the value over time is drawn as one line")
+            check(await pg.locator("#pfValueChart .pf-line-spy").count() == 1 and "The same money in the S&P 500:" in await pg.inner_text("#pfHeroSpy"),
+                  "with the same money in the S&P 500 beside it")
             check(await pg.locator(".pf-row .pf-spark").count() >= 3, "holdings with a year of prices get a small line")
             moved = [money(t) for t in await pg.locator(".pf-move-amount").all_inner_texts()]
             headline = money(await pg.inner_text("#pfHeroChange"))
@@ -224,6 +234,12 @@ async def run(site, out):
             await pg.screenshot(path=f"{out}/xray.png", full_page=True)
 
             # Cost without a date: gain, but no S&P 500 comparison. With a date: the comparison.
+            await show("holdings")
+            check(pg.url.endswith("#holdings") and not await pg.is_visible("#pfSummary"), "a tab shows its part and is in the address")
+            await pg.select_option("#pfSort", "name")
+            order = await pg.eval_on_selector_all(".pf-row", "els => els.map(e => e.dataset.ticker)")
+            check(order == sorted(order), f"holdings can be sorted by name ({order})")
+            await pg.select_option("#pfSort", "value")
             await pg.click('.pf-row[data-ticker="NVDA"] [data-click="pfEditOne"]')
             await pg.fill("#pfEditPaid", "1000")
             await pg.click('[data-click="pfSaveEdit"]')
@@ -242,6 +258,7 @@ async def run(site, out):
             check("dividends" in await pg.inner_text("#pfGainNote"), "the comparison says what it includes")
 
             # What if: the page's answers against the same sums done here from the price files
+            await show("what-if")
             def load(t):
                 with open(os.path.join(site, "data", "prices", f"{t}.json"), encoding="utf-8") as f:
                     return json.load(f)
@@ -308,7 +325,7 @@ async def run(site, out):
             check(not await pg.is_visible("#wiResult") and await pg.input_value("#wiTicker") == "", "a link with bad values is ignored")
 
             # The whole portfolio: NVDA 4000, AMD 2000, MSFT 2000, VOO 1500, RDDT 500 of 10,000
-            await pg.goto(base + "portfolio.html")
+            await pg.goto(base + "portfolio.html#what-if")
             await pg.wait_for_timeout(600)
             await pg.fill("#wiAmount", "10000")
             await pg.fill("#wiFrom", start_month)
@@ -344,6 +361,7 @@ async def run(site, out):
             # Follow these companies, and what a setup link then carries
             await pg.reload()
             await pg.wait_for_timeout(600)
+            await show("holdings")
             note = await pg.inner_text("#pfFollowNote")
             check("to For you" in note and "doesn’t share what you hold" in note, "following is offered, and says it doesn't share holdings")
             await pg.click("#pfFollow")
