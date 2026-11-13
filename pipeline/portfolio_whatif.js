@@ -306,7 +306,7 @@ document.addEventListener('keydown', event => {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('wiFrom').max = PortfolioMath.addMonths(wiToday().slice(0, 7), -1);
   if (wiFromLink()) {
-    wiRun().then(() => document.getElementById('what-if').scrollIntoView());
+    wiRun().then(() => { if (!PF.holdings.length) document.getElementById('what-if').scrollIntoView(); });
   } else {
     wiPick(5);
   }

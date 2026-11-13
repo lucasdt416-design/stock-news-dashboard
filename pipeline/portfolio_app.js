@@ -24,6 +24,8 @@ const PF = {
   editing: null,
   pending: null,      // a pasted or imported list waiting for "Add these"
   mode: 'shares',
+  view: 'overview',   // which part of the page is showing, once there are holdings
+  sort: 'value',
   before: [],         // run before the holdings are drawn
   listeners: [],
 };
@@ -611,6 +613,13 @@ function pfRenderHoldings() {
   list.replaceChildren();
   if (!rows.length) return;
 
+  const sorter = document.getElementById('pfSortBox');
+  sorter.hidden = rows.length < 4;
+  if (PF.sort === 'name') rows.sort((a, b) => a.h.t.localeCompare(b.h.t));
+  else if (PF.sort === 'change') {
+    const change = r => { const m = SUM.moves && SUM.moves.get(r.h.t); return m ? m.change : -Infinity; };
+    rows.sort((a, b) => change(b) - change(a) || a.h.t.localeCompare(b.h.t));
+  }
   const anyPaid = rows.some(r => r.h.paid !== null && r.priced);
   const shown = PF.showAll || rows.length <= FIRST_ROWS + 1 ? rows : rows.slice(0, FIRST_ROWS);
   shown.forEach(row => {
@@ -670,7 +679,37 @@ function pfRenderHoldings() {
   document.getElementById('pfTotalNote').textContent = notes.join(' ');
 }
 
+// ---- The parts of the page --------------------------------------------------------------------
+
+// With holdings, the page shows one part at a time. With none, it is just the form to add some.
+const PF_VIEWS = ['overview', 'holdings', 'exposure', 'what-if'];
+
+function pfViewFromAddress() {
+  const hash = String(location.hash || '').slice(1);
+  if (PF_VIEWS.includes(hash)) return hash;
+  return /[?&]t=/.test(location.search) ? 'what-if' : null;
+}
+
+function pfSyncView() {
+  const tabs = document.getElementById('pfTabs');
+  const has = PF.holdings.length > 0;
+  if (has && PF.wasEmpty) PF.view = 'holdings'; // just added the first one: show it
+  PF.wasEmpty = !has;
+  tabs.hidden = !has;
+  if (has) document.body.dataset.view = PF.view; else delete document.body.dataset.view;
+  tabs.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === PF.view)));
+}
+
+function pfSetView(view) {
+  if (!PF_VIEWS.includes(view)) return;
+  PF.view = view;
+  try { history.replaceState(null, '', '#' + view); } catch (e) { /* the address just isn't updated */ }
+  pfRender();
+  window.scrollTo(0, 0);
+}
+
 function pfRender() {
+  pfSyncView();
   PF.before.forEach(fn => { try { fn(); } catch (e) { /* the holdings still show */ } });
   pfRenderHoldings();
   const note = document.getElementById('pfDropped');
@@ -775,9 +814,11 @@ Object.assign(PAGE_ACTIONS.click, {
   pfRemoveAll: () => pfRemoveAll(),
   pfShowAll: () => { PF.showAll = !PF.showAll; pfRenderHoldings(); },
   pfFollowHeld: () => pfFollowHeld(),
+  pfView: el => pfSetView(el.dataset.view),
 });
 Object.assign(PAGE_ACTIONS.change, {
   pfReadFile: el => pfReadFile(el),
+  pfSort: el => { PF.sort = el.value; PF.showAll = false; pfRenderHoldings(); },
 });
 
 document.addEventListener('keydown', event => {
@@ -800,8 +841,15 @@ window.addEventListener('storage', event => {
   pfPriceAll();
 });
 
+window.addEventListener('hashchange', () => {
+  const view = pfViewFromAddress();
+  if (view && view !== PF.view) { PF.view = view; pfRender(); }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   pfLoad();
+  PF.view = pfViewFromAddress() || 'overview';
+  PF.wasEmpty = false;
   pfSetMode('shares');
   pfRender();
   await pfLoadIndex();

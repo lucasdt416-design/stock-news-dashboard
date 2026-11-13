@@ -434,3 +434,12 @@ starts when the youngest holding began trading. A range (1Y, 3Y, 5Y) is offered 
 prices cover it. The same range drives each holding's dollar change in its row and the "What moved
 your money" bars (`changeSince`), which add up to the headline change. It is not a record of what
 was held in the past, and the page says so under the chart.
+
+## Tabs, the S&P 500 line and sorting (added after launch)
+
+With holdings, the page shows one part at a time: Overview (value, chart, what moved, sectors,
+gain and loss), Holdings (the list and the add form), Exposure (concentration, shared bets, funds)
+and What if. The part is in the address (`#holdings`), and a shared what-if link opens on What if.
+With no holdings there are no tabs, only the add form and the calculator. The chart also draws the
+same starting money in the SPY fund (`PortfolioMath.sameMoneyIn`), and only when SPY has a real
+price for every month shown.

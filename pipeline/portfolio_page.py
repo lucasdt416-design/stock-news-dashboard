@@ -104,6 +104,23 @@ PORTFOLIO_CSS = """
     .pf-preview-actions { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
     .pf-ticker { font-weight: 600; color: var(--text-primary); text-decoration: none; }
     a.pf-ticker:hover { color: var(--accent); }
+    .pf-tabs { display: flex; gap: 1.5rem; margin: 0 0 1.5rem; border-bottom: 1px solid var(--border-subtle); overflow-x: auto; }
+    .pf-tabs button { flex: none; min-height: 44px; padding: 0 0.1rem; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--text-muted); font: inherit; font-size: 1rem; cursor: pointer; }
+    .pf-tabs button:hover { color: var(--text-primary); }
+    .pf-tabs button[aria-pressed="true"] { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--accent); }
+    .pf-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .page-portfolio[data-view] [data-in] { display: none; }
+    .page-portfolio[data-view="overview"] [data-in="overview"], .page-portfolio[data-view="holdings"] [data-in="holdings"],
+    .page-portfolio[data-view="exposure"] [data-in="exposure"], .page-portfolio[data-view="what-if"] [data-in="what-if"] { display: block; }
+    .page-portfolio[data-view] .pf-first { border-top: none; padding-top: 0.25rem; }
+    .pf-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
+    .pf-head .settings-heading { margin: 0; }
+    .pf-sort { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--text-muted); }
+    .pf-sort .pf-input { min-height: 36px; padding: 0.25rem 0.5rem; font-size: 0.9rem; }
+    .pf-hero-spy { margin: 0.15rem 0 0; font-size: 0.92rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .pf-hero-spy .pos { color: var(--pos); }
+    .pf-hero-spy .neg { color: var(--neg); }
+    .pf-line.pf-line-spy { stroke: var(--series-other); }
     .pf-hero { padding: 0.25rem 0 2rem; }
     .pf-hero-label { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
     .pf-hero-value { margin: 0.1rem 0 0.15rem; font-size: clamp(2.2rem, 7vw, 3.1rem); line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -229,10 +246,18 @@ PORTFOLIO_BODY = """
       <p class="pf-banner" id="pfDemo" hidden>Demo prices, not real. This copy of the site was built from made-up data.</p>
       <p class="pf-banner" id="pfPricesFailed" hidden>Prices couldn’t be loaded just now. Your holdings are still here; try again in a little while.</p>
 
-      <section class="pf-hero" id="pfSummary" aria-label="Your portfolio at a glance" hidden>
+      <nav class="pf-tabs" id="pfTabs" aria-label="Parts of this page" hidden>
+        <button type="button" data-click="pfView" data-view="overview" aria-pressed="true">Overview</button>
+        <button type="button" data-click="pfView" data-view="holdings" aria-pressed="false">Holdings</button>
+        <button type="button" data-click="pfView" data-view="exposure" aria-pressed="false">Exposure</button>
+        <button type="button" data-click="pfView" data-view="what-if" aria-pressed="false">What if</button>
+      </nav>
+
+      <section class="pf-hero" id="pfSummary" data-in="overview" aria-label="Your portfolio at a glance" hidden>
         <p class="pf-hero-label" id="pfHeroLabel">Your portfolio is worth</p>
         <p class="pf-hero-value" id="pfHeroValue"></p>
         <p class="pf-hero-change" id="pfHeroChange"></p>
+        <p class="pf-hero-spy" id="pfHeroSpy" hidden></p>
         <div class="pf-seg pf-ranges" id="pfRanges" role="group" aria-label="How far back the chart goes" hidden>
           <button type="button" data-click="pfSetRange" data-months="12" aria-pressed="false">1Y</button>
           <button type="button" data-click="pfSetRange" data-months="36" aria-pressed="false">3Y</button>
@@ -240,16 +265,26 @@ PORTFOLIO_BODY = """
           <button type="button" data-click="pfSetRange" data-months="0" aria-pressed="false">All</button>
         </div>
         <div class="pf-chart" id="pfValueChart"></div>
+        <p class="wi-legend" id="pfValueKey" hidden><span class="wi-key wi-line-main">Your shares</span><span class="wi-key">Same money in the S&amp;P 500</span></p>
         <dl class="pf-tiles" id="pfTiles" hidden></dl>
         <button type="button" class="pf-link" id="pfValueNumbers" data-click="pfValueNumbers" aria-expanded="false" aria-controls="pfValueTable" hidden>Show the numbers</button>
         <div class="wi-table-wrap" id="pfValueTable" hidden></div>
         <p class="pf-note" id="pfValueNote"></p>
       </section>
 
-      <p class="pf-note" id="pfEmpty">Nothing here yet. Add what you hold above: a ticker and either how many shares or what it’s worth today. A file exported from your broker works too; it’s read here, in your browser, and isn’t uploaded.</p>
+      <p class="pf-note" id="pfEmpty">Nothing here yet. Add what you hold below: a ticker and either how many shares or what it’s worth today. A file exported from your broker works too; it’s read here, in your browser, and isn’t uploaded.</p>
 
-      <section class="pf-section" id="pfHoldings" aria-labelledby="pfHoldingsHeading" hidden>
-        <h2 class="settings-heading" id="pfHoldingsHeading">Your holdings</h2>
+      <section class="pf-section pf-first" id="pfHoldings" data-in="holdings" aria-labelledby="pfHoldingsHeading" hidden>
+        <div class="pf-head">
+          <h2 class="settings-heading" id="pfHoldingsHeading">Your holdings</h2>
+          <label class="pf-sort" id="pfSortBox" hidden>Sort by
+            <select class="pf-input" id="pfSort" data-change="pfSort">
+              <option value="value">Value</option>
+              <option value="change">Change</option>
+              <option value="name">Name</option>
+            </select>
+          </label>
+        </div>
         <ul class="pf-list" id="pfList"></ul>
         <button type="button" class="pf-link" id="pfShowAll" data-click="pfShowAll" hidden>Show all</button>
         <div class="pf-total"><span class="pf-total-label">Total</span><span class="pf-total-value" id="pfTotal"></span></div>
@@ -261,7 +296,7 @@ PORTFOLIO_BODY = """
         </div>
       </section>
 
-      <section class="pf-section pf-add-section" aria-labelledby="pfAddHeading">
+      <section class="pf-section pf-add-section" data-in="holdings" aria-labelledby="pfAddHeading">
         <h2 class="settings-heading" id="pfAddHeading">Add a holding</h2>
         <div class="pf-add" id="pfAddRow">
           <input class="pf-input" id="pfTicker" type="text" list="pfTickers" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="60" placeholder="Ticker, e.g. NVDA" aria-label="Ticker or company name">
@@ -295,7 +330,7 @@ PORTFOLIO_BODY = """
         <div class="pf-preview" id="pfPreview" hidden></div>
       </section>
 
-      <section class="pf-section" id="pfMovesSection" aria-labelledby="pfMovesHeading" hidden>
+      <section class="pf-section" id="pfMovesSection" data-in="overview" aria-labelledby="pfMovesHeading" hidden>
         <h2 class="settings-heading" id="pfMovesHeading">What moved your money</h2>
         <p class="pf-lead" id="pfMovesLead"></p>
         <ul class="pf-lines" id="pfMoves"></ul>
@@ -310,20 +345,20 @@ PORTFOLIO_BODY = """
 
 PORTFOLIO_XRAY = """
       <div id="pfXray" hidden>
-        <section class="pf-section" aria-labelledby="pfSectorHeading">
+        <section class="pf-section" data-in="overview" aria-labelledby="pfSectorHeading">
           <h2 class="settings-heading" id="pfSectorHeading">Where the money is</h2>
           <p class="pf-lead" id="pfSectorLead"></p>
           <ul class="pf-sectors" id="pfSectors"></ul>
         </section>
 
-        <section class="pf-section" aria-labelledby="pfConcentrationHeading">
+        <section class="pf-section pf-first" data-in="exposure" aria-labelledby="pfConcentrationHeading">
           <h2 class="settings-heading" id="pfConcentrationHeading">Where it’s concentrated</h2>
           <p class="pf-lead" id="pfConcentrationLead"></p>
           <dl class="pf-stats" id="pfConcentration"></dl>
           <p class="pf-note" id="pfConcentrationNote"></p>
         </section>
 
-        <section class="pf-section" aria-labelledby="pfOverlapHeading">
+        <section class="pf-section" data-in="exposure" aria-labelledby="pfOverlapHeading">
           <h2 class="settings-heading" id="pfOverlapHeading">Shared bets</h2>
           <p class="pf-lead" id="pfOverlapLead"></p>
           <ul class="pf-lines" id="pfOverlap"></ul>
@@ -331,12 +366,12 @@ PORTFOLIO_XRAY = """
           <p class="pf-note" id="pfOverlapNote"></p>
         </section>
 
-        <section class="pf-section" id="pfFundsSection" aria-labelledby="pfFundsHeading" hidden>
+        <section class="pf-section" id="pfFundsSection" data-in="exposure" aria-labelledby="pfFundsHeading" hidden>
           <h2 class="settings-heading" id="pfFundsHeading">Funds</h2>
           <p class="pf-lead" id="pfFunds"></p>
         </section>
 
-        <section class="pf-section" id="pfGainSection" aria-labelledby="pfGainHeading" hidden>
+        <section class="pf-section" id="pfGainSection" data-in="overview" aria-labelledby="pfGainHeading" hidden>
           <h2 class="settings-heading" id="pfGainHeading">Gain and loss</h2>
           <p class="pf-lead" id="pfGainLead"></p>
           <ul class="pf-lines pf-money-bars" id="pfGainBars"></ul>
@@ -349,7 +384,7 @@ PORTFOLIO_XRAY = """
 """
 
 PORTFOLIO_WHAT_IF = """
-      <section class="pf-section" id="what-if" aria-labelledby="wiHeading">
+      <section class="pf-section pf-first" id="what-if" data-in="what-if" aria-labelledby="wiHeading">
         <h2 class="settings-heading" id="wiHeading">What if I’d invested…</h2>
         <p class="pf-lead">Put an amount into any US stock or fund at some point in the past and see what it would be worth now, next to the same money in the S&amp;P 500.</p>
         <div class="wi-form" id="wiForm">

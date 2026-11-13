@@ -348,7 +348,24 @@ const PortfolioMath = (() => {
     return out.sort((a, b) => b.change - a.change || a.t.localeCompare(b.t));
   }
 
-  return { total, positions, sectors, concentration, monthAtOrBefore, gains, overlap,
+  // The same starting money put into a fund instead, for the same months: the first point's value
+  // x (the fund's price that month / its price in the first month). Null if the fund has no real
+  // price for any of the months, so the comparison is never drawn from a guess.
+  function sameMoneyIn(points, months, price) {
+    if (!points || points.length < 2 || !Array.isArray(months) || !(price > 0)) return null;
+    const byMonth = new Map(months);
+    const start = byMonth.get(points[0][0]);
+    if (!start) return null;
+    const out = [];
+    for (let i = 0; i < points.length; i += 1) {
+      const at = i === points.length - 1 ? price : byMonth.get(points[i][0]);
+      if (!at) return null;
+      out.push([points[i][0], points[0][1] * at / start]);
+    }
+    return out;
+  }
+
+  return { total, positions, sectors, concentration, monthAtOrBefore, gains, overlap, sameMoneyIn,
     addMonths, monthsApart, yearsSince, monthYearsAgo, yearlyRate, whatIf, whatIfPortfolio,
     valueSeries, lastMonths, changeSince };
 })();
