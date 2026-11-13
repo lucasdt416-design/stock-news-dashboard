@@ -141,7 +141,7 @@ def parse_monthly_history(symbol: str, chart: Dict[str, Any]) -> Optional[Dict[s
                 return None
             months.append([month, _six_figures(float(value))])
 
-        return {
+        record = {
             "symbol": symbol,
             "name": str(meta.get("longName") or meta.get("shortName") or symbol)[:120],
             "kind": kind,
@@ -150,17 +150,104 @@ def parse_monthly_history(symbol: str, chart: Dict[str, Any]) -> Optional[Dict[s
             "price": round(float(price), 4),
             "price_date": price_day.strftime("%Y-%m-%d"),
         }
+        dividends = parse_dividends(chart, record["price_date"])
+        if dividends is not None:
+            record["dividends"] = dividends
+        return record
     except Exception as e:
         logger.warning("Could not read monthly history for %s: %s", symbol, e)
         return None
 
 
+def _year_before(day: str) -> str:
+    """The same day a year earlier, as text. 29 February becomes 28 February."""
+    year, rest = int(day[:4]) - 1, day[4:]
+    return f"{year:04d}{'-02-28' if rest == '-02-29' else rest}"
+
+
+def parse_dividends(chart: Dict[str, Any], price_date: str) -> Optional[List[List[Any]]]:
+    """Each dividend per share that went ex-dividend in the year up to the price date, oldest first.
+
+    [] means Yahoo listed none, which is a real answer: the company paid nothing. None means the
+    list couldn't be read, so nothing is claimed either way. Yahoo restates past dividends for
+    share splits, so each amount is per share as shares are counted today.
+    """
+    try:
+        if "events" not in chart:
+            # Yahoo leaves "events" out when there are none, and also when they weren't asked for.
+            # The caller adds an empty one when it did ask; without it nothing is claimed.
+            return None
+        events = (chart.get("events") or {}).get("dividends") or {}
+        offset = timedelta(seconds=int((chart.get("meta") or {}).get("gmtoffset") or 0))
+        after = _year_before(price_date)
+        out: List[List[Any]] = []
+        for event in events.values():
+            amount, stamp = event.get("amount"), event.get("date")
+            if not isinstance(amount, (int, float)) or isinstance(amount, bool) or not isinstance(stamp, (int, float)):
+                return None
+            if amount <= 0:
+                return None
+            day = (datetime.fromtimestamp(stamp, tz=timezone.utc) + offset).strftime("%Y-%m-%d")
+            if after < day <= price_date:
+                out.append([day, _six_figures(float(amount))])
+        out.sort()
+        return out
+    except Exception as e:
+        logger.warning("Could not read dividends: %s", e)
+        return None
+
+
+def parse_previous_close(chart: Dict[str, Any], price_date: str) -> Optional[Dict[str, Any]]:
+    """The close of the last trading day before the price date, from one Yahoo daily chart answer.
+
+    None unless the daily answer is for the same price date and has a real close in the week
+    before it, so a day's change is never worked out from two readings that don't belong together.
+    """
+    try:
+        meta = chart.get("meta") or {}
+        price_time = meta.get("regularMarketTime")
+        if meta.get("dataGranularity") != "1d" or not isinstance(price_time, (int, float)):
+            return None
+        offset = timedelta(seconds=int(meta.get("gmtoffset") or 0))
+        if (datetime.fromtimestamp(price_time, tz=timezone.utc) + offset).strftime("%Y-%m-%d") != price_date:
+            return None
+        closes = ((chart.get("indicators") or {}).get("quote") or [{}])[0].get("close") or []
+        found = None
+        for stamp, close in zip(chart.get("timestamp") or [], closes):
+            if close is None or not isinstance(stamp, (int, float)):
+                continue
+            if not isinstance(close, (int, float)) or isinstance(close, bool) or close <= 0:
+                return None
+            day = (datetime.fromtimestamp(stamp, tz=timezone.utc) + offset).strftime("%Y-%m-%d")
+            if day < price_date and (found is None or day > found["date"]):
+                found = {"value": round(float(close), 4), "date": day}
+        if not found:
+            return None
+        gap = datetime.strptime(price_date, "%Y-%m-%d") - datetime.strptime(found["date"], "%Y-%m-%d")
+        return found if gap.days <= 7 else None
+    except Exception as e:
+        logger.warning("Could not read the previous close: %s", e)
+        return None
+
+
 def fetch_ticker_monthly_history(symbol: str, timeout: int = 15) -> Optional[Dict[str, Any]]:
-    """Every finished month's adjusted close since a ticker started trading, plus its latest price."""
+    """Every finished month's adjusted close since a ticker started trading, its latest price, the
+    past year's dividends and the close of the trading day before."""
     # Not range=max: for a company listed in the last few years Yahoo answers that with weekly
     # prices. An explicit start and end gets months for every ticker, including its first month.
-    chart = _fetch_chart(symbol, f"period1=0&period2={int(time.time())}", "1mo", timeout)
-    return parse_monthly_history(symbol, chart) if chart else None
+    chart = _fetch_chart(symbol, f"period1=0&period2={int(time.time())}&events=div", "1mo", timeout)
+    if not chart:
+        return None
+    # Yahoo leaves "events" out altogether when there are none, so note that they were asked for.
+    chart.setdefault("events", {})
+    record = parse_monthly_history(symbol, chart)
+    if not record:
+        return None
+    daily = _fetch_chart(symbol, "range=10d", "1d", timeout)
+    previous = parse_previous_close(daily, record["price_date"]) if daily else None
+    if previous:
+        record["previous"] = previous
+    return record
 
 
 def collect_price_history(

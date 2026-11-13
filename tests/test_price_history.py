@@ -7,7 +7,8 @@ from datetime import date, datetime, timezone
 import pytest
 
 from collectors import stock_prices
-from collectors.stock_prices import collect_price_history, parse_monthly_history
+from collectors.stock_prices import (collect_price_history, parse_dividends, parse_monthly_history,
+                                     parse_previous_close)
 from pipeline.db import get_db_connection, init_db
 from pipeline.prices import get_price_history, save_price_history, write_price_files
 from pipeline.render import render_dashboard
@@ -99,9 +100,12 @@ def test_one_request_helper_serves_both_daily_and_monthly(monkeypatch):
     monkeypatch.setattr(stock_prices, "_fetch_chart", fake)
     assert stock_prices.fetch_ticker_monthly_history("TEST")["price"] == 12.5
     stock_prices.fetch_ticker_historical_closes("TEST")
-    (_, span, interval), daily = calls
+    (_, span, interval), before, daily = calls
     # An explicit start and end, never range=max, which Yahoo answers in weeks for newer companies.
-    assert re.fullmatch(r"period1=0&period2=\d{10}", span) and interval == "1mo"
+    # Dividends ride along on the same request.
+    assert re.fullmatch(r"period1=0&period2=\d{10}&events=div", span) and interval == "1mo"
+    # One short daily request finds the close of the trading day before.
+    assert before == ("TEST", "range=10d", "1d")
     assert daily == ("TEST", "range=3mo", "1d")
 
 
@@ -225,3 +229,122 @@ def test_an_older_database_gains_the_table(tmp_path):
     conn.commit()
     conn.close()
     assert get_price_history(db) == []
+
+
+# ---- Dividends and the close of the day before -------------------------------------------------
+
+def _daily(closes, price_day="2026-03-10"):
+    """A Yahoo daily chart answer: closes are (day, close), stamped at the New York open."""
+    return {
+        "meta": {"gmtoffset": -18000, "dataGranularity": "1d", "regularMarketTime": _ts(price_day) + 16 * 3600},
+        "timestamp": [_ts(d) + 9 * 3600 + 1800 for d, _ in closes],
+        "indicators": {"quote": [{"close": [v for _, v in closes]}]},
+    }
+
+
+def _with_dividends(events):
+    chart = _chart(BARS)
+    chart["events"] = {"dividends": {str(i): {"amount": amount, "date": _ts(day) + 9 * 3600 + 1800}
+                                     for i, (day, amount) in enumerate(events)}} if events else {}
+    return chart
+
+
+def test_dividends_of_the_past_year_are_kept_oldest_first():
+    chart = _with_dividends([("2026-02-09", 0.26), ("2025-03-10", 0.2), ("2025-03-11", 0.25), ("2025-11-10", 0.26),
+                             ("2026-03-10", 0.27)])
+    # 10 March 2025 is a year before the price date to the day, so it is the year before's.
+    assert parse_monthly_history("TEST", chart)["dividends"] == [
+        ["2025-03-11", 0.25], ["2025-11-10", 0.26], ["2026-02-09", 0.26], ["2026-03-10", 0.27]]
+
+
+def test_no_dividends_is_a_real_answer_and_not_asking_is_not():
+    assert parse_monthly_history("TEST", _with_dividends([]))["dividends"] == []
+    # _chart() has no "events" at all: the request didn't ask, so nothing is claimed.
+    assert "dividends" not in parse_monthly_history("TEST", _chart(BARS))
+
+
+@pytest.mark.parametrize("amount", [0, -0.2, None, "0.26", True])
+def test_an_odd_dividend_drops_the_list_but_keeps_the_prices(amount):
+    record = parse_monthly_history("TEST", _with_dividends([("2026-02-09", amount)]))
+    assert "dividends" not in record and record["price"] == 12.5
+
+
+def test_a_leap_day_price_looks_back_to_the_28th():
+    chart = _with_dividends([("2027-02-28", 0.1), ("2027-03-01", 0.2)])
+    assert parse_dividends(chart, "2028-02-29") == [["2027-03-01", 0.2]]
+
+
+def test_the_previous_close_is_the_last_trading_day_before_the_price():
+    closes = [("2026-03-05", 11.9), ("2026-03-06", 12.1), ("2026-03-09", 12.3), ("2026-03-10", 12.5)]
+    assert parse_previous_close(_daily(closes), "2026-03-10") == {"value": 12.3, "date": "2026-03-09"}
+    # A day Yahoo has no close for is skipped, not filled in.
+    closes[2] = ("2026-03-09", None)
+    assert parse_previous_close(_daily(closes), "2026-03-10") == {"value": 12.1, "date": "2026-03-06"}
+
+
+@pytest.mark.parametrize("chart", [
+    _daily([("2026-03-09", 12.3), ("2026-03-10", 12.5)], price_day="2026-03-11"),  # a different day's price
+    _daily([("2026-03-10", 12.5)]),                                                 # nothing before it
+    _daily([("2026-02-27", 12.3), ("2026-03-10", 12.5)]),                           # more than a week before
+    _daily([("2026-03-09", -1), ("2026-03-10", 12.5)]),
+    {"meta": {"dataGranularity": "1mo"}},
+    {},
+])
+def test_a_previous_close_that_does_not_belong_is_left_out(chart):
+    assert parse_previous_close(chart, "2026-03-10") is None
+
+
+def test_the_daily_request_failing_still_returns_prices(monkeypatch):
+    monkeypatch.setattr(stock_prices, "_fetch_chart",
+                        lambda symbol, span, interval, timeout=10: _chart(BARS) if interval == "1mo" else None)
+    record = stock_prices.fetch_ticker_monthly_history("TEST")
+    assert record["price"] == 12.5 and "previous" not in record and record["dividends"] == []
+
+
+def test_extras_are_stored_and_written_to_the_file_and_the_index(tmp_path):
+    db = str(tmp_path / "t.db")
+    extras = {"previous": {"value": 12.3, "date": "2026-03-09"}, "dividends": [["2025-11-10", 0.26], ["2026-02-09", 0.26]]}
+    save_price_history([dict(_record("AAA"), **extras), dict(_record("BBB"), dividends=[]), _record("CCC")],
+                       db_path=db, today=date(2026, 3, 10))
+    site = tmp_path / "site"
+    write_price_files(str(site), db)
+    folder = site / "data" / "prices"
+    aaa, bbb, ccc = (json.loads((folder / f"{s}.json").read_text()) for s in ("AAA", "BBB", "CCC"))
+    assert aaa["previous"] == extras["previous"] and aaa["dividends"] == extras["dividends"]
+    # None paid is written as an empty list; not known is left out.
+    assert bbb["dividends"] == [] and "previous" not in bbb
+    assert "dividends" not in ccc and "previous" not in ccc
+    index = json.loads((folder / "index.json").read_text())["symbols"]
+    assert index["AAA"]["previous"] == extras["previous"] and index["AAA"]["dividends"] == extras["dividends"]
+    assert "dividends" not in index["CCC"]
+
+
+@pytest.mark.parametrize("extras", [
+    {"previous": {"value": 12.3, "date": "2026-03-10"}},     # not before the price date
+    {"previous": {"value": 0, "date": "2026-03-09"}},
+    {"previous": "12.3"},
+    {"dividends": [["2026-02-09", 0.26], ["2025-11-10", 0.26]]},  # out of order
+    {"dividends": [["2026-03-11", 0.26]]},                        # after the price date
+    {"dividends": [["2026-02-09", -1]]},
+    {"dividends": [["2026-02", 0.26]]},
+    {"dividends": "none"},
+])
+def test_an_odd_extra_is_dropped_without_losing_the_prices(tmp_path, extras):
+    db = str(tmp_path / "t.db")
+    assert save_price_history([dict(_record("AAA"), **extras)], db_path=db, today=date(2026, 3, 10)) == 1
+    record = get_price_history(db)[0]
+    assert record["price"] == {"value": 12.5, "date": "2026-03-10"}
+    assert "previous" not in record and "dividends" not in record
+
+
+def test_an_older_database_gains_the_extra_columns(tmp_path):
+    db = str(tmp_path / "old.db")
+    conn = get_db_connection(db)
+    with conn:
+        conn.execute("""CREATE TABLE price_history (symbol TEXT PRIMARY KEY, name TEXT, kind TEXT NOT NULL,
+            months_json TEXT NOT NULL, price REAL NOT NULL, price_date TEXT NOT NULL, fetched_at TEXT NOT NULL,
+            source TEXT NOT NULL DEFAULT 'yahoo')""")
+        conn.execute("INSERT INTO price_history VALUES ('OLD','Old Co','stock','[[\"2026-01\",11.0]]',12.5,'2026-03-10','2026-03-10','yahoo')")
+    conn.close()
+    record = get_price_history(db)[0]
+    assert record["symbol"] == "OLD" and "previous" not in record and "dividends" not in record
