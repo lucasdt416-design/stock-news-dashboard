@@ -177,7 +177,29 @@ function pfWritePriceCache(ticker, record) {
   try { localStorage.setItem(PRICES_KEY, JSON.stringify(trimmed)); } catch (e) { /* not cached; asked again next visit */ }
 }
 
+const PF_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
 // ---- Prices -----------------------------------------------------------------------------------
+
+// The close of the trading day before the price: a real price from an earlier day, or null.
+function pfCheckPrevious(raw, priceDate) {
+  if (!raw || typeof raw !== 'object' || !Number.isFinite(raw.value) || raw.value <= 0) return null;
+  if (!PF_DAY.test(String(raw.date)) || raw.date >= priceDate) return null;
+  return { value: raw.value, date: raw.date };
+}
+
+// The past year's dividends per share, oldest first. An empty list is a real "none paid";
+// null is "not known", and anything odd in the list makes the whole list not known.
+function pfCheckDividends(raw, priceDate) {
+  if (!Array.isArray(raw) || raw.length > 60) return null;
+  const out = [];
+  for (const pair of raw) {
+    if (!Array.isArray(pair) || !PF_DAY.test(String(pair[0])) || !Number.isFinite(pair[1]) || pair[1] <= 0) return null;
+    if (pair[0] > priceDate || (out.length && pair[0] < out[out.length - 1][0])) return null;
+    out.push([pair[0], pair[1]]);
+  }
+  return out;
+}
 
 // A price record from a file, the server or the cache is checked before anything uses it.
 function pfCheckRecord(ticker, raw) {
@@ -199,6 +221,8 @@ function pfCheckRecord(ticker, raw) {
     name: String(raw.name || '').slice(0, 120),
     kind: raw.kind,
     price: { value: price.value, date: price.date },
+    previous: pfCheckPrevious(raw.previous, price.date),
+    dividends: pfCheckDividends(raw.dividends, price.date),
     first_month: months.length ? months[0][0] : null,
     months: Array.isArray(raw.months) ? months : null,
     sector: typeof raw.sector === 'string' && SECTOR_NAMES.has(raw.sector) ? raw.sector : null,
@@ -277,7 +301,8 @@ async function pfFetchInfo(ticker, wantMonths) {
   if (pfHasFile(ticker)) {
     if (!wantMonths) {
       const entry = PF.index[ticker];
-      const record = pfCheckRecord(ticker, { symbol: ticker, name: entry.name, kind: entry.kind, price: entry.price });
+      const record = pfCheckRecord(ticker, { symbol: ticker, name: entry.name, kind: entry.kind, price: entry.price,
+        previous: entry.previous, dividends: entry.dividends });
       if (record) {
         record.first_month = PortfolioInput.MONTH.test(String(entry.first_month)) ? entry.first_month : null;
         return Object.assign({ status: 'ok', local: true }, record);
@@ -580,7 +605,10 @@ function pfMeta(row) {
   if (info.status === 'loading') return `${shares} · getting its price…`;
   if (info.status === 'missing') return `${shares} · ${info.why === 'foreign' ? 'not a US-listed stock or fund' : 'we couldn’t find this ticker'}, so it isn’t counted`;
   if (info.status === 'failed') return `${shares} · we couldn’t get its price right now, so it isn’t counted`;
-  return `${shares} · ${pfMoney(info.price.value)} on ${pfDay(info.price.date)}`;
+  // The price, and how far it moved from the close of the trading day before, when that is known.
+  const moved = info.previous ? info.price.value - info.previous.value : null;
+  const day = moved === null ? '' : moved === 0 ? ', unchanged that day' : `, ${moved > 0 ? 'up' : 'down'} ${pfMoney(Math.abs(moved))} that day`;
+  return `${shares} · ${pfMoney(info.price.value)} on ${pfDay(info.price.date)}${day}`;
 }
 
 function pfEditForm(row) {

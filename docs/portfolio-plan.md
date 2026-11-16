@@ -443,3 +443,17 @@ and What if. The part is in the address (`#holdings`), and a shared what-if link
 With no holdings there are no tabs, only the add form and the calculator. The chart also draws the
 same starting money in the SPY fund (`PortfolioMath.sameMoneyIn`), and only when SPY has a real
 price for every month shown.
+
+## The day's change and dividends
+
+- Each price record can carry two optional extras: `previous` (the close of the trading day before
+  the price) and `dividends` (each dividend per share that went ex-dividend in the year up to the
+  price date). Both come from Yahoo: dividends ride on the monthly request (`events=div`), and the
+  close before needs one more short daily request per ticker.
+- Missing is "not known", never zero. `dividends: []` is a real "paid nothing". An extra that looks
+  wrong is dropped on its own and never costs a ticker its prices.
+- The page counts the day's change only for holdings priced on the latest date with a real close
+  before it, and names the rest. Dividend income is today's shares times the year's dividends, and
+  the yield leaves out holdings whose dividends aren't known.
+- `/api/history` gives the second request its own allowance of 60 a minute, so it can't use up the
+  one for prices. That makes the most this function can ask Yahoo 120 requests a minute, up from 60.

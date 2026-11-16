@@ -98,6 +98,15 @@ def init_db(db_path: Optional[str] = None) -> None:
             )
             """
         )
+        # The close of the trading day before the price, and the past year's dividends per share.
+        # Both are optional: NULL means not known, never zero.
+        price_columns = [row[1] for row in conn.execute("PRAGMA table_info(price_history)").fetchall()]
+        if "previous_close" not in price_columns:
+            conn.execute("ALTER TABLE price_history ADD COLUMN previous_close REAL")
+        if "previous_date" not in price_columns:
+            conn.execute("ALTER TABLE price_history ADD COLUMN previous_date TEXT")
+        if "dividends_json" not in price_columns:
+            conn.execute("ALTER TABLE price_history ADD COLUMN dividends_json TEXT")
 
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_news_published_date ON news_items(published_date DESC);"

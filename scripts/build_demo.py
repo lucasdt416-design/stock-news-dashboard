@@ -210,9 +210,17 @@ def make_price_history(companies, today, rng):
         for month in months_back(length):
             value *= 1 + rng.gauss(drift, 0.02 if sym == "SPY" else 0.07)
             months.append([month, float(f"{max(value, 0.05):.6g}")])
+        price = round(months[-1][1] * (1 + rng.gauss(0, 0.02)), 2)
+        price_day = today - dt.timedelta(days=1)
+        # Made-up extras too: yesterday's close, and four dividends a year for about half of them.
+        pays = sym == "SPY" or rng.random() < 0.5
+        each = float(f"{price * rng.uniform(0.002, 0.009):.3g}")
         records.append({"symbol": sym, "name": name, "kind": kind, "months": months,
-                        "price": round(months[-1][1] * (1 + rng.gauss(0, 0.02)), 2),
-                        "price_date": (today - dt.timedelta(days=1)).isoformat()})
+                        "price": price, "price_date": price_day.isoformat(),
+                        "previous": {"value": round(price * (1 + rng.gauss(0, 0.012)), 2),
+                                     "date": (price_day - dt.timedelta(days=1)).isoformat()},
+                        "dividends": [[(price_day - dt.timedelta(days=d)).isoformat(), each]
+                                      for d in (300, 210, 120, 30)] if pays else []})
     return records
 
 

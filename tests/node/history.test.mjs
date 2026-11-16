@@ -90,7 +90,7 @@ test("a ticker returns finished months, the latest price and its sector", async 
     {
       found: true, symbol: "TEST", name: "Test Co", kind: "stock", currency: "USD", first_month: "2025-12",
       months: [["2025-12", 10], ["2026-01", 11], ["2026-02", 12]],
-      price: { value: 12.5, date: "2026-03-10" }, fetched: "x", sector: "Technology", industry: "Semiconductors",
+      price: { value: 12.5, date: "2026-03-10" }, dividends: [], fetched: "x", sector: "Technology", industry: "Semiconductors",
     }
   );
   assert.match(body.fetched, /^\d{4}-\d{2}-\d{2}$/);
@@ -159,7 +159,9 @@ test("it works with no key: prices come back and the sector is simply not known"
   assert.equal(body.months.length, 3);
   assert.equal(body.sector, null);
   assert.equal(body.industry, null);
-  assert.equal(upstreamCalls.length, 1);
+  // The prices, then one short request for the close of the day before. Nothing else.
+  assert.equal(upstreamCalls.length, 2);
+  assert.ok(upstreamCalls.every((c) => c.url.includes("yahoo")));
 });
 
 test("an industry that isn't in the table is not guessed", async () => {
@@ -188,9 +190,13 @@ test("share classes are written the way each provider expects, and the key is on
   const { onRequestGet } = await loadModule();
   const body = await (await onRequestGet(context("/api/history?ticker=brk.b"))).json();
   assert.equal(body.symbol, "BRK-B");
-  const [prices, profile] = upstreamCalls;
+  assert.equal(upstreamCalls.length, 3);
+  const prices = upstreamCalls[0];
+  const profile = upstreamCalls.find((c) => c.url.includes("finnhub"));
+  const daily = upstreamCalls.find((c) => c.url.includes("interval=1d"));
   // An explicit start and end, never range=max, which Yahoo answers in weeks for newer companies.
-  assert.match(prices.url, /\/chart\/BRK-B\?period1=0&period2=\d{10}&interval=1mo&/);
+  assert.match(prices.url, /\/chart\/BRK-B\?period1=0&period2=\d{10}&interval=1mo&includePrePost=false&events=div$/);
+  assert.ok(daily.url.endsWith("/chart/BRK-B?range=10d&interval=1d&includePrePost=false"));
   assert.ok(profile.url.endsWith("symbol=BRK.B"));
   assert.equal(profile.options.headers["X-Finnhub-Token"], SECRET);
   for (const call of upstreamCalls) assert.ok(!call.url.includes(SECRET));
@@ -307,7 +313,10 @@ test("many different tickers cannot burn the upstream or sector quota", async ()
     if (res.status === 429) busy += 1;
   }
   assert.equal(busy, 10);
-  assert.equal(upstreamCalls.filter((c) => c.url.includes("yahoo")).length, 60);
+  // 60 tickers priced, and at most one short extra request for each of them.
+  assert.equal(upstreamCalls.filter((c) => c.url.includes("interval=1mo")).length, 60);
+  assert.equal(upstreamCalls.filter((c) => c.url.includes("interval=1d")).length, 60);
+  assert.equal(upstreamCalls.filter((c) => c.url.includes("yahoo")).length, 120);
   assert.equal(upstreamCalls.filter((c) => c.url.includes("finnhub")).length, 10);
 });
 
@@ -324,6 +333,86 @@ test("hostile upstream text is cleaned before it is passed on", async () => {
   assert.ok(!/[\u0000-\u001f]/.test(body.name));
   assert.ok(body.industry.length <= 80 && !/[\u0000-\u001f]/.test(body.industry));
   assert.equal(body.sector, null);
+});
+
+// ---- Dividends and the close of the day before ---------------------------------------------
+
+function daily(closes, day = "2026-03-10") {
+  return {
+    meta: { gmtoffset: -18000, dataGranularity: "1d", regularMarketTime: stamp(day, 21) },
+    timestamp: closes.map(([d]) => stamp(d, 14) + 1800),
+    indicators: { quote: [{ close: closes.map(([, v]) => v) }] },
+  };
+}
+
+function withDividends(events) {
+  const body = chart();
+  body.events = { dividends: Object.fromEntries(events.map(([day, amount], i) => [String(i), { amount, date: stamp(day, 14) + 1800 }])) };
+  return body;
+}
+
+const CLOSES = [["2026-03-05", 11.9], ["2026-03-06", 12.1], ["2026-03-09", 12.3], ["2026-03-10", 12.5]];
+
+test("the answer carries the past year's dividends and the close of the day before", async () => {
+  const { onRequestGet } = await loadModule();
+  upstreamHandler = (url) => {
+    if (url.includes("interval=1d")) return yahoo(daily(CLOSES));
+    if (url.includes("yahoo")) return yahoo(withDividends([["2026-02-09", 0.26], ["2025-03-10", 0.2], ["2025-03-11", 0.25], ["2026-03-10", 0.27]]));
+    return goodUpstream(url);
+  };
+  const res = await onRequestGet(context("/api/history?ticker=TEST"));
+  const body = await res.json();
+  // 10 March 2025 is a year before the price date to the day, so it belongs to the year before.
+  assert.deepEqual(body.dividends, [["2025-03-11", 0.25], ["2026-02-09", 0.26], ["2026-03-10", 0.27]]);
+  assert.deepEqual(body.previous, { value: 12.3, date: "2026-03-09" });
+  assert.equal(res.headers.get("Cache-Control"), "public, max-age=21600");
+});
+
+test("no dividends is a real answer, and an odd one drops the list but keeps the prices", async () => {
+  const { parseDividends, parseMonthlyHistory } = await loadModule();
+  assert.deepEqual(parseDividends({ ...chart(), events: {} }, "2026-03-10"), []);
+  assert.equal(parseDividends(chart(), "2026-03-10"), null); // the request didn't ask
+  for (const amount of [0, -0.2, null, "0.26", NaN]) {
+    const record = parseMonthlyHistory("TEST", withDividends([["2026-02-09", amount]]));
+    assert.equal(record.price.value, 12.5);
+    assert.equal("dividends" in record, false);
+  }
+  assert.deepEqual(parseDividends(withDividends([["2027-02-28", 0.1], ["2027-03-01", 0.2]]), "2028-02-29"), [["2027-03-01", 0.2]]);
+});
+
+test("a previous close that doesn't belong is left out", async () => {
+  const { parsePreviousClose } = await loadModule();
+  assert.deepEqual(parsePreviousClose(daily(CLOSES), "2026-03-10"), { value: 12.3, date: "2026-03-09" });
+  // A day with no close is skipped, not filled in.
+  assert.deepEqual(parsePreviousClose(daily([["2026-03-06", 12.1], ["2026-03-09", null], ["2026-03-10", 12.5]]), "2026-03-10"),
+    { value: 12.1, date: "2026-03-06" });
+  for (const body of [
+    daily(CLOSES, "2026-03-11"),                              // a different day's price
+    daily([["2026-03-10", 12.5]]),                            // nothing before it
+    daily([["2026-02-27", 12.3], ["2026-03-10", 12.5]]),      // more than a week before
+    daily([["2026-03-09", -1], ["2026-03-10", 12.5]]),
+    chart(),                                                  // monthly, not daily
+    {},
+  ]) assert.equal(parsePreviousClose(body, "2026-03-10"), null);
+});
+
+test("the second request failing still returns prices, cached for less time", async () => {
+  const { onRequestGet } = await loadModule();
+  upstreamHandler = (url) => (url.includes("interval=1d") ? new Response("no", { status: 500 }) : goodUpstream(url));
+  const res = await onRequestGet(context("/api/history?ticker=TEST"));
+  assert.equal(res.status, 200);
+  await assertNoLeak(res);
+  const body = await res.json();
+  assert.equal(body.price.value, 12.5);
+  assert.equal("previous" in body, false);
+  assert.equal(res.headers.get("Cache-Control"), "public, max-age=3600");
+});
+
+test("a ticker with no prices is never asked about twice", async () => {
+  const { onRequestGet } = await loadModule();
+  upstreamHandler = (url) => (url.includes("yahoo") ? yahoo(chart(BARS, { currency: "GBp" })) : goodUpstream(url));
+  assert.equal((await onRequestGet(context("/api/history?ticker=TEST"))).status, 404);
+  assert.equal(upstreamCalls.length, 1);
 });
 
 test("nothing about a request is logged", () => {

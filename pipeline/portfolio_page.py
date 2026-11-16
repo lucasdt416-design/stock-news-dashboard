@@ -256,6 +256,7 @@ PORTFOLIO_BODY = """
       <section class="pf-hero" id="pfSummary" data-in="overview" aria-label="Your portfolio at a glance" hidden>
         <p class="pf-hero-label" id="pfHeroLabel">Your portfolio is worth</p>
         <p class="pf-hero-value" id="pfHeroValue"></p>
+        <p class="pf-hero-change" id="pfHeroDay" hidden></p>
         <p class="pf-hero-change" id="pfHeroChange"></p>
         <p class="pf-hero-spy" id="pfHeroSpy" hidden></p>
         <div class="pf-seg pf-ranges" id="pfRanges" role="group" aria-label="How far back the chart goes" hidden>
@@ -335,6 +336,14 @@ PORTFOLIO_BODY = """
         <p class="pf-lead" id="pfMovesLead"></p>
         <ul class="pf-lines" id="pfMoves"></ul>
         <button type="button" class="pf-link" id="pfMovesAll" data-click="pfMovesAll" hidden>Show all</button>
+      </section>
+
+      <section class="pf-section" id="pfIncomeSection" data-in="overview" aria-labelledby="pfIncomeHeading" hidden>
+        <h2 class="settings-heading" id="pfIncomeHeading">Dividends</h2>
+        <p class="pf-lead" id="pfIncomeLead"></p>
+        <ul class="pf-lines pf-money-bars" id="pfIncomeBars"></ul>
+        <button type="button" class="pf-link" id="pfIncomeAll" data-click="pfIncomeAll" hidden>Show all</button>
+        <p class="pf-note" id="pfIncomeNote"></p>
       </section>
 {{ portfolio_sections }}
       <section class="pf-section pf-foot">

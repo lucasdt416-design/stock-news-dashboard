@@ -365,7 +365,55 @@ const PortfolioMath = (() => {
     return out;
   }
 
-  return { total, positions, sectors, concentration, monthAtOrBefore, gains, overlap, sameMoneyIn,
+  // ---- The latest day's change and dividends --------------------------------------------------
+
+  // How many dollars the holdings moved on the latest trading day: shares x (latest price - the
+  // close of the trading day before). Only holdings priced on the latest date, with a real close
+  // before it, are counted. The rest are named, so the figure never passes for the whole
+  // portfolio when it isn't.
+  //   items: [{ t, sh, price, date, previous: { value, date } or null }]
+  function dayChange(items) {
+    const usable = (items || []).filter(i => i.sh > 0 && i.price > 0 && i.date);
+    if (!usable.length) return null;
+    const date = usable.map(i => i.date).sort().pop();
+    const rows = [];
+    const missing = [];
+    usable.forEach(i => {
+      const p = i.previous;
+      if (i.date !== date || !p || !(p.value > 0) || !(p.date < date)) { missing.push(i.t); return; }
+      rows.push({ t: i.t, before: i.sh * p.value, change: i.sh * (i.price - p.value), each: i.price - p.value });
+    });
+    if (!rows.length) return null;
+    const before = sum(rows.map(r => r.before));
+    const change = sum(rows.map(r => r.change));
+    return { date, change, before, pct: change / before, missing: missing.sort(),
+      rows: rows.sort((a, b) => b.change - a.change || a.t.localeCompare(b.t)) };
+  }
+
+  // What the shares held now earned in dividends over the past year: shares x each dividend per
+  // share. A holding with an empty list paid nothing, which is known; one with no list isn't
+  // known and is named rather than counted as zero. The yield is the year's dividends over
+  // today's value of the holdings whose dividends are known.
+  //   items: [{ t, sh, value, dividends: [[YYYY-MM-DD, per share]] or null }]
+  function dividendIncome(items) {
+    const usable = (items || []).filter(i => i.sh > 0 && i.value > 0);
+    const known = usable.filter(i => Array.isArray(i.dividends));
+    if (!known.length) return null;
+    const rows = known.map(i => {
+      const perShare = sum(i.dividends.map(d => d[1]));
+      return { t: i.t, amount: i.sh * perShare, perShare, payments: i.dividends.length, yield: i.sh * perShare / i.value };
+    });
+    const total = sum(rows.map(r => r.amount));
+    return {
+      total,
+      yield: total / sum(known.map(i => i.value)),
+      rows: rows.filter(r => r.amount > 0).sort((a, b) => b.amount - a.amount || a.t.localeCompare(b.t)),
+      none: rows.filter(r => !(r.amount > 0)).map(r => r.t).sort(),
+      unknown: usable.filter(i => !Array.isArray(i.dividends)).map(i => i.t).sort(),
+    };
+  }
+
+  return { total, positions, sectors, concentration, monthAtOrBefore, gains, overlap, sameMoneyIn, dayChange, dividendIncome,
     addMonths, monthsApart, yearsSince, monthYearsAgo, yearlyRate, whatIf, whatIfPortfolio,
     valueSeries, lastMonths, changeSince };
 })();
