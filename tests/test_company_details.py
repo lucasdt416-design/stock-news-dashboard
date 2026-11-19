@@ -84,6 +84,8 @@ def test_watchlist_names_are_shortened_the_way_news_writes_them():
     assert short_name("The Goldman Sachs Group, Inc.") == "Goldman Sachs"
     assert short_name("Amazon.com, Inc.") == "Amazon"
     assert short_name("Johnson & Johnson") == "Johnson & Johnson"
+    # A public benefit corporation's suffix, as in Anthropic's legal name.
+    assert short_name("Anthropic, PBC") == "Anthropic"
     for c in WATCHLIST:
         assert "," not in short_name(c["name"]) and not short_name(c["name"]).endswith("&"), c["name"]
 

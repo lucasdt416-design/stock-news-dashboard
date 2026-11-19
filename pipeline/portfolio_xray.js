@@ -63,7 +63,7 @@ function pfBar(fraction) {
 function pfShortName(entity) {
   const full = COMPANY_NAMES[entity];
   if (!full) return String(entity);
-  return full.replace(/,? (Inc\.?|Incorporated|Corporation|Corp\.?|Company|Co\.|Holdings|Group|plc|N\.V\.|Ltd\.?|& Co\.?)$/i, '').replace(/,? (Inc\.?|Corporation)$/i, '') || full;
+  return full.replace(/,? (Inc\.?|Incorporated|Corporation|Corp\.?|Company|Co\.|Holdings|Group|plc|PBC|N\.V\.|Ltd\.?|& Co\.?)$/i, '').replace(/,? (Inc\.?|Corporation)$/i, '') || full;
 }
 
 function pfList(names) {
