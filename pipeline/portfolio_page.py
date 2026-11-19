@@ -145,7 +145,6 @@ PORTFOLIO_CSS = """
     .pf-bar-neg { fill: var(--neg); }
     .pf-zero { stroke: var(--text-muted); stroke-width: 1; vector-effect: non-scaling-stroke; }
     .pf-move-amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .pf-move-detail { grid-column: 2 / -1; font-size: 0.84rem; color: var(--text-muted); }
     .pf-money-bars { margin: 0.25rem 0 1rem; max-width: 42rem; }
     .pf-money-row { display: grid; grid-template-columns: 11rem minmax(0, 1fr) 7rem; align-items: center; gap: 0.15rem 1rem; padding: 0.45rem 0; }
     .pf-money-label { font-size: 0.92rem; color: var(--text-secondary); }
@@ -196,8 +195,10 @@ PORTFOLIO_CSS = """
     .pf-stat-value { margin: 0; text-align: right; font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
     .pf-stat-detail { grid-column: 1 / -1; margin: 0; font-size: 0.84rem; color: var(--text-muted); max-width: 38rem; }
     .pf-sectors > li:last-child, .pf-stats > .pf-stat:last-child, .pf-lines > li:last-child { border-bottom: none; }
-    .pf-line-amount { display: block; font-variant-numeric: tabular-nums; }
-    .pf-overlap-line { padding: 0.65rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.97rem; line-height: 1.45; max-width: 44rem; }
+    .pf-overlap-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem 1.5rem; align-items: baseline; padding: 0.65rem 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.97rem; line-height: 1.45; }
+    .pf-line-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .pf-gain-wrap { overflow-x: auto; margin: 0.5rem 0; }
+    .pf-gain-table { max-width: 40rem; }
     .wi-form { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; }
     .wi-picks { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
     .wi-picks .chip { min-height: 36px; padding: 0.3rem 0.85rem; font-size: 0.88rem; }
@@ -385,7 +386,7 @@ PORTFOLIO_XRAY = """
           <p class="pf-lead" id="pfGainLead"></p>
           <ul class="pf-lines pf-money-bars" id="pfGainBars"></ul>
           <p class="pf-lead" id="pfGainSpy"></p>
-          <ul class="pf-lines" id="pfGainRows"></ul>
+          <div class="pf-gain-wrap" id="pfGainRows"></div>
           <button type="button" class="pf-link" id="pfGainAll" data-click="pfGainAll" hidden>Show all</button>
           <p class="pf-note" id="pfGainNote"></p>
         </section>

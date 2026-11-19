@@ -85,14 +85,14 @@ function pfRenderSectors(rows) {
   const real = sectors.filter(s => s.name !== 'Funds' && s.name !== 'Sector unknown');
   const all = PortfolioMath.total(rows);
   document.getElementById('pfSectorLead').textContent = real.length
-    ? `${pfMoney(real[0].weight * all)} of your ${pfMoney(all)} is in ${real[0].name} (${pfPercent(real[0].weight, 0)})${real.length > 1 ? `, across ${real.length} sectors in all` : ''}.`
+    ? `${pfDollars(real[0].weight * all)} of your ${pfDollars(all)} is in ${real[0].name} (${pfPercent(real[0].weight, 0)})${real.length > 1 ? `, across ${real.length} sectors in all` : ''}.`
     : 'None of your money is in a stock with a known sector.';
   sectors.forEach(sector => {
     const label = sector.name === 'Funds' ? 'Funds (contents not broken out)' : sector.name;
     list.append(pfEl('li', { class: 'pf-sector' }, [
       pfEl('span', { class: 'pf-sector-name', text: label }),
       pfBar(sector.weight),
-      pfEl('span', { class: 'pf-sector-money', text: pfMoney(sector.weight * all) }),
+      pfEl('span', { class: 'pf-sector-money', text: pfDollars(sector.weight * all) }),
       pfEl('span', { class: 'pf-sector-pct', text: pfPercent(sector.weight) }),
       pfEl('span', { class: 'pf-sector-tickers', text: sector.tickers.join(', ') }),
     ]));
@@ -121,9 +121,9 @@ function pfRenderConcentration(rows) {
   const base = c.fundWeight > 0 ? 'of the money you have in individual stocks' : 'of your portfolio';
   const inStocks = PortfolioMath.total(rows.filter(r => !r.fund));
   const part = (names, weight) => `${names}: ${pfPercent(weight, 0)} ${base}`;
-  list.append(stat('Largest holding', pfMoney(c.largest.weight * inStocks), part(c.largest.name, c.largest.weight)));
-  if (c.stocks > 3) list.append(stat('Top three together', pfMoney(c.topThree.weight * inStocks), part(c.topThree.names.join(', '), c.topThree.weight)));
-  list.append(stat('Largest sector', pfMoney(c.largestSector.weight * inStocks), part(c.largestSector.name, c.largestSector.weight)));
+  list.append(stat('Largest holding', pfDollars(c.largest.weight * inStocks), part(c.largest.name, c.largest.weight)));
+  if (c.stocks > 3) list.append(stat('Top three together', pfDollars(c.topThree.weight * inStocks), part(c.topThree.names.join(', '), c.topThree.weight)));
+  list.append(stat('Largest sector', pfDollars(c.largestSector.weight * inStocks), part(c.largestSector.name, c.largestSector.weight)));
   const effective = c.effective < 9.95 ? c.effective.toFixed(1).replace(/\.0$/, '') : String(Math.round(c.effective));
   if (c.stocks === 1) {
     lead.textContent = 'You hold one stock, so all of it rides on that one.';
@@ -168,8 +168,8 @@ function pfRenderOverlap(rows) {
   const shown = XRAY.showAllOverlap ? result.lines : result.lines.slice(0, FIRST_ROWS);
   const all = PortfolioMath.total(rows);
   shown.forEach(line => list.append(pfEl('li', { class: 'pf-overlap-line' }, [
-    pfEl('strong', { class: 'pf-line-amount', text: pfMoney(line.weight * all) }),
     pfEl('span', { class: 'pf-line-words', text: pfOverlapWords(line) }),
+    pfEl('strong', { class: 'pf-line-amount', text: pfDollars(line.weight * all) }),
   ])));
   document.getElementById('pfOverlapLead').textContent = result.lines.length
     ? 'Where several of your holdings depend on the same thing. These overlap, so they don’t add up.'
@@ -205,10 +205,10 @@ function pfRenderGains(rows) {
   const g = PortfolioMath.gains(rows, spy);
   section.hidden = !g;
   if (!g) return;
-  const signed = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${pfMoney(Math.abs(v))}`;
+  const signed = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${pfDollars(Math.abs(v))}`;
   const lead = document.getElementById('pfGainLead');
   lead.replaceChildren(
-    `The ${g.count === 1 ? 'holding' : `${g.count} holdings`} you gave a cost for cost ${pfMoney(g.paid)} and ${g.count === 1 ? 'is' : 'are'} worth ${pfMoney(g.value)} now: `,
+    `You paid ${pfDollars(g.paid)}${g.count === 1 ? ' for it' : ''} and it’s worth ${pfDollars(g.value)} now: `,
     pfEl('span', { class: g.gain > 0 ? 'pos' : g.gain < 0 ? 'neg' : '', text: `${signed(g.gain)} (${pfSigned(g.pct)})` }),
     '.' + (g.without ? ` ${plural(g.without, 'holding has', 'holdings have')} no cost, so ${g.without === 1 ? 'it isn’t' : 'they aren’t'} in this.` : ''));
 
@@ -221,7 +221,7 @@ function pfRenderGains(rows) {
       pfEl('span', { class: 'pf-money-label', text: label }),
       pfSvg('svg', { class: 'pf-bar', viewBox: '0 0 100 4', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
         [pfSvg('rect', { class: cls, x: 0, y: 0, width: ((amount / top) * 100).toFixed(2), height: 4 })]),
-      pfEl('span', { class: 'pf-money-amount', text: pfMoney(amount) }),
+      pfEl('span', { class: 'pf-money-amount', text: pfDollars(amount) }),
     ])));
   };
   const versus = document.getElementById('pfGainSpy');
@@ -242,15 +242,21 @@ function pfRenderGains(rows) {
   }
   const s = g.spy;
   drawBars([['You paid', s.paid, 'pf-bar-quiet'], ['Worth now', s.value, 'pf-bar-fill'], ['Same money in the S&P 500', s.same, 'pf-bar-other']]);
-  versus.textContent = `For the ${s.rows.length === 1 ? 'one' : s.rows.length} with a buy month: the same ${pfMoney(s.paid)} put into the S&P 500 in ${s.rows.length === 1 ? 'that month' : 'those months'} would be worth ${pfMoney(s.same)} now (${pfSigned(s.spyPct)}). Yours ${s.rows.length === 1 ? 'is' : 'are'} worth ${pfMoney(s.value)} (${pfSigned(s.pct)}).`;
+  versus.textContent = `The same ${pfDollars(s.paid)} put into the S&P 500 when you bought would be worth ${pfDollars(s.same)} now (${pfSigned(s.spyPct)}). Yours: ${pfDollars(s.value)} (${pfSigned(s.pct)}).`
+    + (s.rows.length < g.count ? ` Only the ${s.rows.length} with a buy month are compared.` : '');
+  // One row per holding: what was paid and when, what it's worth, and the same money in the fund.
   const ordered = s.rows.slice().sort((a, b) => b.value - a.value);
-  (XRAY.showAllGains ? ordered : ordered.slice(0, FIRST_ROWS)).forEach(r => {
-    list.append(pfEl('li', { class: 'pf-overlap-line',
-      text: `${r.t}: paid ${pfMoney(r.paid)} in ${pfMonth(r.from)}, worth ${pfMoney(r.value)} now. The same money in the S&P 500: ${pfMoney(r.same)}.` }));
-  });
+  const cell = (text, cls) => pfEl('td', { class: cls || '', text });
+  list.append(pfEl('table', { class: 'wi-table pf-gain-table' }, [
+    pfEl('thead', {}, [pfEl('tr', {}, ['Holding', 'Bought', 'Paid', 'Worth now', 'In the S&P 500'].map(h => pfEl('th', { scope: 'col', text: h })))]),
+    pfEl('tbody', {}, (XRAY.showAllGains ? ordered : ordered.slice(0, FIRST_ROWS)).map(r => pfEl('tr', {}, [
+      cell(r.t), cell(new Date(Number(r.from.slice(0, 4)), Number(r.from.slice(5, 7)) - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+      cell(pfDollars(r.paid)), cell(pfDollars(r.value)), cell(pfDollars(r.same)),
+    ]))),
+  ]));
   more.hidden = ordered.length <= FIRST_ROWS;
   more.textContent = XRAY.showAllGains ? 'Show fewer' : `Show all ${ordered.length}`;
-  note.textContent = 'The S&P 500 figure is the SPY fund at the end of the month you bought, with dividends reinvested. Yours is today’s value against what you paid, so dividends you were paid aren’t in it. Buy dates are to the month.'
+  note.textContent = 'S&P 500: the SPY fund from the end of the month you bought, dividends reinvested. Yours doesn’t count dividends you were paid.'
     + (s.skipped ? ` ${plural(s.skipped, 'holding with a cost has', 'holdings with a cost have')} no usable buy month and ${s.skipped === 1 ? 'isn’t' : 'aren’t'} compared.` : '');
 }
 

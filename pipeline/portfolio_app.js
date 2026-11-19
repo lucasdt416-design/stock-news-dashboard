@@ -60,6 +60,13 @@ function pfMoney(value) {
   return Math.abs(value) >= 100000 ? MONEY_WHOLE.format(value) : MONEY.format(value);
 }
 
+// Whole dollars from $1,000 up, for figures that summarise ("$29,000", not "$29,000.00"). Prices,
+// a holding's own value and small amounts keep their cents.
+function pfDollars(value) {
+  if (!Number.isFinite(value)) return '';
+  return Math.abs(value) >= 1000 ? MONEY_WHOLE.format(value) : MONEY.format(value);
+}
+
 function pfShares(value) {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: value < 100 ? 4 : 2 }).format(value);
 }

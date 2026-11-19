@@ -20,6 +20,10 @@ function pfSignedMoney(value) {
   return `${value > 0 ? '+' : value < 0 ? '−' : ''}${pfMoney(Math.abs(value))}`;
 }
 
+function pfSignedDollars(value) {
+  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${pfDollars(Math.abs(value))}`;
+}
+
 function pfTone(value) {
   return value > 0 ? 'pos' : value < 0 ? 'neg' : '';
 }
@@ -191,14 +195,14 @@ function pfRenderTiles(state, moves) {
   const g = PortfolioMath.gains(pfMathRows(), null);
   if (g) {
     const some = g.without ? ` for the ${g.count === 1 ? 'one holding' : `${g.count} holdings`} with a cost` : '';
-    tiles.append(pfTile('You paid', pfMoney(g.paid), some.trim()));
-    tiles.append(pfTile(g.gain < 0 ? 'Loss since you bought' : 'Gain since you bought', pfSignedMoney(g.gain), pfSigned(g.pct), pfTone(g.gain)));
+    tiles.append(pfTile(g.gain < 0 ? 'Loss since you bought' : 'Gain since you bought', pfSignedDollars(g.gain),
+      `${pfSigned(g.pct)} on ${pfDollars(g.paid)} paid${some}`, pfTone(g.gain)));
   }
   if (moves.length >= 2) {
     const words = pfRangeWords(state);
     const best = moves[0], worst = moves[moves.length - 1];
-    tiles.append(pfTile(best.change >= 0 ? 'Added the most' : 'Lost the least', `${best.t} ${pfSignedMoney(best.change)}`, words, pfTone(best.change)));
-    tiles.append(pfTile(worst.change < 0 ? 'Lost the most' : 'Added the least', `${worst.t} ${pfSignedMoney(worst.change)}`, words, pfTone(worst.change)));
+    tiles.append(pfTile(best.change >= 0 ? 'Added the most' : 'Lost the least', `${best.t} ${pfSignedDollars(best.change)}`, words, pfTone(best.change)));
+    tiles.append(pfTile(worst.change < 0 ? 'Lost the most' : 'Added the least', `${worst.t} ${pfSignedDollars(worst.change)}`, words, pfTone(worst.change)));
   }
   const income = SUM.income;
   if (income && income.total > 0) {
@@ -230,7 +234,7 @@ function pfRenderIncome() {
   const more = document.getElementById('pfIncomeAll');
   more.hidden = income.rows.length <= INCOME_FIRST;
   more.textContent = SUM.showAllIncome ? 'Show fewer' : `Show all ${income.rows.length}`;
-  const notes = ['Each dividend is counted on the day the shares stopped carrying it (the ex-dividend date), for the number of shares you hold now. You may have held a different number then, and tax isn’t taken off.'];
+  const notes = ['For the shares you hold now, by ex-dividend date, before tax.'];
   if (income.none.length) notes.push(`No dividend in the past 12 months: ${pfList(income.none)}.`);
   if (income.unknown.length) notes.push(`Not known, so not counted: ${pfList(income.unknown)}.`);
   if (PF.demo) notes.push('These are demo figures, not real ones.');
@@ -269,7 +273,6 @@ function pfRenderMoves(state, moves) {
       pfEl('span', { class: 'pf-ticker', text: m.t }),
       pfMoveBar(m.change, min, max),
       pfEl('span', { class: 'pf-move-amount ' + pfTone(m.change), text: pfSignedMoney(m.change) }),
-      pfEl('span', { class: 'pf-move-detail', text: `${pfMoney(m.then)} then, ${pfMoney(m.now)} now` }),
     ]));
   });
   more.hidden = ordered.length <= MOVES_FIRST;
@@ -339,7 +342,7 @@ function pfRenderSummary() {
 
   const notes = [];
   if (state.points) {
-    notes.push('The line is the shares you hold now, priced at the end of each month, with dividends counted as reinvested. You may have held something different then.');
+    notes.push('The shares you hold now, priced at each month’s end, dividends reinvested.');
     if (!state.range[0] && state.series.limitedBy.length) {
       notes.push(`It starts in ${pfMonth(state.series.from)}, when ${pfList(state.series.limitedBy)} began trading.`);
     }
@@ -348,7 +351,7 @@ function pfRenderSummary() {
     if (left.length) notes.push(`Not in the line, because their price history couldn’t be loaded: ${pfList(left)}.`);
     const short = SUM_RANGES.filter(([months]) => months && !state.available.some(([m]) => m === months)).map(r => r[1]);
     if (short.length && state.series.limitedBy.length) notes.push(`${pfList(short)} ${short.length === 1 ? 'isn’t' : 'aren’t'} offered because ${pfList(state.series.limitedBy)} ${state.series.limitedBy.length === 1 ? 'hasn’t' : 'haven’t'} traded that long.`);
-    if (state.spy) notes.push('The grey line is the same starting amount in the SPY fund, which tracks the S&P 500.');
+    if (state.spy) notes.push('Grey: the same start in the SPY fund.');
     if (PF.demo) notes.push('These are demo prices, not real ones.');
   } else if (rows.some(r => r.priced) && rows.filter(r => r.priced).every(r => SUM.noHistory.has(r.h.t))) {
     notes.push('Price history couldn’t be loaded just now, so there’s no chart.');
