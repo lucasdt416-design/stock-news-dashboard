@@ -26,7 +26,7 @@ GENERIC_STOPWORDS = {
 
 TICKER_LIKE = re.compile(r"[A-Z][A-Z0-9.\-]{0,5}")
 NAME_WORDS = re.compile(
-    r"(?<![\w.])(?:Inc|Incorporated|Corporation|Corp|Co|Company|Platforms|Holdings|Group|plc|Ltd|LLC|N\.V|S\.A|L\.P)\.?(?![\w])"
+    r"(?<![\w.])(?:Inc|Incorporated|Corporation|Corp|Co|Company|Platforms|Holdings|Group|plc|Ltd|LLC|PBC|N\.V|S\.A|L\.P)\.?(?![\w])"
     r"|^The\s+", re.IGNORECASE)
 
 

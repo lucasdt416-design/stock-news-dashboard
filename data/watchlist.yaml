@@ -984,3 +984,14 @@ tickers:
     sector: financial_banking
     themes: [bank_interest_income]
     competitors: [JPM, BAC, C]
+
+  - symbol: ANT
+    name: "Anthropic, PBC"
+    cik: "0002130357"
+    newsroom_url: "https://www.anthropic.com/news"
+    sector: software_cloud
+    themes: [data_center_spending, business_tech_spending]
+    regulators: [FTC, EU_EC, SEC]
+    key_suppliers: [AMZN, GOOGL, NVDA, MSFT]
+    competitors: [GOOGL, META, MSFT]
+    economic_sensitivities: [interest_rates]
