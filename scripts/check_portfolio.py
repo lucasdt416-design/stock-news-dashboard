@@ -249,7 +249,7 @@ async def run(site, out):
             check("that day" not in await row_text("RDDT"), "and says nothing where the close before isn't known")
             await show("overview")
             sectors = await pg.inner_text("#pfSectors")
-            check("$8,000.00 of your $10,000.00 is in Technology (80%)" in await pg.inner_text("#pfSectorLead"), "the largest sector is stated as a fact, in dollars")
+            check("$8,000 of your $10,000 is in Technology (80%)" in await pg.inner_text("#pfSectorLead"), "the largest sector is stated as a fact, in dollars")
             check("Funds (contents not broken out)" in sectors and "15%" in sectors and "Sector unknown" in sectors and "5.0%" in sectors,
                   "funds and unknown sectors are their own groups")
             conc = await pg.inner_text("#pfConcentration")
@@ -279,7 +279,7 @@ async def run(site, out):
             await pg.fill("#pfEditPaid", "1000")
             await pg.click('[data-click="pfSaveEdit"]')
             await pg.wait_for_timeout(300)
-            check("+$3,000.00 (+300%)" in await pg.inner_text("#pfGainLead"), "gain is value against cost")
+            check("+$3,000 (+300%)" in await pg.inner_text("#pfGainLead"), "gain is value against cost")
             check("Add the month you bought" in await pg.inner_text("#pfGainSpy"), "a cost with no date gets no S&P 500 comparison")
             with open(os.path.join(site, "data", "prices", "SPY.json"), encoding="utf-8") as f:
                 spy = json.load(f)
@@ -289,7 +289,8 @@ async def run(site, out):
             await pg.click('[data-click="pfSaveEdit"]')
             await pg.wait_for_timeout(600)
             same = 1000 * spy["price"]["value"] / start
-            check(f"${same:,.2f}" in await pg.inner_text("#pfGainSpy"), f"the same money in the S&P 500 is cost times its rise since that month (${same:,.2f})")
+            check(f"${same:,.0f}" in await pg.inner_text("#pfGainSpy") and f"${same:,.0f}" in await pg.inner_text("#pfGainRows"),
+                  f"the same money in the S&P 500 is cost times its rise since that month (${same:,.0f}), in the sentence and the table")
             check("dividends" in await pg.inner_text("#pfGainNote"), "the comparison says what it includes")
 
             # What if: the page's answers against the same sums done here from the price files
@@ -323,7 +324,7 @@ async def run(site, out):
             query = urlparse(pg.url).query
             check(parse_qs(query) == {"t": ["NVDA"], "a": ["1000"], "from": [start_month]}, f"the address holds the ticker, amount and month and nothing else ({query})")
             await pg.click('[data-click="wiToggleNumbers"]')
-            check(await pg.locator(".wi-table tbody tr").count() == 38, "the numbers behind the chart can be shown: 37 months and now")
+            check(await pg.locator("#wiResult .wi-table tbody tr").count() == 38, "the numbers behind the chart can be shown: 37 months and now")
             await pg.screenshot(path=f"{out}/what-if.png", full_page=True)
 
             shares = 1000 / start_price + sum(100 / price for month, price in nv["months"][-36:])
