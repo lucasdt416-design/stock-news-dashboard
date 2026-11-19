@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import unittest
+from datetime import date, timedelta
 
 # Ensure project root is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,6 +11,9 @@ from pipeline.calendar import build_forthcoming_calendar, init_calendar_schema
 from pipeline.db import get_db_connection, init_db
 from pipeline.persist import save_news_items
 from pipeline.render import render_dashboard
+
+
+UPCOMING = date.today() + timedelta(days=60)
 
 
 class TestCompanyViewAndRender(unittest.TestCase):
@@ -68,9 +72,11 @@ class TestCompanyViewAndRender(unittest.TestCase):
                     "NVIDIA Corporation",
                     "Earnings Call",
                     "SOURCED",
-                    "2026-11-18",
-                    "Nov 18, 2026",
-                    "in 63 days",
+                    # Always ahead of today: the calendar page only shows what's still to come,
+                    # so a fixed date makes this test fail once that day passes.
+                    UPCOMING.isoformat(),
+                    UPCOMING.strftime("%b %d, %Y"),
+                    "in 60 days",
                     "Q3 FY2027 Financial Results Conference Call",
                     "Live webcast and earnings release.",
                     "https://nvidianews.nvidia.com",
