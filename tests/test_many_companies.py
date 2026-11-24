@@ -233,5 +233,6 @@ def test_the_feed_offers_each_kind_of_story_up_front(tmp_path):
     feed = (site / "news.html").read_text(encoding="utf-8")
     bar = re.search(r'<div class="kind-bar" id="feedKinds".*?</div>', feed, re.S).group(0)
     assert re.findall(r'data-kind="(\w+)"', bar) == ["ALL", "results", "news", "releases", "insider", "filings"]
-    # The row is outside the folded-away filters, so it is on show without a click.
-    assert feed.index('id="feedKinds"') < feed.index('id="feedFilters"')
+    # It's the only row of filters: sector, company, category and source were folded away and are gone,
+    # since the search box finds a company, ticker or sector.
+    assert 'id="feedFilters"' not in feed and 'data-filter-type=' not in feed

@@ -303,3 +303,46 @@ def normalize_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             })
 
     return normalized
+
+
+# ---- Teasers that news services paste under every article ----
+# One outlet ends each piece with "Today's big story: …" about whatever it is promoting that day.
+# Pasted under fifty unrelated stories, that line made them read as news about another company
+# and scored them as lawsuits. A sentence that appears under many different headlines, across
+# several companies, isn't about any one of them.
+TEASER_STORIES = 5
+TEASER_COMPANIES = 3
+_SENTENCE = re.compile(r"(?<=[.!?])\s+(?=[A-Z\"“‘'])")
+
+
+def _sentence_key(sentence: str) -> str:
+    return re.sub(r"\W+", " ", sentence.lower()).strip()
+
+
+def _sentences(text: str) -> List[str]:
+    return [s for s in _SENTENCE.split(clean_text(text)) if s.strip()]
+
+
+def shared_sentences(items: List[Dict[str, Any]], min_stories: int = TEASER_STORIES,
+                     min_companies: int = TEASER_COMPANIES) -> set:
+    """Sentences pasted under many different news headlines across several companies."""
+    seen: Dict[str, tuple] = {}
+    for it in items:
+        if it.get("source") not in ("news_media", "finnhub"):
+            continue
+        for sentence in _sentences(it.get("summary") or ""):
+            key = _sentence_key(sentence)
+            if len(key) < 25:
+                continue
+            headlines, tickers = seen.setdefault(key, (set(), set()))
+            headlines.add(it.get("headline") or "")
+            tickers.add(it.get("ticker") or "")
+    return {k for k, (h, t) in seen.items() if len(h) >= min_stories and len(t) >= min_companies}
+
+
+def strip_sentences(text: str, keys: set) -> str:
+    """The text without the given sentences."""
+    if not text or not keys:
+        return text or ""
+    kept = [s for s in _sentences(text) if _sentence_key(s) not in keys]
+    return " ".join(kept).strip()

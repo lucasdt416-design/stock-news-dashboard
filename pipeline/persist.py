@@ -107,28 +107,37 @@ def save_news_items(
 
 def rescore_database_items(db_path: Optional[str] = None, **kwargs) -> int:
     """Re-compute scores and breakdowns for all existing records in SQLite database."""
+    from pipeline.normalize import shared_sentences, strip_sentences
     from pipeline.score import score_item
 
     init_db(db_path)
     conn = get_db_connection(db_path)
     conn.row_factory = sqlite3.Row
-    rows = conn.execute("SELECT * FROM news_items").fetchall()
+    rows = [dict(r) for r in conn.execute("SELECT * FROM news_items").fetchall()]
     updated_count = 0
+    # Teasers pasted under many stories come out first, and those stories are sorted again,
+    # because the teaser was often the only thing that made them look like a lawsuit or a deal.
+    teasers = shared_sentences(rows)
 
     with conn:
-        for r in rows:
-            it = dict(r)
+        for it in rows:
+            if teasers and it.get("source") in ("news_media", "finnhub"):
+                cleaned = strip_sentences(it.get("summary") or "", teasers)
+                if cleaned != (it.get("summary") or ""):
+                    it["summary"] = cleaned
+                    it["category"] = None
             scored = score_item(it)
             conn.execute(
                 """
                 UPDATE news_items
-                SET score = ?, score_breakdown = ?, category = ?
+                SET score = ?, score_breakdown = ?, category = ?, summary = ?
                 WHERE item_uid = ?
                 """,
                 (
                     scored["score"],
                     scored["score_breakdown"],
                     scored["category"],
+                    scored.get("summary") or "",
                     scored["item_uid"],
                 ),
             )

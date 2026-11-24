@@ -161,8 +161,7 @@ class TestCompanyViewAndRender(unittest.TestCase):
         with open(news_path, "r", encoding="utf-8") as f:
             news_html = f.read()
         self.assertIn('href="company-nvda.html"', news_html)
-        self.assertIn("data-val=\"news_media\"", news_html)
-        self.assertIn("News Media", news_html)
+        self.assertIn('data-source="news_media"', news_html)
 
         with open(calendar_path, "r", encoding="utf-8") as f:
             cal_html = f.read()
