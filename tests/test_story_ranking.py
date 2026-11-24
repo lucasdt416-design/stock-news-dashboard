@@ -81,3 +81,58 @@ def test_where_a_story_is_from_reads_plainly():
     assert _source_line({"source": "news_media", "source_label": "News Media", "form_or_type": "Yahoo"}) == "Yahoo"
     assert _source_line({"source": "news_media", "source_label": "News Media", "form_or_type": "SeekingAlpha"}) == "Seeking Alpha"
     assert _source_line({"source": "news_media", "source_label": "News Media", "form_or_type": ""}) == "News Media"
+
+
+def test_opinion_and_adverts_rank_below_reports():
+    # Live on 2026-11-24, each scored 10 as news.
+    for headline in ("Should You Swap Tech For Johnson & Johnson Stock?", "Is Lockheed Martin (LMT) Undervalued After Its New Cybersecurity Partnership?",
+                     "Coca-Cola Stock Returned 40%. How Much Is Left?", "How Much RTX Do You Really Get Through 3 ETFs?"):
+        item = news("JNJ", "Johnson & Johnson", headline, category="Regulation & Policy / Litigation")
+        assert "Opinion: -2" in item["score_breakdown"], headline
+    advert = news("ACN", "Accenture plc", "Global Regulatory Data Market Report 2026 | Capitalize on 18.3% CAGR")
+    assert "Advert: -4" in advert["score_breakdown"]
+    report = news("LLY", "Eli Lilly and Company", "Eli Lilly Acquires Huntington's Disease Drug Developer", category="M&A & Strategic Deals")
+    assert "Opinion" not in report["score_breakdown"] and "Advert" not in report["score_breakdown"]
+    assert "opinion: a question or a view on the price" in _plain_breakdown("Base: 7 (X) | Opinion: -2 (Question or price take)")
+
+
+def test_a_teaser_pasted_under_many_stories_is_taken_out():
+    from pipeline.normalize import shared_sentences, strip_sentences
+    teaser = "Today's big story: Reported SEC Probe: Could Nvidia Stock Fall To $92."
+    rows = [{"source": "news_media", "ticker": t, "headline": f"Story {i}", "summary": f"Real point number {i}. {teaser}"}
+            for i, t in enumerate(["NVDA", "KO", "JNJ", "TSLA", "AMD"])]
+    rows.append({"source": "news_media", "ticker": "NVDA", "headline": "Nvidia reinstates Huang", "summary": "The board voted to reinstate him."})
+    keys = shared_sentences(rows)
+    assert len(keys) == 1
+    assert strip_sentences(rows[1]["summary"], keys) == "Real point number 1."
+    assert strip_sentences(rows[-1]["summary"], keys) == rows[-1]["summary"]
+    # Under fewer companies it may be a story they share, so it stays.
+    assert not shared_sentences([dict(r, ticker="NVDA") for r in rows])
+
+
+def test_rescoring_cleans_teasers_and_sorts_those_stories_again(tmp_path):
+    from pipeline.persist import rescore_database_items, save_news_items, get_all_news_items
+    db = str(tmp_path / "t.db")
+    teaser = "Today's big story: Reported SEC Probe: Could Nvidia Stock Fall To $92."
+    items = [{"item_uid": f"u{i}", "ticker": t, "company_name": n, "source": "news_media", "source_label": "News Media",
+              "source_type": "press", "headline": h, "summary": teaser, "url": f"https://example.com/{i}",
+              "published_date": "2026-11-23", "form_or_type": "Yahoo", "category": "Regulation & Policy / Litigation", "score": 10}
+             for i, (t, n, h) in enumerate([("NVDA", "NVIDIA Corporation", "Why Motorola's Premium Over Cisco Is Harder To Justify"),
+                                            ("KO", "The Coca-Cola Company", "Coca-Cola Stock Returned 40%"),
+                                            ("JNJ", "Johnson & Johnson", "Johnson & Johnson wins a patent case"),
+                                            ("TSLA", "Tesla, Inc.", "Tesla delivers trucks"),
+                                            ("AMD", "Advanced Micro Devices, Inc.", "AMD ships a chip")])]
+    save_news_items(items, db_path=db)
+    rescore_database_items(db_path=db)
+    rows = {r["ticker"]: r for r in get_all_news_items(db_path=db)}
+    assert all(not r["summary"] for r in rows.values())
+    assert rows["NVDA"]["score"] <= 2, rows["NVDA"]["score_breakdown"]  # never named Nvidia once the teaser is gone
+    assert rows["NVDA"]["category"] != "Regulation & Policy / Litigation"
+
+
+def test_feed_rows_say_what_kind_of_story_they_are():
+    from pipeline.render import _mark_story
+    news_item = _mark_story({"source": "news_media", "category": "Company Announcement", "score_breakdown": "Opinion: -2 (Question or price take)"})
+    assert news_item["kind_label"] == "News" and news_item["is_opinion"]
+    filing = _mark_story({"source": "company_ir", "category": "Company Announcement", "score_breakdown": ""})
+    assert filing["kind_label"] == "Company Announcement" and not filing["is_opinion"]

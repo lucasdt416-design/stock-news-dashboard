@@ -1509,9 +1509,34 @@ SHARED_CSS = """
     .date-cell { font-size: 0.8rem; }
     .news-row.is-lead { grid-template-columns: minmax(0, 1fr) auto; padding: 1.25rem 0 1.75rem; }
     .news-row.is-lead .feed-body { grid-column: 1 / -1; grid-row: 2; }
-    .news-row.is-lead .feed-headline { font-size: clamp(1.45rem, 3vw, 2rem); font-weight: 600; line-height: 1.14; letter-spacing: -0.02em; }
+    .news-row.is-lead .feed-headline { font-size: clamp(1.3rem, 2.4vw, 1.65rem); font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; }
     .news-row.is-lead .feed-summary { margin-top: 0.6rem; font-size: 1.06rem; }
     .news-row.is-lead .feed-details { margin-top: 0.35rem; }
+    .feed-toolbar-top { display: flex; align-items: center; gap: 1.25rem; }
+    .feed-toolbar-top .feed-search { flex: 1; min-width: 0; }
+    .feed-toolbar-top .feed-sort { flex: none; }
+    .feed-sort-btn { font-size: 0.9rem; }
+    .feed-filter-line { margin-top: 0.35rem; font-size: 0.84rem; color: var(--text-muted); }
+    .feed-filter-line[hidden] { display: none; }
+    .feed-clear { margin-left: 0.5rem; }
+    .feed-new { margin-right: 0.5rem; color: var(--accent); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; vertical-align: 0.12em; }
+    .news-row.is-opinion .feed-headline { font-weight: 400; color: var(--text-secondary); }
+    /* Filings can run to a page; three lines say what it is, and the link has the rest. */
+    .news-row:not(.is-lead) .feed-summary { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .feed-also { margin-top: 0.3rem; }
+    @media (max-width: 620px) {
+      .feed-toolbar-top { flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+      .feed-toolbar-top .feed-search { flex-basis: 100%; }
+    }
+    .feed-also summary { display: inline-flex; align-items: center; min-height: 32px; font-size: 0.84rem; color: var(--accent); cursor: pointer; list-style: none; }
+    .feed-also summary::-webkit-details-marker { display: none; }
+    .feed-also summary::after { content: ' +'; white-space: pre; }
+    .feed-also[open] summary::after { content: ' \\2212'; }
+    .feed-also-list { list-style: none; margin: 0.15rem 0 0.4rem; padding: 0 0 0 0.9rem; border-left: 1px solid var(--border-card); }
+    .feed-also-list li { padding: 0.3rem 0; font-size: 0.92rem; line-height: 1.4; overflow-wrap: anywhere; }
+    .feed-also-list a { color: var(--text-primary); text-decoration: none; }
+    .feed-also-list a:hover { color: var(--accent); }
+    .feed-also-meta { display: block; font-size: 0.76rem; color: var(--text-muted); }
     .feed-more { display: block; margin-top: 0.9rem; min-height: 36px; background: none; border: 0; color: var(--accent); font-size: 0.95rem; cursor: pointer; }
 
     /* Companies */
@@ -4489,7 +4514,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">The feed</h1>
-        <p class="page-standfirst">{{ feed_items|length }} {{ 'story' if feed_items|length == 1 else 'stories' }} from the last {{ feed_days }} days, most important first. Older ones are on each company’s page.</p>
+        <p class="page-standfirst" id="feedLine">{{ feed_items|length }} {{ 'story' if feed_items|length == 1 else 'stories' }} from the last {{ feed_days }} days. The few worth reading first, then everything else grouped by company.</p>
       </header>
 
       <div class="view-tabs view-tabs-left" role="tablist" aria-label="Which stories to show">
@@ -4499,84 +4524,21 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       <p class="follow-footer" id="feedFollowLine" hidden><span data-follow-count></span> · <a href="settings.html">Edit</a> · <button class="link-btn" type="button" data-click="copySetupLink">Copy setup link</button></p>
 
       <div class="feed-toolbar">
-        <input type="text" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search headlines and summaries" data-input="filterItems">
+        <div class="feed-toolbar-top">
+          <input type="search" id="searchInput" class="feed-search" aria-label="Search the feed" placeholder="Search a company, ticker or topic" data-input="filterItems">
+          <div class="feed-sort" role="group" aria-label="Order">
+            <button class="feed-sort-btn active" id="sortScoreBtn" type="button" data-click="sortRows" data-sort="score" aria-pressed="true">Important</button>
+            <button class="feed-sort-btn" id="sortDateBtn" type="button" data-click="sortRows" data-sort="date" aria-pressed="false">Newest</button>
+          </div>
+        </div>
         <div class="kind-bar" id="feedKinds" role="group" aria-label="Kind of story">
           <button class="filter-btn active" type="button" data-kind="ALL" data-click="setFeedKind">All</button>
           {% for key, label in [('results', 'Results'), ('news', 'News'), ('releases', 'Press releases'), ('insider', 'Insider trades'), ('filings', 'Other filings')] %}
           <button class="filter-btn" type="button" data-kind="{{ key }}" data-click="setFeedKind">{{ label }} <span class="pill-count" data-kind-count="{{ key }}"></span></button>
           {% endfor %}
         </div>
-        <div class="feed-toolbar-row">
-          <div class="feed-sort" role="group" aria-label="Order">
-            <button class="feed-sort-btn active" id="sortScoreBtn" type="button" data-click="sortRows" data-sort="score">By importance</button>
-            <button class="feed-sort-btn" id="sortDateBtn" type="button" data-click="sortRows" data-sort="date">By date</button>
-          </div>
-          <span class="feed-count" id="feedResultCount" aria-live="polite"></span>
-          <button class="feed-clear" id="feedClearFilters" type="button" data-click="clearFeedFilters" hidden>Clear filters</button>
-        </div>
+        <p class="feed-filter-line" id="feedFilterLine" aria-live="polite" hidden><span id="feedResultCount"></span> <button class="feed-clear" id="feedClearFilters" type="button" data-click="clearFeedFilters">Show everything</button></p>
       </div>
-
-      <details class="controls-panel" id="feedFilters">
-        <summary class="feed-filters-toggle">More filters</summary>
-        <div class="filter-row">
-          <span class="filter-label">Sector</span>
-          <div class="feed-sector-bar">
-            <button class="feed-sector-btn filter-btn active" type="button" data-sector="ALL" data-click="setFeedSectorFilter">All</button>
-            {% for sec in sector_directory %}
-            <button class="feed-sector-btn filter-btn" type="button" data-sector="{{ sec.name }}" data-click="setFeedSectorFilter">{{ sec.name }}</button>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="filter-row">
-          <span class="filter-label">Company</span>
-          <div class="feed-ticker-picker-wrap" id="feedTickerPickerWrap">
-            <button class="feed-ticker-picker-btn" id="feedTickerPickerBtn" data-click="toggleFeedTickerDropdown" type="button">
-              <span id="selectedTickerLabel">All companies</span> <span aria-hidden="true">▾</span>
-            </button>
-            <div class="feed-ticker-dropdown-menu" id="feedTickerDropdownMenu">
-              <div class="feed-ticker-dropdown-search">
-                <input type="text" id="feedTickerSearchInput" aria-label="Find a company" placeholder="Find a company" data-input="filterFeedTickerDropdown">
-              </div>
-              <div class="feed-ticker-dropdown-list" id="feedTickerDropdownList">
-                <div class="feed-ticker-item active" data-ticker="ALL" data-sector="ALL" data-click="selectFeedTicker">
-                  <span>All companies</span>
-                  <span class="pill-count">{{ feed_items|length }}</span>
-                </div>
-                {% for sec in sector_directory %}
-                <div class="feed-dropdown-sec-header" data-sector="{{ sec.name }}">{{ sec.name }}</div>
-                {% for co in sec.companies %}
-                <div class="feed-ticker-item" data-ticker="{{ co.symbol }}" data-name="{{ co.name|lower }}" data-sector="{{ sec.name }}" data-click="selectFeedTicker">
-                  <span><span class="ticker-badge">{{ co.symbol }}</span> {{ co.name }}</span>
-                  <span class="pill-count">{{ feed_counts.get(co.symbol, 0) }}</span>
-                </div>
-                {% endfor %}
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="filter-row">
-          <span class="filter-label">Category</span>
-          <div class="filter-options">
-            <button class="filter-btn active" type="button" data-filter-type="category" data-val="ALL" data-click="setCategoryFilter">All</button>
-            {% for cat, count in feed_categories %}
-            <button class="filter-btn" type="button" data-filter-type="category" data-val="{{ cat }}" data-click="setCategoryFilter">{{ cat }} <span class="pill-count">{{ count }}</span></button>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="filter-row">
-          <span class="filter-label">Source</span>
-          <div class="filter-options">
-            <button class="filter-btn active" type="button" data-filter-type="source" data-val="ALL" data-click="setSourceFilter">All</button>
-            <button class="filter-btn" type="button" data-filter-type="source" data-val="news_media" data-click="setSourceFilter">News Media</button>
-            <button class="filter-btn" type="button" data-filter-type="source" data-val="sec_edgar" data-click="setSourceFilter">SEC EDGAR</button>
-            <button class="filter-btn" type="button" data-filter-type="source" data-val="company_ir" data-click="setSourceFilter">Company Releases</button>
-          </div>
-        </div>
-      </details>
 
       <div class="feed-list" id="newsBody">
         {% for item in feed_first %}
@@ -4594,7 +4556,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
             {% if item.story_text %}<p class="feed-summary">{{ figures(item.story_text) }}</p>{% endif %}{% if item.ai_summary %}<p class="feed-takeaway">{{ figures(item.ai_summary) }}</p>{% endif %}
             <p class="follow-reason" hidden></p>
             <details class="feed-details">
-              <summary><span class="feed-meta">{{ item.category }} · {{ source_line(item) }}</span></summary>
+              <summary><span class="feed-meta">{% if item.is_opinion %}Opinion · {% endif %}{{ item.kind_label or item.category }} · {{ source_line(item) }}</span></summary>
               <div class="feed-details-body">
                 {% if item.cross_references_list %}
                 <p class="feed-detail-label">Also relevant to {{ item.cross_references_list|length }} {{ 'company' if item.cross_references_list|length == 1 else 'companies' }}</p>
@@ -4612,7 +4574,7 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
           <span class="date-cell">{{ short_date(item.published_date) }}</span>
         </article>
         {% endfor %}
-        <p class="home-empty" id="feedEmpty" hidden>No stories match these filters.</p>
+        <p class="home-empty" id="feedEmpty" hidden>No stories match.</p>
       </div>
     </main>
   </div>
@@ -4631,106 +4593,37 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
         it.text, ...(it.refs || []).map(r => r.join(' '))].join(' ').toLowerCase();
     });
 
-    let currentSector = 'ALL';
     let currentTicker = 'ALL';
-    let currentCategory = 'ALL';
-    let currentSource = 'ALL';
     let currentKind = 'ALL';
     let currentOrder = 'score';
-    // How many extra rows each group shows after "Show more", and the same for the whole list
-    // when it isn't split into bands.
+    // How many extra rows each list shows after "Show more".
     const extraRows = new Map();
     const MORE_STEP = 50;
     const UNBANDED_FIRST = 60;
+    // Read first: the few stories that matter most, one per company so a busy name can't fill it.
+    const FIRST_MAX = 8;
+    const FIRST_MIN_SCORE = 7;
+    // Everything else, one row per company, a page of companies at a time.
+    const COMPANY_PAGE = 30;
+    const COMPANY_STEP = 30;
 
-    // Only the top of each band shows at first, so the page reads as edited rather than as a dump.
-    const BANDS = [
-      { key: 'high', label: 'Read first', min: 7, show: 10 },
-      { key: 'mid', label: 'Worth knowing', min: 4, show: 5 },
-      { key: 'low', label: 'Routine', min: -Infinity, show: 0 },
-    ];
-    const LEAD_STORIES = 3;
-
-    function bandFor(score) {
-      return BANDS.find(b => score >= b.min);
-    }
-
-    function setFeedSectorFilter(secName, btn) {
-      currentSector = secName;
-      document.querySelectorAll('.feed-sector-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      // A company outside the new sector can't stay selected.
-      if (currentTicker !== 'ALL' && secName !== 'ALL') {
-        const item = document.querySelector(`#feedTickerDropdownList .feed-ticker-item[data-ticker="${CSS.escape(currentTicker)}"]`);
-        if (item && item.dataset.sector !== secName) setTickerFilter('ALL');
-      }
-
-      filterItems();
-    }
-
-    function toggleFeedTickerDropdown() {
-      const menu = document.getElementById('feedTickerDropdownMenu');
-      if (menu) {
-        menu.classList.toggle('active');
-        if (menu.classList.contains('active')) {
-          const inp = document.getElementById('feedTickerSearchInput');
-          if (inp) {
-            inp.value = '';
-            filterFeedTickerDropdown('');
-            setTimeout(() => inp.focus(), 100);
-          }
+    // ---- What's new since the last visit ----
+    // The same record Home keeps, so opening either page first counts the same visit.
+    let previousVisit = '';
+    (function readPreviousVisit() {
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      try {
+        let prev = sessionStorage.getItem('stockpulse_prev_visit');
+        if (prev === null) {
+          prev = localStorage.getItem('stockpulse_last_visit') || '';
+          sessionStorage.setItem('stockpulse_prev_visit', prev);
         }
-      }
-    }
-
-    function filterFeedTickerDropdown(query) {
-      const q = (query || '').toLowerCase().trim();
-      document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
-        const hay = [it.dataset.ticker, it.dataset.name, it.dataset.sector].join(' ').toLowerCase();
-        it.style.display = !q || hay.includes(q) ? 'flex' : 'none';
-      });
-      document.querySelectorAll('#feedTickerDropdownList .feed-dropdown-sec-header').forEach(h => { h.style.display = q ? 'none' : 'block'; });
-    }
-
-    function selectFeedTicker(ticker) {
-      const menu = document.getElementById('feedTickerDropdownMenu');
-      if (menu) menu.classList.remove('active');
-
-      // Picking a company outside the current sector should show that company, not an empty list.
-      const item = document.querySelector(`#feedTickerDropdownList .feed-ticker-item[data-ticker="${CSS.escape(ticker)}"]`);
-      if (item && ticker !== 'ALL' && currentSector !== 'ALL' && item.dataset.sector !== currentSector) {
-        setFeedSectorFilter('ALL', document.querySelector('.feed-sector-btn[data-sector="ALL"]'));
-      }
-      setTickerFilter(ticker);
-    }
-
-    document.addEventListener('click', (e) => {
-      const wrap = document.getElementById('feedTickerPickerWrap');
-      if (wrap && !wrap.contains(e.target)) {
-        const menu = document.getElementById('feedTickerDropdownMenu');
-        if (menu) menu.classList.remove('active');
-      }
-    });
-
-    function setTickerFilter(ticker) {
-      currentTicker = ticker;
-
-      const lbl = document.getElementById('selectedTickerLabel');
-      if (lbl) lbl.textContent = (ticker === 'ALL') ? 'All companies' : ticker;
-
-      document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item').forEach(it => {
-        it.classList.toggle('active', it.getAttribute('data-ticker') === ticker);
-      });
-
-      filterItems();
-    }
-
-    function setCategoryFilter(cat, btn) {
-      currentCategory = cat;
-      document.querySelectorAll('[data-filter-type="category"]').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-      filterItems();
+        localStorage.setItem('stockpulse_last_visit', now);
+        previousVisit = /^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/.test(prev) ? prev : '';
+      } catch (e) { previousVisit = ''; }
+    })();
+    function isNew(it) {
+      return Boolean(previousVisit && it.created && it.created > previousVisit);
     }
 
     // The kind of story: the same five kinds Your feed uses, always on show above the list.
@@ -4757,30 +4650,21 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     }
     document.addEventListener('DOMContentLoaded', showKindCounts);
 
-    function setSourceFilter(src, btn) {
-      currentSource = src;
-      document.querySelectorAll('[data-filter-type="source"]').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
+    function setTickerFilter(ticker) {
+      currentTicker = ticker;
       filterItems();
     }
 
     function filtersActive() {
       const q = (document.getElementById('searchInput')?.value || '').trim();
-      return Boolean(q) || currentSector !== 'ALL' || currentTicker !== 'ALL' || currentCategory !== 'ALL' || currentSource !== 'ALL'
-        || currentKind !== 'ALL';
+      return Boolean(q) || currentTicker !== 'ALL' || currentKind !== 'ALL';
     }
 
     function clearFeedFilters() {
       const box = document.getElementById('searchInput');
       if (box) box.value = '';
-      currentCategory = 'ALL';
-      currentSource = 'ALL';
-      currentKind = 'ALL';
-      document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.val === 'ALL' || b.dataset.sector === 'ALL' || b.dataset.kind === 'ALL');
-      });
-      currentSector = 'ALL';
-      setTickerFilter('ALL');
+      currentTicker = 'ALL';
+      setFeedKind('ALL');
     }
 
     // Any change to what's shown starts the list from the top again.
@@ -4792,13 +4676,10 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
     function matchingStories() {
       const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
       const forYou = currentView() === 'foryou';
-      const follows = followedSet();
       const hidden = hiddenTypes();
+      const follows = followedSet();
       const list = FEED.filter(it =>
-        (currentSector === 'ALL' || it.sector === currentSector)
-        && (currentTicker === 'ALL' || it.tickers.includes(currentTicker))
-        && (currentCategory === 'ALL' || it.category === currentCategory)
-        && (currentSource === 'ALL' || it.source === currentSource)
+        (currentTicker === 'ALL' || it.tickers.includes(currentTicker))
         && (currentKind === 'ALL' || storyType(it.source, it.category) === currentKind)
         && (!q || it.search.includes(q))
         && (!forYou || (it.tickers.some(t => follows.has(t)) && !hidden.has(storyType(it.source, it.category)))));
@@ -4812,48 +4693,96 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
 
     function dayLabel(key) {
       const parts = key.split('-').map(Number);
-      return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     }
 
-    // The same markup the server writes for a row.
-    function feedRowHtml(it, lead, forYou) {
+    function readLabel(it) {
+      return it.source === 'sec_edgar' ? 'Read the filing' : (it.source === 'company_ir' ? 'Read the release' : 'Read the article');
+    }
+
+    function metaText(it) {
+      return [it.opinion ? 'Opinion' : '', it.label || it.category, it.via].filter(Boolean).join(' · ');
+    }
+
+    // The same markup the server writes for a row, plus the other stories about the same company
+    // folded underneath when the list is grouped.
+    function feedRowHtml(it, lead, forYou, also) {
       const reason = forYou ? forYouReason(it.ticker, it.tickers, it.read && it.read.often) : '';
       const refs = it.refs || [];
-      const read = it.source === 'sec_edgar' ? 'Read the filing' : (it.source === 'company_ir' ? 'Read the release' : 'Read the article');
-      const meta = [it.category, it.via].filter(Boolean).join(' · ');
+      const others = also || [];
+      const name = it.company ? it.company.replace(/,?\\s+(?:and\\s+)?(?:Inc|Incorporated|Corporation|Corp|Co|Company|plc|Ltd)\\.?$/i, '').replace(/^The\\s+/, '') : it.ticker;
       return `
-        <article class="news-row${it.score >= 7 ? ' is-high' : ''}${lead ? ' is-lead' : ''}" data-match="1" data-score="${escapeHtml(it.score)}" data-date="${escapeHtml(it.date)}" data-ticker="${escapeHtml(it.ticker)}" data-tickers="${escapeHtml(it.tickers.join(','))}" data-sector="${escapeHtml(it.sector)}" data-source="${escapeHtml(it.source)}" data-category="${escapeHtml(it.category)}">
+        <article class="news-row${it.score >= 7 ? ' is-high' : ''}${lead ? ' is-lead' : ''}${it.opinion ? ' is-opinion' : ''}" data-match="1" data-score="${escapeHtml(it.score)}" data-date="${escapeHtml(it.date)}" data-ticker="${escapeHtml(it.ticker)}" data-tickers="${escapeHtml(it.tickers.join(','))}" data-sector="${escapeHtml(it.sector)}" data-source="${escapeHtml(it.source)}" data-category="${escapeHtml(it.category)}">
           <a href="${companyHref(it.ticker)}" class="ticker-badge" title="${escapeHtml(it.company)}">${escapeHtml(it.ticker)}</a>
           <div class="feed-body">
-            <h3 class="feed-headline"><a href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.headline)}</a></h3>
+            <h3 class="feed-headline">${isNew(it) ? '<span class="feed-new">New</span>' : ''}<a href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.headline)}</a></h3>
             ${it.text ? `<p class="feed-summary">${figuresHtml(it.text)}</p>` : ''}${it.ai ? `<p class="feed-takeaway">${figuresHtml(it.ai)}</p>` : ''}
             <p class="follow-reason"${reason ? '' : ' hidden'}>${escapeHtml(reason)}</p>
             <details class="feed-details">
-              <summary><span class="feed-meta">${escapeHtml(meta)}</span></summary>
+              <summary><span class="feed-meta">${escapeHtml(metaText(it))}</span></summary>
               <div class="feed-details-body">
                 ${refs.length ? `<p class="feed-detail-label">Also relevant to ${plural(refs.length, 'company', 'companies')}</p>
                 <ul class="feed-refs">${refs.map(([t, note]) => `<li><a href="${companyHref(t)}" class="ticker-badge">${escapeHtml(t)}</a> ${escapeHtml(note)}</li>`).join('')}</ul>` : ''}
                 ${it.breakdown ? `<p class="feed-detail-label">How it scored: ${escapeHtml(it.score)}</p><p class="feed-breakdown">${escapeHtml(it.breakdown)}</p>` : ''}
-                <a href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer" class="home-more">${read}</a>
+                <a href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer" class="home-more">${readLabel(it)}</a>
               </div>
             </details>
+            ${others.length ? `<details class="feed-also">
+              <summary>${others.length} more about ${escapeHtml(name)}${others.some(isNew) ? `, ${others.filter(isNew).length} new` : ''}</summary>
+              <ul class="feed-also-list">${others.map(o => `<li>${isNew(o) ? '<span class="feed-new">New</span>' : ''}<a href="${safeHref(o.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(o.headline)}</a> <span class="feed-also-meta">${escapeHtml([o.opinion ? 'Opinion' : '', o.via, shortDay(o.date)].filter(Boolean).join(' · '))}</span></li>`).join('')}</ul>
+            </details>` : ''}
           </div>
           <span class="date-cell">${escapeHtml(shortDay(it.date))}</span>
         </article>`;
     }
 
-    function groupHtml(key, label, count) {
-      return `<div class="feed-group" data-key="${escapeHtml(key)}"><h2 class="feed-group-title">${escapeHtml(label)}</h2><span class="feed-group-note">${plural(count, 'story', 'stories')}</span></div>`;
+    function groupHtml(key, label, note) {
+      return `<div class="feed-group" data-key="${escapeHtml(key)}"><h2 class="feed-group-title">${escapeHtml(label)}</h2><span class="feed-group-note">${escapeHtml(note)}</span></div>`;
     }
 
-    function moreHtml(key, hiddenCount, canFold) {
-      const open = !hiddenCount && canFold;
-      const label = open ? 'Show fewer' : `Show ${Math.min(hiddenCount, MORE_STEP)} more`;
-      return `<button class="feed-more" type="button" data-key="${escapeHtml(key)}" aria-expanded="${open}">${label}</button>`;
+    function moreHtml(key, hiddenCount, step, noun) {
+      return `<button class="feed-more" type="button" data-key="${escapeHtml(key)}" aria-expanded="false">Show ${Math.min(hiddenCount, step)} more${noun ? ' ' + noun : ''}</button>`;
     }
 
-    // Edited (by importance, nothing filtered): bands with the top of each showing. Otherwise the
-    // matches in order, a page at a time.
+    // The few stories worth reading first: the most important, one per company.
+    function pickFirst(stories) {
+      const first = [];
+      const used = new Set();
+      stories.forEach(it => {
+        if (first.length >= FIRST_MAX || it.score < FIRST_MIN_SCORE || used.has(it.ticker)) return;
+        used.add(it.ticker);
+        first.push(it);
+      });
+      return first;
+    }
+
+    // One group per company, in the order of its most important story.
+    function byCompany(stories) {
+      const groups = new Map();
+      stories.forEach(it => {
+        if (!groups.has(it.ticker)) groups.set(it.ticker, []);
+        groups.get(it.ticker).push(it);
+      });
+      return [...groups.values()];
+    }
+
+    function renderLine(stories, first) {
+      const line = document.getElementById('feedLine');
+      if (!line) return;
+      const fresh = stories.filter(isNew).length;
+      const total = `${plural(FEED.length, 'story', 'stories')} from the last {{ feed_days }} days`;
+      if (fresh) {
+        const firstNew = first.filter(isNew).length;
+        line.textContent = `${plural(fresh, 'new story', 'new stories')} since you were last here${firstNew ? `, ${firstNew} worth reading first` : ''}. ${total}.`;
+      } else if (previousVisit) {
+        line.textContent = `Nothing new since you were last here. ${total}.`;
+      } else {
+        line.textContent = `${total}. The few worth reading first, then everything else grouped by company.`;
+      }
+    }
+
+    // Edited (by importance, nothing filtered): Read first, then one row per company.
+    // Otherwise the matches in order, a page at a time.
     function renderFeed() {
       const body = document.getElementById('newsBody');
       const empty = document.getElementById('feedEmpty');
@@ -4865,72 +4794,69 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const stories = matchingStories();
       const active = filtersActive();
       const edited = currentOrder === 'score' && !active;
-      const groups = [];
-      const byKey = new Map();
-      stories.forEach(it => {
-        const band = bandFor(it.score);
-        const key = currentOrder === 'score' ? band.key : it.date;
-        if (!byKey.has(key)) {
-          const group = { key, band, items: [] };
-          byKey.set(key, group);
-          groups.push(group);
-        }
-        byKey.get(key).items.push(it);
-      });
-
       let html = '';
-      let leads = 0;
-      let budget = UNBANDED_FIRST + (extraRows.get('all') || 0);
-      let leftOver = 0;
-      groups.forEach(group => {
-        const total = group.items.length;
-        const show = edited
-          ? Math.min(total, group.band.show + (extraRows.get(group.key) || 0))
-          : Math.min(total, Math.max(0, budget));
-        if (!edited) {
-          budget -= show;
-          leftOver += total - show;
-          if (!show) return;
+
+      if (edited) {
+        const first = pickFirst(stories);
+        renderLine(stories, first);
+        if (first.length) {
+          html += groupHtml('first', 'Read first', `${first.length} of ${plural(stories.length, 'story', 'stories')}, one per company`);
+          first.forEach((it, i) => { html += feedRowHtml(it, i === 0, forYou); });
         }
-        html += groupHtml(group.key, currentOrder === 'score' ? group.band.label : dayLabel(group.key), total);
-        group.items.slice(0, show).forEach(it => {
-          const lead = edited && group.band.key === 'high' && leads < LEAD_STORIES;
-          if (lead) leads += 1;
-          html += feedRowHtml(it, lead, forYou);
+        const rest = stories.filter(it => !first.includes(it));
+        const groups = byCompany(rest);
+        const show = Math.min(groups.length, COMPANY_PAGE + (extraRows.get('companies') || 0));
+        if (groups.length) {
+          html += groupHtml('companies', 'Everything else', `${plural(rest.length, 'story', 'stories')} from ${plural(groups.length, 'company', 'companies')}`);
+          groups.slice(0, show).forEach(g => { html += feedRowHtml(g[0], false, forYou, g.slice(1)); });
+          if (groups.length > show) html += moreHtml('companies', groups.length - show, COMPANY_STEP, 'companies');
+        }
+      } else {
+        renderLine(stories, []);
+        let budget = UNBANDED_FIRST + (extraRows.get('all') || 0);
+        let lastDay = '';
+        stories.slice(0, budget).forEach(it => {
+          if (currentOrder === 'date' && it.date !== lastDay) {
+            lastDay = it.date;
+            html += groupHtml(it.date, dayLabel(it.date), plural(stories.filter(s => s.date === it.date).length, 'story', 'stories'));
+          }
+          html += feedRowHtml(it, false, forYou);
         });
-        if (edited && total > group.band.show) html += moreHtml(group.key, total - show, true);
-      });
-      if (!edited && leftOver) html += moreHtml('all', leftOver, false);
+        if (stories.length > budget) html += moreHtml('all', stories.length - budget, MORE_STEP, '');
+      }
 
       body.innerHTML = html;
       body.append(empty);
 
       const countEl = document.getElementById('feedResultCount');
-      if (countEl) countEl.textContent = active ? `${stories.length} of ${FEED.length} stories` : '';
-      const clearBtn = document.getElementById('feedClearFilters');
-      if (clearBtn) clearBtn.hidden = !active;
+      if (countEl) countEl.textContent = `${stories.length} of ${plural(FEED.length, 'story', 'stories')}${currentTicker !== 'ALL' ? ` about ${currentTicker}` : ''}`;
+      const filterLine = document.getElementById('feedFilterLine');
+      if (filterLine) filterLine.hidden = !active;
       empty.hidden = stories.length !== 0;
       empty.innerHTML = forYou && !followsAnything()
         ? 'You aren’t following anything yet. Pick companies or sectors in <a href="settings.html">Your feed</a>, or switch to Everything.'
         : (forYou && hiddenTypes().size
           ? 'No stories match. Some story types are hidden in <a href="settings.html">Your feed</a>.'
-          : 'No stories match these filters.');
+          : 'No stories match.');
     }
 
     document.getElementById('newsBody')?.addEventListener('click', e => {
       const btn = e.target.closest('.feed-more');
       if (!btn) return;
       const key = btn.dataset.key;
-      if (btn.getAttribute('aria-expanded') === 'true') extraRows.delete(key);
-      else extraRows.set(key, (extraRows.get(key) || 0) + MORE_STEP);
+      extraRows.set(key, (extraRows.get(key) || 0) + (key === 'companies' ? COMPANY_STEP : MORE_STEP));
       renderFeed();
       document.querySelector(`.feed-more[data-key="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
     });
 
     function sortRows(criterion) {
       currentOrder = criterion === 'date' ? 'date' : 'score';
-      document.getElementById('sortScoreBtn')?.classList.toggle('active', currentOrder === 'score');
-      document.getElementById('sortDateBtn')?.classList.toggle('active', currentOrder === 'date');
+      [['sortScoreBtn', 'score'], ['sortDateBtn', 'date']].forEach(([id, order]) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.classList.toggle('active', currentOrder === order);
+        btn.setAttribute('aria-pressed', String(currentOrder === order));
+      });
       filterItems();
     }
 
@@ -4940,11 +4866,9 @@ NEWS_TEMPLATE = """<!DOCTYPE html>
       const urlTicker = params.get('ticker');
       const urlQ = params.get('q');
 
-      // Only a ticker that appears in the picker can filter; anything else from the URL is ignored.
-      const pickable = urlTicker && [...document.querySelectorAll('#feedTickerDropdownList .feed-ticker-item')]
-        .some(it => it.dataset.ticker === urlTicker.toUpperCase());
-      if (pickable) {
-        setTickerFilter(urlTicker.toUpperCase());
+      // Only a company on the watchlist can filter; anything else from the URL is ignored.
+      if (urlTicker && KNOWN_SYMBOLS.has(urlTicker.toUpperCase())) {
+        currentTicker = urlTicker.toUpperCase();
       }
       if (urlQ) {
         const searchBox = document.getElementById('searchInput');
@@ -6858,6 +6782,8 @@ BREAKDOWN_WORDS = {
     "Company Announcement": "the company's own announcement", "News Media / Press": "a news report on results, a deal or leadership",
     "News Media": "a news report", "Press": "a news report", "Named": "names the company in the headline",
     "Not named": "doesn't name the company", "List or roundup": "a stock-picking list or market roundup",
+    "Question or price take": "opinion: a question or a view on the price, not a report",
+    "Market research advert": "a market-research advert",
 }
 
 
@@ -7053,6 +6979,17 @@ def _feed_window(items: List[Dict[str, Any]], today: Optional[date] = None) -> L
     return sorted(window, key=lambda it: (it.get("score") or 0, str(it.get("published_date") or "")), reverse=True)
 
 
+# What a reader calls each kind of story. News services' articles fall in the catch-all category,
+# which reads as if the company announced them, so they're called news instead.
+def _mark_story(it: Dict[str, Any]) -> Dict[str, Any]:
+    """Flag opinion pieces and name the kind of story plainly, for the feed's rows."""
+    breakdown = it.get("score_breakdown") or ""
+    it["is_opinion"] = "Opinion:" in breakdown or "Stock picks:" in breakdown
+    is_news = it.get("source") in ("news_media", "finnhub")
+    it["kind_label"] = "News" if is_news and it.get("category") == "Company Announcement" else (it.get("category") or "")
+    return it
+
+
 def _feed_record(it: Dict[str, Any]) -> Dict[str, Any]:
     """One story as the feed's script needs it."""
     refs = [[r.get("related_ticker"), r.get("impact_note") or ""] for r in it.get("cross_references_list") or []
@@ -7065,6 +7002,8 @@ def _feed_record(it: Dict[str, Any]) -> Dict[str, Any]:
         "text": it.get("story_text") or "", "ai": it.get("ai_summary") or "",
         "related": [t for t in it.get("related_tickers_list") or [] if t and t != it.get("ticker")],
         "refs": refs, "breakdown": _plain_breakdown(it.get("score_breakdown") or ""),
+        "created": str(it.get("created_at") or "")[:19], "opinion": bool(it.get("is_opinion")),
+        "label": it.get("kind_label") or "",
     }
 
 
@@ -7322,6 +7261,7 @@ def _story_text(item: Dict[str, Any]) -> str:
     if not text or text.startswith(SEC_BOILERPLATE):
         return ""
     text = re.sub(r"(?<=[a-z%)])\.(?=[A-Z])", ". ", text)
+    text = re.sub(r"^Key Takeaways\s*", "", text)
     if text.endswith(("...", "…")):
         body = text.rstrip(".… ")
         ends = [m.end() for m in re.finditer(r"[.!?][\"”’]?\s", body)]
@@ -7599,6 +7539,8 @@ def render_dashboard(
             })
 
     feed_items = _feed_window(items)
+    for it in feed_items:
+        _mark_story(it)
     moves_deck = build_deck(performance_data, items, enriched_watchlist,
                             get_forthcoming_calendar(limit=1000, db_path=db_path))
     common_context = {

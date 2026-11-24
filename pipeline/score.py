@@ -110,6 +110,17 @@ STOCK_PICKING = re.compile(
     re.IGNORECASE)
 
 
+# Opinion dressed as news: a question for a headline, or a take on whether the price is right.
+# Real reports state what happened; these ask the reader to guess. They stay, but below the news.
+OPINION = re.compile(
+    r"\?|\b(?:under|over)valued\b|\bchance to buy\b|\bhow much is left\b|\bstill a buy\b|\bharder to justify\b"
+    r"|\b(?:\d+|two|three|four|five)\s+ETFs?\b|\bETFs? for owning\b|\bprice target\b",
+    re.IGNORECASE)
+
+# Paid market-research adverts that news services file under any company they mention.
+PROMO = re.compile(r"\bCAGR\b|\bmarket (?:report|research report|size|forecast)\b|\bresearchandmarkets\b", re.IGNORECASE)
+
+
 def company_spellings(company_name: str) -> list:
     """How news text names a company: "The Goldman Sachs Group, Inc." -> ["Goldman Sachs", "Goldman"]."""
     short = re.sub(r"\s*,\s*(?=,|$)", "", NAME_WORDS.sub("", company_name or ""))
@@ -225,6 +236,12 @@ def score_item(item: Dict[str, Any]) -> Dict[str, Any]:
     if is_news and STOCK_PICKING.search(headline):
         headline_adj -= 3.0
         breakdown_parts.append("Stock picks: -3 (List or roundup)")
+    elif is_news and PROMO.search(headline):
+        headline_adj -= 4.0
+        breakdown_parts.append("Advert: -4 (Market research advert)")
+    elif is_news and OPINION.search(headline):
+        headline_adj -= 2.0
+        breakdown_parts.append("Opinion: -2 (Question or price take)")
 
     # 5. Duplicate Penalty
     dup_adj = 0.0
