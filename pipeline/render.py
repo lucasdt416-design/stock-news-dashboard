@@ -21,7 +21,7 @@ from jinja2 import Template
 from markupsafe import Markup, escape
 from pipeline.moves import build_deck
 from pipeline.normalize import clean_text
-from pipeline.portfolio_page import build_portfolio_template, portfolio_data
+from pipeline.portfolio_page import brief_data, build_portfolio_template, portfolio_data
 from pipeline.prices import write_price_files
 from pipeline.persist import (
     get_all_news_items,
@@ -798,7 +798,10 @@ SHARED_CSS = """
 
     /* Shared page header */
     .page-header { margin-bottom: 2.25rem; max-width: 46rem; }
-    .page-title { font-size: clamp(2.1rem, 4.5vw, 3rem); line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 0.6rem; }
+    .page-title { font-size: clamp(2.3rem, 5vw, 3.4rem); font-weight: 700; line-height: 1.04; letter-spacing: -0.035em; margin-bottom: 0.6rem; }
+    .app-main { animation: page-in 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+    @keyframes page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .app-main { animation: none; } }
     .page-standfirst { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.45; color: var(--text-secondary); }
 
     /* Feed */
@@ -1620,6 +1623,69 @@ SHARED_CSS = """
     .company-rollup-since { color: var(--text-muted); font-size: 0.86rem; }
     .company-news-item[hidden] { display: none; }
 
+    /* ---- Companies: one search, Yours, Worth a look, then every sector folded ---- */
+    .dir-search { margin: 0 0 0.5rem; }
+    .dir-search-box { width: 100%; box-sizing: border-box; min-height: 52px; padding: 0 1.1rem; border: 1px solid var(--border-card); border-radius: var(--radius-lg); background: var(--bg-base); color: var(--text-primary); font: inherit; font-size: 1.1rem; }
+    .dir-search-box::placeholder { color: var(--text-muted); }
+    .dir-search-box:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .dir-block { margin-top: 2.5rem; }
+    .dir-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--text-primary); }
+    .dir-label { margin: 0; font-size: 0.78rem; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-primary); }
+    .dir-head-link { font-size: 0.88rem; color: var(--accent); text-decoration: none; }
+    .dir-head-link:hover { text-decoration: underline; }
+    .dir-note { margin: 0.6rem 0 0; font-size: 0.84rem; color: var(--text-muted); }
+    .dir-note:empty { display: none; }
+    .dir-mine { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0 2rem; margin-top: 0.25rem; }
+    .dir-mine-row { display: grid; gap: 0.1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border-subtle); color: var(--text-primary); text-decoration: none; transition: color var(--transition-fast); }
+    .dir-mine-row:hover .dir-mine-sym { color: var(--accent); }
+    .dir-mine-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+    .dir-mine-sym { font-size: 1.15rem; font-weight: 650; letter-spacing: -0.01em; }
+    .dir-mine-tag { font-size: 0.74rem; color: var(--text-muted); }
+    .dir-mine-name { font-size: 0.88rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dir-mine-stats { display: flex; gap: 0.9rem; font-size: 0.82rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .dir-mine-stats .tone-up { color: var(--pos); } .dir-mine-stats .tone-down { color: var(--neg); }
+    #followingSection.is-searching { display: none; }
+    .dir-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0 2.5rem; }
+    .dir-col-title { margin: 1rem 0 0.25rem; font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+    .dir-rank { list-style: none; margin: 0; padding: 0; counter-reset: rank; }
+    .dir-rank li { counter-increment: rank; border-bottom: 1px solid var(--border-subtle); }
+    .dir-rank a { display: grid; grid-template-columns: 1.4rem 3.6rem minmax(0, 1fr) auto; align-items: baseline; gap: 0.5rem; padding: 0.55rem 0; color: var(--text-primary); text-decoration: none; font-size: 0.92rem; }
+    .dir-rank a::before { content: counter(rank); color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+    .dir-rank a:hover .dir-rank-sym { color: var(--accent); }
+    .dir-rank-sym { font-weight: 650; }
+    .dir-rank-name { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dir-rank-fig { font-variant-numeric: tabular-nums; color: var(--text-muted); white-space: nowrap; }
+    .dir-rank-fig.tone-up { color: var(--pos); } .dir-rank-fig.tone-down { color: var(--neg); }
+    .dir-sort { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+    .dir-sort select { min-height: 32px; padding: 0 0.5rem; border: 1px solid var(--border-card); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-primary); font: inherit; font-size: 0.85rem; }
+    .dir-sector.company-browser-sector { margin: 0; padding: 0; border: none; border-bottom: 1px solid var(--border-subtle); background: none; }
+    .dir-sector-head { display: grid; grid-template-columns: minmax(8rem, 1.3fr) 7rem 6rem minmax(9rem, 1.4fr) 1rem; align-items: center; gap: 1rem; padding: 1rem 0; cursor: pointer; list-style: none; }
+    .dir-sector-head::-webkit-details-marker { display: none; }
+    .dir-sector-head::after { content: ""; width: 0.5rem; height: 0.5rem; justify-self: end; border-right: 1.5px solid var(--text-muted); border-bottom: 1.5px solid var(--text-muted); transform: rotate(45deg) translate(-2px, -2px); transition: transform var(--transition-normal); }
+    .dir-sector[open] > .dir-sector-head::after { transform: rotate(-135deg) translate(-2px, -2px); }
+    .dir-sector-head:hover .dir-sector-name { color: var(--accent); }
+    .dir-sector-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .dir-sector-name { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
+    .dir-sector-count, .dir-sector-stories { font-size: 0.88rem; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .dir-sector-n { color: var(--text-primary); font-weight: 600; }
+    .dir-sector-split { display: grid; grid-template-columns: minmax(3rem, 6rem) auto; align-items: center; gap: 0.6rem; }
+    .dir-split-bar { width: 100%; height: 6px; border-radius: 3px; overflow: hidden; }
+    .dir-split-up { fill: var(--pos); }
+    .dir-split-down { fill: var(--neg); opacity: 0.55; }
+    .dir-split-words { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .dir-sector-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.5rem; padding: 0 0 1.25rem; }
+    .dir-sector[open] .dir-sector-body { animation: dir-open 0.24s cubic-bezier(0.2, 0.7, 0.2, 1); }
+    @keyframes dir-open { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .dir-sector[open] .dir-sector-body { animation: none; } .dir-sector-head::after { transition: none; } }
+    @media (max-width: 760px) {
+      .dir-sector-head { grid-template-columns: minmax(0, 1fr) auto 1rem; gap: 0.2rem 0.75rem; }
+      .dir-sector-stories { display: none; }
+      .dir-sector-split { grid-column: 1 / 3; grid-row: 2; }
+      .dir-sector-head::after { grid-column: 3; grid-row: 1; }
+      .dir-sector-body { grid-template-columns: minmax(0, 1fr); }
+      .dir-mine { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 1.25rem; }
+    }
+
     /* ---- Following list at the top ---- */
     .following-strip { display: flex; align-items: center; gap: 0.5rem 0.75rem; flex-wrap: wrap; margin: 0 0 1.25rem; }
     .following-label { font-size: 0.84rem; font-weight: 600; color: var(--text-primary); }
@@ -1815,8 +1881,6 @@ const PAGE_ACTIONS = {
     selectFeedTicker: el => selectFeedTicker(el.dataset.ticker),
     setCategoryFilter: el => setCategoryFilter(el.dataset.val, el),
     setFeedKind: el => setFeedKind(el.dataset.kind, el),
-    setCompanySector: el => setCompanySector(el.dataset.sector, el),
-    sortCompanies: el => sortCompanies(el.dataset.sort, el),
     setFeedSectorFilter: el => setFeedSectorFilter(el.dataset.sector, el),
     setSourceFilter: el => setSourceFilter(el.dataset.val, el),
     sortRows: el => sortRows(el.dataset.sort),
@@ -1843,6 +1907,7 @@ const PAGE_ACTIONS = {
   change: {
     filterEconomicByTicker: el => filterEconomicByTicker(el.value),
     renderComparativePerformanceChart: el => renderComparativePerformanceChart(el.value),
+    sortCompanies: el => sortCompanies(el.value),
   },
 };
 
@@ -5333,7 +5398,7 @@ ABOUT_TEMPLATE = """<!DOCTYPE html>
           <li><strong>Your choices stay in this browser.</strong> The companies you follow, what you've read (if learning is on in <a href="settings.html">Your feed</a>), your theme and the companies you viewed recently are kept only on this device. They're never sent to us or anyone else. You can clear them in Your feed with “Forget what I read” or “Start over”.</li>
           <li><strong>The setup link</strong> carries only the companies and sectors you follow, and only goes where you send it.</li>
           <li><strong>A few services see what any website involves.</strong> Cloudflare hosts the site, so like any host it receives your IP address and the pages you open. On the Analytics and company pages, the chart library comes from jsDelivr, which also receives your IP address.</li>
-          <li><strong>Your portfolio stays in this browser too.</strong> The stocks you hold, how many shares, what you paid and when are kept only on this device, along with the prices fetched for them, and are never sent to us. “Remove everything” on <a href="portfolio.html">Your portfolio</a> clears them. To price a stock we don't list, its ticker (not how much you hold) is sent to our own server, which asks Yahoo Finance for its prices and Finnhub for its sector. That does show our server which tickers were asked about, though not by whom: it keeps no record, and your IP address is held briefly in memory only to stop overuse.</li>
+          <li><strong>Your portfolio stays in this browser too.</strong> The stocks you hold, how many shares, what you paid and when are kept only on this device, along with the prices fetched for them and the day you last marked the Briefing read, and are never sent to us. The Briefing’s stories come from one file that is the same for everyone, and are matched to your holdings in your browser. “Remove everything” on <a href="portfolio.html">Your portfolio</a> clears them. To price a stock we don't list, its ticker (not how much you hold) is sent to our own server, which asks Yahoo Finance for its prices and Finnhub for its sector. That does show our server which tickers were asked about, though not by whom: it keeps no record, and your IP address is held briefly in memory only to stop overuse.</li>
           <li><strong>Looking up a ticker that isn't listed</strong> sends what you typed, and nothing about you, to Finnhub to find it. Your IP address is held briefly in memory to stop the lookup being overused, and isn't stored.</li>
         </ul>
       </section>
@@ -5912,43 +5977,90 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
     <main class="app-main">
       <header class="page-header">
         <h1 class="page-title">Companies</h1>
-        <p class="page-standfirst">{{ watchlist_companies|length }} on the watchlist. Pick one to see its news and price.</p>
+        <p class="page-standfirst">{{ watchlist_companies|length }} large US companies, by sector. Start with yours, or search.</p>
         <p class="company-missing" id="companyMissing" role="status" hidden></p>
       </header>
 
-      <nav class="following-strip" id="followingStrip" aria-label="Companies you follow" hidden>
-        <span class="following-label">Following</span>
-        <div class="following-chips" id="followingChips"></div>
-        <a class="following-edit" href="settings.html">Edit</a>
-      </nav>
+      <div class="dir-search">
+        <input type="search" class="dir-search-box" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company or sector" autocomplete="off" spellcheck="false" data-input="filterCompanyStrip">
+      </div>
 
-      <section class="company-directory-browser" id="companyDirectory" aria-label="All companies">
-        <input type="text" class="feed-search" id="companyStripFilter" aria-label="Find a company" placeholder="Find a ticker, company, or sector" data-input="filterCompanyStrip">
-        <div class="kind-bar" id="companySectors" role="group" aria-label="Sector">
-          <button class="filter-btn active" type="button" data-sector="ALL" data-click="setCompanySector" aria-pressed="true">All <span class="pill-count">{{ watchlist_companies|length }}</span></button>
-          {% for sec in sector_directory %}
-          <button class="filter-btn" type="button" data-sector="{{ sec.name }}" data-click="setCompanySector" aria-pressed="false">{{ sec.name }} <span class="pill-count">{{ sec.companies|length }}</span></button>
-          {% endfor %}
+      <section class="dir-block" id="followingSection" aria-labelledby="dirMineHeading" hidden>
+        <div class="dir-head">
+          <h2 class="dir-label" id="dirMineHeading">Yours</h2>
+          <a class="dir-head-link" href="settings.html">Edit</a>
         </div>
-        <div class="company-tools">
-          <span class="sort-label" id="companySortLabel">Order</span>
-          <div class="feed-sort" role="group" aria-labelledby="companySortLabel">
-            <button class="feed-sort-btn active" type="button" data-click="sortCompanies" data-sort="listed" aria-pressed="true">Watchlist</button>
-            <button class="feed-sort-btn" type="button" data-click="sortCompanies" data-sort="name" aria-pressed="false">A to Z</button>
-            <button class="feed-sort-btn" type="button" data-click="sortCompanies" data-sort="stories" aria-pressed="false">Most stories</button>
-            {% if performance_data %}<button class="feed-sort-btn" type="button" data-click="sortCompanies" data-sort="ahead" aria-pressed="false">Furthest ahead</button>{% endif %}
+        <p class="dir-note" id="dirMineNote"></p>
+        <div class="dir-mine" id="followingCards"></div>
+      </section>
+
+      {% if trending or standouts.ahead or standouts.behind %}
+      <section class="dir-block dir-week" id="dirWeek" aria-labelledby="dirWeekHeading">
+        <div class="dir-head"><h2 class="dir-label" id="dirWeekHeading">Worth a look</h2></div>
+        <div class="dir-cols">
+          {% if trending %}
+          <div class="dir-col">
+            <h3 class="dir-col-title">Most in the news this week</h3>
+            <ol class="dir-rank">
+              {% for t in trending[:5] %}
+              <li><a href="{{ company_url(t.symbol) }}"><span class="dir-rank-sym">{{ t.symbol }}</span><span class="dir-rank-name">{{ t.name }}</span><span class="dir-rank-fig">{{ t.reason.split(' · ')[0]|replace(' this week', '') }}</span></a></li>
+              {% endfor %}
+            </ol>
           </div>
+          {% endif %}
+          {% if standouts.ahead %}
+          <div class="dir-col">
+            <h3 class="dir-col-title">Furthest ahead of the S&amp;P 500</h3>
+            <ol class="dir-rank">
+              {% for c in standouts.ahead %}
+              <li><a href="{{ company_url(c.symbol) }}"><span class="dir-rank-sym">{{ c.symbol }}</span><span class="dir-rank-name">{{ c.name }}</span><span class="dir-rank-fig tone-up">+{{ '%.1f'|format(c.ahead) }}%</span></a></li>
+              {% endfor %}
+            </ol>
+          </div>
+          {% endif %}
+          {% if standouts.behind %}
+          <div class="dir-col">
+            <h3 class="dir-col-title">Furthest behind it</h3>
+            <ol class="dir-rank">
+              {% for c in standouts.behind %}
+              <li><a href="{{ company_url(c.symbol) }}"><span class="dir-rank-sym">{{ c.symbol }}</span><span class="dir-rank-name">{{ c.name }}</span><span class="dir-rank-fig tone-down">−{{ '%.1f'|format(-c.ahead) }}%</span></a></li>
+              {% endfor %}
+            </ol>
+          </div>
+          {% endif %}
         </div>
-        <p class="econ-note">Percentages show how far each stock is ahead of or behind the S&amp;P 500 over 3 months.</p>
+        {% if standouts.ahead or standouts.behind %}<p class="dir-note">Ahead or behind: the stock’s change over 3 months minus the S&amp;P 500’s.</p>{% endif %}
+      </section>
+      {% endif %}
+
+      <section class="dir-block company-directory-browser" id="companyDirectory" aria-labelledby="dirAllHeading">
+        <div class="dir-head">
+          <h2 class="dir-label" id="dirAllHeading">All companies</h2>
+          <label class="dir-sort">Order
+            <select id="companySort" data-change="sortCompanies">
+              <option value="listed">Watchlist</option>
+              <option value="name">A to Z</option>
+              <option value="stories">Most stories</option>
+              {% if performance_data %}<option value="ahead">Furthest ahead</option>{% endif %}
+            </select>
+          </label>
+        </div>
         <p class="company-none" id="companyNone" role="status" hidden>No company matches that.</p>
-        <div class="company-browser-grid company-strip" id="companyStripContainer">
-          <section class="company-browser-sector" id="followingSection" hidden>
-            <h2 class="company-browser-sector-name">Following</h2>
-            <div id="followingCards"></div>
-          </section>
+        <div class="company-strip" id="companyStripContainer">
           {% for sec in sector_directory %}
-          <section class="company-browser-sector" data-sector="{{ sec.name }}">
-            <h2 class="company-browser-sector-name">{{ sec.name }}</h2>
+          <details class="dir-sector company-browser-sector" data-sector="{{ sec.name }}">
+            <summary class="dir-sector-head">
+              <span class="dir-sector-name">{{ sec.name }}</span>
+              <span class="dir-sector-count"><span class="dir-sector-n">{{ sec.count }}</span> {% if sec.count == 1 %}company{% else %}companies{% endif %}</span>
+              <span class="dir-sector-stories">{{ sec.stories }} {% if sec.stories == 1 %}story{% else %}stories{% endif %}</span>
+              {% if sec.measured %}
+              <span class="dir-sector-split" title="{{ sec.ahead }} ahead of the S&amp;P 500 over 3 months, {{ sec.behind }} behind">
+                <svg class="dir-split-bar" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true"><rect class="dir-split-down" x="0" y="0" width="100" height="6"/><rect class="dir-split-up" x="0" y="0" width="{{ (100 * sec.ahead / sec.measured)|round(1) }}" height="6"/></svg>
+                <span class="dir-split-words">{{ sec.ahead }} ahead · {{ sec.behind }} behind</span>
+              </span>
+              {% endif %}
+            </summary>
+            <div class="dir-sector-body">
             {% for co in sec.companies %}
             <a class="company-browser-card company-strip-pill" href="{{ company_url(co.symbol) }}"
                     data-ticker="{{ co.symbol }}"
@@ -5972,7 +6084,8 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
               </span>
             </a>
             {% endfor %}
-          </section>
+            </div>
+          </details>
           {% endfor %}
         </div>
       </section>
@@ -5982,51 +6095,40 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
 
   <script>
     """ + SHARED_MOBILE_JS + COMPANY_SHARED_JS + """
-    let companySector = 'ALL';
     let companyOrder = 'listed';
+    const openBeforeSearch = new Set();
 
-    // Which companies show: the ones matching the search box, in the chosen sector.
+    // Which companies show: the ones matching the search box. While searching, every sector with a
+    // match opens and the rest step aside; clearing the box puts the sectors back as they were.
     function applyCompanyView() {
       const q = (document.getElementById('companyStripFilter')?.value || '').toLowerCase().trim();
-      document.querySelectorAll('.company-strip-pill').forEach(pill => {
+      document.querySelectorAll('#companyStripContainer .company-strip-pill').forEach(pill => {
         const haystack = [pill.dataset.ticker, pill.dataset.name, pill.dataset.sector].join(' ').toLowerCase();
         pill.hidden = Boolean(q) && !haystack.includes(q);
       });
       let shown = 0;
-      document.querySelectorAll('.company-browser-sector').forEach(group => {
-        // The Following group has no sector of its own, so it steps aside when one is chosen.
-        const inSector = companySector === 'ALL' || group.dataset.sector === companySector;
-        group.hidden = !inSector || !group.querySelector('.company-strip-pill:not([hidden])');
+      document.querySelectorAll('#companyStripContainer .dir-sector').forEach(group => {
+        const sectorHit = Boolean(q) && group.dataset.sector.toLowerCase().includes(q);
+        if (sectorHit) group.querySelectorAll('.company-strip-pill').forEach(p => { p.hidden = false; });
+        const any = Boolean(group.querySelector('.company-strip-pill:not([hidden])'));
+        group.hidden = Boolean(q) && !any;
+        if (q) group.open = any;
+        else group.open = openBeforeSearch.has(group.dataset.sector);
         if (!group.hidden) shown += 1;
       });
-      document.getElementById('companyStripContainer')?.classList.toggle('is-one-sector', companySector !== 'ALL');
+      document.getElementById('followingSection')?.classList.toggle('is-searching', Boolean(q));
+      document.getElementById('dirWeek')?.toggleAttribute('hidden', Boolean(q));
       const none = document.getElementById('companyNone');
       if (none) none.hidden = shown > 0;
     }
 
-    function markCompanySector() {
-      document.querySelectorAll('#companySectors .filter-btn').forEach(b => {
-        const on = b.dataset.sector === companySector;
-        b.classList.toggle('active', on);
-        b.setAttribute('aria-pressed', String(on));
-      });
-    }
-
-    // Searching looks across every sector, so it goes back to All.
     function filterCompanyStrip(rawVal) {
-      if ((rawVal || '').trim() && companySector !== 'ALL') {
-        companySector = 'ALL';
-        markCompanySector();
+      const searching = Boolean((rawVal || '').trim());
+      if (searching && !applyCompanyView.searching) {
+        openBeforeSearch.clear();
+        document.querySelectorAll('#companyStripContainer .dir-sector[open]').forEach(g => openBeforeSearch.add(g.dataset.sector));
       }
-      applyCompanyView();
-    }
-
-    function setCompanySector(name) {
-      const known = [...document.querySelectorAll('#companySectors .filter-btn')].some(b => b.dataset.sector === name);
-      companySector = known ? name : 'ALL';
-      const box = document.getElementById('companyStripFilter');
-      if (box && companySector !== 'ALL') box.value = '';
-      markCompanySector();
+      applyCompanyView.searching = searching;
       applyCompanyView();
     }
 
@@ -6040,38 +6142,79 @@ COMPANY_TEMPLATE = """<!DOCTYPE html>
         ahead: (a, b) => number(b, 'ahead') - number(a, 'ahead') || Number(a.dataset.listed) - Number(b.dataset.listed),
       };
       companyOrder = Object.prototype.hasOwnProperty.call(orders, order) ? order : 'listed';
-      document.querySelectorAll('.company-tools .feed-sort-btn').forEach(b => {
-        const on = b.dataset.sort === companyOrder;
-        b.classList.toggle('active', on);
-        b.setAttribute('aria-pressed', String(on));
-      });
-      document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
-        const cards = [...sec.querySelectorAll(':scope > .company-strip-pill')];
+      const select = document.getElementById('companySort');
+      if (select) select.value = companyOrder;
+      document.querySelectorAll('#companyStripContainer .dir-sector-body').forEach(body => {
+        const cards = [...body.querySelectorAll(':scope > .company-strip-pill')];
         // The watchlist's own order is remembered the first time, so it can be put back.
         cards.forEach((el, i) => { if (!el.dataset.listed) el.dataset.listed = el.dataset.order || String(i); });
-        cards.sort(orders[companyOrder]).forEach((el, i) => { el.dataset.order = String(i); sec.append(el); });
+        cards.sort(orders[companyOrder]).forEach((el, i) => { el.dataset.order = String(i); body.append(el); });
       });
       renderFollowingCompanies();
     }
 
-    // Followed companies: the strip at the very top, a Following group first in the directory,
-    // and first place inside their own sector.
+    // Tickers held on Your portfolio, read from this browser. Only which companies, never amounts.
+    function heldCompanies() {
+      try {
+        const raw = JSON.parse(localStorage.getItem('stockpulse_portfolio') || 'null');
+        const list = raw && Array.isArray(raw.holdings) ? raw.holdings : [];
+        return new Set(list.map(h => String(h && h.t || '')).filter(t => KNOWN_SYMBOLS.has(t)));
+      } catch (e) { return new Set(); }
+    }
+
+    // "Yours": everything followed or held, once, as compact rows at the top. The full directory
+    // below keeps them first inside their own sector.
     function renderFollowingCompanies() {
-      const mine = new Set(renderFollowingStrip(''));
-      const cards = [...document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection) .company-strip-pill')];
+      const follows = followedSet();
+      const held = heldCompanies();
+      const mine = [...KNOWN_SYMBOLS].filter(sym => follows.has(sym) || held.has(sym));
+      const cards = new Map([...document.querySelectorAll('#companyStripContainer .company-strip-pill')].map(c => [c.dataset.ticker, c]));
       const section = document.getElementById('followingSection');
       const holder = document.getElementById('followingCards');
       if (section && holder) {
-        holder.replaceChildren(...cards.filter(c => mine.has(c.dataset.ticker)).map(card => {
-          const copy = card.cloneNode(true);
-          copy.removeAttribute('data-follow-mark');
-          copy.classList.remove('is-followed');
-          return copy;
+        holder.replaceChildren(...mine.filter(sym => cards.has(sym)).map(sym => {
+          const card = cards.get(sym);
+          const row = document.createElement('a');
+          row.className = 'dir-mine-row';
+          row.href = card.getAttribute('href');
+          const top = document.createElement('span');
+          top.className = 'dir-mine-top';
+          const ticker = document.createElement('span');
+          ticker.className = 'dir-mine-sym';
+          ticker.textContent = sym;
+          const tag = document.createElement('span');
+          tag.className = 'dir-mine-tag';
+          tag.textContent = held.has(sym) ? 'You own' : 'Following';
+          top.append(ticker, tag);
+          const name = document.createElement('span');
+          name.className = 'dir-mine-name';
+          name.textContent = COMPANY_NAMES[sym] || sym;
+          const stats = document.createElement('span');
+          stats.className = 'dir-mine-stats';
+          const ahead = parseFloat(card.dataset.ahead);
+          if (Number.isFinite(ahead)) {
+            const fig = document.createElement('span');
+            fig.className = ahead > 0 ? 'tone-up' : ahead < 0 ? 'tone-down' : 'tone-flat';
+            fig.textContent = `${ahead > 0 ? '+' : ahead < 0 ? '−' : ''}${Math.abs(ahead).toFixed(1)}% vs S&P`;
+            stats.append(fig);
+          }
+          const count = Number(card.dataset.stories) || 0;
+          const stories = document.createElement('span');
+          stories.textContent = plural(count, 'story', 'stories');
+          stats.append(stories);
+          row.append(top, name, stats);
+          return row;
         }));
-        section.hidden = mine.size === 0;
+        section.hidden = mine.length === 0;
+        const note = document.getElementById('dirMineNote');
+        if (note) {
+          note.textContent = held.size && follows.size
+            ? 'Companies you follow and the ones on Your portfolio.'
+            : held.size ? 'The companies on Your portfolio.' : 'Companies you follow.';
+        }
       }
-      document.querySelectorAll('#companyStripContainer .company-browser-sector:not(#followingSection)').forEach(sec => {
-        followedFirst(sec, '.company-strip-pill', el => el.dataset.ticker);
+      document.querySelectorAll('#companyStripContainer .dir-sector-body').forEach(body => {
+        followedFirst(body, '.company-strip-pill', el => el.dataset.ticker);
       });
       applyCompanyView();
     }
@@ -6954,6 +7097,15 @@ def _trending(items: List[Dict[str, Any]], companies: List[Dict[str, Any]], toda
     return out
 
 
+def _standouts(sectors: List[Dict[str, Any]], measured: Dict[str, Any], limit: int = 5) -> Dict[str, List[Dict[str, Any]]]:
+    """The companies furthest ahead of and behind the S&P 500 over three months, for Companies."""
+    cos = [c for s in sectors for c in s["companies"] if c["symbol"] in measured]
+    ranked = sorted(cos, key=lambda c: c["alpha_vs_spy"], reverse=True)
+    pick = lambda rows: [{"symbol": c["symbol"], "name": c["name"], "ahead": c["alpha_vs_spy"]} for c in rows]  # noqa: E731
+    return {"ahead": pick([c for c in ranked if c["alpha_vs_spy"] > 0][:limit]),
+            "behind": pick([c for c in reversed(ranked) if c["alpha_vs_spy"] < 0][:limit])}
+
+
 def _economic_schedule(events: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
     """Sort releases by date and work out timing now, since the stored labels can be stale."""
     today = today or date.today()
@@ -7433,21 +7585,27 @@ def render_dashboard(
     for sec_name, meta in SECTOR_METADATA.items():
         cos = sector_directory_map.get(sec_name, [])
         if cos:
+            measured = [c["alpha_vs_spy"] for c in cos if c["symbol"] in perf_companies]
             sector_directory.append({
                 "name": sec_name,
                 "icon": meta["icon"],
                 "description": meta["description"],
                 "count": len(cos),
                 "companies": cos,
+                "stories": sum(c.get("story_count") or 0 for c in cos),
+                "ahead": sum(1 for a in measured if a > 0),
+                "behind": sum(1 for a in measured if a < 0),
+                "measured": len(measured),
             })
 
     feed_items = _feed_window(items)
+    moves_deck = build_deck(performance_data, items, enriched_watchlist,
+                            get_forthcoming_calendar(limit=1000, db_path=db_path))
     common_context = {
         "short_date": _short_date,
         "source_line": _source_line,
         "pct": _pct,
-        "moves": build_deck(performance_data, items, enriched_watchlist,
-                            get_forthcoming_calendar(limit=1000, db_path=db_path)),
+        "moves": moves_deck,
         "plain_breakdown": _plain_breakdown,
         "relative_day": _relative_day_text,
         "safe_url": _safe_url,
@@ -7457,6 +7615,7 @@ def render_dashboard(
         "agenda": _calendar_agenda(calendar_events, {c["symbol"]: c["name"] for c in enriched_watchlist}),
         "orbit_companies": _orbit_companies(items, enriched_watchlist),
         "trending": _trending(items, enriched_watchlist),
+        "standouts": _standouts(sector_directory, perf_companies),
         "home_data_json": _script_json(_home_data(items, enriched_watchlist)),
         "feed_items": feed_items,
         "feed_first": feed_items[:FEED_FIRST],
@@ -7568,6 +7727,12 @@ def render_dashboard(
 
     with open(os.path.join(site_dir, "_headers"), "w", encoding="utf-8") as f:
         f.write(_headers_file(policies, pattern_policies))
+
+    # The portfolio Briefing's stories, dates and big days: one file, the same for everyone.
+    os.makedirs(os.path.join(site_dir, "data"), exist_ok=True)
+    with open(os.path.join(site_dir, "data", "brief.json"), "w", encoding="utf-8") as f:
+        json.dump(brief_data(feed_items, get_forthcoming_calendar(limit=1000, db_path=db_path), moves_deck,
+                             generated.strftime("%Y-%m-%d")), f, separators=(",", ":"))
 
     # Long price history for the portfolio page, as static files read from the database.
     logger.info("Wrote price history for %d tickers", write_price_files(site_dir, db_path))

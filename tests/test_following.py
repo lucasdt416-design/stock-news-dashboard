@@ -128,7 +128,9 @@ def test_home_tabs_come_before_the_welcome(tmp_path):
 
 def test_followed_companies_get_their_own_lists(tmp_path):
     site = _site(tmp_path)
-    assert 'id="followingStrip"' in site["company.html"] and 'id="followingSection"' in site["company.html"]
+    # Companies lists yours once, in a Yours section; the strip of chips stays on each company's page.
+    assert 'id="followingSection"' in site["company.html"] and 'id="followingStrip"' not in site["company.html"]
+    assert 'id="followingStrip"' in site["company-nvda.html"]
     assert 'id="settingsFollowing"' in site["settings.html"]
     assert "function followedFirst" in site["company.html"]
 

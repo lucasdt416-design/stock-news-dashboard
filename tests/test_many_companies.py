@@ -177,8 +177,8 @@ def test_a_long_watchlist_gets_one_small_page_per_company(tmp_path):
     assert len(re.findall(r"^\S", headers, re.M)) < 100
     directory = (site / "company.html").read_text(encoding="utf-8")
     assert 'href="company-brk-b.html"' in directory
-    assert "<h2 class=\"company-browser-sector-name\">Materials</h2>" in directory
-    assert "<h2 class=\"company-browser-sector-name\">Other</h2>" in directory, "no sector given"
+    assert '<span class="dir-sector-name">Materials</span>' in directory
+    assert '<span class="dir-sector-name">Other</span>' in directory, "no sector given"
 
 
 def test_a_long_watchlist_keeps_home_and_the_feed_small(tmp_path):
@@ -205,22 +205,27 @@ def test_a_new_company_shows_no_empty_sections(tmp_path):
     assert "No stories recorded for BRK.B in this period." in body
 
 
-def test_a_long_watchlist_can_be_narrowed_to_one_sector_and_put_in_order(tmp_path):
+def test_a_long_watchlist_folds_into_sectors_and_can_be_put_in_order(tmp_path):
     site = _big_site(tmp_path)
     directory = (site / "company.html").read_text(encoding="utf-8")
-    # One choice per sector that has companies, each with how many, and they add up to the whole list.
-    choices = re.findall(r'data-sector="([^"]+)" data-click="setCompanySector"[^>]*>[^<]*<span class="pill-count">(\d+)</span>', directory)
-    counts = dict(choices)
-    assert counts.pop("ALL") == "122"
-    assert sum(int(n) for n in counts.values()) == 122
-    for name, count in counts.items():
-        section = re.search(rf'<section class="company-browser-sector" data-sector="{re.escape(name)}">(.*?)</section>', directory, re.S)
-        assert section and section.group(1).count('<a class="company-browser-card ') == int(count), name
+    # One folded row per sector that has companies, each saying how many, adding up to the whole list.
+    groups = re.findall(r'<details class="dir-sector company-browser-sector" data-sector="([^"]+)">(.*?)</details>', directory, re.S)
+    assert groups
+    total = 0
+    for name, body in groups:
+        count = int(re.search(r'<span class="dir-sector-n">(\d+)</span>', body).group(1))
+        assert body.count('<a class="company-browser-card ') == count, name
+        total += count
+    assert total == 122
     # Every company carries what the orders need.
     cards = re.findall(r'<a class="company-browser-card [^>]*>', directory)
     assert len(cards) == 122 and all('data-stories="' in c and 'data-ahead="' in c and 'data-name="' in c for c in cards)
-    for order in ("listed", "name", "stories"):
-        assert f'data-click="sortCompanies" data-sort="{order}"' in directory
+    order = re.search(r'<select id="companySort" data-change="sortCompanies">(.*?)</select>', directory, re.S).group(1)
+    for value in ("listed", "name", "stories"):
+        assert f'value="{value}"' in order
+    # One search box and no row of sector buttons on top of the list.
+    assert directory.count('data-input="filterCompanyStrip"') == 1
+    assert 'data-click="setCompanySector"' not in directory
 
 
 def test_the_feed_offers_each_kind_of_story_up_front(tmp_path):

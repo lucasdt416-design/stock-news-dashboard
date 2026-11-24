@@ -107,6 +107,9 @@ def test_rendered_site_contains_only_intended_files():
                 # Price history for the portfolio page: plain JSON, and nowhere else.
                 assert path.suffix == ".json", path.name
                 continue
+            if path == Path(site) / "data" / "brief.json":
+                # The portfolio Briefing's stories and dates: the same for everyone, no holdings.
+                continue
             assert path.suffix in {".html", ".woff2", ""}, path.name
             assert path.suffix or path.name == "_headers", path.name
             assert not re.search(r"\.(db|sqlite|env|map|log|bak)$", path.name)
