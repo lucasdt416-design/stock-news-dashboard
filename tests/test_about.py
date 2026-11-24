@@ -40,9 +40,9 @@ def test_the_privacy_note_matches_the_code():
     keys = set(re.findall(r"stockpulse_[a-z_]+", code))
     assert keys <= {"stockpulse_follow", "stockpulse_reading", "stockpulse_theme", "stockpulse_recently_viewed",
                     "stockpulse_last_visit", "stockpulse_prev_visit", "stockpulse_probe",
-                    "stockpulse_portfolio", "stockpulse_prices"}, keys - {"x"}
+                    "stockpulse_portfolio", "stockpulse_prices", "stockpulse_brief_seen"}, keys - {"x"}
     for words in ("companies you follow", "what you've read", "your theme", "viewed recently",
-                  "stocks you hold", "prices fetched for them"):
+                  "stocks you hold", "prices fetched for them", "last marked the Briefing read"):
         assert words in ABOUT_TEMPLATE, words
 
 
@@ -55,7 +55,7 @@ def test_the_portfolio_note_says_what_is_and_is_not_sent():
     # The only requests the page makes are to this site: its price files and its own two functions.
     script = portfolio_scripts()
     targets = set(re.findall(r"fetch\(\s*'([^']+)'", script))
-    assert targets == {"data/prices/index.json", "data/prices/", "/api/history?ticker=", "/api/lookup?q="}, targets
+    assert targets == {"data/prices/index.json", "data/prices/", "data/brief.json", "/api/history?ticker=", "/api/lookup?q="}, targets
     # (The SVG namespace is a name for drawing the charts, not an address anything is fetched from.)
     assert not re.search(r"https?://", script.replace("http://www.w3.org/2000/svg", "")), "the page's scripts name no outside address"
     # Only the ticker goes into a request: no shares, dollars, dates or costs.

@@ -174,7 +174,8 @@ async def run(site, out):
             await pg.wait_for_timeout(500)
             preview = await pg.inner_text("#pfPreview")
             check("From your file" in preview and "7 shares, paid $1,400.00" in preview, "a broker file is read, with its cost basis")
-            check("3 lines couldn’t be read" in preview, "cash, totals and odd rows are flagged")
+            check("1 line couldn’t be read" in preview and "Left out 2 lines of cash, totals and notes" in preview,
+                  "cash and totals are left out quietly, and the odd row is flagged")
             await pg.click('[data-click="pfAcceptPreview"]')
             await pg.wait_for_timeout(300)
             check("+" in await row_text("JPM") or "−" in await row_text("JPM"), "a holding with a cost shows its gain or loss")
@@ -205,9 +206,13 @@ async def run(site, out):
             await pg.wait_for_timeout(700)
             # The summary: the big number, the line, and each holding's dollars over the same range
             money = lambda text: float(text.replace("−", "-").replace("$", "").replace(",", "").replace("+", "").split()[0])  # noqa: E731
+            check(await pg.is_visible("#pfBrief") and not await pg.is_visible("#pfSummary") and not await pg.is_visible("#pfHoldings"),
+                  "a returning visitor lands on the Briefing, and the other parts are out of the way")
+            await pg.click('#pfTabs [data-view="overview"]')
+            await pg.wait_for_timeout(300)
             check(await pg.inner_text("#pfHeroValue") == "$10,000.00", "the big number is the total")
             check(await pg.is_visible("#pfSummary") and not await pg.is_visible("#pfHoldings") and not await pg.is_visible("#what-if"),
-                  "a returning visitor lands on Overview, and the other parts are out of the way")
+                  "Overview shows the summary, and the other parts are out of the way")
             check(await pg.locator("#pfValueChart .pf-line:not(.pf-line-spy)").count() == 1, "the value over time is drawn as one line")
             check(await pg.locator("#pfValueChart .pf-line-spy").count() == 1 and "The same money in the S&P 500:" in await pg.inner_text("#pfHeroSpy"),
                   "with the same money in the S&P 500 beside it")

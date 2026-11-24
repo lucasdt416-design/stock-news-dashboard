@@ -92,11 +92,12 @@ test("a broker export with a preamble, odd column names, cash and a totals row",
     '"Account Total","--","--","--","$3,698.94","$1,200.00"',
     "",
   ].join("\r\n");
-  const { rows, unread, error } = P.readCsv(csv);
+  const { rows, unread, skipped, error } = P.readCsv(csv);
   assert.equal(error, undefined);
   assert.deepEqual(rows, [row("NVDA", { shares: 10, paid: 1200 }), row("BRK-B", { shares: 2.5 })]);
-  assert.deepEqual(unread.map((u) => u.reason), ["no ticker", "no ticker"]);
-  assert.ok(unread[0].text.startsWith("Cash & Cash Investments"));
+  // Cash and the total aren't holdings: left out and counted, not listed as lines that couldn't be read.
+  assert.deepEqual(unread, []);
+  assert.equal(skipped, 2);
 });
 
 test("other brokers' column names, a per-share cost, semicolons and tabs", () => {
@@ -182,4 +183,61 @@ test("dollars become shares at a real price, and only then", () => {
   assert.equal(P.sharesFromDollars(2000, 0), null);
   assert.equal(P.sharesFromDollars(2000, undefined), null);
   assert.equal(P.sharesFromDollars(-1, 10), null);
+});
+
+// Shaped like the real exports. Each broker adds rows that aren't holdings, which must not become holdings.
+test("a Schwab positions file is read, brackets in its headers and all", () => {
+  const csv = `"Positions for account Individual ...123 as of 09:15 AM ET, 2026/11/23","",""
+"Symbol","Description","Qty (Quantity)","Price","Mkt Val (Market Value)","Cost Basis","Security Type"
+"MSFT","MICROSOFT CORP","12","$420.00","$5,040.00","$3,600.00","Equity"
+"Cash & Cash Investments","--","--","--","$1,200.00","--","Cash and Money Market"
+"Account Total","--","--","--","$6,240.00","$3,600.00","--"`;
+  const out = P.readCsv(csv);
+  assert.deepEqual(out.rows, [row("MSFT", { shares: 12, paid: 3600 })]);
+  assert.equal(out.unread.length, 0);
+  assert.equal(out.skipped, 2);
+});
+
+test("cash, pending money, totals and footnotes are left out quietly", () => {
+  const fidelity = `Account Number,Account Name,Symbol,Description,Quantity,Last Price,Current Value,Cost Basis Total,Average Cost Basis
+Z1,Individual,SPAXX**,HELD IN MONEY MARKET,,,$1520.33,,
+Z1,Individual,AAPL,APPLE INC,10,$230.10,$2301.00,$1500.00,$150.00
+Z1,Individual,Pending Activity,,,,$-200.00,,
+
+"The data and information in this spreadsheet is provided to you solely for your use"
+"Date downloaded 11/23/2026 9:15 AM ET"`;
+  const f = P.readCsv(fidelity);
+  assert.deepEqual(f.rows, [row("AAPL", { shares: 10, paid: 1500 })]);
+  assert.equal(f.unread.length, 0);
+  const etrade = `Symbol,Last Price $,Qty #,Price Paid $,Value $
+AMZN,210.5,20,150,4210
+CASH,,,,1000.00
+TOTAL,,,,5210`;
+  assert.deepEqual(P.readCsv(etrade).rows, [row("AMZN", { shares: 20, paid: 3000 })]);
+});
+
+test("a second table under the holdings ends them", () => {
+  const vanguard = `Account Number,Investment Name,Symbol,Shares,Share Price,Total Value,
+1,VANGUARD S&P 500 ETF,VOO,8.25,540.1,4455.83,
+
+Account Number,Trade Date,Settlement Date,Transaction Type,Transaction Description,Investment Name,Symbol,Shares,Share Price,Principal Amount,
+1,2026-11-01,2026-11-03,Buy,Buy,NVIDIA CORP,NVDA,5,170,-850,`;
+  const out = P.readCsv(vanguard);
+  assert.deepEqual(out.rows.map(r => r.ticker), ["VOO"]);
+  assert.equal(out.unread.length, 0);
+});
+
+test("a file of trades is added up: buys minus sells, with the cost that's left", () => {
+  const robinhood = `"Activity Date","Process Date","Settle Date","Instrument","Description","Trans Code","Quantity","Price","Amount"
+"11/01/2026","11/01/2026","11/03/2026","AAPL","Apple","Buy","10","$200.00","($2,000.00)"
+"11/10/2026","11/10/2026","11/12/2026","AAPL","Apple","Sell","4","$220.00","$880.00"
+"11/12/2026","11/12/2026","11/12/2026","AAPL","Apple","CDIV","","","$1.20"
+"11/13/2026","11/13/2026","11/15/2026","TSLA","Tesla","Buy","2","$300.00","($600.00)"
+"11/14/2026","11/14/2026","11/16/2026","TSLA","Tesla","Sell","2","$310.00","$620.00"
+"11/15/2026","11/15/2026","11/15/2026","","ACH Deposit","ACH","","","$500.00"`;
+  const out = P.readCsv(robinhood);
+  assert.equal(out.trades, true);
+  assert.deepEqual(out.rows, [row("AAPL", { shares: 6, paid: 1200 })]);
+  assert.equal(out.closed, 1, "TSLA was sold off completely");
+  assert.equal(out.skipped, 2, "the dividend and the deposit");
 });

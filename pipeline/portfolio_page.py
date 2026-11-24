@@ -6,12 +6,18 @@ put into the page as one inline script, which the page's Content-Security-Policy
 """
 
 import os
-from typing import Any, Dict, List
+from datetime import date, timedelta
+from typing import Any, Dict, Iterable, List, Optional
 
 _HERE = os.path.dirname(__file__)
 
 # In the order they run. Each later file may use what the earlier ones define.
-PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_math.js", "portfolio_app.js", "portfolio_xray.js", "portfolio_summary.js", "portfolio_whatif.js")
+PORTFOLIO_SCRIPTS = ("portfolio_input.js", "portfolio_math.js", "portfolio_brief_logic.js", "portfolio_app.js", "portfolio_xray.js",
+                     "portfolio_summary.js", "portfolio_brief.js", "portfolio_whatif.js")
+
+BRIEF_EVENT_DAYS = 45   # how far ahead "Coming up" looks
+BRIEF_MOVE_DAYS = 14    # how far back a big price day still counts as news
+BRIEF_TEXT = 240        # longest summary kept per story
 
 
 def _script(name: str) -> str:
@@ -58,6 +64,79 @@ def portfolio_data(companies: List[Dict[str, Any]], sectors: List[str]) -> Dict[
         # "nothing noted about it" from "not a company we follow".
         details[co["symbol"]] = {k: v for k, v in entry.items() if v}
     return {"sectors": list(sectors), "other": other, "companies": details}
+
+
+def _story_kind(item: Dict[str, Any]) -> str:
+    source = item.get("source") or ""
+    if source == "sec_edgar":
+        return "results" if item.get("category") == "Earnings & Financials" else "filing"
+    if source == "company_ir":
+        return "release"
+    return "news"
+
+
+def _event_kind(event_type: str) -> str:
+    if "Earnings" in event_type:
+        return "results"
+    if "Dividend" in event_type:
+        return "dividend"
+    if "SEC" in event_type or "Statutory" in event_type:
+        return "filing"
+    return "event"
+
+
+def brief_data(
+    feed_items: Iterable[Dict[str, Any]],
+    calendar_events: Iterable[Dict[str, Any]],
+    deck: Optional[Dict[str, Any]],
+    generated: str,
+    today: Optional[date] = None,
+) -> Dict[str, Any]:
+    """site/data/brief.json: what the Briefing tab ranks against the holdings, in the browser.
+
+    It's the same for every visitor and carries no holdings: the page fetches it and does the
+    matching itself, so what someone owns never leaves their browser."""
+    today = today or date.today()
+    stories = []
+    for it in feed_items:
+        ticker = it.get("ticker") or ""
+        if not ticker:
+            continue
+        related = sorted({t for t in (it.get("related_tickers_list") or []) if t and t != ticker})
+        refs = {r.get("related_ticker"): (r.get("impact_note") or "")[:160]
+                for r in it.get("cross_references_list") or [] if r.get("related_ticker")}
+        summary = str(it.get("ai_summary") or it.get("story_text") or "").strip()
+        stories.append({
+            "t": ticker,
+            "rel": related,
+            "why": {k: v for k, v in refs.items() if k in related and v},
+            "d": str(it.get("published_date") or "")[:10],
+            "h": it.get("clean_headline") or it.get("headline") or "",
+            "u": it.get("url") or "",
+            "k": _story_kind(it),
+            "c": it.get("category") or "",
+            "s": round(float(it.get("score") or 0), 1),
+            "src": it.get("source_label") or "",
+            "x": summary[:BRIEF_TEXT] + ("…" if len(summary) > BRIEF_TEXT else ""),
+        })
+    last = (today + timedelta(days=BRIEF_EVENT_DAYS)).isoformat()
+    events = []
+    for ev in calendar_events:
+        when = str(ev.get("event_date") or "")[:10]
+        if ev.get("ticker") and today.isoformat() <= when <= last:
+            events.append({"t": ev["ticker"], "d": when, "k": _event_kind(str(ev.get("event_type") or "")),
+                           "h": ev.get("headline") or "", "u": ev.get("source_url") or "",
+                           "est": ev.get("source_type") == "ESTIMATED_RULE"})
+    events.sort(key=lambda e: (e["d"], e["t"]))
+    since = (today - timedelta(days=BRIEF_MOVE_DAYS)).isoformat()
+    days = []
+    for card in (deck or {}).get("cards") or []:
+        for day in card.get("days") or []:
+            if day.get("date", "") >= since:
+                days.append({"t": card["symbol"], "d": day["date"], "m": day["move"], "mk": day.get("market"),
+                             "v": day.get("verdict")})
+    days.sort(key=lambda x: (x["d"], x["t"]), reverse=True)
+    return {"v": 1, "generated": generated, "stories": stories, "events": events, "days": days}
 
 
 PORTFOLIO_CSS = """
@@ -110,9 +189,68 @@ PORTFOLIO_CSS = """
     .pf-tabs button[aria-pressed="true"] { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--accent); }
     .pf-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .page-portfolio[data-view] [data-in] { display: none; }
-    .page-portfolio[data-view="overview"] [data-in="overview"], .page-portfolio[data-view="holdings"] [data-in="holdings"],
+    .page-portfolio[data-view="briefing"] [data-in="briefing"], .page-portfolio[data-view="overview"] [data-in="overview"], .page-portfolio[data-view="holdings"] [data-in="holdings"],
     .page-portfolio[data-view="exposure"] [data-in="exposure"], .page-portfolio[data-view="what-if"] [data-in="what-if"] { display: block; }
+    .page-portfolio:not([data-view]) .pf-intro-held, .page-portfolio[data-view] .pf-intro-empty { display: none; }
     .page-portfolio[data-view] .pf-first { border-top: none; padding-top: 0.25rem; }
+    .page-portfolio .pf-section > .settings-heading, .page-portfolio .pf-head > .settings-heading { margin: 0 0 0.9rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--text-primary); font-size: 0.78rem; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
+    .page-portfolio .pf-head { align-items: baseline; }
+    .page-portfolio .pf-head > .settings-heading { flex: 1; }
+    .page-portfolio .pf-section { border-top: none; padding: 1.25rem 0 1.5rem; }
+    .page-portfolio .pf-lead { font-size: 1.15rem; line-height: 1.45; letter-spacing: -0.01em; }
+    .page-portfolio .pf-hero-value { font-size: clamp(2.6rem, 8vw, 3.8rem); font-weight: 650; letter-spacing: -0.04em; }
+    .pf-tab-count { display: inline-block; min-width: 1.35rem; margin-left: 0.3rem; padding: 0 0.35rem; border-radius: var(--radius-full); background: var(--accent); color: var(--on-accent); font-size: 0.72rem; font-weight: 600; line-height: 1.35rem; text-align: center; font-variant-numeric: tabular-nums; vertical-align: 0.1em; }
+    .page-portfolio[data-view] [data-in] { animation: pf-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+    @keyframes pf-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .page-portfolio[data-view] [data-in] { animation: none; } }
+
+    /* ---- Briefing ---- */
+    .br-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1.5rem; }
+    .br-date { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
+    .br-actions { display: flex; gap: 1.25rem; }
+    .br-lead { margin: 0.5rem 0 0; max-width: 40rem; font-size: clamp(1.6rem, 3.2vw, 2.15rem); font-weight: 650; line-height: 1.18; letter-spacing: -0.025em; color: var(--text-primary); text-wrap: balance; }
+    .br-sub { margin: 0.75rem 0 0; max-width: 38rem; font-size: 1.05rem; line-height: 1.5; color: var(--text-secondary); }
+    .br-sub:empty { display: none; }
+    .br-block { margin-top: 2.5rem; }
+    .br-label { margin: 0 0 0.25rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--text-primary); font-size: 0.78rem; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-primary); }
+    .br-stories, .br-moves, .br-events { list-style: none; margin: 0; padding: 0; }
+    .br-story { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 1.25rem; padding: 1rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .br-story-first { grid-template-columns: 2.25rem minmax(0, 1fr); }
+    .br-n { font-size: 1.9rem; font-weight: 300; line-height: 1; color: var(--text-muted); font-variant-numeric: tabular-nums; padding-top: 0.1rem; }
+    .br-meta { display: flex; flex-wrap: wrap; gap: 0.15rem 0.65rem; margin: 0 0 0.3rem; font-size: 0.8rem; color: var(--text-muted); }
+    .br-meta > * + *::before { content: "·"; margin-right: 0.65rem; color: var(--border-card); }
+    .br-ticker { font-weight: 650; color: var(--text-primary); text-decoration: none; letter-spacing: 0.01em; }
+    .br-ticker:hover { color: var(--accent); }
+    .br-headline { margin: 0; font-size: 1.08rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; }
+    .br-story-first .br-headline { font-size: 1.2rem; }
+    .br-headline a { color: var(--text-primary); text-decoration: none; }
+    .br-headline a:hover { color: var(--accent); }
+    .br-why { margin: 0.35rem 0 0; max-width: 40rem; font-size: 0.92rem; line-height: 1.5; color: var(--text-secondary); }
+    .br-rest .br-headline { font-size: 0.98rem; font-weight: 500; }
+    .br-rest .br-why { display: none; }
+    .br-move { display: grid; grid-template-columns: 4rem 5rem minmax(0, 1fr) auto; align-items: baseline; gap: 0.25rem 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .br-move-pct { font-size: 1.15rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+    .br-move-pct.pos { color: var(--pos); }
+    .br-move-pct.neg { color: var(--neg); }
+    .br-move-words { font-size: 0.92rem; color: var(--text-secondary); }
+    .br-share { font-size: 0.82rem; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+    .br-event { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) auto; align-items: baseline; gap: 0.25rem 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); }
+    .br-event-soon { color: var(--text-primary); }
+    .br-event-when { font-size: 0.9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .br-event-what { font-size: 0.95rem; }
+    .br-event-what a:not(.br-ticker) { color: inherit; text-decoration: none; }
+    .br-event-what a:not(.br-ticker):hover { color: var(--accent); }
+    .br-est { color: var(--text-muted); font-size: 0.85rem; }
+    .br-quiet .pf-note { font-size: 0.95rem; color: var(--text-secondary); }
+    .br-foot { margin-top: 2rem; }
+    @media (max-width: 640px) {
+      .br-move { grid-template-columns: 3.5rem 4.5rem minmax(0, 1fr); }
+      .br-move .br-move-words { grid-column: 1 / -1; }
+      .br-move .br-share { grid-column: 3; grid-row: 1; }
+      .br-story-first { grid-template-columns: 1.75rem minmax(0, 1fr); gap: 0 0.75rem; }
+      .br-n { font-size: 1.5rem; }
+      .br-event { grid-template-columns: 4.5rem minmax(0, 1fr) auto; gap: 0.2rem 0.75rem; }
+    }
     .pf-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
     .pf-head .settings-heading { margin: 0; }
     .pf-sort { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--text-muted); }
@@ -241,18 +379,60 @@ PORTFOLIO_CSS = """
 PORTFOLIO_BODY = """
       <header class="page-header">
         <h1 class="page-title">Your portfolio</h1>
-        <p class="page-standfirst">Put in the stocks you own to see what they’re worth, how that has changed and what you’re actually invested in. Your holdings stay in this browser.</p>
+        <p class="page-standfirst pf-intro-empty">Put in the stocks you own to see what they’re worth, how that has changed and what you’re actually invested in. Your holdings stay in this browser.</p>
+        <p class="page-standfirst pf-intro-held">What happened to what you own, and what it adds up to. Kept in this browser only.</p>
       </header>
 
       <p class="pf-banner" id="pfDemo" hidden>Demo prices, not real. This copy of the site was built from made-up data.</p>
       <p class="pf-banner" id="pfPricesFailed" hidden>Prices couldn’t be loaded just now. Your holdings are still here; try again in a little while.</p>
 
       <nav class="pf-tabs" id="pfTabs" aria-label="Parts of this page" hidden>
-        <button type="button" data-click="pfView" data-view="overview" aria-pressed="true">Overview</button>
+        <button type="button" data-click="pfView" data-view="briefing" aria-pressed="true">Briefing <span class="pf-tab-count" id="pfBriefCount" hidden></span></button>
+        <button type="button" data-click="pfView" data-view="overview" aria-pressed="false">Overview</button>
         <button type="button" data-click="pfView" data-view="holdings" aria-pressed="false">Holdings</button>
         <button type="button" data-click="pfView" data-view="exposure" aria-pressed="false">Exposure</button>
         <button type="button" data-click="pfView" data-view="what-if" aria-pressed="false">What if</button>
       </nav>
+
+      <section class="br" id="pfBrief" data-in="briefing" aria-labelledby="brLead" hidden>
+        <div class="br-top">
+          <p class="br-date" id="brDate"></p>
+          <div class="br-actions">
+            <button type="button" class="pf-link" data-click="brCopy">Copy as text</button>
+            <button type="button" class="pf-link" id="brMarkRead" data-click="brMarkRead">Mark all as read</button>
+          </div>
+        </div>
+        <h2 class="br-lead" id="brLead"></h2>
+        <p class="br-sub" id="brSub"></p>
+
+        <div class="br-block" id="brFirstWrap" hidden>
+          <h3 class="br-label">Read these first</h3>
+          <ol class="br-stories" id="brFirst"></ol>
+        </div>
+
+        <div class="br-block" id="brMovesWrap" hidden>
+          <h3 class="br-label">Big days</h3>
+          <ul class="br-moves" id="brMoves"></ul>
+          <p class="pf-note">“On its own” means the S&amp;P 500 and the company’s peers didn’t move the same way that day. It doesn’t say why.</p>
+        </div>
+
+        <div class="br-block" id="brComingWrap" hidden>
+          <h3 class="br-label">Coming up</h3>
+          <ul class="br-events" id="brComing"></ul>
+        </div>
+
+        <div class="br-block" id="brRestWrap" hidden>
+          <h3 class="br-label" id="brRestHeading">Also new</h3>
+          <ul class="br-stories br-rest" id="brRest"></ul>
+          <button type="button" class="pf-link" id="brRestAll" data-click="brRestAll" hidden>Show all</button>
+        </div>
+
+        <div class="br-block br-quiet" id="brQuietWrap" hidden>
+          <h3 class="br-label">Quiet</h3>
+          <div id="brQuiet"></div>
+        </div>
+        <p class="pf-note br-foot" id="brSeenNote"></p>
+      </section>
 
       <section class="pf-hero" id="pfSummary" data-in="overview" aria-label="Your portfolio at a glance" hidden>
         <p class="pf-hero-label" id="pfHeroLabel">Your portfolio is worth</p>
@@ -323,6 +503,7 @@ PORTFOLIO_BODY = """
           <button type="button" class="pf-link" data-click="pfPickFile">Import a file from your broker</button>
           <input type="file" id="pfFile" accept=".csv,.tsv,.txt,text/csv,text/plain" data-change="pfReadFile" hidden>
         </div>
+        <p class="pf-note">Import reads the positions CSV from Fidelity, Schwab, Vanguard, E*Trade or Interactive Brokers, and Robinhood’s account activity report. The file stays in your browser.</p>
         <div class="pf-paste" id="pfPasteBox" hidden>
           <textarea class="pf-input" id="pfPasteText" maxlength="20000" spellcheck="false" aria-label="A list of holdings" placeholder="NVDA 10, AAPL 5 shares, VOO $2000"></textarea>
           <p class="pf-note">One holding per line or separated by commas. A plain number is shares; a dollar amount is what it’s worth today. “AAPL 5 @ 150” also records what you paid.</p>

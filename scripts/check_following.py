@@ -217,10 +217,10 @@ async def run(site, out):
 
             await pg.goto(base + "company.html")
             await pg.wait_for_timeout(700)
-            chips = await pg.locator(".following-chip").all_inner_texts()
-            check(t1 in chips, "Companies shows a Following strip at the top")
-            check(await pg.locator("#followingSection .company-strip-pill").count() == len(chips), "the directory starts with a Following group")
-            await pg.click(f'.following-chip >> text="{t1}"')
+            mine = await pg.locator("#followingCards .dir-mine-sym").all_inner_texts()
+            check(t1 in mine, "Companies lists followed companies once, under Yours")
+            check(await pg.locator("#followingStrip").count() == 0, "Companies has no second strip of the same tickers")
+            await pg.click(f'#followingCards .dir-mine-row:has(.dir-mine-sym:text-is("{t1}"))')
             await pg.wait_for_url(f"**/company-{t1.lower()}.html")
             await pg.wait_for_timeout(400)
             check(await pg.is_visible(f"#profile-{t1}"), "a Following chip opens that company")
@@ -319,7 +319,7 @@ async def run(site, out):
             check(await pg.is_visible("#welcomePicker"), "after Start over, Home asks again")
             await pg.goto(base + "company.html")
             await pg.wait_for_timeout(400)
-            check(not await pg.is_visible("#followingStrip") and not await pg.is_visible("#followingSection"), "following nothing shows no empty Following strip")
+            check(not await pg.is_visible("#followingSection"), "following nothing shows no empty Yours section")
             await browser.close()
     finally:
         httpd.shutdown()

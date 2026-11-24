@@ -24,7 +24,7 @@ const PF = {
   editing: null,
   pending: null,      // a pasted or imported list waiting for "Add these"
   mode: 'shares',
-  view: 'overview',   // which part of the page is showing, once there are holdings
+  view: 'briefing',   // which part of the page is showing, once there are holdings
   sort: 'value',
   before: [],         // run before the holdings are drawn
   listeners: [],
@@ -482,8 +482,10 @@ async function pfAddOne() {
 
 function pfOfferRows(result, source) {
   if (result.error) { pfSay(result.error, 'bad'); return; }
-  if (!result.rows.length && !result.unread.length) { pfSay('There was nothing to read.', 'bad'); return; }
-  PF.pending = { rows: result.rows.slice(0, PortfolioInput.MAX_HOLDINGS), unread: result.unread.slice(0, 200), source };
+  if (!result.rows.length && !result.unread.length && !result.trades) { pfSay('There was nothing to read.', 'bad'); return; }
+  if (!result.rows.length && !result.unread.length && result.trades) { pfSay('No buys or sells were found in that file.', 'bad'); return; }
+  PF.pending = { rows: result.rows.slice(0, PortfolioInput.MAX_HOLDINGS), unread: result.unread.slice(0, 200), source,
+    skipped: result.skipped || 0, trades: Boolean(result.trades), closed: result.closed || 0 };
   pfSay('');
   pfRenderPreview();
   document.getElementById('pfPreview').scrollIntoView({ block: 'nearest' });
@@ -546,7 +548,16 @@ function pfRenderPreview() {
     ]));
   });
   box.append(pfEl('h2', { class: 'settings-heading', text: pending.source === 'file' ? 'From your file' : 'From what you pasted' }));
+  if (pending.trades) {
+    const closed = pending.closed ? ` ${plural(pending.closed, 'stock was', 'stocks were')} sold off completely and ${pending.closed === 1 ? 'isn’t' : 'aren’t'} included.` : '';
+    box.append(pfEl('p', { class: 'pf-note', text: `This is a file of trades, so what you hold was worked out from its buys and sells.${closed} If it doesn’t go back to your first purchase, some share counts will be short; you can fix them on Holdings.` }));
+  }
   if (pending.rows.length) box.append(list);
+  if (pending.skipped) {
+    box.append(pfEl('p', { class: 'pf-note', text: pending.trades
+      ? `Left out ${plural(pending.skipped, 'line', 'lines')} that weren’t buys or sells, such as dividends and deposits.`
+      : `Left out ${plural(pending.skipped, 'line', 'lines')} of cash, totals and notes.` }));
+  }
   if (pending.unread.length) {
     box.append(pfEl('p', { class: 'pf-preview-unread-head', text: `${plural(pending.unread.length, 'line', 'lines')} couldn’t be read:` }));
     box.append(pfEl('ul', { class: 'pf-preview-unread' }, pending.unread.map(u =>
@@ -717,7 +728,7 @@ function pfRenderHoldings() {
 // ---- The parts of the page --------------------------------------------------------------------
 
 // With holdings, the page shows one part at a time. With none, it is just the form to add some.
-const PF_VIEWS = ['overview', 'holdings', 'exposure', 'what-if'];
+const PF_VIEWS = ['briefing', 'overview', 'holdings', 'exposure', 'what-if'];
 
 function pfViewFromAddress() {
   const hash = String(location.hash || '').slice(1);
@@ -827,7 +838,7 @@ function pfRemoveAll() {
   PF.holdings = [];
   PF.editing = null;
   PF.pending = null;
-  try { localStorage.removeItem(PORTFOLIO_KEY); localStorage.removeItem(PRICES_KEY); } catch (e) { /* nothing stored */ }
+  try { localStorage.removeItem(PORTFOLIO_KEY); localStorage.removeItem(PRICES_KEY); localStorage.removeItem('stockpulse_brief_seen'); } catch (e) { /* nothing stored */ }
   pfRenderPreview();
   pfRender();
   pfSay('Everything was removed from this browser.', 'good');
@@ -883,7 +894,7 @@ window.addEventListener('hashchange', () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
   pfLoad();
-  PF.view = pfViewFromAddress() || 'overview';
+  PF.view = pfViewFromAddress() || 'briefing';
   PF.wasEmpty = false;
   pfSetMode('shares');
   pfRender();

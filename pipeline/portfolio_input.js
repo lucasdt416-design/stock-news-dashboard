@@ -149,25 +149,86 @@ const PortfolioInput = (() => {
 
   const COLUMNS = {
     ticker: ['symbol', 'ticker', 'tickersymbol', 'instrument', 'security', 'securitysymbol'],
-    shares: ['quantity', 'qty', 'shares', 'units', 'sharesowned', 'numberofshares', 'currentquantity'],
+    shares: ['quantity', 'qty', 'shares', 'units', 'sharesowned', 'numberofshares', 'currentquantity', 'qtyquantity', 'sharesquantity'],
     paid: ['costbasis', 'costbasistotal', 'totalcost', 'totalcostbasis', 'bookcost', 'cost'],
     perShare: ['averagecost', 'avgcost', 'avgprice', 'averageprice', 'costpershare', 'purchaseprice', 'averagecostbasis',
-      'avgcostshare', 'costbasispershare'],
-    value: ['marketvalue', 'currentvalue', 'value', 'totalvalue'],
+      'avgcostshare', 'costbasispershare', 'pricepaid', 'costprice'],
+    value: ['marketvalue', 'currentvalue', 'value', 'totalvalue', 'mktval', 'mktvalmarketvalue'],
+    // Only in a file of trades (Robinhood's activity report, a broker's transaction history).
+    action: ['transcode', 'transactiontype', 'action', 'activitytype', 'transactioncode'],
+    amount: ['amount', 'principalamount', 'netamount'],
+    price: ['price', 'shareprice', 'tradeprice'],
   };
 
-  function headerKey(cell) {
-    return String(cell || '').toLowerCase().replace(/[^a-z]/g, '');
+  // "Qty (Quantity)" is Schwab's header for quantity: the words before the brackets count too.
+  function headerKeys(cell) {
+    const text = String(cell || '');
+    const full = text.toLowerCase().replace(/[^a-z]/g, '');
+    const head = text.split('(')[0].toLowerCase().replace(/[^a-z]/g, '');
+    return head && head !== full ? [full, head] : [full];
   }
 
   function findColumns(cells) {
-    const keys = cells.map(headerKey);
+    const keys = cells.map(headerKeys);
     const found = {};
     Object.keys(COLUMNS).forEach(name => {
-      const at = keys.findIndex(k => COLUMNS[name].includes(k));
+      const at = keys.findIndex(k => k.some(key => COLUMNS[name].includes(key)));
       if (at >= 0) found[name] = at;
     });
     return found;
+  }
+
+  // Rows a broker adds that aren't holdings: cash, money waiting to settle and totals.
+  // Fidelity marks its cash fund with "**" (SPAXX**).
+  const NOT_A_HOLDING = /^(cash|cash\s*&\s*cash\s*investments|cash\s*&\s*sweep.*|total|totals|grand\s*total|account\s*total|pending\s*activity|money\s*market)$/i;
+  function notAHolding(text) {
+    const t = String(text || '').trim();
+    return NOT_A_HOLDING.test(t) || /\*\*$/.test(t);
+  }
+
+  const BUY = /^(buy|bought|purchase|reinvest(ment)?|reinvestment\s*shares|you\s*bought|bto)$/i;
+  const SELL = /^(sell|sold|sale|you\s*sold|stc)$/i;
+
+  // A file of trades: buys add shares and cost, sells take shares away (and the matching share of
+  // the cost). Anything else (dividends, deposits, fees) is left out.
+  function fromTrades(table, headerAt, columns) {
+    const held = new Map();
+    const order = [];
+    let other = 0;
+    const notRead = [];
+    for (let i = headerAt + 1; i < table.length; i += 1) {
+      const cells = table[i];
+      if (cells.filter(c => String(c).trim()).length < 2) continue;
+      const cell = name => (columns[name] === undefined ? '' : String(cells[columns[name]] || '').trim());
+      const action = cell('action');
+      const buy = BUY.test(action);
+      const sell = SELL.test(action);
+      if (!buy && !sell) { other += 1; continue; }
+      const ticker = normalizeTicker(cell('ticker'));
+      const shares = Math.abs(parseAmount(cell('shares')));
+      if (!ticker || !usable(shares)) { notRead.push(unread(cells.join(', ').trim(), !ticker ? 'no ticker' : 'no number of shares')); continue; }
+      let cost = Math.abs(parseAmount(cell('amount')));
+      if (!usable(cost)) cost = Math.abs(parseAmount(cell('price'))) * shares;
+      if (!held.has(ticker)) { held.set(ticker, { shares: 0, cost: 0, costKnown: true }); order.push(ticker); }
+      const h = held.get(ticker);
+      if (buy) {
+        h.shares += shares;
+        if (usable(cost)) h.cost += cost; else h.costKnown = false;
+      } else if (h.shares > 0) {
+        const part = Math.min(1, shares / h.shares);
+        h.cost -= h.cost * part;
+        h.shares = Math.max(0, h.shares - shares);
+      }
+    }
+    const rows = [];
+    let closed = 0;
+    order.forEach(ticker => {
+      const h = held.get(ticker);
+      const shares = Math.round(h.shares * 1e6) / 1e6;
+      if (!(shares > 0)) { closed += 1; return; }
+      rows.push({ ticker, shares, usd: null, paid: h.costKnown && h.cost > 0 ? Math.round(h.cost * 100) / 100 : null, bought: null });
+    });
+    return { rows, unread: notRead, skipped: other, closed, trades: true };
   }
 
   // A broker's export. Columns are matched by name, whatever their order or spelling.
@@ -193,19 +254,28 @@ const PortfolioInput = (() => {
     if (headerAt < 0) {
       return { rows: [], unread: [], error: "Couldn't find a column for the ticker and one for the number of shares." };
     }
+    if (columns.action !== undefined && columns.shares !== undefined) return fromTrades(table, headerAt, columns);
 
     const rows = [];
     const notRead = [];
+    let skipped = 0;
     for (let i = headerAt + 1; i < table.length; i += 1) {
       const cells = table[i];
+      const filled = cells.filter(c => String(c).trim()).length;
+      if (!filled) continue;
+      // A second header (Vanguard puts its trades under the holdings) ends the holdings.
+      const again = findColumns(cells);
+      if (again.ticker !== undefined && (again.shares !== undefined || again.value !== undefined)) break;
+      // A note or disclaimer under the table: one or two cells of words.
+      if (filled <= 2 && !normalizeTicker(String(cells[columns.ticker] || '').trim())) { skipped += 1; continue; }
       const line = cells.join(', ').trim();
-      if (!cells.some(c => String(c).trim())) continue;
       const cell = name => (columns[name] === undefined ? '' : String(cells[columns[name]] || '').trim());
+      if (notAHolding(cell('ticker'))) { skipped += 1; continue; }
       const ticker = normalizeTicker(cell('ticker'));
       if (!ticker) { notRead.push(unread(line, 'no ticker')); continue; }
       const row = { ticker, shares: null, usd: null, paid: null, bought: null };
       const shares = parseAmount(cell('shares'));
-      if (columns.shares !== undefined && cell('shares') !== '') {
+      if (columns.shares !== undefined && cell('shares') !== '' && cell('shares') !== '--') {
         if (!usable(shares)) { notRead.push(unread(line, 'the number of shares has to be more than zero')); continue; }
         row.shares = shares;
       } else {
@@ -219,7 +289,7 @@ const PortfolioInput = (() => {
       else if (usable(perShare) && row.shares) row.paid = Math.round(perShare * row.shares * 100) / 100;
       rows.push(row);
     }
-    return { rows, unread: notRead };
+    return { rows, unread: notRead, skipped };
   }
 
   // What is kept in the browser: checked field by field on the way in and on the way out.
